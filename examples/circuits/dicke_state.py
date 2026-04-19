@@ -14,14 +14,14 @@ import sys
 import math
 from collections import Counter
 
-# Add parent directory to path so we can import uniq when running as a script
+# Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, __file__.rsplit("/", 2)[0])
 
 import numpy as np
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.circuits import dicke_state_circuit
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.circuits import dicke_state_circuit
 
 
 def run_dicke(n_qubits, k, shots):

@@ -23,7 +23,7 @@ Demonstrates PyTorch integration for quantum machine learning:
 - **Batch Execution**: Parallel circuit evaluation
 
 ```bash
-pip install uniq[pytorch]
+pip install unified-quantum[pytorch]
 python pytorch_integration.py
 ```
 

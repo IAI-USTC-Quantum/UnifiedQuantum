@@ -70,7 +70,7 @@ def maxcut_hamiltonian(edges, n_nodes):
 ### 2. Build the ansatz
 
 ```python
-from uniq.algorithmics.ansatz import qaoa_ansatz
+from uniqc.algorithmics.ansatz import qaoa_ansatz
 
 circuit = qaoa_ansatz(
     cost_hamiltonian=[("Z0Z1", 0.5), ("Z1Z2", 0.5), ("Z0Z2", 0.5)],

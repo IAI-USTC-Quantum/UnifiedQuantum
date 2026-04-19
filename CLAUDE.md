@@ -50,13 +50,13 @@ This installs cmake to `~/.local/bin/` or the Python bin directory, which must b
 
 ```bash
 # All tests
-pytest uniq/test/ -v
+pytest uniqc/test/ -v
 
 # Single test file
-pytest uniq/test/test_simulator.py -v
+pytest uniqc/test/test_simulator.py -v
 
 # Single test function
-pytest uniq/test/test_simulator.py -v -k "test_function_name"
+pytest uniqc/test/test_simulator.py -v -k "test_function_name"
 ```
 
 Test files follow `test_*.py` naming. Test classes: `Test*` or `RunTest*`. Test functions: `test_*` or `run_test_*`.
@@ -77,24 +77,24 @@ Pre-commit hooks are configured (ruff lint + format, YAML check, trailing whites
 
 ### Core Flow: Circuit -> Simulator/Backend -> Result
 
-1. **Circuit Builder** (`uniq/circuit_builder/`): The `Circuit` class provides a fluent API for constructing quantum circuits. It outputs OriginIR or OpenQASM 2.0 format strings. Gate definitions live in `opcode.py` (logical gate list), `originir_spec.py` (OriginIR gate syntax), and `qasm_spec.py` (QASM gate syntax).
+1. **Circuit Builder** (`uniqc/circuit_builder/`): The `Circuit` class provides a fluent API for constructing quantum circuits. It outputs OriginIR or OpenQASM 2.0 format strings. Gate definitions live in `opcode.py` (logical gate list), `originir_spec.py` (OriginIR gate syntax), and `qasm_spec.py` (QASM gate syntax).
 
-2. **Simulators** (`uniq/simulator/`): Local simulation backends that consume OriginIR or QASM strings.
+2. **Simulators** (`uniqc/simulator/`): Local simulation backends that consume OriginIR or QASM strings.
    - `OriginIR_Simulator` — primary simulator supporting statevector, density matrix, and noisy simulation
    - `QASM_Simulator` — OpenQASM 2.0 simulator
-   - `uniq_cpp` — C++ extension (optional, pybind11)
+   - `uniqc_cpp` — C++ extension (optional, pybind11)
 
-3. **Parsers** (`uniq/originir/`, `uniq/qasm/`): Parse OriginIR and OpenQASM 2.0 assembly strings into structured representations.
+3. **Parsers** (`uniqc/originir/`, `uniqc/qasm/`): Parse OriginIR and OpenQASM 2.0 assembly strings into structured representations.
 
-4. **Cloud Task Submission** (`uniq/task/`): Adapter pattern for submitting circuits to quantum cloud platforms. Each provider (OriginQ, Quafu, IBM) has an adapter under `task/adapters/`. Configuration is via environment variables. The `task_manager` module provides a unified API (`submit_task`, `query_task`, `wait_for_result`).
+4. **Cloud Task Submission** (`uniqc/task/`): Adapter pattern for submitting circuits to quantum cloud platforms. Each provider (OriginQ, Quafu, IBM) has an adapter under `task/adapters/`. Configuration is via environment variables. The `task_manager` module provides a unified API (`submit_task`, `query_task`, `wait_for_result`).
 
-5. **Transpiler** (`uniq/transpiler/`): Converts between Qiskit circuits and OriginIR format.
+5. **Transpiler** (`uniqc/transpiler/`): Converts between Qiskit circuits and OriginIR format.
 
-6. **Analyzer** (`uniq/analyzer/`): Post-processing tools for measurement results — expectation values, measurement tomography, state tomography, etc.
+6. **Analyzer** (`uniqc/analyzer/`): Post-processing tools for measurement results — expectation values, measurement tomography, state tomography, etc.
 
 ### C++ Backend
 
-`UniqCpp/` contains the C++ simulation backend compiled as a pybind11 extension (`uniq_cpp`). Dependencies (pybind11 v2.13.6, fmt) are git submodules under `UniqCpp/Thirdparty/`. The `CMakeExtension` class in `setup.py` handles CMake-based compilation. Building without C++ uses `pip install . --no-cpp`.
+`UniqcCpp/` contains the C++ simulation backend compiled as a pybind11 extension (`uniqc_cpp`). Dependencies (pybind11 v2.13.6, fmt) are git submodules under `UniqcCpp/Thirdparty/`. The `CMakeExtension` class in `setup.py` handles CMake-based compilation. Building without C++ uses `pip install . --no-cpp`.
 
 ## Releasing
 

@@ -15,7 +15,7 @@ import sys
 import pathlib
 parent_path = pathlib.Path(__file__).resolve().parent.parent
 
-# Only the project root is needed; uniq/ lives directly under it.
+# Only the project root is needed; uniqc/ lives directly under it.
 sys.path.insert(0, os.path.abspath(parent_path))
 
 # Read version from setuptools_scm or git tags
@@ -67,7 +67,7 @@ def get_version_from_metadata():
 def get_version_from_file():
     """Get version from _version.py file."""
     try:
-        _version_file = parent_path / 'uniq' / '_version.py'
+        _version_file = parent_path / 'uniqc' / '_version.py'
         if _version_file.exists():
             exec(_version_file.read_text())
             return __version__
@@ -152,7 +152,7 @@ autodoc_mock_imports = ["qiskit",
                         "qiskit_ibm_provider", 
                         "quafu", 
                         "pandas", 
-                        "uniq_cpp",
+                        "uniqc_cpp",
                         "qiskit-aer", 
                         "qutip",
                         "qutip_qip",
@@ -171,7 +171,7 @@ language = 'zh-CN'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniq.test.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniqc.test.rst']
 autodoc_typehints = "description"
 source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 

@@ -95,8 +95,8 @@ def cluster_state(
 ## 使用示例
 
 ```python
-from uniq.circuit_builder import Circuit
-from uniq.algorithmics.circuits import ghz_state, w_state, cluster_state
+from uniqc.circuit_builder import Circuit
+from uniqc.algorithmics.circuits import ghz_state, w_state, cluster_state
 
 # GHZ 态
 c = Circuit(4)

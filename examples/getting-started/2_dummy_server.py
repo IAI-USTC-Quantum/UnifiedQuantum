@@ -18,15 +18,15 @@
 
     There are three ways to enable dummy mode:
 
-    1. Environment variable: export UNIQ_DUMMY=true
-    2. Code: os.environ['UNIQ_DUMMY'] = 'true'
+    1. Environment variable: export UNIQC_DUMMY=true
+    2. Code: os.environ['UNIQC_DUMMY'] = 'true'
     3. Per-task: submit_task(..., dummy=True)
 
 '''
 
 import math
 import os
-from uniq import Circuit, submit_task, wait_for_result, query_task
+from uniqc import Circuit, submit_task, wait_for_result, query_task
 
 
 def build_circuit():
@@ -75,7 +75,7 @@ def demo_2():
 def demo_2_env():
     """Demonstrate dummy mode via environment variable."""
     # Enable dummy mode globally
-    os.environ['UNIQ_DUMMY'] = 'true'
+    os.environ['UNIQC_DUMMY'] = 'true'
 
     circuit = build_circuit()
 

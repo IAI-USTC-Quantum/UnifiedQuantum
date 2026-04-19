@@ -54,15 +54,15 @@ jobs:
 
     - name: Install package (with all optional dependencies and C++ extension)
       run: |
-        pip uninstall uniq -y 2>/dev/null || true
-        rm -rf build/ dist/ *.egg-info uniq.egg-info
+        pip uninstall unified-quantum -y 2>/dev/null || true
+        rm -rf build/ dist/ *.egg-info uniqc.egg-info
         pip install ".[all]" --no-cache-dir
 
     - name: Install test dependencies
       run: pip install pytest pytest-cov
 
     - name: Run tests with coverage
-      run: pytest uniq/test/ --cov=uniq --cov-report=term-missing --cov-report=xml -v
+      run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v
 
     - name: Upload coverage report
       if: always()

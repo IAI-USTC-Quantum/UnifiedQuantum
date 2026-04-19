@@ -18,7 +18,7 @@ circuit.circuit_info   # {'qubits': int, 'gates': {...}, 'measurements': [...]}
 ## 线路分析
 
 ```python
-from uniq.analyzer import analyze_circuit
+from uniqc.analyzer import analyze_circuit
 
 # 分析线路中的门类型和数量
 info = analyze_circuit(circuit.originir)
@@ -36,7 +36,7 @@ remapped = circuit.remapping({0: 3, 1: 5})
 ## 可视化
 
 ```python
-from uniq.transpiler.draw import draw_circuit
+from uniqc.transpiler.draw import draw_circuit
 
 draw_circuit(circuit)
 ```

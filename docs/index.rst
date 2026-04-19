@@ -32,7 +32,7 @@ UnifiedQuantum 的设计围绕一个简洁的工作流：**任意方式构建线
 .. code-block:: python
    :caption: 2. 构建线路（支持 UnifiedQuantum 原生或任意第三方工具）
 
-   from uniq.circuit_builder import Circuit
+   from uniqc.circuit_builder import Circuit
 
    c = Circuit()
    c.h(0)
@@ -78,7 +78,7 @@ UnifiedQuantum 提供原生的 Circuit API，但你也可以使用 Qiskit、Cirq
 
 **进阶功能**
 
-:doc:`OriginIR <source/guide/originir>` | :doc:`OpenQASM 2.0 <source/guide/qasm>` | :doc:`PyTorch 集成 <source/guide/pytorch>` | :doc:`任务管理器 <source/guide/task_manager>` | :doc:`转译器 <source/uniq.transpiler>` | :doc:`电路分析 <source/advanced/circuit_analysis>`
+:doc:`OriginIR <source/guide/originir>` | :doc:`OpenQASM 2.0 <source/guide/qasm>` | :doc:`PyTorch 集成 <source/guide/pytorch>` | :doc:`任务管理器 <source/guide/task_manager>` | :doc:`转译器 <source/uniqc.transpiler>` | :doc:`电路分析 <source/advanced/circuit_analysis>`
 
 **命令行工具**
 

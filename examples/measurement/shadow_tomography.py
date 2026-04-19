@@ -20,9 +20,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.measurement import classical_shadow, shadow_expectation
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.measurement import classical_shadow, shadow_expectation
 
 
 def run_shadow_demo(n_shots=1000, n_shadow=100):
@@ -65,7 +65,7 @@ def run_shadow_demo(n_shots=1000, n_shadow=100):
     print(f"  ⟨X₀⟩ estimate: {est_x0:.4f} (exact: 1/√2 ≈ 0.707)")
 
     # 5. Compare with exact values
-    from uniq.simulator.originir_simulator import OriginIR_Simulator
+    from uniqc.simulator.originir_simulator import OriginIR_Simulator
     sim = OriginIR_Simulator(backend_type="statevector")
     sv = sim.simulate_statevector(c.originir)
 

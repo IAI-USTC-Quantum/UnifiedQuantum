@@ -94,8 +94,8 @@ def amplitude_estimation_result(
 ## 使用示例
 
 ```python
-from uniq.circuit_builder import Circuit
-from uniq.algorithmics.circuits import (
+from uniqc.circuit_builder import Circuit
+from uniqc.algorithmics.circuits import (
     amplitude_estimation_circuit,
     amplitude_estimation_result,
 )

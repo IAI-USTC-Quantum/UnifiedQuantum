@@ -105,7 +105,7 @@ TASK_STATUS_RUNNING = "running"  # 任务运行中
 用于接入 OriginQ 量子云平台。
 
 ```python
-from uniq.task.adapters.originq_adapter import OriginQAdapter
+from uniqc.task.adapters.originq_adapter import OriginQAdapter
 
 adapter = OriginQAdapter()
 
@@ -129,7 +129,7 @@ result = adapter.query(task_id)
 用于接入 BAQIS Quafu (ScQ) 量子云平台。
 
 ```python
-from uniq.task.adapters.quafu_adapter import QuafuAdapter
+from uniqc.task.adapters.quafu_adapter import QuafuAdapter
 
 adapter = QuafuAdapter()
 
@@ -160,7 +160,7 @@ result = adapter.query(task_id)
 用于接入 IBM Quantum 平台。
 
 ```python
-from uniq.task.adapters.qiskit_adapter import QiskitAdapter
+from uniqc.task.adapters.qiskit_adapter import QiskitAdapter
 
 # 支持代理配置
 adapter = QiskitAdapter(proxy={
@@ -194,7 +194,7 @@ results = adapter.query_sync(task_id, timeout=300)
 用于本地模拟，无需真实云平台连接。
 
 ```python
-from uniq.task.adapters.dummy_adapter import DummyAdapter
+from uniqc.task.adapters.dummy_adapter import DummyAdapter
 
 # 基本使用
 adapter = DummyAdapter()
@@ -226,7 +226,7 @@ result = adapter.query(task_id)
 ### UnifiedResult 类
 
 ```python
-from uniq.task.result_types import UnifiedResult
+from uniqc.task.result_types import UnifiedResult
 
 # 从计数结果创建
 result = UnifiedResult.from_counts(
@@ -251,7 +251,7 @@ expectation = result.get_expectation(observable='Z')
 ### 归一化函数
 
 ```python
-from uniq.task.normalizers import (
+from uniqc.task.normalizers import (
     normalize_originq,
     normalize_quafu,
     normalize_ibm,
@@ -270,17 +270,15 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 
 | 平台 | 环境变量 | 说明 |
 |------|----------|------|
-| OriginQ | `QPANDA_API_KEY` | API 密钥 |
-| OriginQ | `QPANDA_SUBMIT_URL` | 提交 URL |
-| OriginQ | `QPANDA_QUERY_URL` | 查询 URL |
+| OriginQ | `ORIGINQ_API_KEY` | API 密钥 |
 | Quafu | `QUAFU_API_TOKEN` | API Token |
 | IBM | `IBM_TOKEN` | IBM Quantum Token |
-| Dummy | `UNIQ_DUMMY` | 启用 Dummy 模式 |
+| Dummy | `UNIQC_DUMMY` | 启用 Dummy 模式 |
 
 ### 配置加载
 
 ```python
-from uniq.task.config import (
+from uniqc.task.config import (
     load_originq_config,
     load_quafu_config,
     load_ibm_config
@@ -295,7 +293,7 @@ api_key = config['api_token']
 要实现自定义适配器，继承 `QuantumAdapter` 并实现所有抽象方法：
 
 ```python
-from uniq.task.adapters.base import (
+from uniqc.task.adapters.base import (
     QuantumAdapter,
     TASK_STATUS_SUCCESS,
     TASK_STATUS_FAILED
@@ -390,7 +388,7 @@ def query_batch(self, taskids):
 使用 `MissingDependencyError` 提供清晰的依赖缺失提示：
 
 ```python
-from uniq.task.optional_deps import MissingDependencyError, check_quafu
+from uniqc.task.optional_deps import MissingDependencyError, check_quafu
 
 def __init__(self):
     if not check_quafu():
@@ -415,10 +413,10 @@ class MyAdapter(QuantumAdapter):
 
 ## API 参考 {#advanced-adapter-api-reference}
 
-- {mod}`uniq.task.adapters.base` - 适配器基类
-- {mod}`uniq.task.adapters.originq_adapter` - OriginQ 适配器
-- {mod}`uniq.task.adapters.quafu_adapter` - Quafu 适配器
-- {mod}`uniq.task.adapters.qiskit_adapter` - IBM Qiskit 适配器
-- {mod}`uniq.task.adapters.dummy_adapter` - Dummy 适配器
-- {mod}`uniq.task.result_types` - 统一结果类型
-- {mod}`uniq.task.normalizers` - 结果归一化函数
+- {mod}`uniqc.task.adapters.base` - 适配器基类
+- {mod}`uniqc.task.adapters.originq_adapter` - OriginQ 适配器
+- {mod}`uniqc.task.adapters.quafu_adapter` - Quafu 适配器
+- {mod}`uniqc.task.adapters.qiskit_adapter` - IBM Qiskit 适配器
+- {mod}`uniqc.task.adapters.dummy_adapter` - Dummy 适配器
+- {mod}`uniqc.task.result_types` - 统一结果类型
+- {mod}`uniqc.task.normalizers` - 结果归一化函数

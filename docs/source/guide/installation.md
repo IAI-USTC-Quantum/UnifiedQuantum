@@ -7,13 +7,13 @@
 ### 从 pip 安装
 
 ```bash
-pip install uniq
+pip install unified-quantum
 ```
 
 ### 从 conda 安装
 
 ```bash
-conda install -c conda-forge uniq
+conda install -c conda-forge uniqc
 ```
 
 ## 安装验证
@@ -21,7 +21,7 @@ conda install -c conda-forge uniq
 安装完成后，运行以下命令确认安装成功：
 
 ```bash
-python -c "import uniq; print(uniq.__version__)"
+python -c "import uniqc; print(uniqc.__version__)"
 ```
 
 若能打印出版本号（如 `0.200.0`），说明安装成功。
@@ -83,7 +83,7 @@ pip install -e .
 > 确保已执行 `git clone --recurse-submodules`，pybind11 子模块未初始化会导致此错误。运行 `git submodule update --init --recursive` 后重新安装。
 
 **Q：如何确认 C++ 模拟器已正确安装？**
-> 安装后运行 `python -c "from uniq_cpp import *; print('C++ 模拟器正常')"`。若无声出输出说明 C++ 扩展未安装成功。
+> 安装后运行 `python -c "from uniqc_cpp import *; print('C++ 模拟器正常')"`。若无声出输出说明 C++ 扩展未安装成功。
 
 ## 可选依赖
 
@@ -94,7 +94,7 @@ pip install -e .
 ```bash
 pip install pyqpanda3
 # 或使用 extras
-pip install uniq[originq]
+pip install unified-quantum[originq]
 ```
 
 ### Quafu 平台
@@ -102,7 +102,7 @@ pip install uniq[originq]
 ```bash
 pip install pyquafu
 # 或使用 extras
-pip install uniq[quafu]
+pip install unified-quantum[quafu]
 ```
 
 ### IBM 平台
@@ -110,7 +110,7 @@ pip install uniq[quafu]
 ```bash
 pip install qiskit qiskit-ibm-provider qiskit-aer
 # 或使用 extras
-pip install uniq[qiskit]
+pip install unified-quantum[qiskit]
 ```
 
 ### 高级模拟 (QuTiP)
@@ -118,7 +118,7 @@ pip install uniq[qiskit]
 ```bash
 pip install qutip qutip-qip
 # 或使用 extras
-pip install uniq[simulation]
+pip install unified-quantum[simulation]
 ```
 
 ### 可视化
@@ -126,7 +126,7 @@ pip install uniq[simulation]
 ```bash
 pip install matplotlib seaborn pandas
 # 或使用 extras
-pip install uniq[visualization]
+pip install unified-quantum[visualization]
 ```
 
 ### PyTorch 集成
@@ -134,13 +134,13 @@ pip install uniq[visualization]
 ```bash
 pip install torch
 # 或使用 extras
-pip install uniq[pytorch]
+pip install unified-quantum[pytorch]
 ```
 
 ### 安装所有可选依赖
 
 ```bash
-pip install uniq[all]
+pip install unified-quantum[all]
 ```
 
 ## 开发者补充

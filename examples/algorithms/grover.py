@@ -21,12 +21,12 @@ import sys
 import math
 import numpy as np
 
-# Add parent directory to path so we can import uniq when running as a script
+# Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.measurement import pauli_expectation
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.measurement import pauli_expectation
 
 
 def build_oracle(n_qubits: int, marked_state: int) -> tuple[Circuit, list[int]]:

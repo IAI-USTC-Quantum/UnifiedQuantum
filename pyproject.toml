@@ -45,7 +45,7 @@ dependencies = [
 "Source Code" = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git"
 
 [project.scripts]
-uniqc = "uniq.cli.main:app"
+uniqc = "uniqc.cli.main:app"
 
 [project.optional-dependencies]
 quafu = ["pyquafu>=0.4.0"]
@@ -66,22 +66,22 @@ all = [
 [tool.setuptools]
 zip-safe = false
 packages = [
-    "uniq",
-    "uniq.cli",
-    "uniq.algorithmics",
-    "uniq.algorithmics.ansatz",
-    "uniq.algorithmics.circuits",
-    "uniq.algorithmics.measurement",
-    "uniq.algorithmics.state_preparation",
-    "uniq.analyzer",
-    "uniq.circuit_builder",
-    "uniq.originir",
-    "uniq.pytorch",
-    "uniq.qasm",
-    "uniq.simulator",
-    "uniq.task",
-    "uniq.task.adapters",
-    "uniq.transpiler",
+    "uniqc",
+    "uniqc.cli",
+    "uniqc.algorithmics",
+    "uniqc.algorithmics.ansatz",
+    "uniqc.algorithmics.circuits",
+    "uniqc.algorithmics.measurement",
+    "uniqc.algorithmics.state_preparation",
+    "uniqc.analyzer",
+    "uniqc.circuit_builder",
+    "uniqc.originir",
+    "uniqc.pytorch",
+    "uniqc.qasm",
+    "uniqc.simulator",
+    "uniqc.task",
+    "uniqc.task.adapters",
+    "uniqc.transpiler",
 ]
 
 [tool.ruff]
@@ -103,10 +103,10 @@ dev = [
 ]
 
 [tool.setuptools_scm]
-write_to = "uniq/_version.py"
+write_to = "uniqc/_version.py"
 fallback_version = "0.0.0"
 local_scheme = "no-local-version"
 
 [tool.setuptools.package-data]
-"uniq" = ["*.pyi"]
-"uniq.simulator" = ["uniq_cpp.pyi"]
+"uniqc" = ["*.pyi"]
+"uniqc.simulator" = ["uniqc_cpp.pyi"]

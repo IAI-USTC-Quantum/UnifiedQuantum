@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.26)
-project(UniqCppCore)
-file(GLOB_RECURSE UniqCppCoreSrc_H ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-file(GLOB_RECURSE UniqCppCoreSrc ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-add_library(${PROJECT_NAME} STATIC ${UniqCppCoreSrc_H} ${UniqCppCoreSrc})

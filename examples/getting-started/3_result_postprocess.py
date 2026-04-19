@@ -13,7 +13,7 @@
 '''
 
 import math
-from uniq import (
+from uniqc import (
     Circuit,
     submit_task,
     wait_for_result,

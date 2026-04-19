@@ -1,5 +1,5 @@
 """
-Custom CMake build logic for uniq_cpp extension.
+Custom CMake build logic for uniqc_cpp extension.
 
 Metadata and dependencies are defined in pyproject.toml.
 This file is retained solely for CMakeExtension / CMakeBuild,
@@ -130,14 +130,14 @@ class CMakeBuild(build_ext):
 
 
 if BUILD_WITH_CPP:
-    ext_modules = [CMakeExtension("uniq_cpp")]
+    ext_modules = [CMakeExtension("uniqc_cpp")]
     cmdclass = {"build_ext": CMakeBuild}
 else:
     ext_modules = []
     cmdclass = {}
 
 setup(
-    packages=find_packages(exclude=["uniq.test*"]),
+    packages=find_packages(exclude=["uniqc.test*"]),
     ext_modules=ext_modules,
     cmdclass=cmdclass,
 )

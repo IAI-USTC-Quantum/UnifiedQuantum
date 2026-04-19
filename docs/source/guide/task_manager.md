@@ -27,28 +27,26 @@
 
 ```bash
 # 基础安装（OriginQ 平台）
-pip install uniq
+pip install unified-quantum
 
 # Quafu 平台
-pip install uniq[quafu]
+pip install unified-quantum[quafu]
 
 # IBM Quantum 平台
-pip install uniq[qiskit]
+pip install unified-quantum[qiskit]
 
 # 本地模拟（Dummy 模式）
-pip install uniq[simulation]
+pip install unified-quantum[simulation]
 
 # 全部平台
-pip install uniq[all]
+pip install unified-quantum[all]
 ```
 
 ### 配置环境变量
 
 ```bash
 # OriginQ Cloud
-export QPANDA_API_KEY="your-api-key"
-export QPANDA_SUBMIT_URL="https://..."
-export QPANDA_QUERY_URL="https://..."
+export ORIGINQ_API_KEY="your-api-key"
 
 # Quafu
 export QUAFU_API_TOKEN="your-quafu-token"
@@ -60,8 +58,8 @@ export IBM_TOKEN="your-ibm-token"
 ### 基本用法
 
 ```python
-from uniq import Circuit
-from uniq.task_manager import submit_task, wait_for_result
+from uniqc import Circuit
+from uniqc.task_manager import submit_task, wait_for_result
 
 # 创建量子线路
 circuit = Circuit()
@@ -90,7 +88,7 @@ print(result['counts'])
 提交单个量子线路到云平台：
 
 ```python
-from uniq.task_manager import submit_task
+from uniqc.task_manager import submit_task
 
 task_id = submit_task(
     circuit,              # OriginIR 或 QASM 格式的线路字符串
@@ -115,7 +113,7 @@ task_id = submit_task(
 批量提交多个量子线路：
 
 ```python
-from uniq.task_manager import submit_batch
+from uniqc.task_manager import submit_batch
 
 task_ids = submit_batch(
     circuits,             # 线路列表
@@ -131,7 +129,7 @@ task_ids = submit_batch(
 查询单个任务状态：
 
 ```python
-from uniq.task_manager import query_task
+from uniqc.task_manager import query_task
 
 info = query_task(task_id, backend='originq')
 print(info['status'])  # 'running', 'success', 'failed'
@@ -142,7 +140,7 @@ print(info['status'])  # 'running', 'success', 'failed'
 阻塞等待任务完成并返回结果：
 
 ```python
-from uniq.task_manager import wait_for_result
+from uniqc.task_manager import wait_for_result
 
 result = wait_for_result(
     task_id,
@@ -159,7 +157,7 @@ result = wait_for_result(
 列出所有缓存的任务：
 
 ```python
-from uniq.task_manager import list_tasks
+from uniqc.task_manager import list_tasks
 
 tasks = list_tasks()
 for task in tasks:
@@ -171,7 +169,7 @@ for task in tasks:
 获取特定任务的详细信息：
 
 ```python
-from uniq.task_manager import get_task
+from uniqc.task_manager import get_task
 
 task_info = get_task(task_id)
 ```
@@ -181,7 +179,7 @@ task_info = get_task(task_id)
 清理已完成的任务：
 
 ```python
-from uniq.task_manager import clear_completed_tasks
+from uniqc.task_manager import clear_completed_tasks
 
 cleared = clear_completed_tasks()
 print(f"Cleared {cleared} tasks")
@@ -192,7 +190,7 @@ print(f"Cleared {cleared} tasks")
 清空所有缓存：
 
 ```python
-from uniq.task_manager import clear_cache
+from uniqc.task_manager import clear_cache
 
 clear_cache()
 ```
@@ -201,20 +199,20 @@ clear_cache()
 
 ### 环境变量控制
 
-设置 `UNIQ_DUMMY` 环境变量可以全局启用本地模拟：
+设置 `UNIQC_DUMMY` 环境变量可以全局启用本地模拟：
 
 ```bash
 # 启用 Dummy 模式
-export UNIQ_DUMMY=true
+export UNIQC_DUMMY=true
 
 # 或
-export UNIQ_DUMMY=1
+export UNIQC_DUMMY=1
 ```
 
 ### 检查 Dummy 模式
 
 ```python
-from uniq.task_manager import is_dummy_mode
+from uniqc.task_manager import is_dummy_mode
 
 if is_dummy_mode():
     print("Running in dummy mode - tasks will be simulated locally")
@@ -225,7 +223,7 @@ if is_dummy_mode():
 直接使用 `DummyAdapter` 进行本地模拟：
 
 ```python
-from uniq.task.adapters.dummy_adapter import DummyAdapter
+from uniqc.task.adapters.dummy_adapter import DummyAdapter
 
 adapter = DummyAdapter()
 
@@ -246,7 +244,7 @@ result = adapter.query(task_id)
 使用 `TaskPersistence` 进行更细粒度的任务存储管理：
 
 ```python
-from uniq.task.persistence import TaskPersistence
+from uniqc.task.persistence import TaskPersistence
 
 # 创建持久化实例
 persistence = TaskPersistence()
@@ -276,7 +274,7 @@ persistence.clear_completed()
 
 ### 存储位置
 
-任务数据默认存储在 `~/.uniq/tasks/` 目录下的 JSONL 文件中。
+任务数据默认存储在 `~/.uniqc/tasks/` 目录下的 JSONL 文件中。
 
 ## 错误处理 {#guide-task-manager-error-handling}
 
@@ -285,14 +283,14 @@ persistence.clear_completed()
 当缺少平台依赖时抛出：
 
 ```python
-from uniq.task.optional_deps import MissingDependencyError
+from uniqc.task.optional_deps import MissingDependencyError
 
 try:
-    from uniq.task.adapters.quafu_adapter import QuafuAdapter
+    from uniqc.task.adapters.quafu_adapter import QuafuAdapter
     adapter = QuafuAdapter()
 except MissingDependencyError as e:
     print(f"Missing dependency: {e.package}")
-    print(f"Install with: pip install uniq[{e.extra}]")
+    print(f"Install with: pip install unified-quantum[{e.extra}]")
 ```
 
 ### 任务状态
@@ -320,4 +318,4 @@ except MissingDependencyError as e:
 
 - 了解 [云平台适配器架构](../advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)
-- 参考 API 文档：{mod}`uniq.task_manager`
+- 参考 API 文档：{mod}`uniqc.task_manager`

@@ -9,7 +9,7 @@
 uniqc config init
 ```
 
-配置文件位置：`~/.uniq/uniq.yml`
+配置文件位置：`~/.uniqc/uniqc.yml`
 
 ## 设置配置项
 

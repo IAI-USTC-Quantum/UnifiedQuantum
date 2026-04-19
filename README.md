@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner_uniq.png" alt="UnifiedQuantum Banner" width="100%">
+  <img src="banner_uniqc.png" alt="UnifiedQuantum Banner" width="100%">
 </p>
 
 # UnifiedQuantum
@@ -27,7 +27,7 @@ pip install unified-quantum
 ### 2. 构建线路（支持原生 API 或任意第三方工具）
 
 ```python
-from uniq.circuit_builder import Circuit
+from uniqc.circuit_builder import Circuit
 
 c = Circuit()
 c.h(0)
@@ -178,7 +178,7 @@ uniqc config init
 uniqc config set originq.token YOUR_TOKEN
 
 # 也可以用 python -m 调用（等价于 uniqc）
-python -m uniq simulate circuit.ir
+python -m uniqc simulate circuit.ir
 ```
 
 ---

@@ -35,7 +35,7 @@ $$|\cos\frac{\theta}{2}|^2 = p_0, \qquad |\sin\frac{\theta}{2}|^2 = p_1$$
 ### `thermal_state_circuit`
 
 ```python
-from uniq.algorithmics.circuits import thermal_state_circuit
+from uniqc.algorithmics.circuits import thermal_state_circuit
 ```
 
 函数签名：
