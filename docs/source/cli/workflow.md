@@ -9,49 +9,49 @@
 # 创建 bell.ir 文件
 
 # 2. 查看电路信息
-uniq circuit bell.ir --info
+uniqc circuit bell.ir --info
 
 # 3. 本地模拟
-uniq simulate bell.ir --shots 1000
+uniqc simulate bell.ir --shots 1000
 
 # 4. 转换格式
-uniq circuit bell.ir --format qasm --output bell.qasm
+uniqc circuit bell.ir --format qasm --output bell.qasm
 ```
 
 ### 示例 2：云端任务提交
 
 ```bash
 # 1. 初始化配置
-uniq config init
+uniqc config init
 
 # 2. 设置 API Token
-uniq config set originq.token YOUR_TOKEN
+uniqc config set originq.token YOUR_TOKEN
 
 # 3. 验证配置
-uniq config validate
+uniqc config validate
 
 # 4. 提交任务
-uniq submit bell.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
+uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
 
 # 5. 查询结果
-uniq result TASK_ID --platform originq --wait
+uniqc result TASK_ID --platform originq --wait
 
 # 6. 查看任务列表
-uniq task list --platform originq
+uniqc task list --platform originq
 ```
 
 ### 示例 3：批量处理
 
 ```bash
 # 批量提交多个电路
-uniq submit circuit1.ir circuit2.ir circuit3.ir \
+uniqc submit circuit1.ir circuit2.ir circuit3.ir \
     --platform originq \
     --backend origin:wuyuan:d5 \
     --shots 1000 \
     --format json
 
 # 查看所有任务状态
-uniq task list --format json
+uniqc task list --format json
 ```
 
 ## 常见问题
@@ -59,14 +59,14 @@ uniq task list --format json
 ### Q：如何确认 CLI 已正确安装？
 
 ```bash
-uniq --help
+uniqc --help
 ```
 
 如果显示帮助信息，说明安装成功。
 
 ### Q：配置文件存储在哪里？
 
-配置文件位于 `~/.uniq/uniq.yml`。可以通过 `uniq config init` 重新初始化。
+配置文件位于 `~/.uniq/uniq.yml`。可以通过 `uniqc config init` 重新初始化。
 
 ### Q：如何切换不同的云平台账户？
 
@@ -74,14 +74,14 @@ uniq --help
 
 ```bash
 # 创建不同账户的 profile
-uniq config profile create account1
-uniq config set originq.token TOKEN1 --profile account1
+uniqc config profile create account1
+uniqc config set originq.token TOKEN1 --profile account1
 
-uniq config profile create account2
-uniq config set originq.token TOKEN2 --profile account2
+uniqc config profile create account2
+uniqc config set originq.token TOKEN2 --profile account2
 
 # 切换 profile
-uniq config profile use account1
+uniqc config profile use account1
 ```
 
 ### Q：dummy 平台是什么？
@@ -89,5 +89,5 @@ uniq config profile use account1
 `dummy` 是一个本地模拟器后端，用于测试工作流而无需连接真实云平台。提交到 dummy 的任务会立即返回模拟结果。
 
 ```bash
-uniq submit bell.ir --platform dummy --wait
+uniqc submit bell.ir --platform dummy --wait
 ```

@@ -1,4 +1,4 @@
-# 本地模拟 (`uniq simulate`)
+# 本地模拟 (`uniqc simulate`)
 
 在本地运行量子电路模拟。
 
@@ -6,26 +6,26 @@
 
 ```bash
 # 使用状态向量后端，默认 1024 shots
-uniq simulate circuit.ir
+uniqc simulate circuit.ir
 
 # 指定后端和 shots 数
-uniq simulate circuit.ir --backend statevector --shots 1000
+uniqc simulate circuit.ir --backend statevector --shots 1000
 
 # 使用密度矩阵后端
-uniq simulate circuit.ir --backend density --shots 2048
+uniqc simulate circuit.ir --backend density --shots 2048
 ```
 
 ## 输出格式
 
 ```bash
 # 表格输出（默认）
-uniq simulate circuit.ir
+uniqc simulate circuit.ir
 
 # JSON 输出
-uniq simulate circuit.ir --format json
+uniqc simulate circuit.ir --format json
 
 # 输出到文件
-uniq simulate circuit.ir --output result.json
+uniqc simulate circuit.ir --output result.json
 ```
 
 表格输出示例：

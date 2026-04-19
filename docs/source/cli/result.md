@@ -1,4 +1,4 @@
-# 结果查询 (`uniq result`)
+# 结果查询 (`uniqc result`)
 
 查询已提交任务的结果。
 
@@ -6,23 +6,23 @@
 
 ```bash
 # 查询任务结果
-uniq result TASK_ID --platform originq
+uniqc result TASK_ID --platform originq
 
 # 等待任务完成
-uniq result TASK_ID --platform originq --wait
+uniqc result TASK_ID --platform originq --wait
 
 # 设置超时时间
-uniq result TASK_ID --platform originq --wait --timeout 600
+uniqc result TASK_ID --platform originq --wait --timeout 600
 ```
 
 ## 输出格式
 
 ```bash
 # 表格输出（默认）
-uniq result TASK_ID --platform originq
+uniqc result TASK_ID --platform originq
 
 # JSON 输出
-uniq result TASK_ID --platform originq --format json
+uniqc result TASK_ID --platform originq --format json
 ```
 
 表格输出示例：

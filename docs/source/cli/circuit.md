@@ -1,4 +1,4 @@
-# 电路格式转换 (`uniq circuit`)
+# 电路格式转换 (`uniqc circuit`)
 
 在 OriginIR 和 OpenQASM 2.0 格式之间转换电路。
 
@@ -6,19 +6,19 @@
 
 ```bash
 # 自动检测输入格式，转换为另一种格式
-uniq circuit input.ir
+uniqc circuit input.ir
 
 # 指定输出格式
-uniq circuit input.ir --format qasm
+uniqc circuit input.ir --format qasm
 
 # 输出到文件
-uniq circuit input.ir --format qasm --output circuit.qasm
+uniqc circuit input.ir --format qasm --output circuit.qasm
 ```
 
 ## 查看电路统计信息
 
 ```bash
-uniq circuit input.ir --info
+uniqc circuit input.ir --info
 ```
 
 输出示例：

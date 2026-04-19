@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 
 app = typer.Typer(
-    name="uniq",
+    name="uniqc",
     help="UnifiedQuantum - A lightweight quantum computing framework",
     no_args_is_help=True,
 )

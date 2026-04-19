@@ -46,13 +46,13 @@ UnifiedQuantum 的设计围绕一个简洁的工作流：**任意方式构建线
    :caption: 3. CLI 统一执行
 
    # 本地模拟
-   uniq simulate circuit.ir --shots 1000
+   uniqc simulate circuit.ir --shots 1000
 
    # 提交到云端
-   uniq submit circuit.ir --platform originq --shots 1000
+   uniqc submit circuit.ir --platform originq --shots 1000
 
    # 查询任务结果
-   uniq result <task_id>
+   uniqc result <task_id>
 
 设计理念
 --------

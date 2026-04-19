@@ -45,7 +45,7 @@ dependencies = [
 "Source Code" = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git"
 
 [project.scripts]
-uniq = "uniq.cli.main:app"
+uniqc = "uniq.cli.main:app"
 
 [project.optional-dependencies]
 quafu = ["pyquafu>=0.4.0"]

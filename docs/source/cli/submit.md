@@ -1,4 +1,4 @@
-# 云端任务提交 (`uniq submit`)
+# 云端任务提交 (`uniqc submit`)
 
 将电路提交到量子云平台。
 
@@ -6,20 +6,20 @@
 
 ```bash
 # 提交单个电路
-uniq submit circuit.ir --platform originq --shots 1000
+uniqc submit circuit.ir --platform originq --shots 1000
 
 # 指定后端名称
-uniq submit circuit.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
+uniqc submit circuit.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
 
 # 提交并等待结果
-uniq submit circuit.ir --platform originq --wait --timeout 300
+uniqc submit circuit.ir --platform originq --wait --timeout 300
 ```
 
 ## 批量提交
 
 ```bash
 # 提交多个电路
-uniq submit circuit1.ir circuit2.ir circuit3.ir --platform originq
+uniqc submit circuit1.ir circuit2.ir circuit3.ir --platform originq
 ```
 
 ## 支持的平台
@@ -35,8 +35,8 @@ uniq submit circuit1.ir circuit2.ir circuit3.ir --platform originq
 
 ```bash
 # 表格输出（默认）
-uniq submit circuit.ir --platform originq
+uniqc submit circuit.ir --platform originq
 
 # JSON 输出
-uniq submit circuit.ir --platform originq --format json
+uniqc submit circuit.ir --platform originq --format json
 ```
