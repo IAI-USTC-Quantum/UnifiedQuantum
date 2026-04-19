@@ -51,8 +51,8 @@ VQD 使用 HEA 作为参数化 ansatz，每层包含：
 ### 构建电路
 
 ```python
-from uniq.circuit_builder import Circuit
-from uniq.algorithmics.circuits import vqd_circuit
+from uniqc.circuit_builder import Circuit
+from uniqc.algorithmics.circuits import vqd_circuit
 import numpy as np
 
 # 2-qubit 系统
@@ -69,7 +69,7 @@ vqd_circuit(c, params, prev_states=[ground_state], n_layers=2)
 ### 构建重叠测量电路
 
 ```python
-from uniq.algorithmics.circuits import vqd_overlap_circuit
+from uniqc.algorithmics.circuits import vqd_overlap_circuit
 
 # 构建 swap test 电路
 overlap_circ = vqd_overlap_circuit(

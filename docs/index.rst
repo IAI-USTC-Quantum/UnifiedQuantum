@@ -1,7 +1,7 @@
 .. UnifiedQuantum documentation master file
 
 UnifiedQuantum — 轻量级量子计算框架
-================================
+======================================
 
 UnifiedQuantum 是一个 Python 原生、轻量且强调透明性的量子计算框架，提供量子线路构建、本地模拟、多平台任务提交，以及 OriginIR / OpenQASM 2.0 格式支持。
 
@@ -25,14 +25,14 @@ UnifiedQuantum 是一个 Python 原生、轻量且强调透明性的量子计算
 UnifiedQuantum 的设计围绕一个简洁的工作流：**任意方式构建线路 → CLI 统一执行**。
 
 .. code-block:: bash
-   :caption: 1. 安装
+   :caption: 步骤 1：安装
 
    pip install unified-quantum
 
 .. code-block:: python
-   :caption: 2. 构建线路（支持 UnifiedQuantum 原生或任意第三方工具）
+   :caption: 步骤 2：构建线路（支持 UnifiedQuantum 原生或任意第三方工具）
 
-   from uniq.circuit_builder import Circuit
+   from uniqc.circuit_builder import Circuit
 
    c = Circuit()
    c.h(0)
@@ -43,16 +43,16 @@ UnifiedQuantum 的设计围绕一个简洁的工作流：**任意方式构建线
    open('circuit.ir', 'w').write(c.originir)
 
 .. code-block:: bash
-   :caption: 3. CLI 统一执行
+   :caption: 步骤 3：CLI 统一执行
 
    # 本地模拟
-   uniq simulate circuit.ir --shots 1000
+   uniqc simulate circuit.ir --shots 1000
 
    # 提交到云端
-   uniq submit circuit.ir --platform originq --shots 1000
+   uniqc submit circuit.ir --platform originq --shots 1000
 
    # 查询任务结果
-   uniq result <task_id>
+   uniqc result <task_id>
 
 设计理念
 --------
@@ -78,7 +78,7 @@ UnifiedQuantum 提供原生的 Circuit API，但你也可以使用 Qiskit、Cirq
 
 **进阶功能**
 
-:doc:`OriginIR <source/guide/originir>` | :doc:`OpenQASM 2.0 <source/guide/qasm>` | :doc:`PyTorch 集成 <source/guide/pytorch>` | :doc:`任务管理器 <source/guide/task_manager>` | :doc:`转译器 <source/uniq.transpiler>` | :doc:`电路分析 <source/advanced/circuit_analysis>`
+:doc:`OriginIR <source/guide/originir>` | :doc:`OpenQASM 2.0 <source/guide/qasm>` | :doc:`PyTorch 集成 <source/guide/pytorch>` | :doc:`任务管理器 <source/guide/task_manager>` | :doc:`转译器 <source/uniqc.transpiler>` | :doc:`电路分析 <source/advanced/circuit_analysis>`
 
 **命令行工具**
 
@@ -126,7 +126,7 @@ UnifiedQuantum 提供原生的 Circuit API，但你也可以使用 Qiskit、Cirq
    :maxdepth: 2
    :caption: API 参考
 
-   source/uniq_api
+   source/uniqc_api
 
 Indices and tables
 ==================

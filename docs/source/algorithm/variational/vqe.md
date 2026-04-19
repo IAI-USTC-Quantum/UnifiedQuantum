@@ -73,7 +73,7 @@ H2_HAMILTONIAN = [
 ### 2. 构建拟设
 
 ```python
-from uniq.algorithmics.ansatz import uccsd_ansatz
+from uniqc.algorithmics.ansatz import uccsd_ansatz
 
 circuit = uccsd_ansatz(n_qubits=4, n_electrons=2, params=theta)
 ```

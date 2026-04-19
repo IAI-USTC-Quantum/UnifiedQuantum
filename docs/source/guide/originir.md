@@ -2,7 +2,7 @@
 
 ## 什么时候进入本页
 
-当你需要理解 `circuit.originir` 输出的文本格式，或者想知道 OriginIR 在 {mod}`uniq.originir` 中扮演什么角色时，看本页。
+当你需要理解 `circuit.originir` 输出的文本格式，或者想知道 OriginIR 在 {mod}`uniqc.originir` 中扮演什么角色时，看本页。
 
 ## 本页解决的问题
 
@@ -26,7 +26,7 @@ OriginIR 是本源量子体系下的量子线路描述语言。在 UnifiedQuantu
 构建完线路后，直接获取 OriginIR 文本：
 
 ```python
-from uniq.circuit_builder import Circuit
+from uniqc.circuit_builder import Circuit
 
 circuit = Circuit()
 circuit.h(0)
@@ -44,7 +44,7 @@ print(originir_str)
 你可以将 OriginIR 文本直接传给模拟器，无需先构建 Circuit 对象：
 
 ```python
-from uniq.simulator import OriginIR_Simulator
+from uniqc.simulator import OriginIR_Simulator
 
 sim = OriginIR_Simulator()
 prob = sim.simulate_pmeasure(originir_str)
@@ -57,7 +57,7 @@ prob = sim.simulate_pmeasure(originir_str)
 提交到 OriginQ 平台时，直接使用 `Circuit` 对象：
 
 ```python
-from uniq import submit_task
+from uniqc import submit_task
 
 task_id = submit_task(
     circuit=circuit,
@@ -281,7 +281,7 @@ rotation(q[2]) (0.5)
 DEF 块与 Python 中的 `@circuit_def` 装饰器对应：
 
 ```python
-from uniq.circuit_builder import circuit_def
+from uniqc.circuit_builder import circuit_def
 
 @circuit_def(name="bell_pair", qregs={"q": 2})
 def bell_pair(circ, q):

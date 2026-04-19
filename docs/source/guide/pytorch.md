@@ -23,7 +23,7 @@
 PyTorch 集成是可选功能，需要单独安装：
 
 ```bash
-pip install uniq[pytorch]
+pip install unified-quantum[pytorch]
 ```
 
 这会安装 `torch>=2.0` 作为依赖。
@@ -36,9 +36,9 @@ pip install uniq[pytorch]
 
 ```python
 import torch
-from uniq.pytorch import QuantumLayer
-from uniq.circuit_builder import Circuit, Parameter
-from uniq.simulator import OriginIR_Simulator
+from uniqc.pytorch import QuantumLayer
+from uniqc.circuit_builder import Circuit, Parameter
+from uniqc.simulator import OriginIR_Simulator
 
 # 定义电路模板
 def build_circuit(theta_value):
@@ -152,9 +152,9 @@ layer = QuantumLayer(
 ```python
 import torch
 import torch.nn as nn
-from uniq.pytorch import QuantumLayer
-from uniq.circuit_builder import Circuit, Parameter
-from uniq.simulator import OriginIR_Simulator
+from uniqc.pytorch import QuantumLayer
+from uniqc.circuit_builder import Circuit, Parameter
+from uniqc.simulator import OriginIR_Simulator
 import numpy as np
 
 # 定义哈密顿量 H = Z0 + Z1 + X0X1
@@ -218,8 +218,8 @@ for epoch in range(50):
 当需要并行执行多个电路时，可以使用 `batch_execute` 工具：
 
 ```python
-from uniq.pytorch import batch_execute, batch_execute_with_params
-from uniq.simulator import OriginIR_Simulator
+from uniqc.pytorch import batch_execute, batch_execute_with_params
+from uniqc.simulator import OriginIR_Simulator
 
 # 定义执行函数
 def simulate(circuit):
@@ -278,12 +278,12 @@ results = batch_execute_with_params(
 
 ## 相关 API
 
-- {mod}`uniq.pytorch` — PyTorch 集成模块
-- {class}`uniq.pytorch.QuantumLayer` — 量子层封装
-- {func}`uniq.pytorch.parameter_shift_gradient` — Parameter-shift 梯度计算
-- {func}`uniq.pytorch.batch_execute` — 并行电路执行
-- {func}`uniq.pytorch.batch_execute_with_params` — 参数化批量执行
-- {func}`uniq.pytorch.compute_all_gradients` — 计算所有参数梯度
+- {mod}`uniqc.pytorch` — PyTorch 集成模块
+- {class}`uniqc.pytorch.QuantumLayer` — 量子层封装
+- {func}`uniqc.pytorch.parameter_shift_gradient` — Parameter-shift 梯度计算
+- {func}`uniqc.pytorch.batch_execute` — 并行电路执行
+- {func}`uniqc.pytorch.batch_execute_with_params` — 参数化批量执行
+- {func}`uniqc.pytorch.compute_all_gradients` — 计算所有参数梯度
 
 ## 下一步
 

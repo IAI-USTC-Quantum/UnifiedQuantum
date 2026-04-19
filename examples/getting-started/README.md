@@ -29,7 +29,7 @@ python examples/getting-started/config_example.py
 
 ## Topics Covered
 
-- **Circuit building** — using `uniq.Circuit` to construct quantum programs
+- **Circuit building** — using `uniqc.Circuit` to construct quantum programs
 - **Qubit remapping** — mapping logical qubits to physical device topology
 - **Dummy backend** — testing locally without consuming cloud resources
 - **Result adaptation** — converting results between key-value, list, probability, and shots styles

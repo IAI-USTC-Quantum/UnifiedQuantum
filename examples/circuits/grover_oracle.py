@@ -2,8 +2,8 @@
 """Grover's search using the circuits module.
 
 Demonstrates the full Grover search pipeline using
-:func:`~uniq.algorithmics.circuits.grover_oracle` and
-:func:`~uniq.algorithmics.circuits.grover_diffusion`.
+:func:`~uniqc.algorithmics.circuits.grover_oracle` and
+:func:`~uniqc.algorithmics.circuits.grover_diffusion`.
 
 Usage:
     python examples/circuits/grover_oracle.py [--n-qubits N] [--marked-state STATE] [--shots N]
@@ -15,9 +15,9 @@ import sys
 
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.circuits.grover_oracle import grover_oracle, grover_diffusion
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.circuits.grover_oracle import grover_oracle, grover_diffusion
 
 
 def run_grover(n_qubits: int, marked_state: int, shots: int = 4096):

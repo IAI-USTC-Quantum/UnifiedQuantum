@@ -81,7 +81,7 @@ jobs:
     - name: Build (with all optional dependencies)
       if: runner.os == 'Linux'
       run: |
-        pip uninstall uniq -y 2>/dev/null || true
+        pip uninstall unified-quantum -y 2>/dev/null || true
         sudo pip install ".[all]" --no-cache-dir --no-build-isolation
 
     - name: Build (with all optional dependencies)
@@ -97,7 +97,7 @@ jobs:
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
-        pytest uniq/test/ -v --tb=short
+        pytest uniqc/test/ -v --tb=short
 
     - name: Check for deprecation warnings (fail on error)
       if: runner.os == 'Linux'

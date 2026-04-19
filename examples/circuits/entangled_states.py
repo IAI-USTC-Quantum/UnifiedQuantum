@@ -4,7 +4,7 @@
 Demonstrates:
   * Preparing GHZ, W, and Cluster entangled states
   * Measuring and displaying probability distributions
-  * Using the entangled_states module from uniq
+  * Using the entangled_states module from uniqc
 
 Usage:
     python entangled_states.py --state [ghz|w|cluster] [--n-qubits N] [--shots N]
@@ -24,12 +24,12 @@ References:
 import argparse
 import sys
 
-# Add parent directory to path so we can import uniq when running as a script
+# Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.circuits import ghz_state, w_state, cluster_state
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.circuits import ghz_state, w_state, cluster_state
 
 
 def run_state(state_type: str, n_qubits: int, shots: int = 4096) -> dict:

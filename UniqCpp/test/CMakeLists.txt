@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.26)
-project(UnifiedQuantumTest)
-file(GLOB_RECURSE UnifiedQuantumTestSrc ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-add_executable(${PROJECT_NAME} ${UnifiedQuantumTestSrc})
-target_link_libraries(${PROJECT_NAME} UniqCppCore fmt)

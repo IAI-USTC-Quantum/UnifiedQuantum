@@ -20,9 +20,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.originir_simulator import OriginIR_Simulator
-from uniq.algorithmics.state_preparation import hadamard_superposition
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.algorithmics.state_preparation import hadamard_superposition
 
 
 def run_hadamard_demo(n_qubits=3):

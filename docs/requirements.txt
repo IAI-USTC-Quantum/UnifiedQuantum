@@ -7,3 +7,4 @@ linkify-it-py
 myst_parser
 numpy
 setuptools_scm
+intersphinx-registry

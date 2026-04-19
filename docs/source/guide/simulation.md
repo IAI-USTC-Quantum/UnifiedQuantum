@@ -42,10 +42,10 @@
 
 | 本地模拟入口 | 输入形式 | 适合先看什么问题 |
 | --- | --- | --- |
-| {class}`uniq.simulator.OriginIR_Simulator` | `originir` 字符串 | 已经用 {class}`uniq.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果 |
-| {class}`uniq.simulator.QASM_Simulator` | `qasm` 字符串 | 你的线路来自 OpenQASM 2.0，或准备沿着 QASM 路径与外部工具互操作 |
-| {class}`uniq.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
-| {class}`uniq.simulator.OriginIR_NoisySimulator` | `originir` 字符串 + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
+| {class}`uniqc.simulator.OriginIR_Simulator` | `originir` 字符串 | 已经用 {class}`uniqc.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果 |
+| {class}`uniqc.simulator.QASM_Simulator` | `qasm` 字符串 | 你的线路来自 OpenQASM 2.0，或准备沿着 QASM 路径与外部工具互操作 |
+| {class}`uniqc.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
+| {class}`uniqc.simulator.OriginIR_NoisySimulator` | `originir` 字符串 + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
 
 如果你还在决定线路该如何表达，先回到 [构建量子线路](circuit.md#guide-circuit-when-to-read)；如果你已经完成本地验证，准备提交到云平台或真机执行，转到 [提交任务](submit_task.md#guide-submit-task-entry-overview)。
 
@@ -54,8 +54,8 @@
 最常用的模拟器，直接模拟 OriginIR 格式的线路。
 
 ```python
-from uniq.circuit_builder import Circuit
-from uniq.simulator import OriginIR_Simulator
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator import OriginIR_Simulator
 
 circuit = Circuit()
 circuit.h(0)
@@ -91,7 +91,7 @@ result = sim.simulate_shots(circuit.originir, shots=1000)
 模拟 OpenQASM 2.0 格式的线路。
 
 ```python
-from uniq.simulator import QASM_Simulator
+from uniqc.simulator import QASM_Simulator
 
 sim = QASM_Simulator()
 prob = sim.simulate_pmeasure(qasm_str)
@@ -106,7 +106,7 @@ prob = sim.simulate_pmeasure(qasm_str)
 - `density_matrix_qutip` — 基于 Qutip 的密度矩阵
 
 ```python
-from uniq.simulator import OpcodeSimulator
+from uniqc.simulator import OpcodeSimulator
 
 sim = OpcodeSimulator(backend_type='statevector')
 ```
@@ -116,7 +116,7 @@ sim = OpcodeSimulator(backend_type='statevector')
 ## 带噪声的本地模拟 {#guide-simulation-noisy}
 
 ```python
-from uniq.simulator import OriginIR_NoisySimulator
+from uniqc.simulator import OriginIR_NoisySimulator
 
 sim = OriginIR_NoisySimulator(
     error_loader=my_error_loader,
@@ -136,8 +136,8 @@ prob = sim.simulate_pmeasure(circuit.originir)
 | `density_matrix_qutip` | 复杂噪声模型，高精度需求 | ✅ | 较慢，依赖 Qutip |
 
 **选择建议**：
-- 一般无噪声模拟 → {class}`uniq.simulator.OriginIR_Simulator`（基于 statevector）
-- 需要噪声模拟 → {class}`uniq.simulator.OriginIR_NoisySimulator`（基于 density_matrix）
+- 一般无噪声模拟 → {class}`uniqc.simulator.OriginIR_Simulator`（基于 statevector）
+- 需要噪声模拟 → {class}`uniqc.simulator.OriginIR_NoisySimulator`（基于 density_matrix）
 - 复杂多比特噪声模型 → `density_matrix_qutip`
 
 ## 已知限制 {#guide-simulation-known-limitations}
@@ -149,10 +149,10 @@ prob = sim.simulate_pmeasure(circuit.originir)
 
 完整的模拟器 API 见：
 
-- {mod}`uniq.simulator` — 模拟器模块
-- {class}`uniq.simulator.OpcodeSimulator`
-- {class}`uniq.simulator.OriginIR_Simulator`
-- {class}`uniq.simulator.QASM_Simulator`
+- {mod}`uniqc.simulator` — 模拟器模块
+- {class}`uniqc.simulator.OpcodeSimulator`
+- {class}`uniqc.simulator.OriginIR_Simulator`
+- {class}`uniqc.simulator.QASM_Simulator`
 
 ## 下一步
 

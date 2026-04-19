@@ -20,12 +20,12 @@ import sys
 
 import numpy as np
 
-# Add parent directory to path so we can import uniq when running as a script
+# Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniq.circuit_builder import Circuit
-from uniq.simulator.qasm_simulator import QASM_Simulator
-from uniq.algorithmics.circuits.vqd import (
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.algorithmics.circuits.vqd import (
     vqd_circuit,
     vqd_overlap_circuit,
     _hea_ansatz,
@@ -58,7 +58,7 @@ def _state_from_hea(ansatz_params: np.ndarray, n_qubits: int, n_layers: int) -> 
     sim = QASM_Simulator()
     # Get state vector via QASM — use analytical approach instead
     # Build the unitary by column-by-column simulation
-    from uniq.simulator.origin_simulator import SingleGateSimulator
+    from uniqc.simulator.origin_simulator import SingleGateSimulator
     sim2 = SingleGateSimulator(n_qubits)
     # Apply gates manually
     state = np.zeros(dim, dtype=complex)

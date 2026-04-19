@@ -27,7 +27,7 @@ python examples/measurement/shadow_tomography.py --n-shadow 100 --n-shots 1000
 ## 代码讲解
 
 ```python
-from uniq.algorithmics.measurement import classical_shadow, shadow_expectation
+from uniqc.algorithmics.measurement import classical_shadow, shadow_expectation
 
 # 收集阴影快照
 shadows = classical_shadow(circuit, qubits=[0, 1], shots=1000, n_shadow=100)

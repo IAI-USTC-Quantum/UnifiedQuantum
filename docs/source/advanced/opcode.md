@@ -13,7 +13,7 @@ OpcodeSimulator 是 UnifiedQuantum 的底层模拟器，直接操作 opcode 列�
 ## 创建模拟器
 
 ```python
-from uniq.simulator import OpcodeSimulator
+from uniqc.simulator import OpcodeSimulator
 
 # 状态向量后端（默认）
 sim = OpcodeSimulator(backend_type='statevector')

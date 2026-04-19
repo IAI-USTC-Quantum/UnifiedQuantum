@@ -4,7 +4,7 @@ This example demonstrates how to use the new config module to manage
 quantum cloud platform configurations.
 """
 
-from uniq.config import (
+from uniqc.config import (
     load_config,
     save_config,
     get_platform_config,
@@ -24,9 +24,9 @@ def example_1_create_default_config():
     print("Example 1: Create default configuration")
     print("=" * 60)
     
-    # Create default config at ~/.uniq/uniq.yml
+    # Create default config at ~/.uniqc/uniqc.yml
     create_default_config()
-    print("✓ Default configuration created at ~/.uniq/uniq.yml")
+    print("✓ Default configuration created at ~/.uniqc/uniqc.yml")
     print()
 
 
@@ -142,16 +142,16 @@ def example_6_validate_config():
 def example_7_environment_variable():
     """Example 7: Use environment variable for active profile."""
     print("=" * 60)
-    print("Example 7: Environment variable UNIQ_PROFILE")
+    print("Example 7: Environment variable UNIQC_PROFILE")
     print("=" * 60)
     
-    print("Set UNIQ_PROFILE environment variable to switch profiles:")
-    print("  export UNIQ_PROFILE=prod")
+    print("Set UNIQC_PROFILE environment variable to switch profiles:")
+    print("  export UNIQC_PROFILE=prod")
     print("  python your_script.py")
     print()
     print("Or in Python:")
     print("  import os")
-    print("  os.environ['UNIQ_PROFILE'] = 'prod'")
+    print("  os.environ['UNIQC_PROFILE'] = 'prod'")
     print()
 
 
@@ -161,7 +161,7 @@ def main():
     print("UnifiedQuantum Configuration Management Examples")
     print("=" * 60 + "\n")
     
-    # Note: These examples create/modify ~/.uniq/uniq.yml
+    # Note: These examples create/modify ~/.uniqc/uniqc.yml
     # Uncomment the ones you want to run
     
     # example_1_create_default_config()

@@ -11,7 +11,7 @@
 ## 测试框架
 
 - **框架**：[pytest](https://docs.pytest.org/)
-- **测试目录**：`uniq/test/`
+- **测试目录**：`uniqc/test/`
 - **配置文件**：`pytest.ini`（项目根目录）
 
 测试函数命名规则（由 `pytest.ini` 中的 `python_functions` 配置）：
@@ -22,13 +22,13 @@
 
 ```bash
 # 运行全部测试
-pytest uniq/test/ -v
+pytest uniqc/test/ -v
 
 # 运行指定模块测试
-pytest uniq/test/test_simulator.py -v
+pytest uniqc/test/test_simulator.py -v
 
 # 运行测试并生成覆盖率报告
-pytest uniq/test/ --cov=uniq --cov-report=term-missing -v
+pytest uniqc/test/ --cov=uniqc --cov-report=term-missing -v
 ```
 
 > **注意**：部分随机回归测试（`test_random_*`）依赖 `qiskit`、`qiskit-aer`、`qutip` 等外部包，需额外安装。
@@ -43,7 +43,7 @@ pytest uniq/test/ --cov=uniq --cov-report=term-missing -v
 | **transpiler** | `test_transpile.py` | 单元测试 | `plot_time_line` 脉冲序列可视化正确性 |
 | **analyzer** | `test_result_adapter.py` | 单元测试 | 结果适配器工具函数基本验证 |
 | **circuit_builder** | `test_general.py` | 集成测试 | 电路构建基本功能（iswap 等特殊门操作） |
-| **demos** | `test_demos.py` | 集成测试 | 示例代码（`originq_dummy` 模式）端到端运行验证 |
+| **demos** | `test_demos.py` | 集成测试 | 示例代码（`backend='originq'` + `dummy=True` 模式）端到端运行验证 |
 
 ### 各测试文件详细说明
 
@@ -119,7 +119,7 @@ QASMBench 基准测试兼容性：
 
 示例端到端测试：
 
-- `originq_dummy` 模式的完整工作流：创建配置 → 构建线路 → 提交任务 → 获取结果
+- Dummy 模式（`submit_task(..., dummy=True)`）的完整工作流：创建配置 → 构建线路 → 提交任务 → 获取结果
 - 验证示例代码可正确运行
 
 ## CI 集成
@@ -136,7 +136,7 @@ QASMBench 基准测试兼容性：
 
 - **触发**：push/PR 到 main
 - **环境**：Ubuntu + Python 3.11
-- **内容**：`pytest uniq/test/ --cov=uniq -v`
+- **内容**：`pytest uniqc/test/ --cov=uniqc -v`
 - **产出**：`coverage.xml` artifact
 
 ## 已知限制
@@ -144,7 +144,7 @@ QASMBench 基准测试兼容性：
 1. **外部依赖**：随机回归测试需要 `qiskit`、`qiskit-aer`、`qutip`、`scipy`，不在默认安装范围内
 3. **test_result_adapter / test_general**：当前测试内容较简单，主要验证导入和基本功能，未覆盖全部 API
 4. **transpiler 测试**：仅覆盖 `plot_time_line`，未覆盖 `qiskit_transpile` 等转译功能
-5. **task 模块**：`test_task_adapters.py` 在 `uniq/test/` 中，但需要 mock HTTP，CI 环境可能不完整覆盖
+5. **task 模块**：`test_task_adapters.py` 在 `uniqc/test/` 中，但需要 mock HTTP，CI 环境可能不完整覆盖
 
 ## 未来改进方向
 

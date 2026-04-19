@@ -11,7 +11,7 @@ Usage:
     python pytorch_integration.py
 
 Requirements:
-    pip install uniq[pytorch]
+    pip install unified-quantum[pytorch]
 
 This example shows how to train parametric quantum circuits using
 PyTorch's automatic differentiation and optimizers.
@@ -31,7 +31,7 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
     print("PyTorch not available. Some examples will be skipped.")
-    print("Install with: pip install uniq[pytorch]")
+    print("Install with: pip install unified-quantum[pytorch]")
 
 
 def demo_gradient_computation():
@@ -44,10 +44,10 @@ def demo_gradient_computation():
         print("\n[SKIPPED] PyTorch required for gradient computation")
         return
 
-    from uniq.pytorch import parameter_shift_gradient
-    from uniq.circuit_builder import Circuit
-    from uniq.circuit_builder.parameter import Parameter
-    from uniq.simulator import OriginIR_Simulator
+    from uniqc.pytorch import parameter_shift_gradient
+    from uniqc.circuit_builder import Circuit
+    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc.simulator import OriginIR_Simulator
 
     # Build a simple circuit
     theta = Parameter("theta")
@@ -120,10 +120,10 @@ def demo_quantum_layer():
         print("\n[SKIPPED] PyTorch required for QuantumLayer")
         return
 
-    from uniq.pytorch import QuantumLayer
-    from uniq.circuit_builder import Circuit
-    from uniq.circuit_builder.parameter import Parameter
-    from uniq.simulator import OriginIR_Simulator
+    from uniqc.pytorch import QuantumLayer
+    from uniqc.circuit_builder import Circuit
+    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc.simulator import OriginIR_Simulator
 
     # Define a simple variational circuit
     theta = Parameter("theta")
@@ -185,9 +185,9 @@ def demo_batch_execution():
     print("Batch Execution Utilities")
     print("=" * 60)
 
-    from uniq.pytorch import batch_execute
-    from uniq.circuit_builder import Circuit
-    from uniq.simulator import OriginIR_Simulator
+    from uniqc.pytorch import batch_execute
+    from uniqc.circuit_builder import Circuit
+    from uniqc.simulator import OriginIR_Simulator
 
     # Create multiple circuits
     circuits = []
@@ -228,9 +228,9 @@ def demo_vqe_with_pytorch():
         print("\n[SKIPPED] PyTorch required for VQE demo")
         return
 
-    from uniq.circuit_builder import Circuit
-    from uniq.circuit_builder.parameter import Parameter
-    from uniq.simulator import OriginIR_Simulator
+    from uniqc.circuit_builder import Circuit
+    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc.simulator import OriginIR_Simulator
 
     print("\nSimple 2-qubit VQE for demonstration:")
     print("  Hamiltonian: H = Z0 + Z1 + X0X1")

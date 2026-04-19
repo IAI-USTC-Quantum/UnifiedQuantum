@@ -6,6 +6,6 @@ except ImportError:
     exit()
 
 import subprocess
-# generate stub for uniq_cpp on the package directory
-# execute : pybind11-stubgen uniq_cpp -o uniq
-subprocess.run(["pybind11-stubgen", "uniq_cpp", "-o", "uniq/simulator"])
+# generate stub for uniqc_cpp on the package directory
+# execute : pybind11-stubgen uniqc_cpp -o uniqc
+subprocess.run(["pybind11-stubgen", "uniqc_cpp", "-o", "uniqc/simulator"])

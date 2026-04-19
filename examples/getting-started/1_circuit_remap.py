@@ -9,12 +9,12 @@
 
 '''
 
-import uniq
+import uniqc
 import math
 
 def demo_1():    
     # Start from here.
-    c = uniq.Circuit()
+    c = uniqc.Circuit()
 
     # Define the gates with the simplest format.
     c.x(0)

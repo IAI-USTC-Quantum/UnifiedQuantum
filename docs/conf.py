@@ -15,7 +15,7 @@ import sys
 import pathlib
 parent_path = pathlib.Path(__file__).resolve().parent.parent
 
-# Only the project root is needed; uniq/ lives directly under it.
+# Only the project root is needed; uniqc/ lives directly under it.
 sys.path.insert(0, os.path.abspath(parent_path))
 
 # Read version from setuptools_scm or git tags
@@ -67,7 +67,7 @@ def get_version_from_metadata():
 def get_version_from_file():
     """Get version from _version.py file."""
     try:
-        _version_file = parent_path / 'uniq' / '_version.py'
+        _version_file = parent_path / 'uniqc' / '_version.py'
         if _version_file.exists():
             exec(_version_file.read_text())
             return __version__
@@ -152,7 +152,7 @@ autodoc_mock_imports = ["qiskit",
                         "qiskit_ibm_provider", 
                         "quafu", 
                         "pandas", 
-                        "uniq_cpp",
+                        "uniqc_cpp",
                         "qiskit-aer", 
                         "qutip",
                         "qutip_qip",
@@ -171,7 +171,7 @@ language = 'zh-CN'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniq.test.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniqc.test.rst']
 autodoc_typehints = "description"
 source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 
@@ -203,7 +203,97 @@ html_theme_options = {
 
 suppress_warnings = ["myst.xref_missing"]
 
-autodoc_default_options = {"no-index": True}
+# Napoleon: render ``Attributes:`` sections as ``:ivar:`` roles inline instead
+# of standalone ``.. attribute::`` directives. Otherwise autodoc also picks up
+# the class-level ``name: type = ...`` annotations and registers the same
+# attribute twice, producing "duplicate object description" warnings.
+napoleon_use_ivar = True
+
+# Autodoc: ignore ``__all__`` in package ``__init__.py`` files so re-exports are
+# documented only at their canonical submodule location, not also at the
+# package level (which would register each function twice).
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+    "ignore-module-all": True,
+}
+
+# External references (numpy / scipy / torch / python stdlib) are resolved via
+# intersphinx. We source the registry from ``intersphinx-registry`` so URLs
+# stay in sync with the upstream community table rather than hard-coded here.
+from intersphinx_registry import get_intersphinx_mapping
+
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "numpy", "scipy", "torch"},
+)
+intersphinx_timeout = 5
+
+# Ignore cross-references that autodoc can't resolve but aren't actionable:
+# short names in docstrings, re-exports (registered at canonical location),
+# external types without an intersphinx inventory, and local type vars.
+nitpick_ignore = [
+    ("py:class", "QubitInput"),
+    ("py:class", "Circuit"),
+    ("py:class", "'Circuit'"),
+    ("py:class", "QuantumCircuit"),
+    ("py:class", "'QuantumCircuit'"),
+    ("py:class", "'qiskit.QuantumCircuit'"),
+    ("py:class", "qiskit.QuantumCircuit"),
+    ("py:class", "'QuantumBackend'"),
+    ("py:class", "Path"),
+    ("py:class", "QReg"),
+    ("py:class", "'QReg'"),
+    ("py:class", "ShadowSnapshot"),
+    ("py:class", "TaskStore"),
+    ("py:class", "CircuitControlContext"),
+    ("py:class", "CircuitDagContext"),
+    ("py:class", "OpCode"),
+    ("py:class", "CbitSpec"),
+    ("py:class", "AnalysisResult"),
+    ("py:class", "operation"),
+    ("py:class", "optional"),
+    ("py:class", "T"),
+    ("py:class", "np.ndarray"),
+    ("py:class", "pd.DataFrame"),
+    ("py:class", "qprog"),
+    ("py:class", "QProg"),
+    ("py:class", "Qobj"),
+    ("py:class", "sympy.core.symbol.Symbol"),
+    # Classes re-exported from sub-package __init__; canonical location is the
+    # sub-module, so the short re-export path won't resolve.
+    ("py:class", "uniqc.circuit_builder.Circuit"),
+    ("py:class", "uniqc.simulator.OriginIR_Simulator"),
+    ("py:class", "uniqc.simulator.OriginIR_NoisySimulator"),
+    ("py:class", "uniqc.simulator.QASM_Simulator"),
+    ("py:class", "uniqc.simulator.OpcodeSimulator"),
+    ("py:class", "uniqc.algorithmics.measurement.classical_shadow.ShadowSnapshot"),
+    ("py:class", "uniqc.circuit_builder.qcircuit.CircuitDagContext"),
+    ("py:exc", "MissingDependencyError"),
+    ("py:exc", "NetworkError"),
+    ("py:exc", "ConfigError"),
+    ("py:exc", "BackendNotFoundError"),
+    ("py:exc", "BackendNotAvailableError"),
+    ("py:exc", "AuthenticationError"),
+    ("py:exc", "InsufficientCreditsError"),
+    ("py:exc", "QuotaExceededError"),
+    ("py:exc", "TaskTimeoutError"),
+    ("py:exc", "TaskFailedError"),
+    ("py:exc", "TaskNotFoundError"),
+    ("py:func", "rotation_prepare"),
+    ("py:func", "dicke_state_circuit"),
+    ("py:mod", "uniqc.task.adapters.dummy_adapter"),
+    ("py:obj", "uniqc.circuit_adapter.T"),
+    ("py:data", "MIGRATIONS"),
+    ("py:data", "CURRENT_SCHEMA_VERSION"),
+    ("py:data", "APPLICATION_ID"),
+]
+
+# Ignore :returns: prose like "dict with keys ...", "Dict with keys ..." that
+# autodoc tries to resolve as a class because of autodoc_typehints="description".
+nitpick_ignore_regex = [
+    (r"py:class", r"^[Dd]ict with.*"),
+]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
