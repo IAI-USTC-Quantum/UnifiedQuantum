@@ -3,24 +3,31 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from .output import console, print_error, print_json, print_success, print_table
+from .output import print_error, print_json, print_success, print_table
 
 HELP = "Submit circuits to quantum cloud platforms"
+INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
+PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/ibm/dummy")
+BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'origin:wuyuan:d5' for OriginQ)")
+SHOTS_OPTION = typer.Option(1000, "--shots", "-s", help="Number of measurement shots")
+NAME_OPTION = typer.Option(None, "--name", help="Task name")
+WAIT_OPTION = typer.Option(False, "--wait", "-w", help="Wait for result after submission")
+TIMEOUT_OPTION = typer.Option(300.0, "--timeout", help="Timeout in seconds when waiting")
+FORMAT_OPTION = typer.Option("table", "--format", "-f", help="Output format: table/json")
 
 
 def submit(
-    input_files: list[Path] = typer.Argument(..., help="Circuit file(s) to submit", exists=True),
-    platform: str = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/ibm/dummy"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'origin:wuyuan:d5' for OriginQ)"),
-    shots: int = typer.Option(1000, "--shots", "-s", help="Number of measurement shots"),
-    name: Optional[str] = typer.Option(None, "--name", help="Task name"),
-    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for result after submission"),
-    timeout: float = typer.Option(300.0, "--timeout", help="Timeout in seconds when waiting"),
-    format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+    input_files: list[Path] = INPUT_FILES_ARGUMENT,
+    platform: str = PLATFORM_OPTION,
+    backend: str | None = BACKEND_OPTION,
+    shots: int = SHOTS_OPTION,
+    name: str | None = NAME_OPTION,
+    wait: bool = WAIT_OPTION,
+    timeout: float = TIMEOUT_OPTION,
+    format: str = FORMAT_OPTION,
 ):
     """Submit circuit(s) to a quantum cloud platform."""
     if platform not in ("originq", "quafu", "ibm", "dummy"):
@@ -50,7 +57,7 @@ def submit(
                 )
     except Exception as e:
         print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     if wait and len(circuits) == 1:
         _wait_and_show(task_id, platform, timeout, format)

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from .output import console, print_error, print_info, print_table, write_output
+from .output import print_error, print_table, write_output
 
 HELP = "Circuit format conversion (OriginIR <-> QASM)"
+INPUT_FILE_ARGUMENT = typer.Argument(..., help="Input circuit file (OriginIR or QASM)", exists=True)
+FORMAT_OPTION = typer.Option(None, "--format", "-f", help="Output format: originir/qasm")
+OUTPUT_OPTION = typer.Option(None, "--output", "-o", help="Output file (default: stdout)")
+INFO_OPTION = typer.Option(False, "--info", help="Show circuit statistics")
 
 
 def _detect_format(content: str) -> str:
@@ -23,10 +26,10 @@ def _detect_format(content: str) -> str:
 
 
 def convert(
-    input_file: Path = typer.Argument(..., help="Input circuit file (OriginIR or QASM)", exists=True),
-    format: Optional[str] = typer.Option(None, "--format", "-f", help="Output format: originir/qasm"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file (default: stdout)"),
-    info: bool = typer.Option(False, "--info", help="Show circuit statistics"),
+    input_file: Path = INPUT_FILE_ARGUMENT,
+    format: str | None = FORMAT_OPTION,
+    output: Path | None = OUTPUT_OPTION,
+    info: bool = INFO_OPTION,
 ):
     """Convert circuit between OriginIR and QASM formats."""
     content = input_file.read_text(encoding="utf-8")
