@@ -3,7 +3,6 @@ It simulates from a basic opcode
 '''
 __all__ = ["backend_alias", "OpcodeSimulator"]
 from typing import List, Optional, Tuple, TYPE_CHECKING, Union
-from .qutip_sim_impl import DensityOperatorSimulatorQutip
 import numpy as np
 from uniqc_cpp import *
 from uniqc.circuit_builder.qcircuit import OpcodeType
@@ -64,6 +63,13 @@ class OpcodeSimulator:
             self.SimulatorType = DensityOperatorSimulator
             self.simulator_typestr = 'density_operator'
         elif backend_type == 'density_operator_qutip':
+            try:
+                from .qutip_sim_impl import DensityOperatorSimulatorQutip
+            except ImportError as exc:
+                raise ImportError(
+                    "backend_type='density_operator_qutip' requires the optional "
+                    "'simulation' dependencies. Install unified-quantum[simulation]."
+                ) from exc
             self.SimulatorType = DensityOperatorSimulatorQutip
             self.simulator_typestr = 'density_operator'
         else:
