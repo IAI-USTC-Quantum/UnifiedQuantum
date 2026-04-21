@@ -106,6 +106,32 @@ ci: add coverage reporting to GitHub Actions
 4. Request a review from a maintainer.
 5. Once approved, a maintainer will merge your PR.
 
+## Release Notes Maintenance
+
+If your change is expected to affect users, please update the release-notes page in the same PR.
+
+Typical examples include:
+
+- user-visible CLI changes
+- package rename or import-path changes
+- behavior changes that may affect existing scripts
+- storage, task, or result format adjustments
+- compatibility changes and migration-related notes
+
+Please update:
+
+- `docs/source/releases/index.md` for the user-facing summary
+- the release-history generator inputs indirectly through clear commit titles and tag messages
+
+## Before Tagging a Release
+
+Before creating a new `v*` tag, maintainers should quickly review the release-notes page and make sure:
+
+1. `docs/source/releases/index.md` reflects the main user-visible changes in the upcoming release.
+2. Recent commits and tag messages are clear enough for the generated version record.
+3. Any rename, migration, or compatibility change is mentioned explicitly.
+4. The docs site builds successfully with the updated release-notes content.
+
 ## Code Style
 
 We use [Ruff](https://docs.astral.sh/ruff/) for linting and formatting:

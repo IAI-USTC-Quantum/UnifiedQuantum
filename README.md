@@ -207,6 +207,10 @@ python -m uniqc simulate circuit.ir
 
 📖 [GitHub Pages](https://iai-ustc-quantum.github.io/UnifiedQuantum/)
 
+### Release Notes
+
+- 版本变化总览：<https://iai-ustc-quantum.github.io/UnifiedQuantum/source/releases/index.html>
+
 ---
 
 ## Status
