@@ -64,6 +64,9 @@ jobs:
         python stubgen.py
         python setup.py bdist_wheel
 
+    - name: Validate wheel ABI
+      run: python scripts/check_wheel_abi.py dist/*.whl
+
     # 第五步：上传构建产物 (wheel 文件)
     # 将 dist/ 目录下的所有 .whl 文件作为 artifact 上传
     - name: Upload wheel artifact
