@@ -78,9 +78,9 @@ def validate_wheel(wheel_path: Path) -> list[str]:
 
     for member, bundled_version in bundled_versions:
         if bundled_version not in expected_versions:
-            expected = ", ".join(sorted(expected_versions))
+            expected = ", ".join(f"cp{version}" for version in sorted(expected_versions))
             errors.append(
-                f"{wheel_path.name}: bundled extension {member} targets cp{bundled_version}, expected cp{expected}"
+                f"{wheel_path.name}: bundled extension {member} targets cp{bundled_version}, expected {expected}"
             )
 
     return errors
