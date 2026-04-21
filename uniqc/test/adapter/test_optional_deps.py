@@ -28,10 +28,14 @@ from uniqc.task.optional_deps import (
     check_quafu,
     check_qiskit,
     check_pyqpanda3,
+    check_uniqc_cpp,
+    check_qutip,
     check_simulation,
     QUAFU_AVAILABLE,
     QISKIT_AVAILABLE,
     PYQPANDA3_AVAILABLE,
+    UNIQC_CPP_AVAILABLE,
+    QUTIP_AVAILABLE,
     SIMULATION_AVAILABLE,
 )
 
@@ -96,6 +100,26 @@ class TestCheckFunctions:
         result = check_simulation()
         assert isinstance(result, bool)
 
+    def test_check_uniqc_cpp_returns_bool(self):
+        """Test check_uniqc_cpp returns boolean."""
+        result = check_uniqc_cpp()
+        assert isinstance(result, bool)
+
+    def test_check_qutip_returns_bool(self):
+        """Test check_qutip returns boolean."""
+        result = check_qutip()
+        assert isinstance(result, bool)
+
+    def test_check_simulation_all_returns_bool(self):
+        """Test check_simulation('all') returns boolean."""
+        result = check_simulation("all")
+        assert isinstance(result, bool)
+
+    def test_check_simulation_invalid_target_raises(self):
+        """Test check_simulation rejects unknown targets."""
+        with pytest.raises(ValueError, match="Unsupported simulation target"):
+            check_simulation("unknown")
+
 
 class TestAvailabilityFlags:
     """Tests for pre-computed availability flags."""
@@ -115,3 +139,11 @@ class TestAvailabilityFlags:
     def test_simulation_available_is_bool(self):
         """Test SIMULATION_AVAILABLE is boolean."""
         assert isinstance(SIMULATION_AVAILABLE, bool)
+
+    def test_uniqc_cpp_available_is_bool(self):
+        """Test UNIQC_CPP_AVAILABLE is boolean."""
+        assert isinstance(UNIQC_CPP_AVAILABLE, bool)
+
+    def test_qutip_available_is_bool(self):
+        """Test QUTIP_AVAILABLE is boolean."""
+        assert isinstance(QUTIP_AVAILABLE, bool)

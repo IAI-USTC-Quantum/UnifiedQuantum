@@ -179,7 +179,7 @@ class TestMissingSimulationDeps:
         # Mock check_simulation to return False
         import uniqc.task.optional_deps as deps_mod
         original_check = deps_mod.check_simulation
-        deps_mod.check_simulation = lambda: False
+        deps_mod.check_simulation = lambda target="cpp": False
         deps_mod.SIMULATION_AVAILABLE = False
 
         try:
@@ -187,7 +187,8 @@ class TestMissingSimulationDeps:
                 from uniqc.task.adapters.dummy_adapter import DummyAdapter
                 DummyAdapter()
 
-            assert "simulation" in str(exc_info.value)
+            assert "uniqc_cpp" in str(exc_info.value)
+            assert "Reinstall unified-quantum" in str(exc_info.value)
         finally:
             # Restore original function
             deps_mod.check_simulation = original_check
