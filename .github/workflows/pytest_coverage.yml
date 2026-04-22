@@ -59,7 +59,7 @@ jobs:
     - name: Install package (with all optional dependencies and C++ extension)
       run: |
         uv pip install --system setuptools setuptools_scm wheel pybind11
-        uv pip uninstall unified-quantum --system -y 2>/dev/null || true
+        uv pip uninstall unified-quantum --system -y || true
         rm -rf build/ dist/ *.egg-info uniqc.egg-info
         uv pip install --system ".[all]" --no-build-isolation
 

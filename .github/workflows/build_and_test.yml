@@ -99,7 +99,7 @@ jobs:
     - name: Build (with all optional dependencies)
       run: |
         uv pip install --system setuptools setuptools_scm wheel pybind11
-        uv pip uninstall unified-quantum --system -y 2>/dev/null || true
+        uv pip uninstall unified-quantum --system -y || true
         uv pip install --system ".[all]" --no-build-isolation
 
     - name: Install dev dependencies
