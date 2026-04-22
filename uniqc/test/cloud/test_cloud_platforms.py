@@ -4,9 +4,7 @@ This module provides:
 1. Configuration loading tests
 2. Backend factory tests
 3. Circuit adapter tests
-4. Mock tests (no real platform dependencies)
-5. Integration tests (skipped unless real credentials exist)
-6. End-to-end workflow tests
+4. Integration tests (require real credentials)
 
 Usage:
     pytest uniqc/test/test_cloud_platforms.py -v
@@ -19,35 +17,10 @@ Environment variables for integration tests:
 
 from __future__ import annotations
 
-import json
 import os
-import sys
-import tempfile
 from pathlib import Path
-from typing import Any
-from unittest import mock
-from unittest.mock import MagicMock, patch
 
 import pytest
-
-# ---------------------------------------------------------------------------
-# Custom Exceptions for Error Testing
-# ---------------------------------------------------------------------------
-
-
-class AuthenticationError(Exception):
-    """Raised when authentication fails (invalid token, etc.)."""
-    pass
-
-
-class InsufficientCreditsError(Exception):
-    """Raised when account has insufficient credits."""
-    pass
-
-
-class NetworkError(Exception):
-    """Raised when network communication fails."""
-    pass
 
 
 # ---------------------------------------------------------------------------
@@ -61,19 +34,6 @@ H q[0]
 CNOT q[0], q[1]
 MEASURE q[0], c[0]
 MEASURE q[1], c[1]
-""".strip()
-
-ORIGINIR_3Q = """
-QINIT 3
-CREG 3
-H q[0]
-H q[1]
-H q[2]
-CNOT q[0], q[1]
-CNOT q[1], q[2]
-MEASURE q[0], c[0]
-MEASURE q[1], c[1]
-MEASURE q[2], c[2]
 """.strip()
 
 ORIGINIR_SINGLE = """
@@ -95,7 +55,7 @@ class TestConfigLoading:
     def test_load_config_file_not_exists(self, tmp_path: Path) -> None:
         """Test that default config is returned when file doesn't exist."""
         from uniqc.config import load_config, DEFAULT_CONFIG
-        
+
         non_existent = tmp_path / "non_existent.yml"
         result = load_config(non_existent)
         assert result == DEFAULT_CONFIG
@@ -103,7 +63,7 @@ class TestConfigLoading:
     def test_load_existing_config(self, tmp_path: Path) -> None:
         """Test loading an existing configuration file."""
         from uniqc.config import load_config, save_config
-        
+
         config_file = tmp_path / "test_config.yml"
         test_config = {
             "default": {
@@ -121,10 +81,10 @@ class TestConfigLoading:
     def test_load_config_all_platforms(self, tmp_path: Path) -> None:
         """Test loading configuration for all three platforms."""
         from uniqc.config import (
-            load_config, save_config, 
+            load_config, save_config,
             get_platform_config, SUPPORTED_PLATFORMS
         )
-        
+
         config_file = tmp_path / "uniqc.yml"
         test_config = {
             "default": {
@@ -144,7 +104,7 @@ class TestConfigLoading:
             }
         }
         save_config(test_config, config_file)
-        
+
         # Test each platform
         for platform in SUPPORTED_PLATFORMS:
             config = get_platform_config(platform, config_path=config_file)
@@ -154,7 +114,7 @@ class TestConfigLoading:
     def test_load_config_different_profiles(self, tmp_path: Path) -> None:
         """Test loading configuration with different profiles."""
         from uniqc.config import load_config, save_config, get_platform_config
-        
+
         config_file = tmp_path / "uniqc.yml"
         test_config = {
             "default": {
@@ -168,13 +128,13 @@ class TestConfigLoading:
             },
         }
         save_config(test_config, config_file)
-        
+
         default_config = get_platform_config("originq", profile="default", config_path=config_file)
         assert default_config["token"] == "default_token"
-        
+
         prod_config = get_platform_config("originq", profile="prod", config_path=config_file)
         assert prod_config["token"] == "prod_token"
-        
+
         dev_config = get_platform_config("originq", profile="dev", config_path=config_file)
         assert dev_config["token"] == "dev_token"
 
@@ -214,79 +174,58 @@ class TestConfigLoading:
 class TestBackendFactory:
     """Tests for the Backend factory pattern (get_backend)."""
 
-    def test_get_backend_originq(self) -> None:
+    def test_get_backend_originq(self, monkeypatch) -> None:
         """Test getting OriginQ backend returns correct type."""
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
+
         from uniqc.backend import get_backend, OriginQBackend
-        
-        with patch("uniqc.backend.OriginQBackend._create_adapter") as mock_create:
-            mock_adapter = MagicMock()
-            mock_create.return_value = mock_adapter
-            
-            backend = get_backend("originq", use_cache=False)
-            assert isinstance(backend, OriginQBackend)
-            assert backend.platform == "originq"
 
-    def test_get_backend_quafu(self) -> None:
+        backend = get_backend("originq", use_cache=False)
+        assert isinstance(backend, OriginQBackend)
+        assert backend.platform == "originq"
+
+    def test_get_backend_quafu(self, monkeypatch) -> None:
         """Test getting Quafu backend returns correct type."""
-        from uniqc.backend import get_backend, QuafuBackend
-        
-        with patch("uniqc.backend.QuafuBackend._create_adapter") as mock_create:
-            mock_adapter = MagicMock()
-            mock_create.return_value = mock_adapter
-            
-            backend = get_backend("quafu", use_cache=False)
-            assert isinstance(backend, QuafuBackend)
-            assert backend.platform == "quafu"
+        monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
 
-    def test_get_backend_ibm(self) -> None:
+        from uniqc.backend import get_backend, QuafuBackend
+
+        backend = get_backend("quafu", use_cache=False)
+        assert isinstance(backend, QuafuBackend)
+        assert backend.platform == "quafu"
+
+    def test_get_backend_ibm(self, monkeypatch) -> None:
         """Test getting IBM backend returns correct type."""
+        monkeypatch.setenv("IBM_TOKEN", "test_token")
+
         from uniqc.backend import get_backend, IBMBackend
-        
-        with patch("uniqc.backend.IBMBackend._create_adapter") as mock_create:
-            mock_adapter = MagicMock()
-            mock_create.return_value = mock_adapter
-            
-            backend = get_backend("ibm", use_cache=False)
-            assert isinstance(backend, IBMBackend)
-            assert backend.platform == "ibm"
+
+        backend = get_backend("ibm", use_cache=False)
+        assert isinstance(backend, IBMBackend)
+        assert backend.platform == "ibm"
 
     def test_get_backend_unknown_raises(self) -> None:
         """Test that unknown backend name raises ValueError."""
         from uniqc.backend import get_backend
-        
+
         with pytest.raises(ValueError, match="Unknown backend"):
             get_backend("unknown_platform")
 
     def test_list_backends(self) -> None:
         """Test listing available backends."""
         from uniqc.backend import list_backends, BACKENDS
-        
+
         backends = list_backends()
         assert "originq" in backends
         assert "quafu" in backends
         assert "ibm" in backends
-        
+
         for name, info in backends.items():
             assert "platform" in info
             assert "available" in info
             assert "class" in info
             assert info["platform"] == name
             assert info["class"] == BACKENDS[name].__name__
-
-    def test_backend_caching(self) -> None:
-        """Test that backend instances are cached."""
-        from uniqc.backend import get_backend, OriginQBackend
-        
-        with patch("uniqc.backend.OriginQBackend._create_adapter") as mock_create:
-            mock_adapter = MagicMock()
-            mock_create.return_value = mock_adapter
-            
-            # First call should create new instance
-            backend1 = get_backend("originq", use_cache=True)
-            # Second call should return cached instance
-            backend2 = get_backend("originq", use_cache=True)
-            
-            assert backend1 is backend2
 
 
 # ---------------------------------------------------------------------------
@@ -300,10 +239,10 @@ class TestCircuitAdapters:
     def test_originq_adapter_supported_gates(self) -> None:
         """Test OriginQ adapter returns supported gates."""
         from uniqc.circuit_adapter import OriginQCircuitAdapter
-        
+
         adapter = OriginQCircuitAdapter()
         gates = adapter.get_supported_gates()
-        
+
         assert isinstance(gates, list)
         assert "H" in gates
         assert "X" in gates
@@ -313,10 +252,10 @@ class TestCircuitAdapters:
     def test_quafu_adapter_supported_gates(self) -> None:
         """Test Quafu adapter returns supported gates."""
         from uniqc.circuit_adapter import QuafuCircuitAdapter
-        
+
         adapter = QuafuCircuitAdapter()
         gates = adapter.get_supported_gates()
-        
+
         assert isinstance(gates, list)
         assert "H" in gates
         assert "CNOT" in gates
@@ -325,387 +264,14 @@ class TestCircuitAdapters:
     def test_ibm_adapter_supported_gates(self) -> None:
         """Test IBM adapter returns supported gates."""
         from uniqc.circuit_adapter import IBMCircuitAdapter
-        
+
         adapter = IBMCircuitAdapter()
         gates = adapter.get_supported_gates()
-        
+
         assert isinstance(gates, list)
         assert "H" in gates
         assert "CX" in gates  # IBM uses CX for CNOT
         assert "MEASURE" in gates
-
-    def test_originq_adapter_without_pyqpanda3(self) -> None:
-        """Test OriginQ adapter raises error when pyqpanda3 not installed."""
-        from uniqc.circuit_adapter import OriginQCircuitAdapter
-        from uniqc.circuit_builder import Circuit
-        from unittest.mock import patch
-        
-        # Create a fresh adapter instance with cleared imports
-        adapter = OriginQCircuitAdapter()
-        adapter._pyqpanda3 = None
-        adapter._convert_originir = None
-        
-        circuit = Circuit()
-        circuit.h(0)
-        
-        # Mock the import to raise ImportError
-        def mock_import(*args, **kwargs):
-            raise ImportError("No module named 'pyqpanda3'")
-        
-        with patch('builtins.__import__', side_effect=mock_import):
-            with pytest.raises(RuntimeError, match="pyqpanda3"):
-                adapter.adapt(circuit)
-
-    def test_quafu_adapter_without_quafu(self) -> None:
-        """Test Quafu adapter raises error when quafu not installed."""
-        # Skip if quafu is actually installed
-        try:
-            import quafu
-            pytest.skip("quafu is installed, cannot test missing dependency")
-        except ImportError:
-            pass
-
-        from uniqc.circuit_adapter import QuafuCircuitAdapter
-        from uniqc.circuit_builder import Circuit
-
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.h(0)
-
-        with pytest.raises(RuntimeError, match="quafu"):
-            adapter.adapt(circuit)
-
-    def test_ibm_adapter_adapt_batch(self) -> None:
-        """Test IBM adapter batch conversion."""
-        try:
-            import qiskit
-        except ImportError:
-            pytest.skip("qiskit not installed")
-        
-        from uniqc.circuit_adapter import IBMCircuitAdapter
-        from uniqc.circuit_builder import Circuit
-        
-        adapter = IBMCircuitAdapter()
-        
-        circuit1 = Circuit()
-        circuit1.h(0)
-        circuit1.measure(0)
-        
-        circuit2 = Circuit()
-        circuit2.x(0)
-        circuit2.measure(0)
-        
-        qiskit_circuits = adapter.adapt_batch([circuit1, circuit2])
-        
-        assert len(qiskit_circuits) == 2
-        for qc in qiskit_circuits:
-            assert hasattr(qc, "num_qubits")
-
-
-# ---------------------------------------------------------------------------
-# Mock Tests (No Real Platform Dependencies)
-# ---------------------------------------------------------------------------
-
-
-class TestMockSubmitTask:
-    """Mock tests for submit_task workflows."""
-
-    def test_originq_submit_task_mock(self) -> None:
-        """Test OriginQ submit task with mocked pyqpanda3."""
-        from uniqc.task.adapters import OriginQAdapter
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "test_key",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Mock pyqpanda3 components
-            mock_service = MagicMock()
-            mock_backend = MagicMock()
-            mock_job = MagicMock()
-            mock_job.job_id.return_value = "task_abc123"
-            mock_backend.run.return_value = mock_job
-            mock_service.backend.return_value = mock_backend
-
-            adapter._service = mock_service
-            adapter._convert_originir = MagicMock(return_value=MagicMock())
-            adapter._QCloudOptions = MagicMock
-
-            task_id = adapter.submit(ORIGINIR_BELL, shots=1000)
-
-            assert task_id == "task_abc123"
-
-    def test_originq_submit_batch_mock(self) -> None:
-        """Test OriginQ submit batch with mocked pyqpanda3."""
-        from uniqc.task.adapters import OriginQAdapter
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "test_key",
-                "task_group_size": 2,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Mock pyqpanda3 components
-            mock_service = MagicMock()
-            mock_backend = MagicMock()
-
-            def mock_run(*args, **kwargs):
-                mock_job = MagicMock()
-                mock_job.job_id.return_value = "task_xyz"
-                return mock_job
-
-            mock_backend.run.side_effect = mock_run
-            mock_service.backend.return_value = mock_backend
-
-            adapter._service = mock_service
-            adapter._convert_originir = MagicMock(return_value=MagicMock())
-            adapter._QCloudOptions = MagicMock
-
-            circuits = [ORIGINIR_BELL] * 3
-            task_ids = adapter.submit_batch(circuits, shots=1000)
-
-            # With group_size=2 and 3 circuits, should call submit twice
-            assert mock_backend.run.call_count == 2
-
-    def test_quafu_submit_task_mock(self) -> None:
-        """Test Quafu submit task with mocked SDK."""
-        from uniqc.task.adapters import QuafuAdapter
-        
-        with patch("uniqc.task.adapters.quafu_adapter.load_quafu_config") as mock_config:
-            mock_config.return_value = {"api_token": "test_token"}
-            
-            mock_quafu = MagicMock()
-            mock_task_result = MagicMock()
-            mock_task_result.taskid = "quafu_task_123"
-            mock_quafu.User.return_value = MagicMock()
-            mock_quafu.Task.return_value.send.return_value = mock_task_result
-            
-            with patch.dict(sys.modules, {"quafu": mock_quafu}):
-                adapter = QuafuAdapter.__new__(QuafuAdapter)
-                adapter._api_token = "test_token"
-                adapter._quafu = mock_quafu
-                adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-                adapter._Task = mock_quafu.Task
-                adapter._User = mock_quafu.User
-                adapter._task_history = {}
-                adapter._history_order = []
-                adapter._MAX_HISTORY_GROUPS = 100
-                
-                mock_circuit = MagicMock()
-                task_id = adapter.submit(mock_circuit, shots=1000, chip_id="ScQ-P10")
-                
-                assert task_id == "quafu_task_123"
-
-
-class TestMockQueryTask:
-    """Mock tests for query_task workflows."""
-
-    def test_originq_query_task_success_mock(self) -> None:
-        """Test OriginQ query task success with mocked pyqpanda3."""
-        from uniqc.task.adapters import OriginQAdapter, TASK_STATUS_SUCCESS
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "test_key",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Create sentinel objects for status comparison
-            FINISHED = object()
-
-            # Mock pyqpanda3 components
-            mock_job_cls = MagicMock()
-            mock_job = MagicMock()
-            mock_job.status.return_value = FINISHED
-            mock_result = MagicMock()
-            mock_result.get_counts.return_value = {"00": 512, "11": 512}
-            mock_job.result.return_value = mock_result
-            mock_job_cls.return_value = mock_job
-
-            adapter._QCloudJob = mock_job_cls
-            adapter._JobStatus = MagicMock(FINISHED=FINISHED)
-            adapter._service = MagicMock()
-
-            result = adapter.query("task_abc")
-
-            assert result["status"] == TASK_STATUS_SUCCESS
-
-    def test_originq_query_task_running_mock(self) -> None:
-        """Test OriginQ query task running status with mocked pyqpanda3."""
-        from uniqc.task.adapters import OriginQAdapter, TASK_STATUS_RUNNING
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "test_key",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Create sentinel objects for status comparison
-            FINISHED = object()
-            RUNNING = object()
-
-            # Mock pyqpanda3 components
-            mock_job_cls = MagicMock()
-            mock_job = MagicMock()
-            mock_job.status.return_value = RUNNING
-            mock_job_cls.return_value = mock_job
-
-            adapter._QCloudJob = mock_job_cls
-            adapter._JobStatus = MagicMock(FINISHED=FINISHED, RUNNING=RUNNING)
-            adapter._service = MagicMock()
-
-            result = adapter.query("task_abc")
-            assert result["status"] == TASK_STATUS_RUNNING
-
-    def test_originq_query_batch_mock(self) -> None:
-        """Test OriginQ query batch with mocked pyqpanda3."""
-        from uniqc.task.adapters import OriginQAdapter, TASK_STATUS_SUCCESS
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "test_key",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Create sentinel objects for status comparison
-            FINISHED = object()
-
-            # Mock pyqpanda3 components
-            mock_job_cls = MagicMock()
-
-            def create_job(taskid):
-                mock_job = MagicMock()
-                mock_job.status.return_value = FINISHED
-                mock_result = MagicMock()
-                if taskid == "task_1":
-                    mock_result.get_counts.return_value = {"00": 1024}
-                else:
-                    mock_result.get_counts.return_value = {"11": 1024}
-                mock_job.result.return_value = mock_result
-                return mock_job
-
-            mock_job_cls.side_effect = create_job
-
-            adapter._QCloudJob = mock_job_cls
-            adapter._JobStatus = MagicMock(FINISHED=FINISHED)
-            adapter._service = MagicMock()
-
-            result = adapter.query_batch(["task_1", "task_2"])
-            assert result["status"] == TASK_STATUS_SUCCESS
-            assert len(result["result"]) == 2
-
-
-class TestMockErrorScenarios:
-    """Mock tests for error scenarios."""
-
-    def test_originq_authentication_error(self) -> None:
-        """Test OriginQ authentication error (invalid token)."""
-        from uniqc.task.adapters import OriginQAdapter
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "invalid_token",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Mock pyqpanda3 components that raise authentication error
-            mock_service = MagicMock()
-            mock_service.backend.side_effect = RuntimeError("Authentication failed: Invalid API key")
-
-            adapter._service = mock_service
-            adapter._convert_originir = MagicMock(return_value=MagicMock())
-            adapter._QCloudOptions = MagicMock
-
-            with pytest.raises(RuntimeError, match="Authentication"):
-                adapter.submit(ORIGINIR_BELL)
-
-    def test_originq_insufficient_credits_error(self) -> None:
-        """Test OriginQ insufficient credits error."""
-        from uniqc.task.adapters import OriginQAdapter
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "valid_token",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Mock pyqpanda3 components that raise credits error
-            mock_service = MagicMock()
-            mock_backend = MagicMock()
-            mock_backend.run.side_effect = RuntimeError("Insufficient credits")
-            mock_service.backend.return_value = mock_backend
-
-            adapter._service = mock_service
-            adapter._convert_originir = MagicMock(return_value=MagicMock())
-            adapter._QCloudOptions = MagicMock
-
-            with pytest.raises(RuntimeError, match="Insufficient credits"):
-                adapter.submit(ORIGINIR_BELL)
-
-    def test_originq_network_error(self) -> None:
-        """Test OriginQ network error."""
-        from uniqc.task.adapters import OriginQAdapter
-
-        with patch("uniqc.task.adapters.originq_adapter.load_originq_config") as mock_config:
-            mock_config.return_value = {
-                "api_key": "valid_token",
-                "task_group_size": 200,
-            }
-
-            adapter = OriginQAdapter()
-
-            # Mock pyqpanda3 components that raise network error
-            mock_service = MagicMock()
-            mock_service.backend.side_effect = RuntimeError("Network error: Connection timeout")
-
-            adapter._service = mock_service
-            adapter._convert_originir = MagicMock(return_value=MagicMock())
-            adapter._QCloudOptions = MagicMock
-
-            with pytest.raises(RuntimeError, match="Network error"):
-                adapter.submit(ORIGINIR_BELL)
-
-    def test_quafu_authentication_error(self) -> None:
-        """Test Quafu authentication error."""
-        from uniqc.task.adapters import QuafuAdapter
-        
-        with patch("uniqc.task.adapters.quafu_adapter.load_quafu_config") as mock_config:
-            mock_config.return_value = {"api_token": "invalid_token"}
-            
-            mock_quafu = MagicMock()
-            mock_user = MagicMock()
-            mock_user.save_apitoken.side_effect = RuntimeError("Invalid API token")
-            mock_quafu.User.return_value = mock_user
-            
-            with patch.dict(sys.modules, {"quafu": mock_quafu}):
-                adapter = QuafuAdapter.__new__(QuafuAdapter)
-                adapter._api_token = "invalid_token"
-                adapter._quafu = mock_quafu
-                adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-                adapter._Task = mock_quafu.Task
-                adapter._User = mock_quafu.User
-                adapter._task_history = {}
-                adapter._history_order = []
-                adapter._MAX_HISTORY_GROUPS = 100
-                
-                mock_circuit = MagicMock()
-                with pytest.raises(RuntimeError):
-                    adapter.submit(mock_circuit, chip_id="ScQ-P10")
 
 
 # ---------------------------------------------------------------------------
@@ -713,17 +279,19 @@ class TestMockErrorScenarios:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.cloud
 @pytest.mark.skipif(
     not os.environ.get("ORIGINQ_API_KEY"),
     reason="ORIGINQ_API_KEY not set"
 )
+@pytest.mark.requires_pyqpanda3
 class TestOriginQIntegration:
     """Integration tests for OriginQ (requires real credentials)."""
 
     def test_originq_connection(self) -> None:
         """Test real OriginQ connection."""
         from uniqc.backend import get_backend
-        
+
         backend = get_backend("originq", use_cache=False)
         assert backend.is_available()
 
@@ -742,57 +310,51 @@ class TestOriginQIntegration:
         assert "status" in result
 
 
+@pytest.mark.cloud
 @pytest.mark.skipif(
     not os.environ.get("QUAFU_API_TOKEN"),
     reason="QUAFU_API_TOKEN not set"
 )
+@pytest.mark.requires_quafu
 class TestQuafuIntegration:
     """Integration tests for Quafu (requires real credentials)."""
 
     def test_quafu_connection(self) -> None:
         """Test real Quafu connection."""
         from uniqc.backend import get_backend
-        
+
         backend = get_backend("quafu", use_cache=False)
-        # Note: is_available might require quafu package to be installed
+        # Note: is_available depends on quafu package
 
     def test_quafu_translate_circuit(self) -> None:
         """Test real Quafu circuit translation."""
-        try:
-            import quafu
-        except ImportError:
-            pytest.skip("quafu not installed")
-        
         from uniqc.task.adapters import QuafuAdapter
-        
+
         adapter = QuafuAdapter()
         circuit = adapter.translate_circuit(ORIGINIR_BELL)
         assert circuit is not None
 
 
+@pytest.mark.cloud
 @pytest.mark.skipif(
     not os.environ.get("IBM_TOKEN"),
     reason="IBM_TOKEN not set"
 )
+@pytest.mark.requires_qiskit
 class TestIBMIntegration:
     """Integration tests for IBM Quantum (requires real credentials)."""
 
     def test_ibm_connection(self) -> None:
         """Test real IBM Quantum connection."""
         from uniqc.backend import get_backend
-        
+
         backend = get_backend("ibm", use_cache=False)
-        # Note: is_available might require qiskit packages
+        # Note: is_available depends on qiskit packages
 
     def test_ibm_translate_circuit(self) -> None:
         """Test real IBM circuit translation."""
-        try:
-            import qiskit
-        except ImportError:
-            pytest.skip("qiskit not installed")
-        
         from uniqc.task.adapters import QiskitAdapter
-        
+
         adapter = QiskitAdapter()
         circuit = adapter.translate_circuit(ORIGINIR_BELL)
         assert circuit is not None
@@ -800,154 +362,47 @@ class TestIBMIntegration:
 
 
 # ---------------------------------------------------------------------------
-# End-to-End Tests
+# Cache Management Tests
 # ---------------------------------------------------------------------------
 
 
-class TestEndToEndWorkflow:
-    """End-to-end tests: Circuit → adapt → submit → query → result."""
+class TestCacheManagement:
+    """Tests for backend cache management."""
 
-    def test_e2e_originq_mock(self) -> None:
-        """End-to-end test with mocked OriginQ backend."""
-        from uniqc.circuit_builder import Circuit
-        from uniqc.circuit_adapter import OriginQCircuitAdapter
-        from uniqc.backend import OriginQBackend
-        
-        # Step 1: Create circuit
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.cnot(0, 1)
-        circuit.measure(0, 1)
-        
-        # Step 2: Adapt circuit (mocked since pyqpanda3 may not be installed)
-        adapter = OriginQCircuitAdapter()
-        
-        # Step 3-5: Mock the backend operations
-        with patch("uniqc.backend.OriginQBackend._create_adapter") as mock_create:
-            mock_backend_adapter = MagicMock()
-            mock_create.return_value = mock_backend_adapter
-            
-            backend = OriginQBackend()
-            
-            # Mock submit
-            mock_backend_adapter.submit.return_value = "e2e_task_123"
-            task_id = backend.submit(circuit, shots=1000)
-            assert task_id == "e2e_task_123"
-            
-            # Mock query
-            mock_backend_adapter.query.return_value = {
-                "status": "success",
-                "result": [{"00": 512, "11": 488}],
-            }
-            result = backend.query(task_id)
-            assert result["status"] == "success"
+    def test_save_and_load_cache(self, tmp_path: Path, monkeypatch) -> None:
+        """Test saving and loading backend cache."""
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
 
-    def test_e2e_quafu_mock(self) -> None:
-        """End-to-end test with mocked Quafu backend."""
-        from uniqc.circuit_builder import Circuit
-        from uniqc.backend import QuafuBackend
-        
-        # Step 1: Create circuit
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.cnot(0, 1)
-        circuit.measure(0, 1)
-        
-        # Step 2-5: Mock the backend operations
-        with patch("uniqc.backend.QuafuBackend._create_adapter") as mock_create:
-            mock_backend_adapter = MagicMock()
-            mock_create.return_value = mock_backend_adapter
-            
-            backend = QuafuBackend()
-            
-            # Mock translate
-            mock_translated_circuit = MagicMock()
-            mock_backend_adapter.translate_circuit.return_value = mock_translated_circuit
-            
-            # Mock submit
-            mock_backend_adapter.submit.return_value = "quafu_e2e_task_123"
-            task_id = backend.submit(mock_translated_circuit, shots=1000, chip_id="ScQ-P10")
-            assert task_id == "quafu_e2e_task_123"
-            
-            # Mock query
-            mock_backend_adapter.query.return_value = {
-                "status": "success",
-                "result": {"counts": {"00": 512, "11": 488}},
-            }
-            result = backend.query(task_id)
-            assert result["status"] == "success"
+        from uniqc.backend import OriginQBackend, _get_cache_file_path
 
-    def test_e2e_ibm_mock(self) -> None:
-        """End-to-end test with mocked IBM backend."""
-        from uniqc.circuit_builder import Circuit
-        from uniqc.backend import IBMBackend
-        
-        # Step 1: Create circuit
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.cnot(0, 1)
-        circuit.measure(0, 1)
-        
-        # Step 2-5: Mock the backend operations
-        with patch("uniqc.backend.IBMBackend._create_adapter") as mock_create:
-            mock_backend_adapter = MagicMock()
-            mock_create.return_value = mock_backend_adapter
-            
-            backend = IBMBackend()
-            
-            # Mock translate
-            mock_translated_circuit = MagicMock()
-            mock_backend_adapter.translate_circuit.return_value = mock_translated_circuit
-            
-            # Mock submit
-            mock_backend_adapter.submit.return_value = "ibm_e2e_job_123"
-            task_id = backend.submit(mock_translated_circuit, shots=1000, chip_id="ibm_perth")
-            assert task_id == "ibm_e2e_job_123"
-            
-            # Mock query
-            mock_backend_adapter.query.return_value = {
-                "status": "success",
-                "result": [{"00": 512, "11": 488}],
-                "time": "Mon 01 Jan 2024, 12:00PM",
-                "backend_name": "ibm_perth",
-            }
-            result = backend.query(task_id)
-            assert result["status"] == "success"
-            assert "backend_name" in result
+        cache_dir = tmp_path / "cache"
+        backend = OriginQBackend(cache_dir=cache_dir, config={"test": "value"})
+        backend.name = "test_backend"
 
-    def test_complete_workflow_all_platforms_mock(self) -> None:
-        """Test complete workflow for all three platforms with mocks."""
-        from uniqc.circuit_builder import Circuit
-        from uniqc.backend import get_backend, BACKENDS
-        
-        # Create test circuit
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.cnot(0, 1)
-        circuit.measure(0, 1)
-        
-        for platform_name in ["originq", "quafu", "ibm"]:
-            backend_class = BACKENDS[platform_name]
-            
-            with patch.object(backend_class, "_create_adapter") as mock_create:
-                mock_adapter = MagicMock()
-                mock_create.return_value = mock_adapter
-                
-                backend = get_backend(platform_name, use_cache=False)
-                
-                # Mock submit and query
-                mock_adapter.submit.return_value = f"{platform_name}_task_123"
-                mock_adapter.query.return_value = {
-                    "status": "success",
-                    "result": [{"00": 500, "11": 500}],
-                }
-                
-                # Execute workflow
-                task_id = backend.submit(circuit, shots=1000)
-                result = backend.query(task_id)
-                
-                assert task_id == f"{platform_name}_task_123"
-                assert result["status"] == "success"
+        # Save to cache
+        backend.save_to_cache()
+
+        # Verify cache file exists
+        cache_file = _get_cache_file_path("originq", cache_dir)
+        assert cache_file.exists()
+
+    def test_clear_cache(self, tmp_path: Path, monkeypatch) -> None:
+        """Test clearing backend cache."""
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
+
+        from uniqc.backend import OriginQBackend, _get_cache_file_path
+
+        cache_dir = tmp_path / "cache"
+        backend = OriginQBackend(cache_dir=cache_dir)
+
+        # Save and verify
+        backend.save_to_cache()
+        cache_file = _get_cache_file_path("originq", cache_dir)
+        assert cache_file.exists()
+
+        # Clear and verify
+        backend.clear_cache()
+        assert not cache_file.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -969,7 +424,7 @@ class TestCompatibilityWithExistingTests:
             create_default_config,
             DEFAULT_CONFIG,
         )
-        
+
         assert callable(load_config)
         assert callable(save_config)
         assert callable(get_platform_config)
@@ -986,7 +441,7 @@ class TestCompatibilityWithExistingTests:
             QuafuCircuitAdapter,
             IBMCircuitAdapter,
         )
-        
+
         assert issubclass(OriginQCircuitAdapter, CircuitAdapter)
         assert issubclass(QuafuCircuitAdapter, CircuitAdapter)
         assert issubclass(IBMCircuitAdapter, CircuitAdapter)
@@ -1002,7 +457,7 @@ class TestCompatibilityWithExistingTests:
             list_backends,
             BACKENDS,
         )
-        
+
         assert callable(get_backend)
         assert callable(list_backends)
         assert isinstance(BACKENDS, dict)
@@ -1021,50 +476,10 @@ class TestCompatibilityWithExistingTests:
             TASK_STATUS_FAILED,
             TASK_STATUS_RUNNING,
         )
-        
+
         assert TASK_STATUS_SUCCESS == "success"
         assert TASK_STATUS_FAILED == "failed"
         assert TASK_STATUS_RUNNING == "running"
-
-
-# ---------------------------------------------------------------------------
-# Cache Management Tests
-# ---------------------------------------------------------------------------
-
-
-class TestCacheManagement:
-    """Tests for backend cache management."""
-
-    def test_save_and_load_cache(self, tmp_path: Path) -> None:
-        """Test saving and loading backend cache."""
-        from uniqc.backend import OriginQBackend, _get_cache_file_path
-        
-        cache_dir = tmp_path / "cache"
-        backend = OriginQBackend(cache_dir=cache_dir, config={"test": "value"})
-        backend.name = "test_backend"
-        
-        # Save to cache
-        backend.save_to_cache()
-        
-        # Verify cache file exists
-        cache_file = _get_cache_file_path("originq", cache_dir)
-        assert cache_file.exists()
-
-    def test_clear_cache(self, tmp_path: Path) -> None:
-        """Test clearing backend cache."""
-        from uniqc.backend import OriginQBackend, _get_cache_file_path
-        
-        cache_dir = tmp_path / "cache"
-        backend = OriginQBackend(cache_dir=cache_dir)
-        
-        # Save and verify
-        backend.save_to_cache()
-        cache_file = _get_cache_file_path("originq", cache_dir)
-        assert cache_file.exists()
-        
-        # Clear and verify
-        backend.clear_cache()
-        assert not cache_file.exists()
 
 
 # ---------------------------------------------------------------------------

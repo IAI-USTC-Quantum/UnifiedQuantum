@@ -75,31 +75,42 @@ jobs:
       with:
         submodules: 'true'
 
-    - name: Install build dependencies
-      run: pip install setuptools wheel setuptools_scm
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
 
-    - name: Build (with all optional dependencies)
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies (Linux)
       if: runner.os == 'Linux'
       run: |
-        pip uninstall unified-quantum -y 2>/dev/null || true
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build
         # Remove system-installed typing_extensions to avoid pip conflict
         sudo apt-get remove -y python3-typing-extensions 2>/dev/null || true
-        sudo pip install ".[all]" --no-cache-dir --no-build-isolation
 
-    - name: Build (with all optional dependencies)
+    - name: Install build dependencies (Windows)
       if: runner.os == 'Windows'
       run: |
-        pip install ".[all]" --no-cache-dir --no-build-isolation
+        uv pip install --system cmake ninja setuptools setuptools_scm wheel pybind11
+
+    - name: Build (with all optional dependencies)
+      run: |
+        uv pip install --system setuptools setuptools_scm wheel pybind11
+        uv pip uninstall unified-quantum --system -y 2>/dev/null || true
+        uv pip install --system ".[all]" --no-build-isolation
 
     - name: Install dev dependencies
       run: |
-        pip install pytest pytest-cov ruff --quiet
+        uv pip install --system pytest pytest-cov ruff
 
     - name: Run tests with deprecation monitoring
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
-        pytest uniqc/test/ -v --tb=short --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py
+        pytest uniqc/test/ -v --tb=short --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py -m "not cloud"
 
     - name: Check for deprecation warnings (fail on error)
       if: runner.os == 'Linux'
@@ -130,4 +141,4 @@ jobs:
         name: coverage-report
         path: .coverage
         retention-days: 7
-   
+

@@ -5,23 +5,6 @@ Run with: pytest uniqc/test/test_optional_deps.py --ignore-glob='uniqc/test/__in
 
 from __future__ import annotations
 
-import sys
-from unittest.mock import MagicMock
-
-# Mock optional modules only when the real import is unavailable.
-try:
-    import uniqc_cpp  # noqa: F401
-except ImportError:
-    sys.modules['uniqc_cpp'] = MagicMock()
-
-try:
-    import pyqpanda3  # noqa: F401
-except ImportError:
-    mock_pyqpanda3 = MagicMock()
-    sys.modules['pyqpanda3'] = mock_pyqpanda3
-    sys.modules['pyqpanda3.core'] = MagicMock()
-    sys.modules['pyqpanda3.intermediate_compiler'] = MagicMock()
-
 import pytest
 
 from uniqc.task.optional_deps import (

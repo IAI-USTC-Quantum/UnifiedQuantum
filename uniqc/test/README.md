@@ -88,7 +88,48 @@ addopts = -v
 
 ## CI 配置说明
 
-- **Build-and-test workflow**：使用 `pytest uniqc/test/ -v`
-- **Pytest Coverage workflow**：使用 `pytest uniqc/test/ -v --deselect uniqc/test/simulator/test_random_QASM.py::test_random_qasm_compare_density_operator`
+- **Build-and-test workflow**：使用 `pytest uniqc/test/ -v -m "not cloud"`
+- **Pytest Coverage workflow**：使用 `pytest uniqc/test/ -v -m "not cloud"`
 
 两个 workflow 现已统一使用 pytest。
+
+## Cloud Tests
+
+Tests marked with `@pytest.mark.cloud` require real cloud credentials and network access.
+
+### Running Cloud Tests Locally
+
+```bash
+# Set required credentials
+export ORIGINQ_API_KEY="your-key"
+export QUAFU_API_TOKEN="your-token"
+export IBM_TOKEN="your-token"
+
+# Run all tests including cloud tests
+pytest uniqc/test/ -v -m cloud
+
+# Run specific platform tests
+pytest uniqc/test/ -v -m "cloud and requires_pyqpanda3"
+```
+
+### CI Behavior
+
+Cloud tests are **skipped by default in CI** via `-m "not cloud"` to avoid:
+- Exposing credentials in CI logs
+- Incurring cloud platform costs
+- Network dependency failures
+
+## Dependency-Specific Tests
+
+Tests may be marked with dependency markers:
+
+| Marker | Description |
+|--------|-------------|
+| `@pytest.mark.requires_cpp` | Requires compiled C++ backend (uniqc_cpp) |
+| `@pytest.mark.requires_pytorch` | Requires PyTorch |
+| `@pytest.mark.requires_torchquantum` | Requires TorchQuantum |
+| `@pytest.mark.requires_qiskit` | Requires Qiskit |
+| `@pytest.mark.requires_quafu` | Requires Quafu/pyquafu |
+| `@pytest.mark.requires_pyqpanda3` | Requires pyqpanda3 |
+
+These tests will be skipped if the dependency is not installed.

@@ -136,7 +136,28 @@ If system CMake is too old:
 pip install cmake --upgrade
 ```
 
-**Development mode:**
+**Development mode (using uv, recommended):**
+
+```bash
+cd UnifiedQuantum
+
+# Create virtual environment
+uv venv .venv && source .venv/bin/activate
+
+# Install build dependencies
+uv pip install cmake ninja setuptools setuptools_scm wheel pybind11
+
+# Editable install with all optional dependencies
+uv pip install -e ".[all]" --no-build-isolation
+
+# Install TorchQuantum separately
+uv pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
+
+# Run tests
+pytest uniqc/test/ -v -m "not cloud"
+```
+
+**Development mode (using pip):**
 ```bash
 pip install -e . --no-build-isolation
 ```

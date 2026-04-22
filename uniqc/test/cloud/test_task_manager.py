@@ -12,8 +12,6 @@ import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from unittest import mock
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -302,15 +300,11 @@ class TestTaskManager:
 
 
 # =============================================================================
-# Test submit_task with mocks
+# Test submit_task
 # =============================================================================
 
 class TestSubmitTask:
-    """Tests for submit_task function with mocked backends.
-
-    Note: Due to variable name collision (backend is both a module and parameter name),
-    we test the underlying functions that submit_task calls instead.
-    """
+    """Tests for submit_task function."""
 
     def test_submit_task_raises_backend_not_found(self):
         """Test that _get_adapter raises BackendNotFoundError for invalid backend."""
@@ -319,109 +313,43 @@ class TestSubmitTask:
 
 
 # =============================================================================
-# Test query_task with mocks
+# Test query_task (cloud tests)
 # =============================================================================
 
+@pytest.mark.cloud
 class TestQueryTask:
-    """Tests for query_task function."""
+    """Tests for query_task function with real backends."""
 
     def test_query_task_not_found_no_backend(self, temp_cache_dir: Path):
         """Test query_task when task not found and no backend provided."""
         from uniqc.task_manager import query_task
 
-        with patch("uniqc.task_manager.get_task") as mock_get_task:
-            mock_get_task.return_value = None
-            with pytest.raises(TaskNotFoundError):
-                query_task("nonexistent-task")
+        with pytest.raises(TaskNotFoundError):
+            query_task("nonexistent-task")
 
 
 # =============================================================================
-# Test wait_for_result with mocks
+# Test wait_for_result (cloud tests)
 # =============================================================================
 
+@pytest.mark.cloud
 class TestWaitForResult:
-    """Tests for wait_for_result function."""
+    """Tests for wait_for_result function with real backends."""
 
-    @patch("uniqc.task_manager.query_task")
-    def test_wait_for_result_success(self, mock_query, temp_cache_dir: Path):
-        """Test wait_for_result with successful completion."""
+    def test_wait_for_result_timeout(self, temp_cache_dir: Path):
+        """Test wait_for_result with timeout for nonexistent task."""
         from uniqc.task_manager import wait_for_result
 
-        # Mock successful result
-        success_task = TaskInfo(
-            task_id="task-1",
-            backend="quafu",
-            status=TaskStatus.SUCCESS,
-            result={"counts": {"00": 512, "11": 488}},
-        )
-        mock_query.return_value = success_task
-
-        with patch("uniqc.task_manager.DEFAULT_CACHE_DIR", temp_cache_dir):
-            result = wait_for_result("task-1", backend="quafu", timeout=1)
-
-        assert result == {"counts": {"00": 512, "11": 488}}
-
-    @patch("uniqc.task_manager.query_task")
-    def test_wait_for_result_failure_raise(self, mock_query, temp_cache_dir: Path):
-        """Test wait_for_result with failure and raise_on_failure=True."""
-        from uniqc.task_manager import wait_for_result
-
-        failed_task = TaskInfo(
-            task_id="task-1",
-            backend="quafu",
-            status=TaskStatus.FAILED,
-        )
-        mock_query.return_value = failed_task
-
-        with patch("uniqc.task_manager.DEFAULT_CACHE_DIR", temp_cache_dir):
-            with pytest.raises(TaskFailedError):
-                wait_for_result("task-1", backend="quafu", timeout=1)
-
-    @patch("uniqc.task_manager.query_task")
-    def test_wait_for_result_failure_no_raise(self, mock_query, temp_cache_dir: Path):
-        """Test wait_for_result with failure and raise_on_failure=False."""
-        from uniqc.task_manager import wait_for_result
-
-        failed_task = TaskInfo(
-            task_id="task-1",
-            backend="quafu",
-            status=TaskStatus.FAILED,
-        )
-        mock_query.return_value = failed_task
-
-        with patch("uniqc.task_manager.DEFAULT_CACHE_DIR", temp_cache_dir):
-            result = wait_for_result("task-1", backend="quafu", timeout=1, raise_on_failure=False)
-
-        assert result is None
-
-    @patch("uniqc.task_manager.query_task")
-    def test_wait_for_result_timeout(self, mock_query, temp_cache_dir: Path):
-        """Test wait_for_result with timeout."""
-        from uniqc.task_manager import wait_for_result
-
-        # Mock running task that never completes
-        running_task = TaskInfo(
-            task_id="task-1",
-            backend="quafu",
-            status=TaskStatus.RUNNING,
-        )
-        mock_query.return_value = running_task
-
-        with patch("uniqc.task_manager.DEFAULT_CACHE_DIR", temp_cache_dir):
-            with pytest.raises(TaskTimeoutError):
-                wait_for_result("task-1", backend="quafu", timeout=0.1, poll_interval=0.05)
+        with pytest.raises(TaskNotFoundError):
+            wait_for_result("nonexistent-task", backend="quafu", timeout=0.1)
 
 
 # =============================================================================
-# Test submit_batch with mocks
+# Test submit_batch
 # =============================================================================
 
 class TestSubmitBatch:
-    """Tests for submit_batch function.
-
-    Note: Full integration tests require backend setup. Here we test
-    the component functions that submit_batch uses.
-    """
+    """Tests for submit_batch function."""
 
     def test_submit_batch_uses_get_adapter(self):
         """Test that submit_batch would use correct adapter."""

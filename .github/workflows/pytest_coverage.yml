@@ -41,6 +41,9 @@ jobs:
       with:
         submodules: 'true'
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -52,22 +55,22 @@ jobs:
         sudo apt-get install -y build-essential cmake ninja-build
         # Remove system-installed typing_extensions to avoid pip conflict
         sudo apt-get remove -y python3-typing-extensions 2>/dev/null || true
-        pip install setuptools wheel setuptools_scm
 
     - name: Install package (with all optional dependencies and C++ extension)
       run: |
-        pip uninstall unified-quantum -y 2>/dev/null || true
+        uv pip install --system setuptools setuptools_scm wheel pybind11
+        uv pip uninstall unified-quantum --system -y 2>/dev/null || true
         rm -rf build/ dist/ *.egg-info uniqc.egg-info
-        pip install ".[all]" --no-cache-dir
+        uv pip install --system ".[all]" --no-build-isolation
 
     - name: Install test dependencies
-      run: pip install pytest pytest-cov
+      run: uv pip install --system pytest pytest-cov
 
     - name: Run tests without coverage first (avoid dill serialization issue with qiskit+torchquantum)
-      run: pytest uniqc/test/ -v --no-cov --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py
+      run: pytest uniqc/test/ -v --no-cov --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py -m "not cloud"
 
     - name: Run tests with coverage (for coverage report only)
-      run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v --no-cov-on-fail || true
+      run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v --no-cov-on-fail -m "not cloud" || true
 
     - name: Upload coverage report
       if: always()

@@ -3,22 +3,13 @@
 from __future__ import annotations
 
 import os
-import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
-
-# Mock uniqc_cpp only when the real module is unavailable.
-try:
-    import uniqc_cpp  # noqa: F401
-except ImportError:
-    sys.modules['uniqc_cpp'] = MagicMock()
 
 import pytest
 
-from uniqc.task.persistence import TaskPersistence
 
-
+@pytest.mark.requires_cpp
 class TestTaskPersistence:
     """Tests for TaskPersistence class."""
 
@@ -31,10 +22,12 @@ class TestTaskPersistence:
     @pytest.fixture
     def persistence(self, temp_dir):
         """Create a TaskPersistence instance with temp directory."""
+        from uniqc.task.persistence import TaskPersistence
         return TaskPersistence(cache_dir=temp_dir)
 
     def test_init_creates_directory(self, temp_dir):
         """Test that initialization creates the cache directory."""
+        from uniqc.task.persistence import TaskPersistence
         cache_dir = temp_dir / "new_cache"
         TaskPersistence(cache_dir=cache_dir)
 

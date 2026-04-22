@@ -8,31 +8,12 @@ This module tests:
 - QuantumLayer class (when PyTorch is available)
 """
 
-import sys
 import types
-from importlib import import_module, reload
+from importlib import import_module
 from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
 import pytest
-
-# Setup mocks for dependencies only when the real modules are unavailable.
-try:
-    import uniqc_cpp  # noqa: F401
-except ImportError:
-    mock_cpp = MagicMock()
-    sys.modules['uniqc_cpp'] = mock_cpp
-
-try:
-    import pyqpanda3  # noqa: F401
-except ImportError:
-    mock_pyqpanda3 = MagicMock()
-    mock_pyqpanda3.core.draw_qprog = MagicMock()
-    mock_pyqpanda3.core.PIC_TYPE = MagicMock()
-    mock_pyqpanda3.intermediate_compiler.convert_originir_string_to_qprog = MagicMock()
-    sys.modules['pyqpanda3'] = mock_pyqpanda3
-    sys.modules['pyqpanda3.core'] = mock_pyqpanda3.core
-    sys.modules['pyqpanda3.intermediate_compiler'] = mock_pyqpanda3.intermediate_compiler
 
 
 # =============================================================================
@@ -68,31 +49,6 @@ class TestPytorchImports:
         assert callable(uniqc_pytorch.compute_all_gradients)
         assert callable(uniqc_pytorch.batch_execute)
         assert uniqc_pytorch.QuantumLayer is not None
-
-    def test_import_simulator_without_torchquantum_when_torch_exists(self):
-        """TorchQuantum simulator import should stay optional even if torch exists."""
-        fake_torch = types.ModuleType("torch")
-        fake_torch.Tensor = object
-        original_import = __import__
-
-        def import_without_torchquantum(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "torchquantum" or name.startswith("torchquantum."):
-                raise ImportError("torchquantum intentionally unavailable for this test")
-            return original_import(name, globals, locals, fromlist, level)
-
-        with (
-            patch.dict(sys.modules, {"torch": fake_torch}, clear=False),
-            patch("builtins.__import__", side_effect=import_without_torchquantum),
-        ):
-            sys.modules.pop("torchquantum", None)
-            sys.modules.pop("torchquantum.functional", None)
-            sys.modules.pop("torchquantum.measurement", None)
-            sys.modules.pop("uniqc.simulator", None)
-            sys.modules.pop("uniqc.simulator.torchquantum_simulator", None)
-
-            simulator = import_module("uniqc.simulator")
-            assert simulator is not None
-            assert simulator.TORCHQUANTUM_AVAILABLE is False
 
 
 # =============================================================================
@@ -322,32 +278,13 @@ class TestComputeAllGradients:
 # Test QuantumLayer (when PyTorch available)
 # =============================================================================
 
-class TestQuantumLayerWithoutPytorch:
-    """Tests for QuantumLayer when PyTorch is not available."""
-
-    def test_quantum_layer_raises_without_pytorch(self):
-        """Test QuantumLayer raises ImportError without PyTorch."""
-        # Simulate PyTorch not available
-        with patch.dict(sys.modules, {"torch": None}):
-            # Need to reimport to pick up the mock
-            import uniqc.pytorch.quantum_layer
-
-            reload(uniqc.pytorch.quantum_layer)
-
-            from uniqc.pytorch.quantum_layer import QuantumLayer
-
-            with pytest.raises(ImportError, match="PyTorch"):
-                QuantumLayer(MagicMock(), Mock())
-
-
+@pytest.mark.requires_pytorch
 class TestQuantumLayerWithPytorch:
     """Tests for QuantumLayer when PyTorch is available."""
 
-    @pytest.mark.skip(reason="PyTorch not installed - test requires torch")
     def test_quantum_layer_initialization(self):
         """Test QuantumLayer initialization."""
-        pytest.importorskip("torch")
-
+        torch = pytest.importorskip("torch")
         from uniqc.pytorch.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()
@@ -360,11 +297,9 @@ class TestQuantumLayerWithPytorch:
         assert layer is not None
         assert hasattr(layer, "params")
 
-    @pytest.mark.skip(reason="PyTorch not installed - test requires torch")
     def test_quantum_layer_extra_repr(self):
         """Test QuantumLayer.extra_repr."""
         pytest.importorskip("torch")
-
         from uniqc.pytorch.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()

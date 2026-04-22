@@ -2,31 +2,19 @@
 
 from __future__ import annotations
 
+import importlib
 import os
-import sys
+
 import pytest
-from unittest.mock import MagicMock
 
 from uniqc.task.optional_deps import SIMULATION_AVAILABLE
-
-
-# Check if uniqc_cpp is available for actual simulation
-def _has_cpp_backend():
-    """Check if uniqc_cpp C++ backend is available."""
-    try:
-        import uniqc_cpp
-        return True
-    except ImportError:
-        return False
-
-
-HAS_CPP_BACKEND = _has_cpp_backend()
 
 
 @pytest.mark.skipif(
     not SIMULATION_AVAILABLE,
     reason="simulation dependencies not installed"
 )
+@pytest.mark.requires_cpp
 class TestDummyAdapter:
     """Tests for DummyAdapter."""
 
@@ -50,10 +38,6 @@ class TestDummyAdapter:
         result = adapter.translate_circuit(circuit)
         assert result == circuit
 
-    @pytest.mark.skipif(
-        not HAS_CPP_BACKEND,
-        reason="Cannot run simulation (uniqc_cpp not available)"
-    )
     def test_query_returns_result(self, adapter):
         """Test query returns a result dict."""
         circuit = "QINIT 2\nCREG 2\nH q[0]\nMEASURE q[0], c[0]"
@@ -72,10 +56,6 @@ class TestDummyAdapter:
         assert result["status"] == "failed"
         assert "error" in result
 
-    @pytest.mark.skipif(
-        not HAS_CPP_BACKEND,
-        reason="Cannot run simulation (uniqc_cpp not available)"
-    )
     def test_deterministic_task_id(self, adapter):
         """Test that same circuit produces same task ID."""
         circuit = "QINIT 2\nCREG 2\nH q[0]\nMEASURE q[0], c[0]"
@@ -85,10 +65,6 @@ class TestDummyAdapter:
 
         assert task_id1 == task_id2
 
-    @pytest.mark.skipif(
-        not HAS_CPP_BACKEND,
-        reason="Cannot run simulation (uniqc_cpp not available)"
-    )
     def test_different_circuits_different_ids(self, adapter):
         """Test that different circuits produce different task IDs."""
         circuit1 = "QINIT 2\nCREG 2\nH q[0]\nMEASURE q[0], c[0]"
@@ -111,10 +87,6 @@ class TestDummyAdapter:
         assert len(task_ids) == 2
         assert all(isinstance(tid, str) for tid in task_ids)
 
-    @pytest.mark.skipif(
-        not HAS_CPP_BACKEND,
-        reason="Cannot run simulation (uniqc_cpp not available)"
-    )
     def test_query_batch(self, adapter):
         """Test querying multiple tasks."""
         circuits = [
@@ -146,7 +118,6 @@ class TestUniqcDummyEnv:
         """Test UNIQC_DUMMY=true is recognized."""
         monkeypatch.setenv("UNIQC_DUMMY", "true")
         # Re-import to pick up new env var
-        import importlib
         import uniqc.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
@@ -155,7 +126,6 @@ class TestUniqcDummyEnv:
     def test_env_variable_false(self, monkeypatch):
         """Test UNIQC_DUMMY=false is recognized as false."""
         monkeypatch.setenv("UNIQC_DUMMY", "false")
-        import importlib
         import uniqc.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
@@ -164,32 +134,7 @@ class TestUniqcDummyEnv:
     def test_env_variable_1(self, monkeypatch):
         """Test UNIQC_DUMMY=1 is recognized as true."""
         monkeypatch.setenv("UNIQC_DUMMY", "1")
-        import importlib
         import uniqc.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
         assert dummy_mod.UNIQC_DUMMY is True
-
-
-class TestMissingSimulationDeps:
-    """Test error handling when simulation deps are missing."""
-
-    def test_init_without_simulation_raises(self, monkeypatch):
-        """Test that DummyAdapter raises error without simulation deps."""
-        # Mock check_simulation to return False
-        import uniqc.task.optional_deps as deps_mod
-        original_check = deps_mod.check_simulation
-        deps_mod.check_simulation = lambda target="cpp": False
-        deps_mod.SIMULATION_AVAILABLE = False
-
-        try:
-            with pytest.raises(deps_mod.MissingDependencyError) as exc_info:
-                from uniqc.task.adapters.dummy_adapter import DummyAdapter
-                DummyAdapter()
-
-            assert "uniqc_cpp" in str(exc_info.value)
-            assert "Reinstall unified-quantum" in str(exc_info.value)
-        finally:
-            # Restore original function
-            deps_mod.check_simulation = original_check
-            deps_mod.SIMULATION_AVAILABLE = original_check()

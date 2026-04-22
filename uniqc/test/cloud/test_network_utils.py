@@ -10,6 +10,8 @@ import platform
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from uniqc.network_utils import (
     check_proxy_connectivity,
     detect_system_proxy,
@@ -176,14 +178,15 @@ class TestGetIbmProxyFromConfig(unittest.TestCase):
         self.assertIsNone(result)
 
 
-class TestTestIbmConnectivity(unittest.TestCase):
+@pytest.mark.cloud
+class TestTestIbmConnectivity:
     """Tests for test_ibm_connectivity function."""
 
-    def setUp(self):
+    def setup_method(self):
         """Save original environment variables."""
         self.original_token = os.environ.get("IBM_TOKEN")
 
-    def tearDown(self):
+    def teardown_method(self):
         """Restore original environment variables."""
         if self.original_token is None:
             os.environ.pop("IBM_TOKEN", None)
@@ -196,9 +199,9 @@ class TestTestIbmConnectivity(unittest.TestCase):
 
         result = test_ibm_connectivity()
 
-        self.assertFalse(result["success"])
-        self.assertIn("token not provided", result["message"])
-        self.assertIsNone(result["response_time_ms"])
+        assert result["success"] is False
+        assert "token not provided" in result["message"]
+        assert result["response_time_ms"] is None
 
     def test_uses_env_var_token(self):
         """Test that IBM_TOKEN env var is used when token not provided."""
@@ -214,7 +217,7 @@ class TestTestIbmConnectivity(unittest.TestCase):
             result = test_ibm_connectivity()
 
             # Should attempt to connect (actual result depends on mock)
-            self.assertIsNotNone(result)
+            assert result is not None
 
     def test_with_explicit_proxy(self):
         """Test with explicit proxy configuration."""
@@ -226,7 +229,7 @@ class TestTestIbmConnectivity(unittest.TestCase):
         )
 
         # Verify proxy is recorded in result
-        self.assertEqual(result["proxy_used"], proxy)
+        assert result["proxy_used"] == proxy
 
     def test_with_string_proxy(self):
         """Test with string proxy configuration."""
@@ -242,7 +245,7 @@ class TestTestIbmConnectivity(unittest.TestCase):
             )
 
             # String proxy should be converted to dict
-            self.assertIsNotNone(result["proxy_used"])
+            assert result["proxy_used"] is not None
 
     def test_connectivity_failure(self):
         """Test handling of connection failure."""
@@ -251,12 +254,13 @@ class TestTestIbmConnectivity(unittest.TestCase):
 
             result = test_ibm_connectivity(token="test_token")
 
-            self.assertFalse(result["success"])
-            self.assertIn("Connection failed", result["message"])
-            self.assertIsNotNone(result["response_time_ms"])
+            assert result["success"] is False
+            assert "Connection failed" in result["message"]
+            assert result["response_time_ms"] is not None
 
 
-class TestIntegration(unittest.TestCase):
+@pytest.mark.cloud
+class TestIntegration:
     """Integration tests combining multiple functions."""
 
     def test_system_proxy_to_ibm_connectivity(self):
@@ -267,7 +271,7 @@ class TestIntegration(unittest.TestCase):
         }):
             # Detect system proxy
             proxies = detect_system_proxy()
-            self.assertEqual(proxies["https"], "http://proxy.example.com:8080")
+            assert proxies["https"] == "http://proxy.example.com:8080"
 
             # Test IBM connectivity with detected proxy
             with patch("urllib.request.OpenerDirector.open") as mock_open:
@@ -277,7 +281,7 @@ class TestIntegration(unittest.TestCase):
                 mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
                 result = test_ibm_connectivity(proxy=proxies)
-                self.assertTrue(result["success"])
+                assert result["success"] is True
 
 
 if __name__ == "__main__":

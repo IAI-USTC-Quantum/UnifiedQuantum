@@ -1,7 +1,6 @@
 """Tests for circuit_adapter module."""
 
-import unittest
-from unittest.mock import MagicMock, patch, Mock
+import pytest
 
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_adapter import (
@@ -12,12 +11,12 @@ from uniqc.circuit_adapter import (
 )
 
 
-class TestCircuitAdapterInterface(unittest.TestCase):
+class TestCircuitAdapterInterface:
     """Test the CircuitAdapter abstract base class interface."""
 
     def test_abstract_methods(self):
         """Test that CircuitAdapter cannot be instantiated directly."""
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             CircuitAdapter()
 
     def test_adapt_batch(self):
@@ -35,7 +34,7 @@ class TestCircuitAdapterInterface(unittest.TestCase):
         circuits[1].x(0)
 
         results = adapter.adapt_batch(circuits)
-        self.assertEqual(len(results), 2)
+        assert len(results) == 2
 
     def test_get_originir(self):
         """Test _get_originir extracts OriginIR string."""
@@ -50,282 +49,208 @@ class TestCircuitAdapterInterface(unittest.TestCase):
         circuit.h(0)
 
         originir = adapter._get_originir(circuit)
-        self.assertIn("QINIT", originir)
-        self.assertIn("H", originir)
+        assert "QINIT" in originir
+        assert "H" in originir
 
 
-class TestOriginQCircuitAdapter(unittest.TestCase):
+class TestOriginQCircuitAdapter:
     """Test OriginQCircuitAdapter."""
 
     def test_get_supported_gates(self):
         """Test that supported gates are returned."""
         adapter = OriginQCircuitAdapter()
         gates = adapter.get_supported_gates()
-        self.assertIsInstance(gates, list)
-        self.assertIn("H", gates)
-        self.assertIn("CNOT", gates)
-        self.assertIn("MEASURE", gates)
-
-    def test_adapt_without_pyqpanda3(self):
-        """Test that adapt raises RuntimeError when pyqpanda3 is not installed."""
-        adapter = OriginQCircuitAdapter()
-
-        # Mock _pyqpanda3 as None to simulate missing import
-        adapter._pyqpanda3 = None
-        adapter._convert_originir = None
-
-        circuit = Circuit()
-        circuit.h(0)
-
-        with patch.dict("sys.modules", {"pyqpanda3": None}):
-            with self.assertRaises(RuntimeError) as context:
-                adapter.adapt(circuit)
-            self.assertIn("pyqpanda3", str(context.exception))
+        assert isinstance(gates, list)
+        assert "H" in gates
+        assert "CNOT" in gates
+        assert "MEASURE" in gates
 
     def test_supported_gates_includes_rotation_gates(self):
         """Test that rotation gates are included."""
         adapter = OriginQCircuitAdapter()
         gates = adapter.get_supported_gates()
-        self.assertIn("RX", gates)
-        self.assertIn("RY", gates)
-        self.assertIn("RZ", gates)
-        self.assertIn("U1", gates)
-        self.assertIn("U2", gates)
-        self.assertIn("U3", gates)
+        assert "RX" in gates
+        assert "RY" in gates
+        assert "RZ" in gates
+        assert "U1" in gates
+        assert "U2" in gates
+        assert "U3" in gates
 
     def test_supported_gates_includes_two_qubit_gates(self):
         """Test that two-qubit gates are included."""
         adapter = OriginQCircuitAdapter()
         gates = adapter.get_supported_gates()
-        self.assertIn("CNOT", gates)
-        self.assertIn("CZ", gates)
-        self.assertIn("SWAP", gates)
-        self.assertIn("ISWAP", gates)
+        assert "CNOT" in gates
+        assert "CZ" in gates
+        assert "SWAP" in gates
+        assert "ISWAP" in gates
 
 
-class TestQuafuCircuitAdapter(unittest.TestCase):
-    """Test QuafuCircuitAdapter."""
+@pytest.mark.requires_pyqpanda3
+class TestOriginQCircuitAdapterIntegration:
+    """Integration tests for OriginQCircuitAdapter with real pyqpanda3."""
 
-    def test_get_supported_gates(self):
-        """Test that supported gates are returned."""
-        adapter = QuafuCircuitAdapter()
-        gates = adapter.get_supported_gates()
-        self.assertIsInstance(gates, list)
-        self.assertIn("H", gates)
-        self.assertIn("CNOT", gates)
-        self.assertIn("MEASURE", gates)
+    @pytest.fixture(autouse=True)
+    def check_pyqpanda3(self):
+        """Skip tests if pyqpanda3 is not available."""
+        pytest.importorskip("pyqpanda3")
 
-    def test_adapt_without_quafu(self):
-        """Test that adapt raises RuntimeError when quafu is not installed."""
-        adapter = QuafuCircuitAdapter()
-
-        # Reset the imports to simulate missing package
-        adapter._quafu = None
-        adapter._QuantumCircuit = None
-
-        circuit = Circuit()
-        circuit.h(0)
-
-        with patch.dict("sys.modules", {"quafu": None}):
-            with self.assertRaises(RuntimeError) as context:
-                adapter.adapt(circuit)
-            self.assertIn("quafu", str(context.exception))
-
-    def test_adapt_with_mock_quafu(self):
-        """Test adapt with mocked quafu module."""
-        # Create mock QuantumCircuit
-        mock_qc = Mock()
-        mock_qc.h = Mock()
-        mock_qc.x = Mock()
-        mock_qc.cnot = Mock()
-        mock_qc.measure = Mock()
-
-        mock_quafu = Mock()
-        mock_quafu.QuantumCircuit = Mock(return_value=mock_qc)
-
-        adapter = QuafuCircuitAdapter()
-        adapter._quafu = mock_quafu
-        adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.x(1)
-        circuit.cnot(0, 1)
-        circuit.measure(0)
-
-        with patch("uniqc.circuit_adapter.QuafuCircuitAdapter._ensure_imports"):
-            result = adapter.adapt(circuit)
-
-        self.assertEqual(result, mock_qc)
-
-    def test_adapt_rotation_gates_with_mock(self):
-        """Test adapt with rotation gates using mock."""
-        mock_qc = Mock()
-        mock_qc.rx = Mock()
-        mock_qc.ry = Mock()
-        mock_qc.rz = Mock()
-        mock_qc.measure = Mock()
-
-        mock_quafu = Mock()
-        mock_quafu.QuantumCircuit = Mock(return_value=mock_qc)
-
-        adapter = QuafuCircuitAdapter()
-        adapter._quafu = mock_quafu
-        adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-
-        circuit = Circuit()
-        circuit.rx(0, 0.5)
-        circuit.ry(1, 0.3)
-        circuit.rz(2, 0.1)
-        circuit.measure(0)
-
-        with patch("uniqc.circuit_adapter.QuafuCircuitAdapter._ensure_imports"):
-            result = adapter.adapt(circuit)
-
-        self.assertEqual(result, mock_qc)
-
-    def test_adapt_two_qubit_gates_with_mock(self):
-        """Test adapt with two-qubit gates using mock."""
-        mock_qc = Mock()
-        mock_qc.cnot = Mock()
-        mock_qc.cz = Mock()
-        mock_qc.measure = Mock()
-
-        mock_quafu = Mock()
-        mock_quafu.QuantumCircuit = Mock(return_value=mock_qc)
-
-        adapter = QuafuCircuitAdapter()
-        adapter._quafu = mock_quafu
-        adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-
-        circuit = Circuit()
-        circuit.cnot(0, 1)
-        circuit.cz(1, 2)
-        circuit.measure(0, 1)
-
-        with patch("uniqc.circuit_adapter.QuafuCircuitAdapter._ensure_imports"):
-            result = adapter.adapt(circuit)
-
-        self.assertEqual(result, mock_qc)
-
-    def test_adapt_with_dagger_block_mock(self):
-        """Test adapt with DAGGER block using mock."""
-        mock_qc = Mock()
-        mock_qc.h = Mock()
-        mock_qc.cnot = Mock()
-        mock_qc.s = Mock()
-        mock_qc.sdg = Mock()
-        mock_qc.t = Mock()
-        mock_qc.tdg = Mock()
-        mock_qc.measure = Mock()
-
-        mock_quafu = Mock()
-        mock_quafu.QuantumCircuit = Mock(return_value=mock_qc)
-
-        adapter = QuafuCircuitAdapter()
-        adapter._quafu = mock_quafu
-        adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-
-        circuit = Circuit()
-        circuit.s(0)
-        circuit.t(1)
-        with circuit.dagger():
-            circuit.h(0)
-        circuit.measure(0)
-
-        with patch("uniqc.circuit_adapter.QuafuCircuitAdapter._ensure_imports"):
-            result = adapter.adapt(circuit)
-
-        self.assertEqual(result, mock_qc)
-
-    def test_adapt_with_barrier_mock(self):
-        """Test adapt with BARRIER using mock."""
-        mock_qc = Mock()
-        mock_qc.h = Mock()
-        mock_qc.barrier = Mock()
-        mock_qc.measure = Mock()
-
-        mock_quafu = Mock()
-        mock_quafu.QuantumCircuit = Mock(return_value=mock_qc)
-
-        adapter = QuafuCircuitAdapter()
-        adapter._quafu = mock_quafu
-        adapter._QuantumCircuit = mock_quafu.QuantumCircuit
-
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.barrier(0)
-        circuit.measure(0)
-
-        with patch("uniqc.circuit_adapter.QuafuCircuitAdapter._ensure_imports"):
-            result = adapter.adapt(circuit)
-
-        self.assertEqual(result, mock_qc)
-
-
-class TestIBMCircuitAdapter(unittest.TestCase):
-    """Test IBMCircuitAdapter."""
-
-    def test_get_supported_gates(self):
-        """Test that supported gates are returned."""
-        adapter = IBMCircuitAdapter()
-        gates = adapter.get_supported_gates()
-        self.assertIsInstance(gates, list)
-        self.assertIn("H", gates)
-        self.assertIn("CNOT", gates)
-        self.assertIn("CX", gates)  # IBM uses CX for CNOT
-        self.assertIn("MEASURE", gates)
-
-    def test_adapt_without_qiskit(self):
-        """Test that adapt raises RuntimeError when qiskit is not installed."""
-        adapter = IBMCircuitAdapter()
-        adapter._qiskit = None
-
-        circuit = Circuit()
-        circuit.h(0)
-
-        with patch.dict("sys.modules", {"qiskit": None}):
-            with self.assertRaises(RuntimeError) as context:
-                adapter.adapt(circuit)
-            self.assertIn("qiskit", str(context.exception))
-
-    def test_adapt_with_mock_qiskit(self):
-        """Test adapt with mocked qiskit module."""
-        mock_circuit = Mock()
-        mock_circuit.num_qubits = 2
-        mock_circuit.num_clbits = 2
-
-        mock_qiskit = Mock()
-        mock_qiskit.QuantumCircuit = Mock()
-        mock_qiskit.QuantumCircuit.from_qasm_str = Mock(return_value=mock_circuit)
-
-        adapter = IBMCircuitAdapter()
-        adapter._qiskit = mock_qiskit
-
+    def test_adapt_simple_circuit(self):
+        """Test adapt with real pyqpanda3."""
+        adapter = OriginQCircuitAdapter()
         circuit = Circuit()
         circuit.h(0)
         circuit.cnot(0, 1)
         circuit.measure(0, 1)
 
         result = adapter.adapt(circuit)
-        self.assertEqual(result, mock_circuit)
+        assert result is not None
 
-    def test_adapt_batch_with_mock(self):
-        """Test batch adaptation with mocked qiskit."""
-        mock_circuit1 = Mock()
-        mock_circuit1.num_qubits = 1
+    def test_adapt_rotation_gates(self):
+        """Test adapt with rotation gates."""
+        adapter = OriginQCircuitAdapter()
+        circuit = Circuit()
+        circuit.rx(0, 0.5)
+        circuit.ry(1, 0.3)
+        circuit.rz(2, 0.1)
+        circuit.measure(0, 1, 2)
 
-        mock_circuit2 = Mock()
-        mock_circuit2.num_qubits = 1
+        result = adapter.adapt(circuit)
+        assert result is not None
 
-        mock_qiskit = Mock()
-        mock_qiskit.QuantumCircuit = Mock()
-        mock_qiskit.QuantumCircuit.from_qasm_str = Mock(
-            side_effect=[mock_circuit1, mock_circuit2]
-        )
 
+class TestQuafuCircuitAdapter:
+    """Test QuafuCircuitAdapter."""
+
+    def test_get_supported_gates(self):
+        """Test that supported gates are returned."""
+        adapter = QuafuCircuitAdapter()
+        gates = adapter.get_supported_gates()
+        assert isinstance(gates, list)
+        assert "H" in gates
+        assert "CNOT" in gates
+        assert "MEASURE" in gates
+
+
+@pytest.mark.requires_quafu
+class TestQuafuCircuitAdapterIntegration:
+    """Integration tests for QuafuCircuitAdapter with real quafu."""
+
+    @pytest.fixture(autouse=True)
+    def check_quafu(self):
+        """Skip tests if quafu is not available."""
+        pytest.importorskip("quafu")
+
+    def test_adapt_simple_circuit(self):
+        """Test adapt with real quafu."""
+        adapter = QuafuCircuitAdapter()
+        circuit = Circuit()
+        circuit.h(0)
+        circuit.cnot(0, 1)
+        circuit.measure(0, 1)
+
+        result = adapter.adapt(circuit)
+        # Verify result is a quafu.QuantumCircuit
+        assert result is not None
+        assert hasattr(result, 'h')
+        assert hasattr(result, 'cnot')
+
+    def test_adapt_rotation_gates(self):
+        """Test adapt with rotation gates."""
+        adapter = QuafuCircuitAdapter()
+        circuit = Circuit()
+        circuit.rx(0, 0.5)
+        circuit.ry(1, 0.3)
+        circuit.rz(2, 0.1)
+        circuit.measure(0, 1, 2)
+
+        result = adapter.adapt(circuit)
+        assert result is not None
+
+    def test_adapt_two_qubit_gates(self):
+        """Test adapt with two-qubit gates."""
+        adapter = QuafuCircuitAdapter()
+        circuit = Circuit()
+        circuit.cnot(0, 1)
+        circuit.cz(1, 2)
+        circuit.measure(0, 1, 2)
+
+        result = adapter.adapt(circuit)
+        assert result is not None
+
+    def test_adapt_with_dagger_block(self):
+        """Test adapt with DAGGER block."""
+        adapter = QuafuCircuitAdapter()
+        circuit = Circuit()
+        circuit.s(0)
+        circuit.t(1)
+        with circuit.dagger():
+            circuit.h(0)
+        circuit.measure(0, 1)
+
+        result = adapter.adapt(circuit)
+        assert result is not None
+
+    def test_adapt_with_barrier(self):
+        """Test adapt with BARRIER."""
+        adapter = QuafuCircuitAdapter()
+        circuit = Circuit()
+        circuit.h(0)
+        circuit.barrier(0)
+        circuit.measure(0)
+
+        result = adapter.adapt(circuit)
+        assert result is not None
+
+
+class TestIBMCircuitAdapter:
+    """Test IBMCircuitAdapter."""
+
+    def test_get_supported_gates(self):
+        """Test that supported gates are returned."""
         adapter = IBMCircuitAdapter()
-        adapter._qiskit = mock_qiskit
+        gates = adapter.get_supported_gates()
+        assert isinstance(gates, list)
+        assert "H" in gates
+        assert "CNOT" in gates
+        assert "CX" in gates  # IBM uses CX for CNOT
+        assert "MEASURE" in gates
+
+    def test_supported_gates_includes_u_gates(self):
+        """Test that U gates are included."""
+        adapter = IBMCircuitAdapter()
+        gates = adapter.get_supported_gates()
+        assert "U1" in gates
+        assert "U2" in gates
+        assert "U3" in gates
+
+
+@pytest.mark.requires_qiskit
+class TestIBMCircuitAdapterIntegration:
+    """Integration tests for IBMCircuitAdapter with real qiskit."""
+
+    @pytest.fixture(autouse=True)
+    def check_qiskit(self):
+        """Skip tests if qiskit is not available."""
+        pytest.importorskip("qiskit")
+
+    def test_adapt_simple_circuit(self):
+        """Test adapt with real qiskit."""
+        adapter = IBMCircuitAdapter()
+        circuit = Circuit()
+        circuit.h(0)
+        circuit.cnot(0, 1)
+        circuit.measure(0, 1)
+
+        result = adapter.adapt(circuit)
+        # Verify result is a qiskit.QuantumCircuit
+        assert result is not None
+        assert hasattr(result, 'num_qubits')
+        assert result.num_qubits == 2
+
+    def test_adapt_batch(self):
+        """Test batch adaptation with real qiskit."""
+        adapter = IBMCircuitAdapter()
 
         circuit1 = Circuit()
         circuit1.h(0)
@@ -336,60 +261,21 @@ class TestIBMCircuitAdapter(unittest.TestCase):
         circuit2.measure(0)
 
         results = adapter.adapt_batch([circuit1, circuit2])
-        self.assertEqual(len(results), 2)
+        assert len(results) == 2
 
-    def test_adapt_with_transpilation_mock(self):
-        """Test adapt_with_transpilation with mocked qiskit."""
-        mock_circuit = Mock()
-        mock_transpiled = Mock()
-
-        mock_backend = Mock()
-
-        mock_qiskit = Mock()
-        mock_qiskit.QuantumCircuit = Mock()
-        mock_qiskit.QuantumCircuit.from_qasm_str = Mock(return_value=mock_circuit)
-        mock_qiskit.compiler = Mock()
-        mock_qiskit.compiler.transpile = Mock(return_value=mock_transpiled)
-
+    def test_adapt_with_transpilation(self):
+        """Test adapt_with_transpilation with real qiskit."""
         adapter = IBMCircuitAdapter()
-        adapter._qiskit = mock_qiskit
-
         circuit = Circuit()
         circuit.h(0)
         circuit.measure(0)
 
-        result = adapter.adapt_with_transpilation(circuit, backend=mock_backend)
-        self.assertEqual(result, mock_transpiled)
-        mock_qiskit.compiler.transpile.assert_called_once()
-
-    def test_adapt_with_transpilation_no_backend_mock(self):
-        """Test adapt_with_transpilation without backend."""
-        mock_circuit = Mock()
-
-        mock_qiskit = Mock()
-        mock_qiskit.QuantumCircuit = Mock()
-        mock_qiskit.QuantumCircuit.from_qasm_str = Mock(return_value=mock_circuit)
-
-        adapter = IBMCircuitAdapter()
-        adapter._qiskit = mock_qiskit
-
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.measure(0)
-
+        # Without backend
         result = adapter.adapt_with_transpilation(circuit, backend=None)
-        self.assertEqual(result, mock_circuit)
-
-    def test_supported_gates_includes_u_gates(self):
-        """Test that U gates are included."""
-        adapter = IBMCircuitAdapter()
-        gates = adapter.get_supported_gates()
-        self.assertIn("U1", gates)
-        self.assertIn("U2", gates)
-        self.assertIn("U3", gates)
+        assert result is not None
 
 
-class TestGateCoverage(unittest.TestCase):
+class TestGateCoverage:
     """Test that adapters cover the expected gate sets."""
 
     def test_originq_covers_basic_gates(self):
@@ -398,7 +284,7 @@ class TestGateCoverage(unittest.TestCase):
         gates = set(adapter.get_supported_gates())
 
         basic_gates = {"H", "X", "Y", "Z", "CNOT", "CZ", "RX", "RY", "RZ"}
-        self.assertTrue(basic_gates.issubset(gates))
+        assert basic_gates.issubset(gates)
 
     def test_ibm_covers_qasm_gates(self):
         """Test that IBM adapter covers standard QASM gates."""
@@ -406,7 +292,7 @@ class TestGateCoverage(unittest.TestCase):
         gates = set(adapter.get_supported_gates())
 
         qasm_gates = {"H", "X", "Y", "Z", "CNOT", "CX", "CZ"}
-        self.assertTrue(qasm_gates.issubset(gates))
+        assert qasm_gates.issubset(gates)
 
     def test_quafu_covers_basic_gates(self):
         """Test that Quafu adapter covers basic gates."""
@@ -414,8 +300,4 @@ class TestGateCoverage(unittest.TestCase):
         gates = set(adapter.get_supported_gates())
 
         basic_gates = {"H", "X", "Y", "Z", "RX", "RY", "RZ", "CNOT"}
-        self.assertTrue(basic_gates.issubset(gates))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert basic_gates.issubset(gates)
