@@ -24,12 +24,14 @@ git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantu
 # If system CMake is < 3.26, install newer version via pip first:
 pip install cmake --upgrade
 
-# For development: editable install with C++ extension
-# Use --no-build-isolation to ensure pip cmake (not system cmake) is used
-pip install -e . --no-build-isolation
+# For development: editable install with C++ extension (recommended — installs CLI globally via uv tool)
+uv tool install -e .
 
-# For production install (uses build isolation, requires CMake >= 3.26 in PATH)
-pip install .
+# For development without CLI tool (Python API only):
+uv pip install -e . --no-build-isolation
+
+# For production install (requires CMake >= 3.26 in PATH)
+uv pip install .
 ```
 
 ### CMake Requirement
@@ -106,4 +108,4 @@ Pushing a `v*` tag triggers `pypi-publish.yml`, which builds wheels (Linux manyl
 
 ## Known Issues
 
-- System cmake on Ubuntu 22.04 (cmake 3.22) is too old for building the C++ extension. Install via `pip install cmake --upgrade` and use `pip install -e . --no-build-isolation` for development.
+- System cmake on Ubuntu 22.04 (cmake 3.22) is too old for building the C++ extension. Install via `pip install cmake --upgrade` and use `uv tool install -e .` for development.

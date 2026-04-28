@@ -134,3 +134,18 @@ class QuantumAdapter(abc.ABC):
         availability.
         """
         return False
+
+    def list_backends(self) -> list[dict[str, Any]]:
+        """Return raw backend metadata from the platform API.
+
+        Returns a list of dicts with at least a ``"name"`` key.
+        The dict shape is platform-specific; the caller is responsible for
+        normalising the data into ``BackendInfo`` objects.
+
+        Raises:
+            Exception: If the platform API call fails (auth error, network
+                error, etc.).  Subclasses should propagate the original
+                exception type so callers can distinguish auth failures from
+                network failures.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement list_backends")

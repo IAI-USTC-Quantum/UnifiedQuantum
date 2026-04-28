@@ -1,6 +1,8 @@
 # 安装与入口
 
-CLI 工具随 `unified-quantum` 包一同安装，提供两种等价的调用方式：
+CLI 工具随 `unified-quantum` 包一同安装。安装方式请参见[安装指南](../guide/installation.md)，推荐使用 `uv` 进行安装。
+
+## 调用方式
 
 ```bash
 # 推荐：直接命令

@@ -397,3 +397,27 @@ def get_ibm_config(profile: str = "default") -> dict[str, Any]:
         IBM Quantum configuration dictionary.
     """
     return get_platform_config("ibm", profile)
+
+
+def sync_tokens_to_env(profile: str = "default") -> None:
+    """Sync API tokens from the YAML config file into environment variables.
+
+    Call this before instantiating adapters that read from env vars
+    (``ORIGINQ_API_KEY``, ``QUAFU_API_TOKEN``, ``IBM_TOKEN``) so that
+    tokens stored in the config file are picked up.
+
+    Idempotent: only overwrites an env var if the config file has a
+    non-empty token for that platform.
+    """
+    cfg = load_config()
+    profile_data = cfg.get(profile, {})
+    for platform, env_var, field in [
+        ("originq", "ORIGINQ_API_KEY", "token"),
+        ("quafu", "QUAFU_API_TOKEN", "token"),
+        ("ibm", "IBM_TOKEN", "token"),
+    ]:
+        if platform in profile_data:
+            token = profile_data[platform].get(field, "")
+            if token:
+                os.environ[env_var] = token
+

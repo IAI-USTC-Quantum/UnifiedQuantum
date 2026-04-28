@@ -48,19 +48,25 @@ class OriginQAdapter(QuantumAdapter):
         self._QCloudOptions: Any = None
         self._QCloudJob: Any = None
         self._JobStatus: Any = None
+        self._DataBase: Any = None
         self._convert_originir: Any = None
+
+        # State for the current/last submitted job
+        self._last_backend_name: str = "origin:wuyuan:d5"
+        self._last_n_qubits: int | None = None
 
     def _ensure_imports(self) -> None:
         """Lazily import pyqpanda3 modules."""
         if self._service is None:
             pyqpanda3 = require("pyqpanda3", "originq")
-            from pyqpanda3.qcloud import QCloudService, QCloudOptions, QCloudJob, JobStatus
+            from pyqpanda3.qcloud import QCloudService, QCloudOptions, QCloudJob, JobStatus, DataBase
             from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
 
             self._service = QCloudService(api_key=self._api_key)
             self._QCloudOptions = QCloudOptions
             self._QCloudJob = QCloudJob
             self._JobStatus = JobStatus
+            self._DataBase = DataBase
             self._convert_originir = convert_originir_string_to_qprog
 
     def is_available(self) -> bool:
@@ -70,6 +76,19 @@ class OriginQAdapter(QuantumAdapter):
             bool: True if api_key is configured.
         """
         return bool(self._api_key)
+
+    def list_backends(self) -> list[dict[str, Any]]:
+        """Return raw OriginQ Cloud backend metadata.
+
+        Calls ``QCloudService.backends()`` which returns a dict
+        mapping backend name to an availability boolean.
+
+        Returns:
+            List of dicts with keys: ``name``, ``available``.
+        """
+        self._ensure_imports()
+        raw: dict[str, bool] = self._service.backends()
+        return [{"name": name, "available": available} for name, available in raw.items()]
 
     # -------------------------------------------------------------------------
     # Circuit translation (OriginIR to QProg)
@@ -115,8 +134,10 @@ class OriginQAdapter(QuantumAdapter):
         measurement_amend = kwargs.get("measurement_amend", False)
         auto_mapping = kwargs.get("auto_mapping", False)
 
-        # Get backend
+        # Get backend and cache backend name + qubit count for use in query()
         backend = self._service.backend(backend_name)
+        self._last_backend_name = backend_name
+        self._last_n_qubits = backend.chip_info().qubits_num()
 
         # Convert OriginIR to QProg
         qprog = self.translate_circuit(circuit)
@@ -155,7 +176,11 @@ class OriginQAdapter(QuantumAdapter):
         measurement_amend = kwargs.get("measurement_amend", False)
         auto_mapping = kwargs.get("auto_mapping", False)
 
+        # Get backend and cache backend name + qubit count
         backend = self._service.backend(backend_name)
+        self._last_backend_name = backend_name
+        self._last_n_qubits = backend.chip_info().qubits_num()
+
         options = self._create_options(
             amend=measurement_amend,
             mapping=auto_mapping,

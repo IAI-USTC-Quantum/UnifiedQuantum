@@ -12,6 +12,7 @@ __all__ = [
     "OriginQAdapter",
     "QuafuAdapter",
     "QiskitAdapter",
+    "IBMAdapter",
     "DummyAdapter",
     # Constants (re-exported from base for convenience)
     "TASK_STATUS_FAILED",
@@ -28,6 +29,7 @@ from uniqc.task.adapters.base import (
 from uniqc.task.adapters.originq_adapter import OriginQAdapter
 from uniqc.task.adapters.quafu_adapter import QuafuAdapter
 from uniqc.task.adapters.qiskit_adapter import QiskitAdapter
+from uniqc.task.adapters.ibm_adapter import IBMAdapter
 
 # DummyAdapter requires simulation dependencies
 # Import lazily to avoid errors when simulation deps not installed

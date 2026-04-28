@@ -83,6 +83,29 @@ class QuafuAdapter(QuantumAdapter):
         """
         return check_quafu()
 
+    def list_backends(self) -> list[dict[str, Any]]:
+        """Return raw Quafu backend metadata.
+
+        Returns:
+            List of dicts with keys: ``name``, ``num_qubits``, ``status``,
+            ``task_in_queue``, ``qv``, ``valid_gates``.
+        """
+        user = self._User(api_token=self._api_token)
+        user.save_apitoken()
+        raw_backends = user.get_available_backends()
+        result: list[dict[str, Any]] = []
+        for name, backend in raw_backends.items():
+            result.append({
+                "name": name,
+                "num_qubits": backend.qubit_num,
+                "status": backend.status,
+                "task_in_queue": backend.task_in_queue,
+                "qv": backend.qv,
+                "system_id": backend.system_id,
+                "valid_gates": backend.get_valid_gates(),
+            })
+        return result
+
     # -------------------------------------------------------------------------
     # Circuit translation
     # -------------------------------------------------------------------------

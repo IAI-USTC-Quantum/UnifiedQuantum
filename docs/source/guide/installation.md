@@ -2,25 +2,19 @@
 
 本页帮助你快速完成安装，并在安装后立即验证环境是否可用。若你是第一次接触 UnifiedQuantum，建议先完成本页，再继续阅读 [快速上手](quickstart.md)。
 
-## 推荐安装方式
+## 推荐安装方式：通过 uv 安装
 
-### 从 pip 安装
+[uv](https://github.com/astral-sh/uv) 是新一代 Python 包管理工具，安装与构建速度远快于 pip。
 
-```bash
-pip install unified-quantum
-```
-
-## 安装验证
-
-安装完成后，运行以下命令确认安装成功：
+### 从 PyPI 安装
 
 ```bash
-python -c "import uniqc; print(uniqc.__version__)"
+# 安装 CLI 工具（推荐，全局可用，无需虚拟环境）
+uv tool install unified-quantum
+
+# 安装 Python 包（提供 Python API，可与 CLI 安装共存）
+uv pip install unified-quantum
 ```
-
-若能打印出版本号（如 `0.200.0`），说明安装成功。
-
-## 其他安装方式
 
 ### 从源码构建
 
@@ -36,7 +30,7 @@ python -c "import uniqc; print(uniqc.__version__)"
 #### 获取源码
 
 ```bash
-git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 ```
 
@@ -58,16 +52,49 @@ git submodule update --init --recursive
 #### 构建并安装
 
 ```bash
-# 完整安装（需要 CMake >= 3.26 和 C++17 编译器）
+# 安装 CLI + Python 包（开发模式，源码可编辑，推荐）
+uv tool install -e .
+
+# 仅安装 Python 包（开发模式）
+uv pip install -e . --no-build-isolation
+```
+
+> **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.26），请先运行 `pip install cmake --upgrade` 后再执行上述命令。
+
+## 备选安装方式：通过 pip 安装
+
+> 以下方式可作为 uv 的替代方案。如无特殊需求，建议优先使用上面的 uv 安装方式。
+
+### 从 PyPI 安装
+
+```bash
+pip install unified-quantum
+```
+
+### 从源码构建
+
+```bash
+git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+cd UnifiedQuantum
+
+# 完整安装
 pip install .
 
-# 开发模式（可编辑源码，需使用 pip 安装的 cmake）
+# 开发模式
 pip install -e . --no-build-isolation
 ```
 
-> **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.26），请先运行 `pip install cmake --upgrade`。
+## 安装验证
 
-### 构建 C++ 扩展常见问题
+安装完成后，运行以下命令确认安装成功：
+
+```bash
+python -c "import uniqc; print(uniqc.__version__)"
+```
+
+若能打印出版本号（如 `0.200.0`），说明安装成功。
+
+## 构建 C++ 扩展常见问题
 
 **Q：编译时报 `CMake could not find...`**
 > 确保 CMake 已安装并加入 PATH。Windows 上可使用 [CMake 官方安装包](https://cmake.org/download/)。
@@ -85,54 +112,56 @@ pip install -e . --no-build-isolation
 ### OriginQ 平台
 
 ```bash
-pip install pyqpanda3
-# 或使用 extras
+uv pip install unified-quantum[originq]
+# 或 pip
 pip install unified-quantum[originq]
 ```
 
 ### Quafu 平台
 
 ```bash
-pip install pyquafu
-# 或使用 extras
+uv pip install unified-quantum[quafu]
+# 或 pip
 pip install unified-quantum[quafu]
 ```
 
 ### IBM 平台
 
 ```bash
-pip install qiskit qiskit-ibm-provider qiskit-aer
-# 或使用 extras
+uv pip install unified-quantum[qiskit]
+# 或 pip
 pip install unified-quantum[qiskit]
 ```
 
 ### 高级模拟 (QuTiP)
 
 ```bash
-pip install qutip qutip-qip
-# 或使用 extras
+uv pip install unified-quantum[simulation]
+# 或 pip
 pip install unified-quantum[simulation]
 ```
 
 ### 可视化
 
 ```bash
-pip install matplotlib seaborn pandas
-# 或使用 extras
+uv pip install unified-quantum[visualization]
+# 或 pip
 pip install unified-quantum[visualization]
 ```
 
 ### PyTorch 集成
 
 ```bash
-pip install torch
-# 或使用 extras
+uv pip install unified-quantum[pytorch]
+# 或 pip
 pip install unified-quantum[pytorch]
 ```
 
 ### 安装所有可选依赖
 
 ```bash
+uv pip install unified-quantum[all]
+# 或 pip
 pip install unified-quantum[all]
 ```
 
