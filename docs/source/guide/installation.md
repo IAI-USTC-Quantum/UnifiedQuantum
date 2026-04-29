@@ -6,6 +6,12 @@
 
 [uv](https://github.com/astral-sh/uv) 是新一代 Python 包管理工具，安装与构建速度远快于 pip。
 
+> **中国大陆用户推荐配置清华源**，可大幅提升下载速度：
+> ```bash
+> # 永久生效（推荐）
+> uv pip install --python-preference managed --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+> ```
+
 ### 从 PyPI 安装
 
 ```bash
@@ -52,10 +58,10 @@ git submodule update --init --recursive
 #### 构建并安装
 
 ```bash
-# 安装 CLI + Python 包（开发模式，源码可编辑，推荐）
-uv tool install -e .
+# 安装 CLI + Python 包（开发模式，源码可编辑，含全部可选依赖，推荐）
+uv tool install -e .[all]
 
-# 仅安装 Python 包（开发模式）
+# 仅安装 Python 包（开发模式，不含可选依赖）
 uv pip install -e . --no-build-isolation
 ```
 
@@ -63,7 +69,7 @@ uv pip install -e . --no-build-isolation
 
 ## 备选安装方式：通过 pip 安装
 
-> 以下方式可作为 uv 的替代方案。如无特殊需求，建议优先使用上面的 uv 安装方式。
+> pip 不支持 `uv tool install` 的 CLI 全局安装方式（无需虚拟环境即可全局调用 `uniqc` 命令）。如无特殊需求，建议优先使用上面的 uv 安装方式。
 
 ### 从 PyPI 安装
 
