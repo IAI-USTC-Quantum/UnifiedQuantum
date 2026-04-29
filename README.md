@@ -203,6 +203,25 @@ uniqc config set originq.token YOUR_TOKEN
 python -m uniqc simulate circuit.ir
 ```
 
+### 后端信息查询
+
+```bash
+# 列出所有可用后端（默认隐藏 unavailable/deprecated）
+uniqc backend list
+
+# 显示所有后端（包括 unavailable/deprecated）
+uniqc backend list --all
+
+# 显示带保真度信息的表格
+uniqc backend list --info
+
+# 查看单个后端详情（含保真度、相干时间、拓扑）
+uniqc backend show originq:WK_C180
+
+# 强制刷新后端缓存（update 始终全量拉取最新数据）
+uniqc backend update
+```
+
 ---
 
 ## Examples

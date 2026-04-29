@@ -24,10 +24,10 @@ git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantu
 # If system CMake is < 3.26, install newer version via pip first:
 pip install cmake --upgrade
 
-# For development: editable install with C++ extension (recommended — installs CLI globally via uv tool)
-uv tool install -e .
+# For development: editable install with C++ extension + all optional dependencies (recommended)
+uv tool install -e ".[all]"
 
-# For development without CLI tool (Python API only):
+# For development without CLI tool (Python API only, no optional deps):
 uv pip install -e . --no-build-isolation
 
 # For production install (requires CMake >= 3.26 in PATH)

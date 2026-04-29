@@ -59,7 +59,8 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
     # Single-qubit gate fidelity: SX gate error, 1 - error = fidelity
     sq_errors: list[float] = []
     try:
-        sx_ops = getattr(target, "instructions", {}).get("sx", {})
+        # target["sx"] returns dict[qubit_index, InstructionProperties]
+        sx_ops = target["sx"]
         if hasattr(sx_ops, "items"):
             for qpair, props in sx_ops.items():
                 if len(qpair) == 1 and props and props.error is not None:
@@ -71,7 +72,7 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
     tq_errors: list[float] = []
     for gname in ("cz", "ecr"):
         try:
-            ops = getattr(target, "instructions", {}).get(gname, {})
+            ops = target[gname]
             if hasattr(ops, "items"):
                 for qpair, props in ops.items():
                     if len(qpair) == 2 and props and props.error is not None:
