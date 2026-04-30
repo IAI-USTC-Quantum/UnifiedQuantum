@@ -431,7 +431,7 @@ class QuafuAdapter(QuantumAdapter):
         from datetime import datetime, timezone
 
         from uniqc.backend_info import Platform, QubitTopology
-        from uniqc.chip_info import (
+        from uniqc.cli.chip_info import (
             ChipCharacterization,
             ChipGlobalInfo,
             SingleQubitData,

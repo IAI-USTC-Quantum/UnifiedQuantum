@@ -2,13 +2,13 @@
 
 Fetches per-chip calibration data (per-qubit T1/T2, gate fidelities, readout
 errors, connectivity) from each quantum cloud platform and returns a unified
-:class:`~uniqc.chip_info.ChipCharacterization`.
+:class:`~uniqc.cli.chip_info.ChipCharacterization`.
 
 Usage
 -----
 ::
 
-    from uniqc.chip_service import fetch_chip_characterization
+    from uniqc.cli.chip_service import fetch_chip_characterization
     chip = fetch_chip_characterization("wuyuan:d5", "originq")
     chip = fetch_chip_characterization("ibm:sherbrooke", "ibm")
 
@@ -19,10 +19,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from uniqc.backend_info import Platform
-from uniqc.chip_cache import get_chip, save_chip
+from uniqc.cli.chip_cache import get_chip, save_chip
 
 if TYPE_CHECKING:
-    from uniqc.chip_info import ChipCharacterization
+    from uniqc.cli.chip_info import ChipCharacterization
 
 
 def fetch_chip_characterization(

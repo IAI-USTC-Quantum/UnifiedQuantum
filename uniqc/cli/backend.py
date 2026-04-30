@@ -457,7 +457,7 @@ def chip_display(
         print_error(f"Unknown platform '{platform_str}'. Valid: originq, quafu, ibm")
         raise typer.Exit(1) from None
 
-    from uniqc.chip_service import fetch_chip_characterization
+    from uniqc.cli.chip_service import fetch_chip_characterization
 
     chip = fetch_chip_characterization(chip_name.strip(), platform, force_refresh=update)
 
