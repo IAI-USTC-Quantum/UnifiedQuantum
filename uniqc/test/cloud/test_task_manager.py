@@ -8,25 +8,10 @@ This module tests:
 - TaskManager class
 """
 
-import tempfile
-import time
-from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from uniqc.task_manager import (
-    TaskInfo,
-    TaskStatus,
-    TaskManager,
-    _map_adapter_error,
-    _get_adapter,
-    save_task,
-    get_task,
-    list_tasks,
-    clear_completed_tasks,
-    clear_cache,
-)
 from uniqc.exceptions import (
     AuthenticationError,
     BackendNotFoundError,
@@ -35,9 +20,20 @@ from uniqc.exceptions import (
     QuotaExceededError,
     TaskFailedError,
     TaskNotFoundError,
-    TaskTimeoutError,
 )
-
+from uniqc.task.adapters.base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS
+from uniqc.task_manager import (
+    TaskInfo,
+    TaskManager,
+    TaskStatus,
+    _get_adapter,
+    _map_adapter_error,
+    clear_cache,
+    clear_completed_tasks,
+    get_task,
+    list_tasks,
+    save_task,
+)
 
 # =============================================================================
 # Test Fixtures
@@ -332,9 +328,99 @@ class TestQueryTask:
 # Test wait_for_result (cloud tests)
 # =============================================================================
 
+class TestWaitForResultUnit:
+    """Unit tests for wait_for_result using mocks."""
+
+    def test_wait_for_result_unwraps_result_dict(self, temp_cache_dir: Path, monkeypatch):
+        """wait_for_result returns raw counts dict, not {"result": counts}."""
+        from uniqc.task_manager import TaskInfo, TaskStatus, wait_for_result
+
+        task = TaskInfo(
+            task_id="unwrap-test",
+            backend="originq",
+            status=TaskStatus.SUCCESS,
+            result={"result": {"00": 512, "11": 488}},
+        )
+
+        # Mock query_task to return the cached task immediately
+        import uniqc.task_manager as tm
+        monkeypatch.setattr(tm, "query_task", lambda tid, backend: task)
+
+        result = wait_for_result("unwrap-test", backend="originq", timeout=1)
+        assert result == {"00": 512, "11": 488}
+
+    def test_wait_for_result_returns_raw_dict(self, temp_cache_dir: Path, monkeypatch):
+        """wait_for_result returns the raw result dict when no unwrapping needed."""
+        from uniqc.task_manager import TaskInfo, TaskStatus, wait_for_result
+
+        task = TaskInfo(
+            task_id="raw-result-test",
+            backend="originq",
+            status=TaskStatus.SUCCESS,
+            result={"00": 512, "11": 488},
+        )
+
+        import uniqc.task_manager as tm
+        monkeypatch.setattr(tm, "query_task", lambda tid, backend: task)
+
+        result = wait_for_result("raw-result-test", backend="originq", timeout=1)
+        assert result == {"00": 512, "11": 488}
+
+    def test_wait_for_result_timeout_raises_taskfailederror_on_final_failed_query(
+        self, monkeypatch
+    ):
+        """Timeout does a final uncached query; raises TaskFailedError if cloud reports FAILED."""
+        from uniqc.task_manager import TaskInfo, TaskStatus, wait_for_result
+
+        call_count = 0
+
+        def mock_query_task(tid, backend):
+            nonlocal call_count
+            call_count += 1
+            # First call: still running; second call: still running (cached)
+            return TaskInfo(task_id=tid, backend=backend, status=TaskStatus.RUNNING)
+
+        def mock_final_query(tid):
+            # Final uncached query (after timeout): FAILED
+            return {"status": TASK_STATUS_FAILED, "result": {"error": "cloud error"}}
+
+        class FakeBackend:
+            def query(self, tid):
+                return mock_final_query(tid)
+
+        import uniqc.task_manager as tm
+        monkeypatch.setattr(tm, "query_task", mock_query_task)
+        # backend_module is imported as `from uniqc import backend as backend_module`
+        monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
+
+        with pytest.raises(TaskFailedError):
+            wait_for_result("timeout-fail-test", backend="originq", timeout=0.1, poll_interval=1.0)
+
+    def test_wait_for_result_timeout_returns_success_from_final_query(self, monkeypatch):
+        """Timeout does a final uncached query; returns result if cloud reports SUCCESS."""
+        from uniqc.task_manager import TaskInfo, TaskStatus, wait_for_result
+
+        def mock_query_task(tid, backend):
+            return TaskInfo(task_id=tid, backend=backend, status=TaskStatus.RUNNING)
+
+        def mock_final_query(tid):
+            return {"status": TASK_STATUS_SUCCESS, "result": {"00": 1024}}
+
+        class FakeBackend:
+            def query(self, tid):
+                return mock_final_query(tid)
+
+        import uniqc.task_manager as tm
+        monkeypatch.setattr(tm, "query_task", mock_query_task)
+        monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
+
+        result = wait_for_result("timeout-success-test", backend="originq", timeout=0.1, poll_interval=1.0)
+        assert result == {"00": 1024}
+
+
 @pytest.mark.cloud
-class TestWaitForResult:
-    """Tests for wait_for_result function with real backends."""
+class TestWaitForResultCloud:
+    """Cloud tests for wait_for_result function."""
 
     def test_wait_for_result_timeout(self, temp_cache_dir: Path):
         """Test wait_for_result with timeout for nonexistent task."""

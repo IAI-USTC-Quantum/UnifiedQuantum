@@ -707,7 +707,11 @@ def wait_for_result(
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
-            return task_info.result
+            # Unwrap: adapter returns {"result": counts_dict}, return just the counts
+            raw = task_info.result
+            if isinstance(raw, dict) and "result" in raw:
+                return raw["result"]
+            return raw
 
         # Check if failed
         if task_info.status == TaskStatus.FAILED:
@@ -719,9 +723,25 @@ def wait_for_result(
                 )
             return None
 
-        # Check timeout
+        # Check timeout — but first do a final non-cached query so we
+        # don't raise TaskTimeoutError for a task that actually failed.
         elapsed = time.time() - start_time
         if elapsed >= timeout:
+            # One last query without cache to get the true cloud status.
+            try:
+                final_info = backend_module.get_backend(backend).query(task_id)
+            except Exception:
+                pass  # fall through to timeout error
+            else:
+                if final_info.get("status") == TASK_STATUS_FAILED:
+                    raise TaskFailedError(
+                        f"Task '{task_id}' failed on backend '{backend}'.",
+                        task_id=task_id,
+                        backend=backend,
+                    )
+                if final_info.get("status") == TASK_STATUS_SUCCESS:
+                    return final_info.get("result")
+
             raise TaskTimeoutError(
                 f"Timeout waiting for task '{task_id}' to complete.",
                 task_id=task_id,

@@ -64,16 +64,21 @@ class OriginQAdapter(QuantumAdapter):
     def _ensure_imports(self) -> None:
         """Lazily import pyqpanda3 modules."""
         if self._service is None:
-            require("pyqpanda3", "originq")
-            from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
-            from pyqpanda3.qcloud import DataBase, JobStatus, QCloudJob, QCloudOptions, QCloudService
+            try:
+                require("pyqpanda3", "originq")
+                from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
+                from pyqpanda3.qcloud import DataBase, JobStatus, QCloudJob, QCloudOptions, QCloudService
 
-            self._service = QCloudService(api_key=self._api_key)
-            self._QCloudOptions = QCloudOptions
-            self._QCloudJob = QCloudJob
-            self._JobStatus = JobStatus
-            self._DataBase = DataBase
-            self._convert_originir = convert_originir_string_to_qprog
+                self._service = QCloudService(api_key=self._api_key)
+                self._QCloudOptions = QCloudOptions
+                self._QCloudJob = QCloudJob
+                self._JobStatus = JobStatus
+                self._DataBase = DataBase
+                self._convert_originir = convert_originir_string_to_qprog
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to initialize pyqpanda3 for OriginQ: {e}"
+                ) from e
 
     def is_available(self) -> bool:
         """Check if the OriginQ adapter is available (credentials configured).
@@ -179,7 +184,12 @@ class OriginQAdapter(QuantumAdapter):
         # Get backend and cache backend name + qubit count for use in query()
         backend = self._service.backend(backend_name)
         self._last_backend_name = backend_name
-        self._last_n_qubits = backend.chip_info().qubits_num()
+        # chip_info() may fail if the backend has no chip data loaded.
+        # Catch and ignore — we only need the job ID for tracking.
+        try:
+            self._last_n_qubits = backend.chip_info().qubits_num()
+        except Exception:
+            self._last_n_qubits = None
 
         # Convert OriginIR to QProg
         qprog = self.translate_circuit(circuit)
@@ -219,7 +229,10 @@ class OriginQAdapter(QuantumAdapter):
         # Get backend and cache backend name + qubit count
         backend = self._service.backend(backend_name)
         self._last_backend_name = backend_name
-        self._last_n_qubits = backend.chip_info().qubits_num()
+        try:
+            self._last_n_qubits = backend.chip_info().qubits_num()
+        except Exception:
+            self._last_n_qubits = None
 
         options = self._create_options(
             amend=measurement_amend,
@@ -276,24 +289,38 @@ class OriginQAdapter(QuantumAdapter):
         self._ensure_imports()
 
         job = self._QCloudJob(taskid)
-        status = job.status()
 
-        if status == self._JobStatus.FINISHED:
-            result = job.result()
-            counts = result.get_counts()
+        # Always use job.query() (not job.status()) — it returns a QCloudResult
+        # with the authoritative status from the cloud, even for failed/unknown
+        # status codes that job.status() cannot parse.
+        qr = job.query()
+        status_name = qr.job_status().name
+        error_msg = qr.error_message()
+        counts = qr.get_counts()
+
+        if status_name == "FINISHED":
             return {
                 "taskid": taskid,
                 "status": TASK_STATUS_SUCCESS,
                 "result": self._format_counts(counts),
             }
-        elif status == self._JobStatus.FAILED:
+        elif status_name == "FAILED" or status_name == "???":
+            # For "???" (unknown status), check if there's an error message or
+            # empty counts — both indicate the task failed.
+            if error_msg or not counts:
+                return {
+                    "taskid": taskid,
+                    "status": TASK_STATUS_FAILED,
+                    "result": {"error": error_msg or "Job failed on cloud (unknown status)"},
+                }
+            # If no error and has counts, treat as success despite unknown status
             return {
                 "taskid": taskid,
-                "status": TASK_STATUS_FAILED,
-                "result": {"error": "Job failed on cloud"},
+                "status": TASK_STATUS_SUCCESS,
+                "result": self._format_counts(counts),
             }
         else:
-            # RUNNING, QUEUING, WAITING
+            # RUNNING, QUEUING, WAITING → treat as running
             return {
                 "taskid": taskid,
                 "status": TASK_STATUS_RUNNING,
@@ -324,26 +351,27 @@ class OriginQAdapter(QuantumAdapter):
 
         return taskinfo
 
-    def _format_counts(self, counts: Any) -> list[dict]:
-        """Format pyqpanda3 counts to adapter result format.
+    def _format_counts(self, counts: Any) -> dict[str, int]:
+        """Format pyqpanda3 counts to a simple {bitstring: shots} dict.
 
         Args:
             counts: Counts from QCloudResult.get_counts().
 
         Returns:
-            List of result dicts with 'key' and 'value' keys.
+            Dict mapping bitstrings to shot counts, e.g. {"0000": 512, "1111": 480}.
         """
         if isinstance(counts, dict):
-            return [{"key": k, "value": v} for k, v in counts.items()]
+            return dict(counts)
         elif isinstance(counts, list):
-            # Handle list of counts (for batch results)
-            results = []
+            # Handle list of counts (for batch results) — merge all into one dict
+            merged: dict[str, int] = {}
             for c in counts:
                 if isinstance(c, dict):
-                    results.extend([{"key": k, "value": v} for k, v in c.items()])
-            return results
+                    for k, v in c.items():
+                        merged[k] = merged.get(k, 0) + v
+            return merged
         else:
-            return [{"key": str(counts), "value": 1}]
+            return {str(counts): 1}
 
     # -------------------------------------------------------------------------
     # Synchronous wait

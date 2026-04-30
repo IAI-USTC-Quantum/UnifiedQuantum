@@ -13,12 +13,8 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -261,7 +257,7 @@ class RunTestIBMAdapterIntegration:
 
         adapter = QiskitAdapter()
 
-        circuit = adapter.translate_circuit(ORIGINIR_BELL)
+        adapter.translate_circuit(ORIGINIR_BELL)
         # Note: IBM submission requires backend selection
         # This test may need adjustment based on available backends
 
@@ -311,3 +307,40 @@ class RunTestAdapterAvailability:
         from uniqc.task.adapters import QiskitAdapter
         adapter = QiskitAdapter()
         assert isinstance(adapter.is_available(), bool)
+
+
+# ---------------------------------------------------------------------------
+# OriginQ adapter unit tests (mock-based)
+# ---------------------------------------------------------------------------
+
+class TestOriginQAdapterUnit:
+    """Unit tests for OriginQ adapter using mocks."""
+
+    def run_test_format_counts_returns_dict(self, monkeypatch):
+        """_format_counts returns {bitstring: shots} dict, not list of dicts."""
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
+        from uniqc.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = None
+        adapter._QCloudOptions = None
+        adapter._QCloudJob = None
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._convert_originir = None
+
+        # dict input
+        result = adapter._format_counts({"00": 512, "11": 488})
+        assert isinstance(result, dict)
+        assert result == {"00": 512, "11": 488}
+
+        # list of dicts (batch) — counts should be merged
+        result = adapter._format_counts([{"00": 256}, {"00": 256, "11": 488}])
+        assert isinstance(result, dict)
+        assert result == {"00": 512, "11": 488}
+
+        # non-dict/list fallback
+        result = adapter._format_counts("something")
+        assert isinstance(result, dict)
+        assert result == {"something": 1}

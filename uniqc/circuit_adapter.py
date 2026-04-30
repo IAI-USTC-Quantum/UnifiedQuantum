@@ -136,18 +136,20 @@ class OriginQCircuitAdapter(CircuitAdapter[Any]):
                     "Install it with: pip install pyqpanda3"
                 ) from e
 
-    def adapt(self, circuit: "Circuit") -> Any:
-        """Convert UnifiedQuantum Circuit to pyqpanda QProg.
+    def adapt(self, circuit: "Circuit") -> str:
+        """Convert UnifiedQuantum Circuit to OriginIR string.
+
+        The OriginQAdapter.submit() receives this string and converts it
+        to QProg internally via translate_circuit(). Returning QProg here
+        would cause submit() to double-convert, breaking translate_circuit().
 
         Args:
             circuit: UnifiedQuantum Circuit object.
 
         Returns:
-            pyqpanda3.core.QProg object.
+            OriginIR format string.
         """
-        self._ensure_imports()
-        originir = self._get_originir(circuit)
-        return self._convert_originir(originir)
+        return self._get_originir(circuit)
 
     def get_supported_gates(self) -> List[str]:
         """Return the list of gate names supported by this adapter."""
