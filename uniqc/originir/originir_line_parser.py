@@ -357,6 +357,8 @@ class OriginIR_LineParser:
         """
         matches = OriginIR_LineParser.regexp_2q.match(line)
         operation = matches.group(1)
+        if operation.lower() == "ecr":
+            operation = "ECR"
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
         dagger_flag = True if matches.group(4) is not None else False
@@ -678,6 +680,9 @@ class OriginIR_LineParser:
             line = line.strip()
             # extract operation
             operation = line.split()[0]
+            # Normalise ECR to uppercase (case-insensitive support)
+            if operation.lower() == "ecr":
+                operation = "ECR"
 
             if operation == "QINIT":
                 q = int(line.strip().split()[1])
@@ -698,7 +703,7 @@ class OriginIR_LineParser:
             ):
                 operation, q, dagger_flag, control_qubits = OriginIR_LineParser.handle_1q(line)
             # 2-qubit gates
-            elif operation == "CZ" or operation == "CNOT" or operation == "SWAP" or operation == "ISWAP":
+            elif operation == "CZ" or operation == "CNOT" or operation == "ECR" or operation == "SWAP" or operation == "ISWAP":
                 operation, q, dagger_flag, control_qubits = OriginIR_LineParser.handle_2q(line)
             # 3-qubit gates
             elif operation == "TOFFOLI" or operation == "CSWAP":
@@ -750,9 +755,7 @@ class OriginIR_LineParser:
                 operation, q = OriginIR_LineParser.handle_control(line)
             elif operation == "ENDCONTROL":
                 operation = "ENDCONTROL"
-            elif operation == "DAGGER":
-                operation = OriginIR_LineParser.handle_dagger(line)
-            elif operation == "ENDDAGGER":
+            elif operation == "DAGGER" or operation == "ENDDAGGER":
                 operation = OriginIR_LineParser.handle_dagger(line)
             elif operation == "DEF":
                 # DEF block header - return special operation
@@ -768,7 +771,7 @@ class OriginIR_LineParser:
                 raise NotImplementedError(f"A invalid line: {line}.")
 
             return operation, q, c, parameter, dagger_flag, control_qubits
-        except AttributeError as e:
+        except AttributeError:
             raise RuntimeError(f"Error when parsing the line: {line}")
 
 

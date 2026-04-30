@@ -3,14 +3,72 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any
 
+import rich.box
+import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
+
+from .refs import AI_HINTS, CMD_REFS, DOCS_URL, GITHUB_URL
 
 console = Console()
 err_console = Console(stderr=True)
+
+# ----------------------------------------------------------------------
+# Shared --ai-hints option (hidden; injected into every command)
+# ----------------------------------------------------------------------
+AI_HINTS_OPTION = typer.Option(
+    False,
+    "--ai-hints",
+    help="Show AI workflow hints for this command (also enabled via UNIQC_AI_HINTS=1)",
+    is_eager=True,
+    hidden=True,
+)
+
+
+def _ai_hints_enabled(ctx: typer.Context) -> bool:
+    """Return True if AI hints should be shown."""
+    if ctx.obj and ctx.obj.get("ai_hints"):
+        return True
+    return bool(os.environ.get("UNIQC_AI_HINTS"))
+
+
+def build_ref_str(command: str) -> str:
+    """Return a single-line reference string for embedding in HELP constants."""
+    refs = CMD_REFS.get(command)
+    if not refs:
+        return ""
+    parts = []
+    for label, url in refs:
+        parts.append(f"[link={url}][cyan]{label}[/cyan][/link]")
+    return "  |  ".join(parts)
+
+
+def print_ai_hints(command: str) -> None:
+    """Print AI workflow hints for the given command as a styled Rich panel."""
+    hints = AI_HINTS.get(command)
+    if not hints:
+        return
+
+    lines: list[str] = []
+    for label, text in hints:
+        lines.append(f"[bold white]{label}[/bold white]")
+        lines.append(f"  {text}")
+        lines.append("")
+
+    console.print(
+        Panel(
+            "\n".join(lines).rstrip(),
+            title="[bold cyan]AI Workflow Hints[/bold cyan]  (pass --ai-hints or set UNIQC_AI_HINTS=1)",
+            border_style="cyan",
+            box=rich.box.ROUNDED,
+            padding=(1, 2),
+        )
+    )
 
 
 def _key_to_int(key: Any) -> int | None:

@@ -2,18 +2,45 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 import typer
 
-from .output import console, print_error, print_info, print_json, print_success, print_table
+from .output import (
+    AI_HINTS_OPTION,
+    build_ref_str,
+    console,
+    print_ai_hints,
+    print_error,
+    print_info,
+    print_json,
+    print_success,
+    print_table,
+)
 
-app = typer.Typer(help="Manage API key and configuration")
+app = typer.Typer(
+    help=(
+        "Manage API key and configuration\n"
+        f"  {build_ref_str('config')}"
+    ),
+)
 
 
 @app.command()
-def init():
-    """Initialize configuration file with default values."""
+def init(
+    ai_hints: bool = AI_HINTS_OPTION,
+):
+    """Initialize configuration file with default values.
+
+    Workflow:
+      - Next: uniqc config set originq.token <YOUR_TOKEN>
+      - Then: uniqc config validate
+      - Then: uniqc backend update
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     from uniqc.config import create_default_config
 
     create_default_config()
@@ -25,8 +52,18 @@ def set(
     key: str = typer.Argument(..., help="Configuration key (e.g., originq.token)"),
     value: str = typer.Argument(..., help="Configuration value"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Set a configuration value."""
+    """Set a configuration value.
+
+    Workflow:
+      - After setting a token, validate it: uniqc config validate
+      - Then fetch backends: uniqc backend update
+      - Use --profile to set values for a named profile instead of 'default'.
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     parts = key.split(".")
     if len(parts) != 2:
         print_error("Key must be in format 'platform.field' (e.g., originq.token)")
@@ -49,8 +86,12 @@ def set(
 def get(
     platform: str = typer.Argument(..., help="Platform name: originq/quafu/ibm"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Get configuration for a platform."""
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     from uniqc.config import get_platform_config
 
     platform = platform.lower()
@@ -79,8 +120,12 @@ def get(
 def list_config(
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """List all platform configurations."""
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     from uniqc.config import PLATFORM_REQUIRED_FIELDS, load_config
 
     config = load_config()
@@ -98,13 +143,13 @@ def list_config(
         required = PLATFORM_REQUIRED_FIELDS.get(platform, [])
 
         if token:
-            status = "[green]✓ Configured[/green]"
+            status = "[green]Configured[/green]"
         else:
-            status = "[red]✗ Missing token[/red]"
+            status = "[red]Missing token[/red]"
 
         missing = [f for f in required if not platform_config.get(f)]
         if missing and token:
-            status = f"[yellow]⚠ Missing: {', '.join(missing)}[/yellow]"
+            status = f"[yellow]Missing: {', '.join(missing)}[/yellow]"
 
         results.append(
             {
@@ -124,8 +169,12 @@ def list_config(
 @app.command()
 def validate(
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Validate current configuration."""
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     from uniqc.config import validate_config
 
     errors = validate_config()
@@ -143,8 +192,18 @@ def validate(
 def profile(
     action: str = typer.Argument(..., help="Action: list/use/create"),
     name: Optional[str] = typer.Argument(None, help="Profile name"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Manage configuration profiles."""
+    """Manage configuration profiles.
+
+    Workflow:
+      - List profiles: uniqc config profile list
+      - Switch to a profile: uniqc config profile use <NAME>
+      - Create a new profile: uniqc config profile create <NAME>
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("config")
+
     from uniqc.config import get_active_profile, load_config, set_active_profile
 
     if action == "list":

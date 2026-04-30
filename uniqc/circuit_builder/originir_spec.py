@@ -36,6 +36,7 @@ available_originir_1q3p_gates = ["U3"]
 available_originir_2q_gates = [
     "CNOT",
     "CZ",
+    "ECR",
     "ISWAP",
 ]  # TODO: SQISWAP
 available_originir_2q1p_gates = [

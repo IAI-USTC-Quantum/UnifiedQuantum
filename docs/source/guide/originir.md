@@ -262,6 +262,7 @@ U3 q[0], (1.57, 0.785, 0.392)
 | `CNOT` | 受控非门（CX） | $\begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&0&1 \\ 0&0&1&0 \end{pmatrix}$ |
 | `CZ` | 受控 Z 门 | $\begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&1&0 \\ 0&0&0&-1 \end{pmatrix}$ |
 | `ISWAP` | 交换门变体 | $\begin{pmatrix} 1&0&0&0 \\ 0&0&i&0 \\ 0&i&0&0 \\ 0&0&0&1 \end{pmatrix}$ |
+| `ECR` | 弹性 Cross-Resonance 门 | $\frac{1}{\sqrt{2}}\begin{pmatrix} 0&1&0&-i \\ 1&0&-i&0 \\ 0&-i&0&1 \\ -i&0&1&0 \end{pmatrix}$ |
 
 **语法：**
 ```
@@ -273,6 +274,7 @@ U3 q[0], (1.57, 0.785, 0.392)
 CNOT q[0], q[1]
 CZ q[1], q[2]
 ISWAP q[0], q[1]
+ECR q[0], q[1]
 ```
 
 #### 单参数双量子比特门

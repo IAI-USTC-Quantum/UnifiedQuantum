@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
 import typer
 
+from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints
 from .output import console, format_prob, print_error, print_json, print_table, write_output
 
-HELP = "Local circuit simulation"
+HELP = (
+    "Local circuit simulation\n"
+    f"  {build_ref_str('simulate')}"
+)
 
 
 def simulate(
@@ -18,8 +23,19 @@ def simulate(
     shots: int = typer.Option(1024, "--shots", "-s", help="Number of measurement shots"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Simulate a quantum circuit locally."""
+    """Simulate a quantum circuit locally.
+
+    Workflow:
+      - Use --backend statevector for exact probabilities (default, fast).
+      - Use --backend density for noisy simulation of NISQ devices.
+      - Use --shots to set measurement repetitions (default 1024).
+      - Use --format json for machine-readable output; --output to write to a file.
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("simulate")
+
     content = input_file.read_text(encoding="utf-8")
 
     if backend not in ("statevector", "density"):

@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 import typer
 
+from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints
 from .output import extract_counts_and_probs, format_prob, print_error, print_json, print_table
 
-HELP = "Query task results from quantum cloud platforms"
+HELP = (
+    "Query task results from quantum cloud platforms\n"
+    f"  {build_ref_str('result')}"
+)
 
 
 def result(
@@ -17,8 +22,19 @@ def result(
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for task completion"),
     timeout: float = typer.Option(300.0, "--timeout", help="Timeout in seconds"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Query result of a submitted task."""
+    """Query result of a submitted task.
+
+    Workflow:
+      - No result yet? Use --wait (or -w) to poll until task completes.
+      - Task not found? Run uniqc task list to see all tasks and find the correct task_id.
+      - To list all tasks: uniqc task list
+      - Task is still pending/running? Increase --timeout if needed.
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("result")
+
     show_result(task_id, platform=platform, wait=wait, timeout=timeout, format=format)
 
 

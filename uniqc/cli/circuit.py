@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import typer
 
-from .output import print_error, print_table, write_output
+from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error, print_table, write_output
 
-HELP = "Circuit format conversion (OriginIR <-> QASM)"
+HELP = (
+    "Circuit format conversion (OriginIR <-> QASM)\n"
+    f"  {build_ref_str('circuit')}"
+)
 INPUT_FILE_ARGUMENT = typer.Argument(..., help="Input circuit file (OriginIR or QASM)", exists=True)
 FORMAT_OPTION = typer.Option(None, "--format", "-f", help="Output format: originir/qasm")
 OUTPUT_OPTION = typer.Option(None, "--output", "-o", help="Output file (default: stdout)")
@@ -30,8 +34,18 @@ def convert(
     format: str | None = FORMAT_OPTION,
     output: Path | None = OUTPUT_OPTION,
     info: bool = INFO_OPTION,
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Convert circuit between OriginIR and QASM formats."""
+    """Convert circuit between OriginIR and QASM formats.
+
+    Workflow:
+      - Auto-detects OriginIR vs QASM from file content.
+      - Converts originir -> QASM or QASM -> OriginIR automatically.
+      - Use --info to show gate count, circuit depth, and qubit count.
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("circuit")
+
     content = input_file.read_text(encoding="utf-8")
     source_format = _detect_format(content)
 

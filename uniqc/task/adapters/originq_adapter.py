@@ -395,3 +395,116 @@ class OriginQAdapter(QuantumAdapter):
                 warnings.warn(f"Query failed. Retry remains {retry} times.", stacklevel=2)
             else:
                 raise RuntimeError("Retry count exhausted.")
+
+    # -------------------------------------------------------------------------
+    # Chip characterization
+    # -------------------------------------------------------------------------
+
+    def get_chip_characterization(self, backend_name: str):
+        """Return per-qubit and per-pair calibration data for a hardware backend.
+
+        Parameters
+        ----------
+        backend_name:
+            Full backend name, e.g. ``"origin:wuyuan:d5"``.
+
+        Returns
+        -------
+        ChipCharacterization or None
+            None if the backend is not found or chip info is unavailable.
+        """
+        from datetime import datetime, timezone
+
+        from uniqc.backend_info import Platform, QubitTopology
+        from uniqc.chip_info import (
+            ChipCharacterization,
+            ChipGlobalInfo,
+            SingleQubitData,
+            TwoQubitData,
+            TwoQubitGateData,
+        )
+
+        self._ensure_imports()
+        backend = self._service.backend(backend_name)
+
+        try:
+            ci = backend.chip_info()
+        except Exception:
+            return None
+
+        # Available qubits
+        available_qubits = tuple(ci.available_qubits())
+
+        # Connectivity
+        raw_topo = ci.get_chip_topology() or []
+        connectivity = tuple(QubitTopology(u=u, v=v) for u, v in raw_topo)
+
+        # Per-qubit data
+        single_qubit_data: list[SingleQubitData] = []
+        for sq in (ci.single_qubit_info() or []):
+            fid_0 = sq.get_readout_fidelity_0() if hasattr(sq, "get_readout_fidelity_0") else None
+            fid_1 = sq.get_readout_fidelity_1() if hasattr(sq, "get_readout_fidelity_1") else None
+            avg_ro = sq.get_readout_fidelity() if hasattr(sq, "get_readout_fidelity") else None
+            single_qubit_data.append(
+                SingleQubitData(
+                    qubit_id=sq.get_qubit_id() if hasattr(sq, "get_qubit_id") else 0,
+                    t1=sq.get_t1(),
+                    t2=sq.get_t2(),
+                    single_gate_fidelity=sq.get_single_gate_fidelity(),
+                    readout_fidelity_0=fid_0,
+                    readout_fidelity_1=fid_1,
+                    avg_readout_fidelity=avg_ro,
+                )
+            )
+
+        # Per-pair data
+        two_qubit_data: list[TwoQubitData] = []
+        for dq in (ci.double_qubits_info() or []):
+            fid = dq.get_fidelity() if hasattr(dq, "get_fidelity") else None
+            u = dq.get_qubit_u() if hasattr(dq, "get_qubit_u") else 0
+            v = dq.get_qubit_v() if hasattr(dq, "get_qubit_v") else 0
+            two_qubit_data.append(
+                TwoQubitData(
+                    qubit_u=u,
+                    qubit_v=v,
+                    gates=(TwoQubitGateData(gate="cx", fidelity=fid),),
+                )
+            )
+
+        # Global info
+        single_gates: list[str] = []
+        two_gates: list[str] = []
+        sq_gate_time: float | None = None
+        tq_gate_time: float | None = None
+        try:
+            cfg = backend.configuration()
+            gates = cfg.supported_gates() if hasattr(cfg, "supported_gates") else []
+            for g in gates:
+                g_lower = g.lower()
+                if g_lower in {"h", "x", "y", "z", "s", "sx", "t", "i", "rx", "ry", "rz", "u1", "u2", "u3"} and g not in single_gates:
+                    single_gates.append(g)
+                elif g_lower in {"cnot", "cz", "iswap", "ecr", "swap"} and g not in two_gates:
+                    two_gates.append(g)
+            if hasattr(cfg, "single_qubit_gate_time"):
+                sq_gate_time = float(cfg.single_qubit_gate_time())
+            if hasattr(cfg, "two_qubit_gate_time"):
+                tq_gate_time = float(cfg.two_qubit_gate_time())
+        except Exception:
+            pass
+
+        return ChipCharacterization(
+            platform=Platform.ORIGINQ,
+            chip_name=backend_name,
+            full_id=f"originq:{backend_name}",
+            available_qubits=available_qubits,
+            connectivity=connectivity,
+            single_qubit_data=tuple(single_qubit_data),
+            two_qubit_data=tuple(two_qubit_data),
+            global_info=ChipGlobalInfo(
+                single_qubit_gates=tuple(single_gates),
+                two_qubit_gates=tuple(two_gates),
+                single_qubit_gate_time=sq_gate_time,
+                two_qubit_gate_time=tq_gate_time,
+            ),
+            calibrated_at=datetime.now(timezone.utc).isoformat(),
+        )

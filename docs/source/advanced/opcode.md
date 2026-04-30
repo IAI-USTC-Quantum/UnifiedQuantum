@@ -63,6 +63,7 @@ sim = OpcodeSimulator(backend_type='density_matrix_qutip')
 | `CZ` | 受控 Z | 无 |
 | `SWAP` | SWAP | 无 |
 | `ISWAP` | iSWAP | 无 |
+| `ECR` | Echoed Cross-Resonance | 无 |
 | `XY` | XY 交互 | `theta` |
 | `XX` | XX 交互 | `theta` |
 | `YY` | YY 交互 | `theta` |
