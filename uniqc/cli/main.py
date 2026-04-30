@@ -6,6 +6,8 @@ import os
 
 import typer
 
+from uniqc.version import __version__
+
 app = typer.Typer(
     name="uniqc",
     help=(
@@ -25,6 +27,13 @@ app = typer.Typer(
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        help="Show version and exit",
+        is_eager=True,
+    ),
     ai_hints: bool = typer.Option(
         False,
         "--ai-hints",
@@ -34,6 +43,10 @@ def main(
     ),
 ):
     """UnifiedQuantum CLI - Quantum computing from the command line."""
+    if version:
+        console = __import__("rich").console.Console()
+        console.print(f"[bold cyan]uniqc[/bold cyan] {__version__}")
+        raise typer.Exit(0)
     ctx.obj = {"ai_hints": ai_hints or bool(os.environ.get("UNIQC_AI_HINTS"))}
 
 

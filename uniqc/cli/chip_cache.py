@@ -4,7 +4,7 @@ Cache file layout
 ----------------
 ``~/.uniqc/backend-cache/{provider}-{chip_name}.json``
 
-Each file contains a single :class:`~uniqc.chip_info.ChipCharacterization` object.
+Each file contains a single :class:`~uniqc.cli.chip_info.ChipCharacterization` object.
 
 Public API
 ----------
@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from uniqc.backend_info import Platform
-from uniqc.chip_info import ChipCharacterization
+from uniqc.cli.chip_info import ChipCharacterization
 
 DEFAULT_CACHE_DIR = Path.home() / ".uniqc" / "backend-cache"
 
