@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 
 import rich.box
@@ -11,14 +12,22 @@ from uniqc.backend_cache import cache_info, invalidate_all
 from uniqc.backend_info import BackendInfo, Platform
 from uniqc.backend_registry import fetch_all_backends, fetch_platform_backends, find_backend
 from uniqc.cli.output import (
+    AI_HINTS_OPTION,
+    build_ref_str,
     console,
+    print_ai_hints,
     print_error,
     print_info,
     print_success,
     print_warning,
 )
 
-app = typer.Typer(help="List, update, and inspect quantum cloud backends")
+app = typer.Typer(
+    help=(
+        "List, update, and inspect quantum cloud backends\n"
+        f"  {build_ref_str('backend-list')}"
+    ),
+)
 
 
 # Detect whether a subcommand was given by checking if the first
@@ -36,6 +45,7 @@ def _subcommand_given() -> bool:
 
 @app.callback(invoke_without_command=True)
 def backend(
+    ctx: typer.Context,
     show: str | None = typer.Option(
         None,
         "--show",
@@ -106,15 +116,22 @@ def list_backends(
         "-f",
         help="Output format: table (default) or json",
     ),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """List backends from configured platforms.
 
     By default only available backends are shown. Use --all to show all backends
     regardless of status.
 
-    Backend data is cached for 24 hours. Use ``uniqc backend update`` to
-    force-refresh.
+    Workflow:
+      - No backends shown? Run uniqc backend update to fetch the latest backend list.
+      - Select a backend: copy the Name column value and pass it to --backend in uniqc submit.
+      - Hardware vs simulator: 'hw' = real device, 'sim' = simulation backend.
+      - Use --status simulator or --status hardware to filter.
     """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("backend-list")
+
     target_platform: Platform | None = None
     if platform:
         try:
@@ -258,12 +275,15 @@ def update(
         "-c",
         help="Clear cache before updating (force re-fetch all platforms)",
     ),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Force-refresh backend information from cloud APIs.
 
     Always bypasses the cache and fetches fresh data from all configured
     platforms. Use ``uniqc backend list`` to view cached data without refreshing.
     """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("backend-list")
 
     if clear:
         invalidate_all()
@@ -299,15 +319,18 @@ def update(
 def show(
     identifier: str = typer.Argument(..., help="Backend identifier (platform:name or bare name)"),
     format: str = typer.Option("rich", "--format", "-f", help="Output format: rich (default) or json"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Show detailed information for a specific backend.
 
-    Examples::
-
-        uniqc backend show originq:HanYuan_01
-        uniqc backend show quafu:ScQ-P10
-        uniqc backend show ibm:ibmq_qasm_simulator
+    Workflow:
+      - Use this backend for submission: uniqc submit ... --backend '<IDENTIFIER>'
+      - Compare backends: uniqc backend list --info to see fidelity data for all backends.
+      - Hardware backends show fidelity data; lower fidelity = higher error rates on real devices.
     """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("backend-show")
+
     try:
         backend = find_backend(identifier)
     except ValueError as exc:

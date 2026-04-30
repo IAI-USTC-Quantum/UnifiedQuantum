@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 import typer
 
 from .output import (
+    AI_HINTS_OPTION,
+    build_ref_str,
     console,
     extract_counts_and_probs,
     format_prob,
+    print_ai_hints,
     print_error,
     print_info,
     print_json,
@@ -17,7 +21,12 @@ from .output import (
     print_table,
 )
 
-app = typer.Typer(help="Manage submitted tasks")
+app = typer.Typer(
+    help=(
+        "Manage submitted tasks\n"
+        f"  {build_ref_str('task-list')}"
+    ),
+)
 
 
 @app.command("list")
@@ -26,8 +35,19 @@ def list_tasks(
     platform: Optional[str] = typer.Option(None, "--platform", "-p", help="Filter by platform"),
     limit: int = typer.Option(20, "--limit", "-l", help="Maximum number of tasks to show"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """List submitted tasks."""
+    """List submitted tasks.
+
+    Workflow:
+      - No tasks shown? Configure your platform: uniqc config set originq.token <TOKEN>
+      - Then validate: uniqc config validate
+      - Wrong platform? Filter: uniqc task list --platform originq
+      - Get a result: uniqc result <TASK_ID>
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("task-list")
+
     from uniqc.task_manager import list_tasks as _list_tasks
 
     tasks = _list_tasks(status=status, backend=platform)
@@ -59,8 +79,18 @@ def list_tasks(
 def show(
     task_id: str = typer.Argument(..., help="Task ID to show"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Show details of a specific task."""
+    """Show details of a specific task.
+
+    Workflow:
+      - Get the measurement result: uniqc result <TASK_ID>
+      - Task still running? Use uniqc result <TASK_ID> --wait to poll.
+      - See all tasks: uniqc task list
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("task-show")
+
     from uniqc.task_manager import get_task, query_task
 
     task_info = get_task(task_id)
@@ -121,8 +151,12 @@ def show(
 def clear(
     status: Optional[str] = typer.Option(None, "--status", help="Clear tasks with this status"),
     force: bool = typer.Option(False, "--force", help="Force clear without confirmation"),
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Clear completed or failed tasks from cache."""
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("task-list")
+
     from uniqc.task_manager import clear_completed_tasks, clear_cache, list_tasks
 
     if status:

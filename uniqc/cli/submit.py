@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import typer
 
+from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints
 from .output import print_error, print_json, print_success, print_table
 
-HELP = "Submit circuits to quantum cloud platforms"
+HELP = (
+    "Submit circuits to quantum cloud platforms\n"
+    f"  {build_ref_str('submit')}"
+)
 INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
 PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/ibm/dummy")
 BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'origin:wuyuan:d5' for OriginQ)")
@@ -28,8 +33,20 @@ def submit(
     wait: bool = WAIT_OPTION,
     timeout: float = TIMEOUT_OPTION,
     format: str = FORMAT_OPTION,
+    ai_hints: bool = AI_HINTS_OPTION,
 ):
-    """Submit circuit(s) to a quantum cloud platform."""
+    """Submit circuit(s) to a quantum cloud platform.
+
+    Workflow:
+      - After submission you receive a TASK_ID.
+      - Check result: uniqc result <TASK_ID>
+      - List all tasks: uniqc task list
+      - Validate config first: uniqc config validate
+      - Pick a backend: uniqc backend list --platform <PLATFORM>
+    """
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("submit")
+
     if platform not in ("originq", "quafu", "ibm", "dummy"):
         print_error(f"Unknown platform: {platform}. Use originq/quafu/ibm/dummy.")
         raise typer.Exit(1)
