@@ -42,6 +42,8 @@ uniqc task show TASK_ID
 uniqc task show TASK_ID --format json
 ```
 
+> 如需等待任务完成并获取完整结果，请使用 `uniqc result TASK_ID --wait`。`task show` 显示缓存的任务信息，适合快速查看已缓存的结果。
+
 ## 清理任务缓存
 
 ```bash

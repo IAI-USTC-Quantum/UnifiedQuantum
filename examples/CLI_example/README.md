@@ -75,6 +75,20 @@ python -m uniqc backend list -p ibm --info
 python -m uniqc backend update
 ```
 
+### 查看后端详情和芯片标定
+
+```bash
+# 查看单个后端的完整信息（含保真度和拓扑）
+python -m uniqc backend show originq:wuyuan:d5
+python -m uniqc backend show originq:simulator:01
+
+# 查看芯片逐量子比特标定数据
+python -m uniqc backend chip-display originq/wuyuan:d5
+
+# 强制刷新标定数据
+python -m uniqc backend chip-display originq/wuyuan:d5 --update
+```
+
 输出示例：
 ```
 Platform: quafu
@@ -122,6 +136,23 @@ python -m uniqc submit circuit.qasm -p ibm -b ibm_fez -s 1000
 # 同步提交，等结果最久等 300 秒
 python -m uniqc submit circuit.originir -p quafu -s 1000 --wait --timeout 300
 python -m uniqc submit circuit.qasm -p ibm -s 1000 --wait --timeout 300
+```
+
+---
+
+### 试运行（不提交）
+
+在正式提交前，可使用 `--dry-run` 在不发起网络请求的情况下验证电路兼容性：
+
+```bash
+# 单电路试运行
+python -m uniqc submit circuit.originir -p quafu --dry-run
+
+# 指定后端进行验证
+python -m uniqc submit circuit.originir -p quafu -b ScQ-P18 --dry-run
+
+# 批量试运行
+python -m uniqc submit circuit1.originir circuit2.originir -p originq --dry-run
 ```
 
 ---

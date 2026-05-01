@@ -30,19 +30,32 @@ uniqc config set originq.token YOUR_TOKEN
 # 3. 验证配置
 uniqc config validate
 
-# 4. 提交任务
+# 4. 查看可用后端
+uniqc backend list --platform originq
+uniqc backend show origin:wuyuan:d5
+
+# 5. 试运行验证（可选，不消耗额度）
+uniqc submit bell.ir --platform originq --dry-run
+
+# 6. 提交任务
 uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
 
-# 5. 查询结果
+# 7. 查询结果
 uniqc result TASK_ID --platform originq --wait
 
-# 6. 查看任务列表
+# 8. 查看任务列表
 uniqc task list --platform originq
 ```
 
 ### 示例 3：批量处理
 
 ```bash
+# 批量试运行验证
+uniqc submit circuit1.ir circuit2.ir circuit3.ir \
+    --platform originq \
+    --backend origin:wuyuan:d5 \
+    --dry-run
+
 # 批量提交多个电路
 uniqc submit circuit1.ir circuit2.ir circuit3.ir \
     --platform originq \

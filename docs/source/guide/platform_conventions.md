@@ -256,7 +256,102 @@ export ORIGINQ_AVAILABLE_TOPOLOGY='[[0,1],[1,2],[2,3]]'
 | `query_sync()` | ✅ | ✅ | ✅ | ❌ |
 | 1Q 门保真度 | ✅ 可用 | ❌ 返回 None | ✅ 可用 | ❌ |
 | 电路优化 | `circuit_optimize` | `auto_mapping` | `circuit_optimize` | N/A |
+| chip_characterization 支持 | ✅ | ✅ | ✅ | ✅ 从标定数据自动推导噪声参数 |
 | 免费额度 | 有限 | 有限 | ✅ 有开放设备 | 无需联网 |
+
+---
+
+## 8. DummyBackend：芯片标定与本地噪声模拟 {#platform-dummy-backend}
+
+DummyAdapter 是本地模拟器适配器，在不需要真实量子硬件的情况下执行电路。它完整支持 `ChipCharacterization` 标定数据，可实现真实的噪声模拟。
+
+### 基本用法
+
+```python
+from uniqc.task.adapters.dummy_adapter import DummyAdapter
+
+# 纯净模拟（无噪声）
+adapter = DummyAdapter()
+
+# 从芯片标定获取真实噪声参数
+from uniqc.task.adapters.originq_adapter import OriginQAdapter
+
+originq = OriginQAdapter()
+chip = originq.get_chip_characterization("origin:wuyuan:d5")
+adapter = DummyAdapter(chip_characterization=chip)
+
+# 提交（结果立即可用，无需等待）
+task_id = adapter.submit(circuit, shots=1000)
+result = adapter.query(task_id)
+```
+
+### `chip_characterization` 如何转换为噪声参数
+
+当传入 `ChipCharacterization` 对象时，`DummyAdapter` 自动提取以下数据：
+
+| 标定数据 | 转换方式 | 用法 |
+|----------|----------|------|
+| `single_gate_fidelity`（逐量子比特） | `error = 1 - fidelity` | 注入单量子比特去极化噪声 |
+| `gate.fidelity`（逐量子比特对） | `error = 1 - fidelity` | 注入双量子比特门去极化噪声 |
+| `avg_readout_fidelity`（逐量子比特） | 对称读出误差模型 | 注入读出误差 |
+
+若某量子比特或量子比特对缺少标定数据，使用默认值（1Q 误差 0.01，2Q 误差 0.05）。
+
+### `DummyOptions`（Python API）
+
+```python
+from uniqc import DummyOptions
+
+opts = DummyOptions(
+    noise_model=None,              # 可选，传入噪声模型（dict）
+    available_qubits=16,           # 默认 16
+    available_topology=None,        # None=all-to-all，传入 [[u,v], ...] 指定拓扑
+    shots=1000,
+)
+```
+
+### CLI 中的 Dummy 平台
+
+在 CLI 中使用 `--platform dummy` 等效于使用 `DummyAdapter`：
+
+```bash
+# CLI：本地模拟（纯净）
+uniqc submit circuit.ir --platform dummy --shots 1000 --wait
+
+# CLI：试运行验证
+uniqc submit circuit.ir --platform dummy --dry-run
+```
+
+---
+
+## 9. 统一后端工厂：`get_backend()` {#platform-get-backend}
+
+`get_backend()` 是量子后端工厂函数（`uniqc/backend.py`），用于获取平台后端实例。
+
+```python
+from uniqc.backend import get_backend
+
+# 获取 DummyBackend（含芯片标定噪声模拟）
+from uniqc.task.adapters.originq_adapter import OriginQAdapter
+
+chip = OriginQAdapter().get_chip_characterization("origin:wuyuan:d5")
+backend = get_backend("dummy", config={"chip_characterization": chip})
+task_id = backend.submit(circuit, shots=1000)
+
+# 获取 OriginQ 后端
+backend = get_backend("originq")
+
+# 获取 Quafu 后端
+backend = get_backend("quafu")
+
+# 获取 IBM 后端
+backend = get_backend("ibm")
+
+# 获取 DummyBackend（纯净模拟）
+backend = get_backend("dummy")
+```
+
+`get_backend()` 返回 `QuantumBackend` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../guide/compiler_options_region.md)。
 
 ---
 
