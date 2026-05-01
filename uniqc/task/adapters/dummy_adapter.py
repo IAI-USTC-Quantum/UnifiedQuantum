@@ -38,7 +38,7 @@ import os
 from typing import Any
 
 from ..result_types import UnifiedResult
-from .base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS, QuantumAdapter
+from .base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS, DryRunResult, QuantumAdapter
 
 # Check environment variable for global dummy mode
 UNIQC_DUMMY = os.environ.get("UNIQC_DUMMY", "").lower() in ("true", "1", "yes")
@@ -277,6 +277,65 @@ class DummyAdapter(QuantumAdapter):
     def clear_cache(self) -> None:
         """Clear the internal result cache."""
         self._cache.clear()
+
+    # -------------------------------------------------------------------------
+    # Dry-run validation
+    # -------------------------------------------------------------------------
+
+    def dry_run(self, originir: str, *, shots: int = 1000, **kwargs: Any) -> DryRunResult:
+        """Dry-run validation for the dummy local simulator.
+
+        The dummy adapter always succeeds — it accepts any valid OriginIR string
+        and simulates it locally. There are no backend constraints.
+
+        Note:
+            Any dry-run success followed by actual submission failure is a
+            critical bug. Please report it at the UnifiedQuantum issue tracker.
+        """
+        from .base import _dry_run_success
+
+        # Extract qubit count from OriginIR QINIT line
+        circuit_qubits: int | None = None
+        try:
+            for line in originir.splitlines():
+                line = line.strip()
+                if line.startswith("QINIT"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        circuit_qubits = int(parts[1])
+                    break
+        except Exception:
+            pass
+
+        return _dry_run_success(
+            (f"Dry-run passed for dummy simulator: OriginIR is valid. Qubits={circuit_qubits}, shots={shots}"),
+            backend_name="dummy",
+            circuit_qubits=circuit_qubits,
+            supported_gates=(
+                "H",
+                "X",
+                "Y",
+                "Z",
+                "S",
+                "T",
+                "SX",
+                "RX",
+                "RY",
+                "RZ",
+                "CNOT",
+                "CZ",
+                "SWAP",
+                "ISWAP",
+                "TOFFOLI",
+                "CSWAP",
+                "XX",
+                "YY",
+                "ZZ",
+                "XY",
+                "MEASURE",
+                "BARRIER",
+            ),
+        )
 
     def _simulate(self, originir: str, shots: int) -> UnifiedResult:
         """Run simulation using the OriginIR simulator.

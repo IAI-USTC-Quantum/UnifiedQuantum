@@ -86,6 +86,8 @@ Pre-commit hooks are configured (ruff lint + format, YAML check, trailing whites
 
 4. **Cloud Task Submission** (`uniqc/task/`): Adapter pattern for submitting circuits to quantum cloud platforms. Each provider (OriginQ, Quafu, IBM) has an adapter under `task/adapters/`. Configuration is via environment variables. The `task_manager` module provides a unified API (`submit_task`, `query_task`, `wait_for_result`).
 
+   **Dry-run validation**: Every adapter implements `dry_run(originir, shots, **kwargs)` which validates the circuit offline — no cloud API calls are made. Use `uniqc submit --dry-run` in the CLI or `dry_run_task()` in Python to check circuit compatibility before submitting. If a dry-run succeeds but the actual submission fails, that is a **critical bug**.
+
 5. **Transpiler** (`uniqc/transpiler/`): Converts between Qiskit circuits and OriginIR format.
 
 6. **Analyzer** (`uniqc/analyzer/`): Post-processing tools for measurement results — expectation values, measurement tomography, state tomography, etc.

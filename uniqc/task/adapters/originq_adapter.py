@@ -19,6 +19,7 @@ from uniqc.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
     TASK_STATUS_SUCCESS,
+    DryRunResult,
     QuantumAdapter,
 )
 from uniqc.task.config import load_originq_config
@@ -76,9 +77,7 @@ class OriginQAdapter(QuantumAdapter):
                 self._DataBase = DataBase
                 self._convert_originir = convert_originir_string_to_qprog
             except Exception as e:
-                raise RuntimeError(
-                    f"Failed to initialize pyqpanda3 for OriginQ: {e}"
-                ) from e
+                raise RuntimeError(f"Failed to initialize pyqpanda3 for OriginQ: {e}") from e
 
     def is_available(self) -> bool:
         """Check if the OriginQ adapter is available (credentials configured).
@@ -469,7 +468,7 @@ class OriginQAdapter(QuantumAdapter):
 
         # Per-qubit data
         single_qubit_data: list[SingleQubitData] = []
-        for sq in (ci.single_qubit_info() or []):
+        for sq in ci.single_qubit_info() or []:
             fid_0 = sq.get_readout_fidelity_0() if hasattr(sq, "get_readout_fidelity_0") else None
             fid_1 = sq.get_readout_fidelity_1() if hasattr(sq, "get_readout_fidelity_1") else None
             avg_ro = sq.get_readout_fidelity() if hasattr(sq, "get_readout_fidelity") else None
@@ -487,7 +486,7 @@ class OriginQAdapter(QuantumAdapter):
 
         # Per-pair data
         two_qubit_data: list[TwoQubitData] = []
-        for dq in (ci.double_qubits_info() or []):
+        for dq in ci.double_qubits_info() or []:
             fid = dq.get_fidelity() if hasattr(dq, "get_fidelity") else None
             u = dq.get_qubit_u() if hasattr(dq, "get_qubit_u") else 0
             v = dq.get_qubit_v() if hasattr(dq, "get_qubit_v") else 0
@@ -509,7 +508,10 @@ class OriginQAdapter(QuantumAdapter):
             gates = cfg.supported_gates() if hasattr(cfg, "supported_gates") else []
             for g in gates:
                 g_lower = g.lower()
-                if g_lower in {"h", "x", "y", "z", "s", "sx", "t", "i", "rx", "ry", "rz", "u1", "u2", "u3"} and g not in single_gates:
+                if (
+                    g_lower in {"h", "x", "y", "z", "s", "sx", "t", "i", "rx", "ry", "rz", "u1", "u2", "u3"}
+                    and g not in single_gates
+                ):
                     single_gates.append(g)
                 elif g_lower in {"cnot", "cz", "iswap", "ecr", "swap"} and g not in two_gates:
                     two_gates.append(g)
@@ -535,4 +537,62 @@ class OriginQAdapter(QuantumAdapter):
                 two_qubit_gate_time=tq_gate_time,
             ),
             calibrated_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    # -------------------------------------------------------------------------
+    # Dry-run validation
+    # -------------------------------------------------------------------------
+
+    def dry_run(self, originir: str, *, shots: int = 1000, **kwargs: Any) -> DryRunResult:
+        """Dry-run validation for OriginQ Cloud backends.
+
+        Validates offline by calling translate_circuit() which internally calls
+        convert_originir_string_to_qprog() — a purely local pyqpanda3 call.
+        The pyqpanda3 compiler will reject unknown gates.
+
+        This method makes NO network calls.
+
+        Note:
+            Any dry-run success followed by actual submission failure is a
+            critical bug. Please report it at the UnifiedQuantum issue tracker.
+        """
+        from uniqc.circuit_adapter import OriginQCircuitAdapter
+        from uniqc.task.adapters.base import _dry_run_failed, _dry_run_success
+
+        backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
+
+        # Extract qubit count from OriginIR QINIT line (no API call)
+        circuit_qubits: int | None = None
+        try:
+            for line in originir.splitlines():
+                line = line.strip()
+                if line.startswith("QINIT"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        circuit_qubits = int(parts[1])
+                    break
+        except Exception:
+            pass
+
+        # Attempt translation — this is a purely local pyqpanda3 call
+        try:
+            self.translate_circuit(originir)
+        except Exception as e:
+            return _dry_run_failed(
+                str(e),
+                details=(
+                    f"OriginIR translation to QProg failed for backend '{backend_name}': {e}. "
+                    "The circuit may use gates not supported by pyqpanda3."
+                ),
+                backend_name=backend_name,
+            )
+
+        return _dry_run_success(
+            (
+                f"Dry-run passed for '{backend_name}': OriginIR translates cleanly "
+                f"to QProg. Qubits={circuit_qubits}, shots={shots}"
+            ),
+            backend_name=backend_name,
+            circuit_qubits=circuit_qubits,
+            supported_gates=tuple(sorted(OriginQCircuitAdapter.SUPPORTED_GATES)),
         )

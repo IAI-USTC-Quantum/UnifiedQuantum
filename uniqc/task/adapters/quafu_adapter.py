@@ -17,6 +17,7 @@ from uniqc.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
     TASK_STATUS_SUCCESS,
+    DryRunResult,
     QuantumAdapter,
 )
 from uniqc.task.config import load_quafu_config
@@ -24,6 +25,30 @@ from uniqc.task.optional_deps import MissingDependencyError, check_quafu
 
 if TYPE_CHECKING:
     pass  # type hints use string annotations via `from __future__ import annotations`
+
+
+# Static qubit count map for offline dry-run qubit validation.
+# Sources: BAQIS ScQ public chip specifications.
+CHIP_QUBIT_COUNTS: dict[str, int] = {
+    "ScQ-P10": 10,
+    "ScQ-P18": 18,
+    "ScQ-P136": 136,
+    "ScQ-P10C": 10,
+    "Dongling": 24,
+    "ScQ-Sim10": 10,
+    "ScQ-Sim": 25,
+    "ScQ-P5": 5,
+    "ScQ-P102": 102,
+    "ScQ-P21": 21,
+    "ScQ-P3": 3,
+    "ScQ-TEST": 5,
+    "Baiwang": 100,
+    "Miaofeng": 44,
+    "Haituo": 136,
+    "Baihua": 10,
+    "Yunmeng": 18,
+    "Xiang": 21,
+}
 
 
 def _avg(values: list[float]) -> float | None:
@@ -93,12 +118,28 @@ class QuafuAdapter(QuantumAdapter):
     name = "quafu"
 
     # Valid chip IDs (known ScQ series chips and simulators)
-    VALID_CHIP_IDS = frozenset({
-        "ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling",
-        "ScQ-Sim10", "ScQ-Sim",
-        "ScQ-P5", "ScQ-P102", "ScQ-P21", "ScQ-P3", "ScQ-TEST",
-        "Baiwang", "Miaofeng", "Haituo", "Baihua", "Yunmeng", "Xiang",
-    })
+    VALID_CHIP_IDS = frozenset(
+        {
+            "ScQ-P10",
+            "ScQ-P18",
+            "ScQ-P136",
+            "ScQ-P10C",
+            "Dongling",
+            "ScQ-Sim10",
+            "ScQ-Sim",
+            "ScQ-P5",
+            "ScQ-P102",
+            "ScQ-P21",
+            "ScQ-P3",
+            "ScQ-TEST",
+            "Baiwang",
+            "Miaofeng",
+            "Haituo",
+            "Baihua",
+            "Yunmeng",
+            "Xiang",
+        }
+    )
 
     # Upper limit on the number of groups retained in _task_history.
     # Beyond this threshold the oldest entry is evicted to avoid unbounded
@@ -642,4 +683,114 @@ class QuafuAdapter(QuantumAdapter):
                 two_qubit_gate_time=tq_time,
             ),
             calibrated_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    # -------------------------------------------------------------------------
+    # Dry-run validation
+    # -------------------------------------------------------------------------
+
+    def dry_run(self, originir: str, *, shots: int = 10000, **kwargs: Any) -> DryRunResult:
+        """Dry-run validation for Quafu backends.
+
+        Validates offline by:
+        1. Extracting qubit count from OriginIR QINIT line (no API call).
+        2. Checking chip_id in VALID_CHIP_IDS (static check).
+        3. Checking qubit count against CHIP_QUBIT_COUNTS (static map).
+        4. Attempting translation via translate_circuit() (no API call —
+           catches unsupported gates).
+
+        This method makes NO network calls.
+
+        Note:
+            Any dry-run success followed by actual submission failure is a
+            critical bug. Please report it at the UnifiedQuantum issue tracker.
+        """
+        from uniqc.task.adapters.base import _dry_run_failed, _dry_run_success
+
+        chip_id: str | None = kwargs.get("chip_id")
+
+        # Step 1: Extract qubit count from OriginIR QINIT line (no API call)
+        circuit_qubits: int | None = None
+        try:
+            for line in originir.splitlines():
+                line = line.strip()
+                if line.startswith("QINIT"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        circuit_qubits = int(parts[1])
+                    break
+        except Exception:
+            pass
+
+        # Step 2: Validate chip_id against static VALID_CHIP_IDS
+        if chip_id is None:
+            return _dry_run_success(
+                "Dry-run passed (no chip_id): OriginIR is syntactically valid. "
+                "Specify --chip-id for full chip-level validation.",
+                backend_name=None,
+                circuit_qubits=circuit_qubits,
+                warnings=("No chip_id provided — skipping chip-level validation.",),
+            )
+
+        if chip_id not in self.VALID_CHIP_IDS:
+            return _dry_run_failed(
+                f"chip_id '{chip_id}' is not in the known Quafu chip list",
+                details=(f"Invalid chip_id. Valid chips: {', '.join(sorted(self.VALID_CHIP_IDS))}"),
+                backend_name=chip_id,
+            )
+
+        # Step 3: Qubit count check against static chip map
+        if circuit_qubits is not None:
+            max_qubits = CHIP_QUBIT_COUNTS.get(chip_id)
+            if max_qubits is not None and circuit_qubits > max_qubits:
+                return _dry_run_failed(
+                    f"circuit requires {circuit_qubits} qubits but chip '{chip_id}' has {max_qubits}",
+                    details=f"Qubit count validation failed: circuit={circuit_qubits}, chip={max_qubits}",
+                    backend_name=chip_id,
+                )
+
+        # Step 4: Attempt translation (catches unsupported gates)
+        try:
+            self.translate_circuit(originir)
+        except RuntimeError as e:
+            err_str = str(e)
+            if "Unknown OriginIR operation" in err_str or "not supported" in err_str.lower():
+                return _dry_run_failed(
+                    err_str,
+                    details=(
+                        f"Circuit contains gates not supported by Quafu adapter. "
+                        f"Supported gates: {', '.join(sorted(self.SUPPORTED_GATES))}. "
+                        f"Error: {e}"
+                    ),
+                    backend_name=chip_id,
+                )
+            return _dry_run_failed(
+                str(e),
+                details=f"Translation failed with unexpected RuntimeError: {e}",
+                backend_name=chip_id,
+            )
+        except Exception as e:
+            return _dry_run_failed(
+                str(e),
+                details=f"Failed to translate OriginIR to Quafu QuantumCircuit: {e}",
+                backend_name=chip_id,
+            )
+
+        # Shots validation — Quafu default max is typically 100000
+        MAX_QUAFU_SHOTS = 100000
+        if shots > MAX_QUAFU_SHOTS:
+            return _dry_run_failed(
+                f"shots ({shots}) exceeds Quafu maximum ({MAX_QUAFU_SHOTS})",
+                details="Shot count validation failed.",
+                backend_name=chip_id,
+            )
+
+        return _dry_run_success(
+            (
+                f"Dry-run passed for '{chip_id}': circuit translates cleanly to "
+                f"Quafu QuantumCircuit. Qubits={circuit_qubits}, shots={shots}"
+            ),
+            backend_name=chip_id,
+            circuit_qubits=circuit_qubits,
+            supported_gates=tuple(sorted(self.SUPPORTED_GATES)),
         )

@@ -18,6 +18,7 @@ from uniqc.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
     TASK_STATUS_SUCCESS,
+    DryRunResult,
     QuantumAdapter,
 )
 from uniqc.task.config import load_ibm_config
@@ -123,9 +124,7 @@ class QiskitAdapter(QuantumAdapter):
     # Task submission
     # -------------------------------------------------------------------------
 
-    def submit(
-        self, circuit: qiskit.QuantumCircuit, *, shots: int = 1000, **kwargs: Any
-    ) -> str:
+    def submit(self, circuit: qiskit.QuantumCircuit, *, shots: int = 1000, **kwargs: Any) -> str:
         """Submit a single circuit to IBM Quantum."""
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: Any = kwargs.get("auto_mapping", False)
@@ -141,9 +140,7 @@ class QiskitAdapter(QuantumAdapter):
             task_name=task_name,
         )
 
-    def submit_batch(
-        self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, **kwargs: Any
-    ) -> list[str]:
+    def submit_batch(self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, **kwargs: Any) -> list[str]:
         """Submit multiple circuits as a batch.
 
         IBM executes all circuits in a single job, so this returns a single-element
@@ -188,14 +185,10 @@ class QiskitAdapter(QuantumAdapter):
 
         max_shots = backend.configuration().max_shots
         if shots > max_shots:
-            raise ValueError(
-                f"maximum shots number exceeded, should less than {max_shots}"
-            )
+            raise ValueError(f"maximum shots number exceeded, should less than {max_shots}")
 
         if circuit_optimize:
-            circuits = qiskit.compiler.transpile(
-                circuits, backend=backend, optimization_level=3
-            )
+            circuits = qiskit.compiler.transpile(circuits, backend=backend, optimization_level=3)
 
         if auto_mapping is True:
             circuits = qiskit.compiler.transpile(
@@ -212,9 +205,7 @@ class QiskitAdapter(QuantumAdapter):
                 optimization_level=1,
             )
         else:
-            circuits = qiskit.compiler.transpile(
-                circuits, backend=backend, optimization_level=1
-            )
+            circuits = qiskit.compiler.transpile(circuits, backend=backend, optimization_level=1)
 
         from qiskit_ibm_runtime import Sampler
 
@@ -325,9 +316,7 @@ class QiskitAdapter(QuantumAdapter):
             if taskinfo["status"] == TASK_STATUS_SUCCESS:
                 return taskinfo["result"]
             if taskinfo["status"] == TASK_STATUS_FAILED:
-                raise RuntimeError(
-                    f"Failed to execute, errorinfo = {taskinfo.get('result')}"
-                )
+                raise RuntimeError(f"Failed to execute, errorinfo = {taskinfo.get('result')}")
 
             # Retry on transient errors
             if retry > 0:
@@ -335,3 +324,130 @@ class QiskitAdapter(QuantumAdapter):
                 time.sleep(interval)
             else:
                 raise RuntimeError("Retry count exhausted.")
+
+    # -------------------------------------------------------------------------
+    # Dry-run validation
+    # -------------------------------------------------------------------------
+
+    def dry_run(self, originir: str, *, shots: int = 1000, **kwargs: Any) -> DryRunResult:
+        """Dry-run validation for IBM Quantum backends.
+
+        Validates offline by:
+        1. Parsing OriginIR -> Qiskit QuantumCircuit.
+        2. Checking chip_id is in available backends (local config lookup).
+        3. Checking shots <= max_shots (local config lookup).
+        4. Checking qubit count against backend limits.
+        5. Attempting transpilation against the backend's basis_gates
+           (purely local — catches unsupported gates).
+
+        This method makes NO network calls. ``service.backend(chip_id)``
+        and ``backend.configuration()`` are local config reads.
+
+        Note:
+            Any dry-run success followed by actual submission failure is a
+            critical bug. Please report it at the UnifiedQuantum issue tracker.
+        """
+        import qiskit
+
+        from uniqc.task.adapters.base import _dry_run_failed, _dry_run_success
+
+        chip_id: str | None = kwargs.get("chip_id")
+        backend_name = chip_id or "simulator"
+
+        # Step 1: Parse OriginIR -> Qiskit QuantumCircuit
+        try:
+            qiskit_circuit = self.translate_circuit(originir)
+        except Exception as e:
+            return _dry_run_failed(
+                str(e),
+                details=f"Failed to translate OriginIR to Qiskit QuantumCircuit: {e}",
+                backend_name=backend_name,
+            )
+
+        circuit_qubits = qiskit_circuit.num_qubits
+
+        # Step 2: Determine backend configuration (local — no network call)
+        try:
+            if chip_id:
+                backend = self._service.backend(chip_id)
+                backend_config = backend.configuration()
+                max_shots = backend_config.max_shots
+                basis_gates = backend_config.basis_gates
+                num_qubits = backend_config.num_qubits
+            else:
+                # Fall back to generic simulator basis gates if no chip_id given
+                max_shots = 100000
+                basis_gates = [
+                    "cx",
+                    "u1",
+                    "u2",
+                    "u3",
+                    "id",
+                    "x",
+                    "y",
+                    "z",
+                    "h",
+                    "s",
+                    "sdg",
+                    "t",
+                    "tdg",
+                    "reset",
+                ]
+                num_qubits = 127
+        except Exception as e:
+            return _dry_run_failed(
+                str(e),
+                details=f"Failed to access backend configuration for '{chip_id}': {e}",
+                backend_name=backend_name,
+            )
+
+        # Step 3: Shots limit check
+        if shots > max_shots:
+            return _dry_run_failed(
+                f"shots ({shots}) exceeds backend maximum ({max_shots})",
+                details=f"Shot count validation failed: {shots} > {max_shots}",
+                backend_name=backend_name,
+            )
+
+        # Step 4: Qubit count check
+        if circuit_qubits > num_qubits:
+            return _dry_run_failed(
+                f"circuit requires {circuit_qubits} qubits but backend '{chip_id}' has {num_qubits}",
+                details=f"Qubit count validation failed: circuit={circuit_qubits}, backend={num_qubits}",
+                backend_name=backend_name,
+            )
+
+        # Step 5: Transpile against basis_gates (fully offline)
+        # This catches unsupported gates without needing a real backend.
+        try:
+            from qiskit.transpiler import CouplingMap
+
+            coupling_map = CouplingMap.from_heavy_hex(num_qubits) if chip_id else None
+            qiskit.compiler.transpile(
+                qiskit_circuit,
+                basis_gates=basis_gates,
+                coupling_map=coupling_map,
+                optimization_level=0,
+            )
+            transpile_warnings: tuple[str, ...] = ()
+        except Exception as e:
+            return _dry_run_failed(
+                f"transpilation failed: {e}",
+                details=(
+                    f"Circuit uses gates not supported by '{chip_id or 'simulator'}' "
+                    f"basis gates. Basis gates: {basis_gates}. "
+                    f"Transpilation error: {e}"
+                ),
+                backend_name=backend_name,
+            )
+
+        return _dry_run_success(
+            (
+                f"Dry-run passed for '{chip_id or 'simulator'}': "
+                f"circuit translates cleanly and transpiles to basis gates. "
+                f"Qubits={circuit_qubits}, shots={shots}"
+            ),
+            backend_name=backend_name,
+            circuit_qubits=circuit_qubits,
+            warnings=transpile_warnings,
+        )

@@ -12,15 +12,19 @@ Environment Variables:
 
 Usage::
 
-    from uniqc.task_manager import submit_task, query_task, wait_for_result
+    from uniqc.task_manager import submit_task, query_task, wait_for_result, dry_run_task
     from uniqc.circuit_builder import Circuit
-    from uniqc.backend import get_backend
 
     # Create a circuit
     circuit = Circuit()
     circuit.h(0)
     circuit.cnot(0, 1)
     circuit.measure(0, 1)
+
+    # Dry-run: validate circuit offline before submitting
+    result = dry_run_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')
+    if not result.success:
+        print(f"Validation failed: {result.error}")
 
     # Submit task (use UNIQC_DUMMY=true for local simulation)
     task_id = submit_task(circuit, backend='quafu', shots=1000)
@@ -34,6 +38,10 @@ Usage::
 
     # Explicitly use dummy mode for a single submission
     task_id = submit_task(circuit, backend='quafu', dummy=True)
+
+Note:
+    Any dry-run success followed by actual submission failure is a critical bug.
+    Please report it at the UnifiedQuantum issue tracker.
 """
 
 from __future__ import annotations
@@ -42,6 +50,9 @@ __all__ = [
     # Task submission
     "submit_task",
     "submit_batch",
+    # Dry-run
+    "dry_run_task",
+    "dry_run_batch",
     # Task query
     "query_task",
     "wait_for_result",
@@ -92,7 +103,9 @@ from uniqc.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
     TASK_STATUS_SUCCESS,
+    QuantumAdapter,
 )
+from uniqc.task.result_types import DryRunResult
 from uniqc.task.store import (
     DEFAULT_CACHE_DIR,
     TaskInfo,
@@ -142,16 +155,150 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
     """
     if backend_name not in ADAPTER_MAP:
         available = ", ".join(ADAPTER_MAP.keys())
-        raise BackendNotFoundError(
-            f"No circuit adapter for backend '{backend_name}'. "
-            f"Available adapters: {available}"
-        )
+        raise BackendNotFoundError(f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}")
     return ADAPTER_MAP[backend_name]()
+
+
+# -----------------------------------------------------------------------------
+# Dry-run validation
+# -----------------------------------------------------------------------------
+
+
+def dry_run_task(
+    circuit: Circuit,
+    backend: str,
+    shots: int = 1000,
+    dummy: bool | None = None,
+    **kwargs: Any,
+) -> DryRunResult:
+    """Validate a circuit against a backend without making network calls.
+
+    This performs a dry-run validation that checks:
+    1. The circuit can be successfully translated to the platform's native format.
+    2. The resulting native circuit object is structurally valid.
+    3. The qubit count fits within the backend's limits (where determinable offline).
+    4. Gate basis compatibility is confirmed (where determinable offline).
+
+    This function makes NO cloud API calls.
+
+    Args:
+        circuit: The UnifiedQuantum Circuit to validate.
+        backend: The backend name (e.g., 'originq', 'quafu', 'ibm').
+        shots: Number of measurement shots for validation.
+        dummy: Override dummy mode. If None, uses UNIQC_DUMMY env var.
+        **kwargs: Additional backend-specific parameters.
+            - For IBM: chip_id (required for full validation)
+            - For Quafu: chip_id (required for full validation)
+            - For OriginQ: backend_name (e.g., 'origin:wuyuan:d5')
+
+    Returns:
+        DryRunResult indicating success or failure with details and warnings.
+
+    Example:
+        >>> from uniqc.circuit_builder import Circuit
+        >>> circuit = Circuit()
+        >>> circuit.h(0)
+        >>> circuit.measure(0)
+        >>> result = dry_run_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')
+        >>> if result.success:
+        ...     print("Circuit is valid for submission")
+        >>> else:
+        ...     print(f"Validation failed: {result.error}")
+
+    Note:
+        Any dry-run success followed by actual submission failure is a
+        critical bug. Please report it at the UnifiedQuantum issue tracker.
+    """
+    from uniqc.task.adapters.dummy_adapter import DummyAdapter
+    from uniqc.task.adapters.originq_adapter import OriginQAdapter
+    from uniqc.task.adapters.qiskit_adapter import QiskitAdapter
+    from uniqc.task.adapters.quafu_adapter import QuafuAdapter
+
+    use_dummy = dummy if dummy is not None else UNIQC_DUMMY
+
+    adapter_map: dict[str, type[QuantumAdapter]] = {
+        "originq": OriginQAdapter,
+        "quafu": QuafuAdapter,
+        "ibm": QiskitAdapter,
+    }
+
+    if use_dummy:
+        try:
+            adapter: QuantumAdapter = DummyAdapter(
+                noise_model=kwargs.get("noise_model"),
+                available_qubits=kwargs.get("available_qubits"),
+                available_topology=kwargs.get("available_topology"),
+            )
+        except Exception as e:
+            return DryRunResult(
+                success=False,
+                details=f"Cannot initialize dummy adapter: {e}",
+                error=str(e),
+                backend_name="dummy",
+            )
+    else:
+        if backend not in adapter_map:
+            return DryRunResult(
+                success=False,
+                details=f"No adapter registered for backend '{backend}'.",
+                error=f"Unknown backend: {backend}",
+                warnings=("Known backends: originq, quafu, ibm",),
+            )
+
+        try:
+            adapter = adapter_map[backend]()
+        except Exception as e:
+            return DryRunResult(
+                success=False,
+                details=f"Failed to initialize adapter for '{backend}': {e}",
+                error=str(e),
+            )
+
+    originir = circuit.originir
+    try:
+        return adapter.dry_run(originir, shots=shots, **kwargs)
+    except Exception as e:
+        return DryRunResult(
+            success=False,
+            details=f"dry_run() raised an unhandled exception: {e}",
+            error=str(e),
+            backend_name=getattr(adapter, "name", None),
+        )
+
+
+def dry_run_batch(
+    circuits: list[Circuit],
+    backend: str,
+    shots: int = 1000,
+    dummy: bool | None = None,
+    **kwargs: Any,
+) -> list[DryRunResult]:
+    """Validate multiple circuits against a backend without making network calls.
+
+    Runs dry_run_task() on each circuit in sequence and returns a list of
+    results, one per circuit in input order.
+
+    Args:
+        circuits: List of UnifiedQuantum Circuits to validate.
+        backend: The backend name.
+        shots: Number of measurement shots per circuit.
+        dummy: Override dummy mode.
+        **kwargs: Additional backend-specific parameters.
+
+    Returns:
+        List of DryRunResult, one per circuit in input order.
+
+    Note:
+        Any dry-run success followed by actual submission failure is a
+        critical bug. Please report it at the UnifiedQuantum issue tracker.
+    """
+    return [dry_run_task(c, backend, shots=shots, dummy=dummy, **kwargs) for c in circuits]
 
 
 # -----------------------------------------------------------------------------
 # Cache Management
 # -----------------------------------------------------------------------------
+
 
 def _store(cache_dir: Path | None = None) -> TaskStore:
     """Return a :class:`TaskStore` bound to ``cache_dir`` (or the default)."""
@@ -224,6 +371,7 @@ def clear_cache(cache_dir: Path | None = None) -> None:
 # Error Handling
 # -----------------------------------------------------------------------------
 
+
 def _map_adapter_error(error: Exception, backend_name: str) -> Exception:
     """Map an adapter error to a UnifiedQuantumError.
 
@@ -239,23 +387,20 @@ def _map_adapter_error(error: Exception, backend_name: str) -> Exception:
     # Check for authentication errors
     if any(keyword in error_message for keyword in ["unauthorized", "invalid token", "authentication", "auth"]):
         return AuthenticationError(
-            f"Authentication failed for backend '{backend_name}'. "
-            "Please check your API token or credentials.",
+            f"Authentication failed for backend '{backend_name}'. Please check your API token or credentials.",
             details={"original_error": str(error)},
         )
 
     # Check for credit/quota errors
     if any(keyword in error_message for keyword in ["credit", "balance", "payment", "billing"]):
         return InsufficientCreditsError(
-            f"Insufficient credits for backend '{backend_name}'. "
-            "Please top up your account.",
+            f"Insufficient credits for backend '{backend_name}'. Please top up your account.",
             details={"original_error": str(error)},
         )
 
     if any(keyword in error_message for keyword in ["quota", "limit exceeded", "rate limit"]):
         return QuotaExceededError(
-            f"Quota exceeded for backend '{backend_name}'. "
-            "Please try again later or upgrade your plan.",
+            f"Quota exceeded for backend '{backend_name}'. Please try again later or upgrade your plan.",
             details={"original_error": str(error)},
         )
 
@@ -273,8 +418,9 @@ def _map_adapter_error(error: Exception, backend_name: str) -> Exception:
 # Task Submission
 # -----------------------------------------------------------------------------
 
+
 def submit_task(
-    circuit: "Circuit",
+    circuit: Circuit,
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
@@ -332,8 +478,7 @@ def submit_task(
     # Check backend availability
     if not backend_instance.is_available():
         raise BackendNotAvailableError(
-            f"Backend '{backend}' is not available. "
-            "Please check your configuration and credentials."
+            f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
     # Convert circuit using adapter
@@ -364,7 +509,7 @@ def submit_task(
 
 
 def _submit_dummy(
-    circuit: "Circuit",
+    circuit: Circuit,
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
@@ -428,7 +573,7 @@ def _submit_dummy(
 
 
 def submit_batch(
-    circuits: list["Circuit"],
+    circuits: list[Circuit],
     backend: str,
     shots: int = 1000,
     dummy: bool | None = None,
@@ -476,8 +621,7 @@ def submit_batch(
     # Check backend availability
     if not backend_instance.is_available():
         raise BackendNotAvailableError(
-            f"Backend '{backend}' is not available. "
-            "Please check your configuration and credentials."
+            f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
     # Convert circuits using adapter
@@ -491,10 +635,7 @@ def submit_batch(
     try:
         result = backend_instance.submit_batch(native_circuits, shots=shots, **kwargs)
         # Handle both list of task IDs and single group ID
-        if isinstance(result, list):
-            task_ids = result
-        else:
-            task_ids = [result]
+        task_ids = result if isinstance(result, list) else [result]
     except Exception as e:
         mapped_error = _map_adapter_error(e, backend)
         raise mapped_error from e
@@ -514,7 +655,7 @@ def submit_batch(
 
 
 def _submit_batch_dummy(
-    circuits: list["Circuit"],
+    circuits: list[Circuit],
     backend: str,
     shots: int = 1000,
     **kwargs: Any,
@@ -574,6 +715,7 @@ def _submit_batch_dummy(
 # Task Query
 # -----------------------------------------------------------------------------
 
+
 def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     """Query the status of a task.
 
@@ -608,10 +750,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
             return cached_task
 
     if backend is None:
-        raise TaskNotFoundError(
-            f"Task '{task_id}' not found in local cache. "
-            "Please provide the backend parameter."
-        )
+        raise TaskNotFoundError(f"Task '{task_id}' not found in local cache. Please provide the backend parameter.")
 
     # Get backend instance (strip 'dummy:' prefix if present)
     actual_backend = backend.split(":", 1)[-1] if backend.startswith("dummy:") else backend
@@ -756,6 +895,7 @@ def wait_for_result(
 # TaskManager Class
 # -----------------------------------------------------------------------------
 
+
 class TaskManager:
     """High-level task manager for quantum computing workflows.
 
@@ -779,7 +919,7 @@ class TaskManager:
 
     def submit(
         self,
-        circuit: "Circuit",
+        circuit: Circuit,
         backend: str,
         shots: int = 1000,
         metadata: dict | None = None,
@@ -796,7 +936,7 @@ class TaskManager:
 
     def submit_batch(
         self,
-        circuits: list["Circuit"],
+        circuits: list[Circuit],
         backend: str,
         shots: int = 1000,
         **kwargs: Any,

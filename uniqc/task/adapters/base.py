@@ -4,27 +4,85 @@ Every backend adapter must implement this interface, providing:
 1. Translation from OriginIR string to the provider's native circuit type.
 2. Task submission via the provider's Python SDK (not raw REST).
 3. Task status query and result retrieval.
+4. Dry-run validation without making any network calls.
 
 The adapter layer replaces all direct ``requests`` REST calls within the
 task modules.  Each adapter is a stateful object that holds the provider
 session / client and configuration.
+
+Dry-run Validation
+------------------
+Every adapter implements ``dry_run(originir, shots, **kwargs)`` to validate
+a circuit offline before submission. This checks:
+  1. OriginIR parses without error.
+  2. All gates are supported by the target backend.
+  3. Qubit count fits within the backend's limits.
+  4. The native circuit object is structurally valid.
+
+No cloud API calls are made. A dry-run success followed by actual submission
+failure is a critical bug — please report it at the issue tracker.
 """
 
 from __future__ import annotations
 
-__all__ = ["QuantumAdapter", "TASK_STATUS_FAILED", "TASK_STATUS_SUCCESS", "TASK_STATUS_RUNNING"]
+__all__ = [
+    "QuantumAdapter",
+    "DryRunResult",
+    "TASK_STATUS_FAILED",
+    "TASK_STATUS_SUCCESS",
+    "TASK_STATUS_RUNNING",
+    "_dry_run_success",
+    "_dry_run_failed",
+]
 
 import abc
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
+
+from uniqc.task.result_types import DryRunResult
 
 if TYPE_CHECKING:
-    from uniqc.circuit_builder.qcircuit import Circuit
+    pass
 
 
 TASK_STATUS_FAILED = "failed"
 TASK_STATUS_SUCCESS = "success"
 TASK_STATUS_RUNNING = "running"
+
+
+def _dry_run_failed(
+    error_message: str,
+    *,
+    details: str,
+    backend_name: str | None = None,
+    warnings: tuple[str, ...] = (),
+) -> DryRunResult:
+    """Build a failure DryRunResult from a caught exception."""
+    return DryRunResult(
+        success=False,
+        details=details,
+        error=error_message,
+        warnings=warnings,
+        backend_name=backend_name,
+    )
+
+
+def _dry_run_success(
+    details: str,
+    *,
+    backend_name: str | None = None,
+    circuit_qubits: int | None = None,
+    supported_gates: tuple[str, ...] = (),
+    warnings: tuple[str, ...] = (),
+) -> DryRunResult:
+    """Build a success DryRunResult."""
+    return DryRunResult(
+        success=True,
+        details=details,
+        backend_name=backend_name,
+        circuit_qubits=circuit_qubits,
+        supported_gates=supported_gates,
+        warnings=warnings,
+    )
 
 
 class QuantumAdapter(abc.ABC):
@@ -72,9 +130,7 @@ class QuantumAdapter(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def submit_batch(
-        self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any
-    ) -> list[str]:
+    def submit_batch(self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any) -> list[str]:
         """Submit multiple circuits as a single batch.
 
         Args:
@@ -149,3 +205,42 @@ class QuantumAdapter(abc.ABC):
                 network failures.
         """
         raise NotImplementedError(f"{self.__class__.__name__} does not implement list_backends")
+
+    # -------------------------------------------------------------------------
+    # Dry-run validation
+    # -------------------------------------------------------------------------
+
+    def dry_run(self, originir: str, *, shots: int = 1000, **kwargs: Any) -> DryRunResult:
+        """Validate a circuit without making network calls.
+
+        Subclasses must implement this method. The default implementation
+        raises NotImplementedError.
+
+        Validation checklist (where determinable offline):
+        1. OriginIR parses without error.
+        2. All gates are supported by the target backend.
+        3. Qubit count fits within the backend's limits.
+        4. The native circuit object is structurally valid.
+
+        This method must NOT make any cloud API calls. All checks must be
+        local-only.
+
+        Args:
+            originir: Circuit in OriginIR format.
+            shots: Number of measurement shots (for shots-limit validation).
+            **kwargs: Adapter-specific options (e.g. chip_id for IBM/Quafu).
+
+        Returns:
+            DryRunResult with success=True/False, details, warnings, and metadata.
+
+        Raises:
+            NotImplementedError: Subclasses must implement this method.
+
+        Note:
+            Any dry-run success followed by actual submission failure is a
+            critical bug. Please report it at the UnifiedQuantum issue tracker.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement dry_run(). "
+            "Subclasses of QuantumAdapter must implement dry_run()."
+        )

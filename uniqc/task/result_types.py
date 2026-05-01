@@ -30,7 +30,7 @@ Usage::
 
 from __future__ import annotations
 
-__all__ = ["UnifiedResult"]
+__all__ = ["UnifiedResult", "DryRunResult"]
 
 from dataclasses import dataclass, field
 from typing import Any
@@ -193,3 +193,35 @@ class UnifiedResult:
             sign = 1 if first_bit == "0" else -1
             expectation += sign * prob
         return expectation
+
+
+@dataclass(frozen=True, slots=True)
+class DryRunResult:
+    """Result of a dry-run circuit validation.
+
+    A dry-run validates circuit translatability and backend compatibility
+    WITHOUT making any cloud API calls.
+
+    Attributes:
+        success: True if the circuit passed all validation checks.
+        details: Human-readable description of what was checked and the outcome.
+        warnings: Non-fatal warnings (e.g., no chip_id provided, partial validation).
+        error: Error message if success is False.
+        backend_name: The backend/chip ID used for this dry-run.
+        circuit_qubits: Number of qubits in the circuit (extracted from OriginIR
+            QINIT line, without making any API call).
+        supported_gates: Gates confirmed available on the target backend that are
+            also used by this circuit.
+
+    Note:
+        Any dry-run success followed by actual submission failure is a
+        critical bug. Please report it at the UnifiedQuantum issue tracker.
+    """
+
+    success: bool
+    details: str
+    warnings: tuple[str, ...] = ()
+    error: str | None = None
+    backend_name: str | None = None
+    circuit_qubits: int | None = None
+    supported_gates: tuple[str, ...] = ()
