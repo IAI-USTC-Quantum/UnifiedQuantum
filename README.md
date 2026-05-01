@@ -7,6 +7,7 @@
 [![PyPI version](https://badge.fury.io/py/unified-quantum.svg?icon=si%3Apython)](https://badge.fury.io/py/unified-quantum)
 [![codecov](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum/graph/badge.svg?token=PFQ6F7HQY7)](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum)
 [![Build and Test](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml)
+[![Quantum | AI](https://img.shields.io/badge/Quantum_Computing-AI-00e5ff?style=flat-square)](https://iai-ustc-quantum.github.io/)
 
 **UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
 
@@ -258,6 +259,19 @@ uniqc backend update
 ### Release Notes
 
 - 版本变化总览：<https://iai-ustc-quantum.github.io/UnifiedQuantum/source/releases/index.html>
+
+---
+
+## 关于我们
+
+**UnifiedQuantum** 由 [IAI-USTC-Quantum](https://github.com/IAI-USTC-Quantum) 团队开发和维护。
+
+- **机构**：[合肥综合性国家科学中心人工智能研究院](https://iai-ustc-quantum.github.io) · 量子人工智能团队
+- **GitHub 组织**：[github.com/IAI-USTC-Quantum](https://github.com/IAI-USTC-Quantum)
+- **文档站点**：[iai-ustc-quantum.github.io](https://iai-ustc-quantum.github.io)
+- **联系我们**：chenzhaoyun@iai.ustc.edu.cn
+
+欢迎提交 Issues、Pull Request，或通过邮件联系我们。如果您对量子计算研究感兴趣，欢迎加入我们。
 
 ---
 
