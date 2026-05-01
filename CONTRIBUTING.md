@@ -32,7 +32,7 @@ This installs the package in **editable mode** with:
 
 #### CMake Requirement
 
-The C++ backend requires CMake >= 3.26. On systems with an older CMake (e.g. Ubuntu 22.04 ships cmake 3.22), install a newer version via pip:
+The C++ backend requires CMake >= 3.22. On systems with an older CMake, install a newer version via pip:
 
 ```bash
 pip install cmake --upgrade

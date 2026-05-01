@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Literal
 
 from ._utils import CompilationFailedException
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
-from .qiskit_transpiler import transpile_qasm
 
 if TYPE_CHECKING:
     from uniqc.backend_info import BackendInfo
@@ -208,6 +207,7 @@ def compile_with_config(
     qasm_input = convert_oir_to_qasm(routed_originir)
 
     # Qiskit transpilation
+    transpile_qasm = _load_transpile_qasm()
     transpiled_qasm = transpile_qasm(
         [qasm_input],
         topology=topology,
@@ -289,6 +289,7 @@ def compile_full(
         messages.append("No chip characterization; routing uses topology only.")
 
     qasm_input = convert_oir_to_qasm(routed_originir)
+    transpile_qasm = _load_transpile_qasm()
     transpiled_qasm = transpile_qasm(
         [qasm_input],
         topology=topology,
@@ -314,6 +315,17 @@ def compile_full(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+
+def _load_transpile_qasm():
+    try:
+        from .qiskit_transpiler import transpile_qasm
+    except ImportError as exc:
+        raise CompilationFailedException(
+            "compile() requires the optional qiskit dependencies. "
+            "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`."
+        ) from exc
+    return transpile_qasm
 
 
 def _route_with_fidelity(
@@ -534,6 +546,7 @@ def _originir_to_circuit(originir_str: str) -> Circuit:
 
     circuit: Circuit = Circuit()
     lines = originir_str.strip().splitlines()
+    pending_measurements: dict[int, int] = {}
 
     GATE_MAP: dict[str, str] = {
         "H": "h",
@@ -577,13 +590,26 @@ def _originir_to_circuit(originir_str: str) -> Circuit:
                 circuit.cbit_num = int(stripped.split()[1])
                 continue
             if "MEASURE" in stripped:
-                for i, q_str in enumerate(re.findall(r"q\[(\d+)\]", stripped)):
-                    circuit.measure(int(q_str), i)
+                q_match = re.search(r"q\[(\d+)\]", stripped)
+                c_match = re.search(r"c\[(\d+)\]", stripped)
+                if q_match is not None and c_match is not None:
+                    pending_measurements[int(c_match.group(1))] = int(q_match.group(1))
                 continue
             # Skip unparseable lines
             continue
 
-        if op is None or op in ("QINIT", "CREG", "CONTROL", "ENDCONTROL", "DAGGER", "ENDDAGGER", "DEF", "ENDDEF"):
+        if op == "QINIT":
+            circuit.qubit_num = int(qubit)
+            circuit.max_qubit = max(0, circuit.qubit_num - 1)
+            continue
+        if op == "CREG":
+            circuit.cbit_num = int(cbit or 0)
+            continue
+        if op is None or op in ("CONTROL", "ENDCONTROL", "DAGGER", "ENDDAGGER", "DEF", "ENDDEF"):
+            continue
+        if op == "MEASURE":
+            pending_measurements[int(cbit)] = int(qubit)
+            circuit.record_qubit(int(qubit))
             continue
         if op == "BARRIER":
             q_ids = [int(q) for q in re.findall(r"q\[(\d+)\]", stripped)]
@@ -616,5 +642,10 @@ def _originir_to_circuit(originir_str: str) -> Circuit:
                 circuit.add_gate(op, qubit, cbit, param, bool(dagger), ctrl)
         else:
             circuit.add_gate(op, qubit, cbit, param, bool(dagger), ctrl)
+
+    if pending_measurements:
+        circuit.measure_list = [pending_measurements[cbit] for cbit in sorted(pending_measurements)]
+        circuit.cbit_num = max(pending_measurements) + 1
+        circuit.record_qubit(circuit.measure_list)
 
     return circuit
