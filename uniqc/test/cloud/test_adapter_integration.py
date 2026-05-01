@@ -90,7 +90,7 @@ class RunTestQuafuAdapterReal:
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
         # Use a simulator chip if available, otherwise any valid chip
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-P10", wait=True)
+        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=True)
         assert isinstance(task_id, str) and len(task_id) > 0
 
         result = adapter.query(task_id)
@@ -103,14 +103,17 @@ class RunTestQuafuAdapterReal:
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-P10", wait=False)
+        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=False)
         assert isinstance(task_id, str)
 
         # Poll until done (or timeout after 60s)
         results = adapter.query_sync(task_id, interval=5.0, timeout=60.0)
         assert isinstance(results, list)
         assert len(results) == 1
-        assert results[0]["status"] in ("success", "failed")
+        # query_sync returns inner result dicts from query_batch — for Quafu
+        # these are {"counts": {...}, "probabilities": {...}}, no "status" key
+        assert "counts" in results[0]
+        assert "probabilities" in results[0]
 
     def run_test_submit_batch_sync(self):
         """Batch submit 3 circuits with wait=True."""
@@ -119,7 +122,7 @@ class RunTestQuafuAdapterReal:
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
         task_ids = adapter.submit_batch(
-            [qc, qc, qc], shots=100, chip_id="ScQ-P10", wait=True
+            [qc, qc, qc], shots=100, chip_id="ScQ-Sim10", wait=True
         )
         assert isinstance(task_ids, list)
         assert len(task_ids) == 3
@@ -131,7 +134,7 @@ class RunTestQuafuAdapterReal:
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-P10", wait=True)
+        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=True)
         result = adapter.query(task_id)
 
         assert result["status"] == "success", f"Expected success, got {result}"
@@ -155,7 +158,7 @@ class RunTestQuafuAdapterReal:
         assert len(backends) > 0
         names = [b["name"] for b in backends]
         # At least one of the known chips should appear
-        known_chips = {"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"}
+        known_chips = {"ScQ-Sim10", "ScQ-P18", "ScQ-P136", "ScQ-Sim10C", "Dongling"}
         assert any(c in names for c in known_chips), f"Expected known chips in {names}"
 
 
@@ -179,12 +182,12 @@ class RunTestQiskitAdapterReal:
         assert qc.num_qubits >= 2
 
     def run_test_submit_single(self):
-        """Submit single circuit to ibm_qasm_simulator."""
+        """Submit single circuit to a real IBM chip (ibm_fez)."""
         from uniqc.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
-        job_id = adapter.submit(qc, shots=100, chip_id="ibm_qasm_simulator")
+        job_id = adapter.submit(qc, shots=100, chip_id="ibm_fez")
         assert isinstance(job_id, str)
 
         result = adapter.query(job_id)
@@ -201,7 +204,7 @@ class RunTestQiskitAdapterReal:
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
         result = adapter.submit_batch(
-            [qc, qc, qc], shots=100, chip_id="ibm_qasm_simulator"
+            [qc, qc, qc], shots=100, chip_id="ibm_fez"
         )
         # Must be a list, not a string
         assert isinstance(result, list), f"submit_batch must return list, got {type(result)}"
@@ -215,11 +218,11 @@ class RunTestQiskitAdapterReal:
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
         job_ids = adapter.submit_batch(
-            [qc, qc], shots=100, chip_id="ibm_qasm_simulator"
+            [qc, qc], shots=100, chip_id="ibm_fez"
         )
         assert isinstance(job_ids, list)
 
-        results = adapter.query_sync(job_ids, interval=2.0, timeout=60.0)
+        results = adapter.query_sync(job_ids, interval=5.0, timeout=180.0)
         assert isinstance(results, list)
         assert len(results) == 2
 
@@ -230,9 +233,9 @@ class RunTestQiskitAdapterReal:
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
         job_ids = adapter.submit_batch(
-            [qc, qc], shots=100, chip_id="ibm_qasm_simulator"
+            [qc, qc], shots=100, chip_id="ibm_fez"
         )
-        results = adapter.query_sync(job_ids, interval=2.0, timeout=60.0)
+        results = adapter.query_sync(job_ids, interval=5.0, timeout=180.0)
 
         assert isinstance(results, list)
         assert len(results) == 2
@@ -244,12 +247,12 @@ class RunTestQiskitAdapterReal:
                 assert isinstance(val, int) and val >= 0
 
     def run_test_list_backends(self):
-        """List IBM backends; verify simulator appears."""
+        """List IBM backends; verify real chips appear."""
         from uniqc.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
-        # QiskitAdapter doesn't implement list_backends; use the provider directly
-        provider = adapter._provider
-        backends = provider.backends()
+        backends = adapter._service.backends()
         names = [b.name for b in backends]
-        assert "ibm_qasm_simulator" in names, f"Expected simulator in {names}"
+        # At least one known chip should appear (the open instance has real hardware)
+        known_chips = {"ibm_fez", "ibm_marrakesh", "ibm_kingston"}
+        assert any(c in names for c in known_chips), f"Expected known chips in {names}"

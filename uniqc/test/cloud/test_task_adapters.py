@@ -47,6 +47,7 @@ MEASURE q[2], c[2]
 # Config tests
 # ---------------------------------------------------------------------------
 
+
 class RunTestConfigEnvVars:
     """Config loading from environment variables (preferred)."""
 
@@ -86,9 +87,7 @@ class RunTestConfigEnvVars:
 
     def run_test_dummy_config_from_env(self, monkeypatch, tmp_path):
         """OriginQ Dummy config is read from ORIGINQ_* env vars."""
-        monkeypatch.setenv(
-            "ORIGINQ_AVAILABLE_QUBITS", json.dumps([0, 1, 2, 3])
-        )
+        monkeypatch.setenv("ORIGINQ_AVAILABLE_QUBITS", json.dumps([0, 1, 2, 3]))
         monkeypatch.setenv(
             "ORIGINQ_AVAILABLE_TOPOLOGY",
             json.dumps([[0, 1], [1, 2], [2, 3]]),
@@ -148,11 +147,9 @@ class RunTestConfigEnvVars:
 # OriginQ adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("ORIGINQ_API_KEY"),
-    reason="ORIGINQ_API_KEY not set"
-)
+@pytest.mark.skipif(not os.environ.get("ORIGINQ_API_KEY"), reason="ORIGINQ_API_KEY not set")
 @pytest.mark.requires_pyqpanda3
 class RunTestOriginQAdapterIntegration:
     """Integration tests for OriginQ adapter with real pyqpanda3 and credentials."""
@@ -190,11 +187,9 @@ class RunTestOriginQAdapterIntegration:
 # Quafu adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("QUAFU_API_TOKEN"),
-    reason="QUAFU_API_TOKEN not set"
-)
+@pytest.mark.skipif(not os.environ.get("QUAFU_API_TOKEN"), reason="QUAFU_API_TOKEN not set")
 @pytest.mark.requires_quafu
 class RunTestQuafuAdapterIntegration:
     """Integration tests for Quafu adapter with real quafu and credentials."""
@@ -233,11 +228,9 @@ MEASURE q[0], c[0]
 # IBM adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("IBM_TOKEN"),
-    reason="IBM_TOKEN not set"
-)
+@pytest.mark.skipif(not os.environ.get("IBM_TOKEN"), reason="IBM_TOKEN not set")
 @pytest.mark.requires_qiskit
 class RunTestIBMAdapterIntegration:
     """Integration tests for IBM adapter with real qiskit and credentials."""
@@ -266,6 +259,7 @@ class RunTestIBMAdapterIntegration:
 # Adapter availability tests
 # ---------------------------------------------------------------------------
 
+
 class RunTestAdapterAvailability:
     """Each adapter reports availability based on installed packages / config."""
 
@@ -281,6 +275,7 @@ class RunTestAdapterAvailability:
     def run_test_quafu_adapter_available_with_config(self, monkeypatch):
         """Test Quafu adapter availability with config."""
         from uniqc.task.optional_deps import check_quafu
+
         monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
 
         # Check if quafu is actually installed
@@ -290,21 +285,29 @@ class RunTestAdapterAvailability:
             pytest.skip("quafu not installed")
 
         from uniqc.task.adapters import QuafuAdapter
+
         adapter = QuafuAdapter()
         assert isinstance(adapter.is_available(), bool)
 
     def run_test_ibm_adapter_available_with_config(self, monkeypatch):
         """Test IBM adapter availability with config."""
+        import os
+
         from uniqc.task.optional_deps import check_qiskit
-        monkeypatch.setenv("IBM_TOKEN", "test_token")
 
-        # Check if qiskit is actually installed
-        qiskit_available = check_qiskit()
-
-        if not qiskit_available:
+        if not check_qiskit():
             pytest.skip("qiskit not installed")
 
+        # QiskitRuntimeService validates tokens against IBM servers, so we need
+        # a real token — skip if none is available
+        real_token = os.environ.get("IBM_TOKEN")
+        if not real_token:
+            pytest.skip("IBM_TOKEN not set")
+
+        monkeypatch.setenv("IBM_TOKEN", real_token)
+
         from uniqc.task.adapters import QiskitAdapter
+
         adapter = QiskitAdapter()
         assert isinstance(adapter.is_available(), bool)
 
@@ -312,6 +315,7 @@ class RunTestAdapterAvailability:
 # ---------------------------------------------------------------------------
 # OriginQ adapter unit tests (mock-based)
 # ---------------------------------------------------------------------------
+
 
 class TestOriginQAdapterUnit:
     """Unit tests for OriginQ adapter using mocks."""

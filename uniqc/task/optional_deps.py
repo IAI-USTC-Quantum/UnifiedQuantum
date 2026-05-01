@@ -102,14 +102,14 @@ def check_quafu() -> bool:
 
 
 def check_qiskit() -> bool:
-    """Check if the qiskit and qiskit_ibm_provider packages are available.
+    """Check if the qiskit and qiskit_ibm_runtime packages are available.
 
     Returns:
         True if both packages can be imported, False otherwise.
     """
     try:
         import qiskit  # noqa: F401
-        import qiskit_ibm_provider  # noqa: F401
+        import qiskit_ibm_runtime  # noqa: F401
         return True
     except ImportError:
         return False

@@ -92,8 +92,13 @@ class QuafuAdapter(QuantumAdapter):
 
     name = "quafu"
 
-    # Valid chip IDs
-    VALID_CHIP_IDS = frozenset({"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"})
+    # Valid chip IDs (known ScQ series chips and simulators)
+    VALID_CHIP_IDS = frozenset({
+        "ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling",
+        "ScQ-Sim10", "ScQ-Sim",
+        "ScQ-P5", "ScQ-P102", "ScQ-P21", "ScQ-P3", "ScQ-TEST",
+        "Baiwang", "Miaofeng", "Haituo", "Baihua", "Yunmeng", "Xiang",
+    })
 
     # Upper limit on the number of groups retained in _task_history.
     # Beyond this threshold the oldest entry is evicted to avoid unbounded
@@ -317,7 +322,9 @@ class QuafuAdapter(QuantumAdapter):
             raise RuntimeError(
                 r"Invalid chip_id. "
                 r"Current quafu chip_id list: "
-                r"['ScQ-P10','ScQ-P18','ScQ-P136', 'ScQ-P10C', 'Dongling']"
+                r"ScQ-P10, ScQ-P18, ScQ-P136, ScQ-P10C, Dongling, "
+                r"ScQ-Sim10, ScQ-Sim, ScQ-P5, ScQ-P102, ScQ-P21, ScQ-P3, ScQ-TEST, "
+                r"Baiwang, Miaofeng, Haituo, Baihua, Yunmeng, Xiang"
             )
 
         user = self._User(api_token=self._api_token)
@@ -360,7 +367,9 @@ class QuafuAdapter(QuantumAdapter):
             raise RuntimeError(
                 r"Invalid chip_id. "
                 r"Current quafu chip_id list: "
-                r"['ScQ-P10','ScQ-P18','ScQ-P136', 'ScQ-P10C', 'Dongling']"
+                r"ScQ-P10, ScQ-P18, ScQ-P136, ScQ-P10C, Dongling, "
+                r"ScQ-Sim10, ScQ-Sim, ScQ-P5, ScQ-P102, ScQ-P21, ScQ-P3, ScQ-TEST, "
+                r"Baiwang, Miaofeng, Haituo, Baihua, Yunmeng, Xiang"
             )
 
         user = self._User(api_token=self._api_token)
