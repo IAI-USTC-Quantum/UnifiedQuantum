@@ -17,32 +17,42 @@ UnifiedQuantum is a Python-native quantum programming framework for NISQ devices
 
 ## Build Commands
 
+**Requirements:** Python 3.10–3.13, git with submodules, CMake >= 3.26, C++17 compiler.
+
 ```bash
-# Requirements: git submodules, CMake >= 3.26, C++ compiler with C++17 support
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
-
-# If system CMake is < 3.26, install newer version via pip first:
-pip install cmake --upgrade
-
-# For development: editable install with C++ extension + all optional dependencies (recommended)
-uv tool install -e ".[all]"
-
-# For development without CLI tool (Python API only, no optional deps):
-uv pip install -e . --no-build-isolation
-
-# For production install (requires CMake >= 3.26 in PATH)
-uv pip install .
+cd UnifiedQuantum
 ```
+
+### Recommended: Full development environment
+
+```bash
+uv tool install -e ".[all]"
+```
+
+This installs in **editable mode** with:
+- The C++ simulation backend (`uniqc_cpp`) compiled via pybind11/CMake
+- All optional dependencies (Qiskit, Quafu, IBM Runtime, pandas, etc.)
+- Development tools (pytest, ruff, pre-commit)
+
+This is the default/recommended command for active development. All tests (including those requiring `uniqc_cpp`) run normally.
 
 ### CMake Requirement
 
-The C++ backend requires CMake >= 3.26. Most Linux distributions ship older versions (e.g., Ubuntu 22.04 has cmake 3.22). For local development, install a newer cmake via pip:
+The C++ backend requires CMake >= 3.26. On systems with an older CMake (e.g. Ubuntu 22.04 ships cmake 3.22), install a newer version via pip:
 
 ```bash
 pip install cmake --upgrade
 ```
 
-This installs cmake to `~/.local/bin/` or the Python bin directory, which must be in PATH before the system cmake for editable installs with `--no-build-isolation`.
+The newer cmake is installed to `~/.local/bin/` or your Python bin directory — make sure it comes first in `PATH` before the system cmake.
+
+### Without uv
+
+```bash
+pip install cmake --upgrade
+pip install -e ".[all]"
+```
 
 ## Testing
 
@@ -107,7 +117,3 @@ To release a new version:
 3. Push the tag: `git push origin --tags`
 
 Pushing a `v*` tag triggers `pypi-publish.yml`, which builds wheels (Linux manylinux + Windows, Python 3.10–3.13) with the C++ extension via `cibuildwheel` and publishes them to PyPI using Trusted Publishing (OIDC). No manual version bump is needed — the version is automatically extracted from the git tag.
-
-## Known Issues
-
-- System cmake on Ubuntu 22.04 (cmake 3.22) is too old for building the C++ extension. Install via `pip install cmake --upgrade` and use `uv tool install -e .` for development.

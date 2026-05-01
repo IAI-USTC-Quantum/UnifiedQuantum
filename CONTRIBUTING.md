@@ -6,24 +6,48 @@ Thank you for your interest in contributing to UnifiedQuantum! This document out
 
 ### Prerequisites
 
-- Python 3.9 – 3.12
+- Python 3.10 – 3.13
+- [uv](https://github.com/astral-sh/uv) (package manager — install via `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Git
+- CMake >= 3.26 (C++ backend build — see [CMake Requirement](#cmake-requirement) below)
+- C++ compiler with C++17 support (e.g. `g++` >= 8, `clang++` >= 10)
 
 ### Clone & Install
 
 ```bash
-git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
-pip install -e .
 ```
 
-For development dependencies (testing, linting):
+#### Recommended: Full Development Environment (includes C++ extension + all optional dependencies)
 
 ```bash
-pip install -e . && pip install pytest ruff pre-commit
+uv tool install -e ".[all]"
 ```
 
-Install pre-commit hooks:
+This installs the package in **editable mode** with:
+- The C++ simulation backend (`uniqc_cpp`) compiled via pybind11/CMake
+- All optional dependencies (Qiskit, Quafu, IBM Runtime, visualization tools, etc.)
+- Development tools (pytest, ruff, pre-commit)
+
+#### CMake Requirement
+
+The C++ backend requires CMake >= 3.22. On systems with an older CMake, install a newer version via pip:
+
+```bash
+pip install cmake --upgrade
+```
+
+The newer cmake is installed to `~/.local/bin/` or your Python bin directory — make sure it comes first in `PATH` before the system cmake.
+
+#### Without uv (pip only)
+
+```bash
+pip install cmake --upgrade
+pip install -e ".[all]"
+```
+
+### Install pre-commit hooks
 
 ```bash
 pre-commit install

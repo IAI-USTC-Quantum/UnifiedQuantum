@@ -16,6 +16,7 @@ class Platform(Enum):
     ORIGINQ = "originq"
     QUAFU = "quafu"
     IBM = "ibm"
+    DUMMY = "dummy"
 
 
 # ---------------------------------------------------------------------------

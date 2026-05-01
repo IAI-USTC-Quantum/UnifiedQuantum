@@ -13,11 +13,17 @@ and returns results in the same format as cloud backends.
 Usage:
     from uniqc.task.adapters.dummy_adapter import DummyAdapter
 
-    # Create adapter with default settings
+    # Create adapter with default settings (perfect simulator)
     adapter = DummyAdapter()
 
-    # Or with noise simulation
-    adapter = DummyAdapter(noise_model={'depol': 0.01})
+    # Noisy simulation from chip characterization
+    from uniqc.task.adapters.originq_adapter import OriginQAdapter
+    originq = OriginQAdapter()
+    chip = originq.get_chip_characterization("origin:wuyuan:d5")
+    adapter = DummyAdapter(chip_characterization=chip)
+
+    # Explicit noise model
+    adapter = DummyAdapter(noise_model={'depol_1q': 0.01, 'depol_2q': 0.05})
 
     # Submit and query (results are immediately available)
     task_id = adapter.submit(originir_circuit, shots=1000)
@@ -35,10 +41,13 @@ __all__ = ["DummyAdapter", "UNIQC_DUMMY"]
 
 import hashlib
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..result_types import UnifiedResult
 from .base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS, DryRunResult, QuantumAdapter
+
+if TYPE_CHECKING:
+    from uniqc.cli.chip_info import ChipCharacterization
 
 # Check environment variable for global dummy mode
 UNIQC_DUMMY = os.environ.get("UNIQC_DUMMY", "").lower() in ("true", "1", "yes")
@@ -53,18 +62,21 @@ class DummyAdapter(QuantumAdapter):
 
     Features:
     - Immediate result availability (no waiting for queue)
-    - Optional noise simulation
-    - Deterministic task IDs (based on circuit hash)
+    - Optional noise simulation from chip characterization or explicit model
     - Same result format as cloud backends
+    - Deterministic task IDs (based on circuit hash)
 
     Attributes:
         name: Adapter identifier ('dummy').
-        noise_model: Optional noise configuration for simulation.
+        chip_characterization: Optional chip characterization for realistic noise.
+        noise_model: Optional explicit noise configuration dict.
         available_qubits: List of qubit indices available for simulation.
-        available_topology: List of [u, v] edges defining qubit connectivity.
 
     Example:
-        >>> adapter = DummyAdapter()
+        >>> from uniqc.task.adapters.originq_adapter import OriginQAdapter
+        >>> originq = OriginQAdapter()
+        >>> chip = originq.get_chip_characterization("origin:wuyuan:d5")
+        >>> adapter = DummyAdapter(chip_characterization=chip)
         >>> task_id = adapter.submit("QINIT 2\\nH q[0]\\nCNOT q[0] q[1]\\nMEASURE")
         >>> result = adapter.query(task_id)
         >>> print(result['status'])
@@ -78,21 +90,28 @@ class DummyAdapter(QuantumAdapter):
         noise_model: dict[str, Any] | None = None,
         available_qubits: list[int] | None = None,
         available_topology: list[list[int]] | None = None,
+        chip_characterization: ChipCharacterization | None = None,
     ) -> None:
         """Initialize the DummyAdapter.
 
         Args:
             noise_model: Optional noise model configuration.
                 Supported keys:
-                - 'depol': Depolarizing error rate (0.0 to 1.0)
-                - 'bitflip': Bit-flip error rate
+                - 'depol_1q': Depolarizing error rate for single-qubit gates (0.0 to 1.0)
+                - 'depol_2q': Depolarizing error rate for two-qubit gates
                 - 'readout': Readout error rate
+                - 'depol': Fallback depolarizing rate for both 1Q and 2Q (used if
+                  depol_1q/depol_2q not set)
             available_qubits: List of available qubit indices.
             available_topology: List of [u, v] edges for qubit connectivity.
+            chip_characterization: Chip characterization data. When provided, the
+                adapter automatically derives realistic noise parameters from the
+                per-qubit and per-pair calibration data (T1/T2, gate fidelities,
+                readout errors). This is the recommended way to configure noise.
 
         Raises:
             MissingDependencyError: If the C++ simulator extension (`uniqc_cpp`)
-                required by the default dummy simulation path is not available.
+                required by the simulation path is not available.
         """
         from ..optional_deps import MissingDependencyError, check_simulation
 
@@ -105,19 +124,146 @@ class DummyAdapter(QuantumAdapter):
                 ),
             )
 
+        self.chip_characterization = chip_characterization
         self.noise_model = noise_model
         self.available_qubits = available_qubits or []
         self.available_topology = available_topology or []
         self._cache: dict[str, dict[str, Any]] = {}
-        self._simulator_cls = None  # Lazy loaded
+        self._simulator_cls: type | None = None
+        self._error_loader: Any | None = None
 
-    def _get_simulator_cls(self):
+    def _get_simulator_cls(self) -> type:
         """Lazily load the simulator class."""
         if self._simulator_cls is None:
             from uniqc.simulator import OriginIR_Simulator
 
             self._simulator_cls = OriginIR_Simulator
         return self._simulator_cls
+
+    def _get_error_loader(self) -> Any | None:
+        """Build error loader from chip characterization or explicit noise model.
+
+        This is called lazily on first simulation to avoid importing heavy
+        dependencies at construction time.
+        """
+        if self._error_loader is not None:
+            return self._error_loader
+
+        if self.chip_characterization is not None:
+            self._error_loader = self._build_error_loader_from_chip(
+                self.chip_characterization
+            )
+        elif self.noise_model is not None:
+            self._error_loader = self._build_error_loader_from_model(self.noise_model)
+        else:
+            self._error_loader = None
+
+        return self._error_loader
+
+    def _build_error_loader_from_chip(self, chip: ChipCharacterization) -> Any:
+        """Convert chip characterization data to a gate-specific error loader.
+
+        Uses per-qubit single-gate fidelity and per-pair two-qubit gate fidelity
+        to derive realistic gate error rates. Readout errors are also extracted.
+
+        Args:
+            chip: Chip characterization with calibration data.
+
+        Returns:
+            ErrorLoader_GateSpecificError instance, or None if chip has no gate data.
+        """
+        from uniqc.simulator.error_model import ErrorLoader_GateSpecificError, ErrorModel
+
+        # Collect single-qubit gate errors
+        sq_errors: dict[int, float] = {}
+        for sq_data in chip.single_qubit_data:
+            if sq_data.single_gate_fidelity is not None:
+                # Error rate = 1 - fidelity
+                sq_errors[sq_data.qubit_id] = 1.0 - sq_data.single_gate_fidelity
+
+        # Collect two-qubit gate errors (use best fidelity per edge)
+        tq_errors: dict[tuple[int, int], float] = {}
+        for tq_data in chip.two_qubit_data:
+            for gate in tq_data.gates:
+                if gate.fidelity is not None:
+                    edge = tuple(sorted((tq_data.qubit_u, tq_data.qubit_v)))
+                    existing = tq_errors.get(edge)
+                    if existing is None or (1.0 - gate.fidelity) < existing:
+                        tq_errors[edge] = 1.0 - gate.fidelity
+
+        # Collect readout errors: p(misread | prepared 0), p(misread | prepared 1)
+        ro_errors: dict[int, list[float]] = {}
+        for sq_data in chip.single_qubit_data:
+            if sq_data.avg_readout_fidelity is not None:
+                # Approximate readout error: 1 - fidelity
+                err = 1.0 - sq_data.avg_readout_fidelity
+                # Symmetric readout error model: p(0|1) = p(1|0) = err/2
+                ro_errors[sq_data.qubit_id] = [err / 2.0, err / 2.0]
+
+        # Build generic_error: average over all qubits for gates not explicitly listed
+        all_sq_errors = list(sq_errors.values())
+        generic_1q = sum(all_sq_errors) / len(all_sq_errors) if all_sq_errors else 0.01
+        all_tq_errors = list(tq_errors.values())
+        generic_2q = sum(all_tq_errors) / len(all_tq_errors) if all_tq_errors else 0.05
+
+        generic_error = [
+            ErrorModel(
+                name="depolarizing",
+                params={"p": generic_1q},
+            )
+        ]
+        gatetype_error: dict[str, list[ErrorModel]] = {
+            "CNOT": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
+            "CZ": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
+            "ISWAP": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
+        }
+
+        # Per-instance gate errors
+        gate_specific_error: dict[tuple[str, tuple[int, int]], list[ErrorModel]] = {}
+        for edge, err in tq_errors.items():
+            gate_specific_error[("CNOT", edge)] = [
+                ErrorModel(name="depolarizing", params={"p": err})
+            ]
+            gate_specific_error[("CZ", edge)] = [
+                ErrorModel(name="depolarizing", params={"p": err})
+            ]
+
+        loader = ErrorLoader_GateSpecificError(
+            generic_error=generic_error,
+            gatetype_error=gatetype_error,
+            gate_specific_error=gate_specific_error,
+        )
+        return loader
+
+    def _build_error_loader_from_model(
+        self, noise_model: dict[str, Any]
+    ) -> Any:
+        """Build error loader from an explicit noise model dict.
+
+        Args:
+            noise_model: Noise model with optional 'depol_1q', 'depol_2q', 'depol'.
+
+        Returns:
+            ErrorLoader_GateSpecificError instance.
+        """
+        from uniqc.simulator.error_model import ErrorLoader_GateSpecificError, ErrorModel
+
+        depol_1q = noise_model.get("depol_1q", noise_model.get("depol", 0.0))
+        depol_2q = noise_model.get("depol_2q", noise_model.get("depol", 0.0))
+
+        generic_error = [
+            ErrorModel(name="depolarizing", params={"p": depol_1q}),
+        ]
+        gatetype_error: dict[str, list[ErrorModel]] = {
+            "CNOT": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
+            "CZ": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
+            "ISWAP": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
+        }
+        return ErrorLoader_GateSpecificError(
+            generic_error=generic_error,
+            gatetype_error=gatetype_error,
+            gate_specific_error={},
+        )
 
     def _generate_task_id(self, circuit: str) -> str:
         """Generate a deterministic task ID from circuit content.
@@ -338,7 +484,7 @@ class DummyAdapter(QuantumAdapter):
         )
 
     def _simulate(self, originir: str, shots: int) -> UnifiedResult:
-        """Run simulation using the OriginIR simulator.
+        """Run simulation using the OriginIR simulator (noiseless or noisy).
 
         Args:
             originir: Circuit in OriginIR format.
@@ -351,12 +497,40 @@ class DummyAdapter(QuantumAdapter):
             RuntimeError: If simulation fails.
         """
         Simulator = self._get_simulator_cls()
+        error_loader = self._get_error_loader()
 
-        # Create simulator with optional constraints
-        sim = Simulator(
-            available_qubits=self.available_qubits,
-            available_topology=self.available_topology,
-        )
+        # Determine which simulator to use
+        if error_loader is not None:
+            # Noisy simulation
+            try:
+                from uniqc.simulator import OriginIR_NoisySimulator
+            except ImportError:
+                # Fall back to noiseless
+                sim = Simulator(
+                    available_qubits=self.available_qubits,
+                    available_topology=self.available_topology,
+                )
+            else:
+                # Collect readout errors from chip characterization
+                readout_error: dict[int, list[float]] = {}
+                if self.chip_characterization is not None:
+                    for sq_data in self.chip_characterization.single_qubit_data:
+                        if sq_data.avg_readout_fidelity is not None:
+                            err = 1.0 - sq_data.avg_readout_fidelity
+                            readout_error[sq_data.qubit_id] = [err / 2.0, err / 2.0]
+
+                sim = OriginIR_NoisySimulator(
+                    error_loader=error_loader,
+                    available_qubits=self.available_qubits,
+                    available_topology=self.available_topology,
+                    readout_error=readout_error,
+                )
+        else:
+            # Noiseless simulation
+            sim = Simulator(
+                available_qubits=self.available_qubits,
+                available_topology=self.available_topology,
+            )
 
         # Run simulation to get probability distribution
         probs = sim.simulate_pmeasure(originir)
@@ -370,59 +544,6 @@ class DummyAdapter(QuantumAdapter):
                 prob_dict[bin_key] = float(p)
 
         # Create unified result
-        return UnifiedResult.from_probabilities(
-            probabilities=prob_dict,
-            shots=shots,
-            platform="dummy",
-            task_id=self._generate_task_id(originir),
-        )
-
-    def _simulate_with_noise(
-        self,
-        originir: str,
-        shots: int,
-    ) -> UnifiedResult:
-        """Run noisy simulation if noise model is configured.
-
-        Args:
-            originir: Circuit in OriginIR format.
-            shots: Number of shots.
-
-        Returns:
-            UnifiedResult with noisy measurement probabilities.
-        """
-        # Check if we have a noise model
-        if not self.noise_model:
-            return self._simulate(originir, shots)
-
-        # Import noisy simulator
-        try:
-            from uniqc.simulator import OriginIR_NoisySimulator
-            from uniqc.simulator.error_model import ErrorLoader_GateSpecificError
-        except ImportError:
-            # Fall back to noiseless simulation
-            return self._simulate(originir, shots)
-
-        # Build error loader from noise model
-        error_loader = ErrorLoader_GateSpecificError(**self.noise_model)
-
-        # Create noisy simulator
-        sim = OriginIR_NoisySimulator(
-            error_loader=error_loader,
-            available_qubits=self.available_qubits,
-            available_topology=self.available_topology,
-        )
-
-        # Run simulation
-        probs = sim.simulate_pmeasure(originir)
-        n_qubits = sim.qubit_num
-
-        prob_dict = {}
-        for i, p in enumerate(probs):
-            if p > 0:
-                bin_key = bin(i)[2:].zfill(n_qubits)
-                prob_dict[bin_key] = float(p)
-
         return UnifiedResult.from_probabilities(
             probabilities=prob_dict,
             shots=shots,

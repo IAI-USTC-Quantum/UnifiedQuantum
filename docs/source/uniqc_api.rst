@@ -14,6 +14,7 @@ UnifiedQuantum 公开 API 的完整参考文档。
    uniqc.simulator
    uniqc.originir
    uniqc.qasm
+   uniqc.transpiler.compiler
    uniqc.transpiler
    uniqc.analyzer
    uniqc.algorithmics
@@ -30,6 +31,8 @@ UnifiedQuantum 公开 API 的完整参考文档。
    uniqc.backend
    uniqc.circuit_adapter
    uniqc.task_manager
+   uniqc.region_selector
+   uniqc.task.options
    uniqc.exceptions
    uniqc.network_utils
    uniqc.pytorch

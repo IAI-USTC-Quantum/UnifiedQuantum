@@ -74,6 +74,28 @@ from .task_manager import (
     TaskManager,
 )
 
+# Enhanced transpiler
+from .transpiler.compiler import (  # noqa: F401
+    compile,
+    TranspilerConfig,
+    CompilationResult,
+    CompilationFailedException,
+)
+
+# Unified backend options
+from .task.options import (  # noqa: F401
+    BackendOptions,
+    OriginQOptions,
+    QuafuOptions,
+    IBMOptions,
+    DummyOptions,
+    BackendOptionsFactory,
+    BackendOptionsError,
+)
+
+# Region selector
+from .region_selector import RegionSelector, ChainSearchResult, RegionSearchResult  # noqa: F401
+
 from .network_utils import (
     check_proxy_connectivity,
     detect_system_proxy,
