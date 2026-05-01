@@ -90,7 +90,7 @@ class DummyAdapter(QuantumAdapter):
         noise_model: dict[str, Any] | None = None,
         available_qubits: list[int] | None = None,
         available_topology: list[list[int]] | None = None,
-        chip_characterization: "ChipCharacterization | None" = None,
+        chip_characterization: ChipCharacterization | None = None,
     ) -> None:
         """Initialize the DummyAdapter.
 
@@ -160,7 +160,7 @@ class DummyAdapter(QuantumAdapter):
 
         return self._error_loader
 
-    def _build_error_loader_from_chip(self, chip: "ChipCharacterization") -> Any:
+    def _build_error_loader_from_chip(self, chip: ChipCharacterization) -> Any:
         """Convert chip characterization data to a gate-specific error loader.
 
         Uses per-qubit single-gate fidelity and per-pair two-qubit gate fidelity

@@ -105,8 +105,8 @@ from uniqc.task.adapters.base import (
     TASK_STATUS_SUCCESS,
     QuantumAdapter,
 )
-from uniqc.task.result_types import DryRunResult
 from uniqc.task.options import BackendOptions, BackendOptionsFactory
+from uniqc.task.result_types import DryRunResult
 from uniqc.task.store import (
     DEFAULT_CACHE_DIR,
     TaskInfo,
