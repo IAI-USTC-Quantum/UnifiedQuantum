@@ -485,3 +485,27 @@ task_id = submit_task(circuit, "quafu", options=opts)
 | `estimate_circuit_fidelity(circuit, qubits)` | 估算电路在给定量子比特上的成功率 |
 | `get_qubit_rankings()` | 按 fidelity 排名所有量子比特 |
 | `get_edge_rankings()` | 按 2Q fidelity 排名所有边 |
+
+### 常见错误
+
+**缺少 Qiskit 依赖**
+
+调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedException`，提示：
+
+```
+pip install unified-quantum[qiskit]
+```
+
+或使用 uv：
+
+```
+uv pip install unified-quantum[qiskit]
+```
+
+**绘图功能需要 matplotlib**
+
+`plot_time_line()` 需要 matplotlib。若未安装，调用时返回 `None` 而不抛异常。若需脉冲序列可视化：
+
+```
+pip install matplotlib
+```

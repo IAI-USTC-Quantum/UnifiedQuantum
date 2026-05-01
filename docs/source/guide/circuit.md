@@ -13,6 +13,7 @@
 - 如何使用 CONTROL / DAGGER 控制结构
 - 如何将线路导出为 OriginIR 或 OpenQASM 2.0 字符串
 - 如何查看线路结构信息和做基础变换（重映射等）
+- 如何提取线路的酉矩阵（Unitary Matrix）表示
 
 ## 推荐阅读顺序 {#guide-circuit-reading-order}
 
@@ -134,6 +135,23 @@ draw(circuit.originir)
 ```
 
 > 可视化功能详见 [线路分析](../advanced/circuit_analysis.md)。
+
+## 提取酉矩阵 {#guide-circuit-unitary-matrix}
+
+对不含测量门的线路，可以提取其对应的酉矩阵（Unitary Matrix）表示：
+
+```python
+from uniqc import Circuit
+
+c = Circuit()
+c.h(0)
+c.cnot(0, 1)
+
+matrix = c.get_matrix()   # numpy.ndarray，shape = (4, 4)
+print(matrix.round(4))
+```
+
+支持的门：`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`，以及各受控变体。含测量或退相干通道的线路会抛出 {exc}`NotMatrixableError`。
 
 ## 命名量子寄存器 {#guide-circuit-named-qreg}
 

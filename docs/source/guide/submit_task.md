@@ -178,9 +178,11 @@ result = wait_for_result(task_id)
 ```
 
 ```python
-# 方式三：单次提交使用 dummy 参数
-task_id = submit_task(circuit, backend='originq', dummy=True)
+# 方式三：使用本地 dummy 后端（推荐）
+task_id = submit_task(circuit, backend='dummy')
 ```
+
+> **弃用警告**：`dummy=True` 参数已弃用，请改用 `backend='dummy'`。
 
 ### Dummy 模式适用场景
 
