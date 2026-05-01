@@ -113,7 +113,7 @@ class QiskitAdapter(QuantumAdapter):
     # Circuit translation
     # -------------------------------------------------------------------------
 
-    def translate_circuit(self, originir: str) -> "qiskit.QuantumCircuit":
+    def translate_circuit(self, originir: str) -> qiskit.QuantumCircuit:
         """Translate an OriginIR string to a Qiskit QuantumCircuit.
 
         The conversion path is OriginIR → QASM string → Qiskit QuantumCircuit.
@@ -123,6 +123,7 @@ class QiskitAdapter(QuantumAdapter):
         direct path can be evaluated in a future iteration if needed.
         """
         import qiskit
+
         from uniqc.circuit_builder.qcircuit import Circuit
 
         circuit = Circuit()
@@ -136,7 +137,7 @@ class QiskitAdapter(QuantumAdapter):
     # -------------------------------------------------------------------------
 
     def submit(
-        self, circuit: "qiskit.QuantumCircuit", *, shots: int = 1000, **kwargs: Any
+        self, circuit: qiskit.QuantumCircuit, *, shots: int = 1000, **kwargs: Any
     ) -> str:
         """Submit a single circuit to IBM Quantum."""
         chip_id: str | None = kwargs.get("chip_id")
@@ -154,15 +155,22 @@ class QiskitAdapter(QuantumAdapter):
         )
 
     def submit_batch(
-        self, circuits: list["qiskit.QuantumCircuit"], *, shots: int = 1000, **kwargs: Any
-    ) -> str:
-        """Submit multiple circuits as a batch. Returns a single job ID."""
+        self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, **kwargs: Any
+    ) -> list[str]:
+        """Submit multiple circuits as a batch.
+
+        IBM executes all circuits in a single job, so this returns a single-element
+        list containing that job's ID. The batch result is retrieved via that ID.
+
+        Returns:
+            list[str]: Single-element list with the IBM job ID.
+        """
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: Any = kwargs.get("auto_mapping", False)
         circuit_optimize: bool = kwargs.get("circuit_optimize", True)
         task_name: str | None = kwargs.get("task_name")
 
-        return self._submit_impl(
+        job_id = self._submit_impl(
             circuits=circuits,
             chip_id=chip_id,
             shots=shots,
@@ -170,10 +178,11 @@ class QiskitAdapter(QuantumAdapter):
             circuit_optimize=circuit_optimize,
             task_name=task_name,
         )
+        return [job_id]
 
     def _submit_impl(
         self,
-        circuits: list["qiskit.QuantumCircuit"],
+        circuits: list[qiskit.QuantumCircuit],
         *,
         chip_id: str | None,
         shots: int,

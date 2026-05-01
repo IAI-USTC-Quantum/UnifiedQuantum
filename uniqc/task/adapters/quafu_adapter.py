@@ -195,7 +195,7 @@ class QuafuAdapter(QuantumAdapter):
                 continue
             if qc is None:
                 raise RuntimeError("QINIT must appear before any gate operation.")
-            qc = self._reconstruct_qasm(qc, operation, qubit, cbit, parameter)
+            qc = self._reconstruct_qasm(qc, operation, qubit, cbit, parameter, bool(dagger_flag))
 
         if qc is None:
             raise RuntimeError("OriginIR string produced no circuit.")
@@ -208,6 +208,7 @@ class QuafuAdapter(QuantumAdapter):
         qubit: int | list[int],
         cbit: int | None,
         parameter: float | list[float] | None,
+        dagger_flag: bool = False,
     ) -> "QuantumCircuit":  # noqa: UP037,F821
         """Append a single gate to a Quafu QuantumCircuit based on parsed OriginIR.
 
@@ -221,6 +222,7 @@ class QuafuAdapter(QuantumAdapter):
             qubit: Target qubit index or list of indices for multi-qubit gates.
             cbit: Classical bit index for MEASURE operations.
             parameter: Rotation angle for parametric gates (e.g., RX, RY, RZ).
+            dagger_flag: Whether the gate is daggered (for S, SX, T).
 
         Returns:
             The modified QuantumCircuit (same object as input).
@@ -229,7 +231,8 @@ class QuafuAdapter(QuantumAdapter):
             RuntimeError: If the operation is not supported by this adapter.
 
         Note:
-            Supported gates: RX, RY, RZ, H, X, CZ, CNOT, MEASURE.
+            Supported gates: RX, RY, RZ, H, X, Y, Z, S, SX, T,
+            CZ, CNOT, SWAP, ISWAP, MEASURE, BARRIER.
             CREG and None operations are silently ignored.
         """
         if operation == "RX":
@@ -242,12 +245,38 @@ class QuafuAdapter(QuantumAdapter):
             qc.h(int(qubit))  # type: ignore[arg-type]
         elif operation == "X":
             qc.x(int(qubit))  # type: ignore[arg-type]
+        elif operation == "Y":
+            qc.y(int(qubit))  # type: ignore[arg-type]
+        elif operation == "Z":
+            qc.z(int(qubit))  # type: ignore[arg-type]
+        elif operation == "S":
+            if dagger_flag:
+                qc.sdg(int(qubit))  # type: ignore[arg-type]
+            else:
+                qc.s(int(qubit))  # type: ignore[arg-type]
+        elif operation == "SX":
+            if dagger_flag:
+                qc.sxdg(int(qubit))  # type: ignore[arg-type]
+            else:
+                qc.sx(int(qubit))  # type: ignore[arg-type]
+        elif operation == "T":
+            if dagger_flag:
+                qc.tdg(int(qubit))  # type: ignore[arg-type]
+            else:
+                qc.t(int(qubit))  # type: ignore[arg-type]
         elif operation == "CZ":
             qc.cz(int(qubit[0]), int(qubit[1]))  # type: ignore[index]
         elif operation == "CNOT":
             qc.cnot(int(qubit[0]), int(qubit[1]))  # type: ignore[index]
+        elif operation == "SWAP":
+            qc.swap(int(qubit[0]), int(qubit[1]))  # type: ignore[index]
+        elif operation == "ISWAP":
+            qc.iswap(int(qubit[0]), int(qubit[1]))  # type: ignore[index]
         elif operation == "MEASURE":
             qc.measure([int(qubit)], [int(cbit)])  # type: ignore[list-item]
+        elif operation == "BARRIER":
+            # BARRIER is a no-op for execution; skip without error
+            pass
         elif operation is None or operation == "CREG":
             pass
         else:
@@ -263,9 +292,23 @@ class QuafuAdapter(QuantumAdapter):
         circuit: "QuantumCircuit",  # noqa: UP037,F821
         *,
         shots: int = 10000,
+        wait: bool = False,
         **kwargs: Any,
     ) -> str:
-        """Submit a single circuit to Quafu."""
+        """Submit a single circuit to Quafu.
+
+        Args:
+            circuit: Quafu QuantumCircuit object.
+            shots: Number of measurement shots (default: 10000).
+            wait: If True, block until the server acknowledges receipt (default: False).
+            **kwargs: Additional options:
+                - chip_id: Quafu chip ID (required, e.g. 'ScQ-P18')
+                - auto_mapping: Enable automatic qubit mapping (default: True)
+                - task_name: Optional task name string
+
+        Returns:
+            Task ID string.
+        """
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: bool = kwargs.get("auto_mapping", True)
         task_name: str | None = kwargs.get("task_name")
@@ -282,7 +325,7 @@ class QuafuAdapter(QuantumAdapter):
         task = self._Task()
         task.config(backend=chip_id, shots=shots, compile=auto_mapping)
 
-        result = task.send(circuit, wait=False, name=task_name)  # type: ignore[arg-type]
+        result = task.send(circuit, wait=wait, name=task_name)  # type: ignore[arg-type]
         return result.taskid
 
     def submit_batch(
@@ -290,9 +333,24 @@ class QuafuAdapter(QuantumAdapter):
         circuits: list["QuantumCircuit"],  # noqa: UP037,F821
         *,
         shots: int = 10000,
+        wait: bool = False,
         **kwargs: Any,
     ) -> list[str]:
-        """Submit multiple circuits as a group to Quafu."""
+        """Submit multiple circuits as a group to Quafu.
+
+        Args:
+            circuits: List of Quafu QuantumCircuit objects.
+            shots: Number of measurement shots per circuit (default: 10000).
+            wait: If True, block until server acknowledges each submission (default: False).
+            **kwargs: Additional options:
+                - chip_id: Quafu chip ID (required)
+                - auto_mapping: Enable automatic qubit mapping (default: True)
+                - task_name: Base task name (suffixed with -0, -1, ...)
+                - group_name: Group name for server-side batch tracking
+
+        Returns:
+            List of task ID strings.
+        """
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: bool = kwargs.get("auto_mapping", True)
         task_name: str | None = kwargs.get("task_name")
@@ -314,8 +372,8 @@ class QuafuAdapter(QuantumAdapter):
         for index, c in enumerate(circuits):
             result = task.send(
                 c,
-                wait=False,
-                name=f"{task_name}-{index}",
+                wait=wait,
+                name=f"{task_name}-{index}" if task_name else None,
                 group=group_name,  # type: ignore[arg-type]
             )
             taskids.append(result.taskid)
@@ -411,6 +469,40 @@ class QuafuAdapter(QuantumAdapter):
             if taskinfo["status"] == TASK_STATUS_SUCCESS:
                 taskinfo["result"].append(result_i.get("result", {}))
         return taskinfo
+
+    def query_sync(
+        self,
+        taskid: str | list[str],
+        interval: float = 2.0,
+        timeout: float = 60.0,
+    ) -> list[dict[str, Any]]:
+        """Poll task status until completion or timeout.
+
+        Args:
+            taskid: Task ID or list of task IDs.
+            interval: Polling interval in seconds (default: 2.0).
+            timeout: Maximum wait time in seconds (default: 60.0).
+
+        Returns:
+            List of result dicts (one per task ID).
+
+        Raises:
+            TimeoutError: If timeout is reached before completion.
+        """
+        import time
+
+        taskids = [taskid] if isinstance(taskid, str) else taskid
+        start = time.time()
+
+        while True:
+            if time.time() - start > timeout:
+                raise TimeoutError(f"Task(s) timed out after {timeout}s.")
+
+            time.sleep(interval)
+
+            batch_result = self.query_batch(taskids)
+            if batch_result["status"] != TASK_STATUS_RUNNING:
+                return batch_result.get("result", [])
 
     # -------------------------------------------------------------------------
     # Chip characterization

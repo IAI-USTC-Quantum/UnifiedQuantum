@@ -311,9 +311,11 @@ except MissingDependencyError as e:
 
 | 特性 | OriginQ | Quafu | IBM | Dummy |
 |------|---------|-------|-----|-------|
-| 输入格式 | OriginIR | QASM | QASM | OriginIR |
+| 输入格式 | OriginIR string | quafu.QuantumCircuit | qiskit.QuantumCircuit | OriginIR string |
+| 结果格式 | `{"00": 512}` | `{"counts": {...}, "probabilities": {...}}` | `[{"00": 512}, ...]` | `{"00": 512}` |
 | 真机支持 | ✓ | ✓ | ✓ | ✗ |
 | 噪声模拟 | ✗ | ✗ | ✗ | ✓ |
+| 提交模式 | 异步 | 异步（`wait=` 可选） | 同步 | 同步 |
 | 网络要求 | 需要 | 需要 | 需要 | 不需要 |
 | 适用场景 | 生产环境 | BAQIS ScQ 系列 | 国际平台 | 开发测试 |
 
