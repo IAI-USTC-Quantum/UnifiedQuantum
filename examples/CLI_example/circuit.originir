@@ -1,0 +1,10 @@
+QINIT 4
+CREG 4
+H q[0]
+CNOT q[0], q[1]
+CNOT q[0], q[2]
+CNOT q[0], q[3]
+MEASURE q[0], c[0]
+MEASURE q[1], c[1]
+MEASURE q[2], c[2]
+MEASURE q[3], c[3]

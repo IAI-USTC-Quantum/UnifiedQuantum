@@ -13,12 +13,8 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,6 +46,7 @@ MEASURE q[2], c[2]
 # ---------------------------------------------------------------------------
 # Config tests
 # ---------------------------------------------------------------------------
+
 
 class RunTestConfigEnvVars:
     """Config loading from environment variables (preferred)."""
@@ -90,9 +87,7 @@ class RunTestConfigEnvVars:
 
     def run_test_dummy_config_from_env(self, monkeypatch, tmp_path):
         """OriginQ Dummy config is read from ORIGINQ_* env vars."""
-        monkeypatch.setenv(
-            "ORIGINQ_AVAILABLE_QUBITS", json.dumps([0, 1, 2, 3])
-        )
+        monkeypatch.setenv("ORIGINQ_AVAILABLE_QUBITS", json.dumps([0, 1, 2, 3]))
         monkeypatch.setenv(
             "ORIGINQ_AVAILABLE_TOPOLOGY",
             json.dumps([[0, 1], [1, 2], [2, 3]]),
@@ -152,11 +147,9 @@ class RunTestConfigEnvVars:
 # OriginQ adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("ORIGINQ_API_KEY"),
-    reason="ORIGINQ_API_KEY not set"
-)
+@pytest.mark.skipif(not os.environ.get("ORIGINQ_API_KEY"), reason="ORIGINQ_API_KEY not set")
 @pytest.mark.requires_pyqpanda3
 class RunTestOriginQAdapterIntegration:
     """Integration tests for OriginQ adapter with real pyqpanda3 and credentials."""
@@ -194,11 +187,9 @@ class RunTestOriginQAdapterIntegration:
 # Quafu adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("QUAFU_API_TOKEN"),
-    reason="QUAFU_API_TOKEN not set"
-)
+@pytest.mark.skipif(not os.environ.get("QUAFU_API_TOKEN"), reason="QUAFU_API_TOKEN not set")
 @pytest.mark.requires_quafu
 class RunTestQuafuAdapterIntegration:
     """Integration tests for Quafu adapter with real quafu and credentials."""
@@ -237,11 +228,9 @@ MEASURE q[0], c[0]
 # IBM adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not os.environ.get("IBM_TOKEN"),
-    reason="IBM_TOKEN not set"
-)
+@pytest.mark.skipif(not os.environ.get("IBM_TOKEN"), reason="IBM_TOKEN not set")
 @pytest.mark.requires_qiskit
 class RunTestIBMAdapterIntegration:
     """Integration tests for IBM adapter with real qiskit and credentials."""
@@ -261,7 +250,7 @@ class RunTestIBMAdapterIntegration:
 
         adapter = QiskitAdapter()
 
-        circuit = adapter.translate_circuit(ORIGINIR_BELL)
+        adapter.translate_circuit(ORIGINIR_BELL)
         # Note: IBM submission requires backend selection
         # This test may need adjustment based on available backends
 
@@ -269,6 +258,7 @@ class RunTestIBMAdapterIntegration:
 # ---------------------------------------------------------------------------
 # Adapter availability tests
 # ---------------------------------------------------------------------------
+
 
 class RunTestAdapterAvailability:
     """Each adapter reports availability based on installed packages / config."""
@@ -285,6 +275,7 @@ class RunTestAdapterAvailability:
     def run_test_quafu_adapter_available_with_config(self, monkeypatch):
         """Test Quafu adapter availability with config."""
         from uniqc.task.optional_deps import check_quafu
+
         monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
 
         # Check if quafu is actually installed
@@ -294,20 +285,66 @@ class RunTestAdapterAvailability:
             pytest.skip("quafu not installed")
 
         from uniqc.task.adapters import QuafuAdapter
+
         adapter = QuafuAdapter()
         assert isinstance(adapter.is_available(), bool)
 
     def run_test_ibm_adapter_available_with_config(self, monkeypatch):
         """Test IBM adapter availability with config."""
+        import os
+
         from uniqc.task.optional_deps import check_qiskit
-        monkeypatch.setenv("IBM_TOKEN", "test_token")
 
-        # Check if qiskit is actually installed
-        qiskit_available = check_qiskit()
-
-        if not qiskit_available:
+        if not check_qiskit():
             pytest.skip("qiskit not installed")
 
+        # QiskitRuntimeService validates tokens against IBM servers, so we need
+        # a real token — skip if none is available
+        real_token = os.environ.get("IBM_TOKEN")
+        if not real_token:
+            pytest.skip("IBM_TOKEN not set")
+
+        monkeypatch.setenv("IBM_TOKEN", real_token)
+
         from uniqc.task.adapters import QiskitAdapter
+
         adapter = QiskitAdapter()
         assert isinstance(adapter.is_available(), bool)
+
+
+# ---------------------------------------------------------------------------
+# OriginQ adapter unit tests (mock-based)
+# ---------------------------------------------------------------------------
+
+
+class TestOriginQAdapterUnit:
+    """Unit tests for OriginQ adapter using mocks."""
+
+    def run_test_format_counts_returns_dict(self, monkeypatch):
+        """_format_counts returns {bitstring: shots} dict, not list of dicts."""
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
+        from uniqc.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = None
+        adapter._QCloudOptions = None
+        adapter._QCloudJob = None
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._convert_originir = None
+
+        # dict input
+        result = adapter._format_counts({"00": 512, "11": 488})
+        assert isinstance(result, dict)
+        assert result == {"00": 512, "11": 488}
+
+        # list of dicts (batch) — counts should be merged
+        result = adapter._format_counts([{"00": 256}, {"00": 256, "11": 488}])
+        assert isinstance(result, dict)
+        assert result == {"00": 512, "11": 488}
+
+        # non-dict/list fallback
+        result = adapter._format_counts("something")
+        assert isinstance(result, dict)
+        assert result == {"something": 1}

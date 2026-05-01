@@ -1,7 +1,7 @@
 """Qiskit backend adapter.
 
 Translates OriginIR circuits to Qiskit QuantumCircuit objects and submits
-via the ``qiskit`` / ``qiskit_ibm_provider`` packages.  No raw REST calls.
+via the ``qiskit`` / ``qiskit_ibm_runtime`` packages.  No raw REST calls.
 
 Installation:
     pip install unified-quantum[qiskit]
@@ -25,7 +25,6 @@ from uniqc.task.optional_deps import MissingDependencyError, check_qiskit
 
 if TYPE_CHECKING:
     import qiskit
-    import qiskit_ibm_provider  # noqa: F401
 
 
 class QiskitAdapter(QuantumAdapter):
@@ -37,7 +36,7 @@ class QiskitAdapter(QuantumAdapter):
         - Or a single proxy URL string for both protocols
 
     Raises:
-        MissingDependencyError: If qiskit or qiskit_ibm_provider is not installed.
+        MissingDependencyError: If qiskit or qiskit_ibm_runtime is not installed.
 
     Example:
         >>> adapter = QiskitAdapter(proxy={
@@ -59,7 +58,6 @@ class QiskitAdapter(QuantumAdapter):
         Raises:
             MissingDependencyError: If qiskit is not installed.
         """
-        # Check if qiskit is available
         if not check_qiskit():
             raise MissingDependencyError("qiskit", "qiskit")
 
@@ -67,15 +65,15 @@ class QiskitAdapter(QuantumAdapter):
         self._api_token: str = config["api_token"]
         self._proxy: dict[str, str] | str | None = proxy
 
-        import qiskit_ibm_provider
+        from qiskit_ibm_runtime import QiskitRuntimeService
 
-        # Set up proxy for qiskit-ibm-provider if proxy is configured
         if proxy:
             self._setup_proxy(proxy)
 
-        qiskit_ibm_provider.IBMProvider.save_account(self._api_token)
-        self._provider = qiskit_ibm_provider.IBMProvider(instance="ibm-q/open/main")
-        self._backends = self._provider.backends()
+        self._service = QiskitRuntimeService(
+            channel="ibm_quantum_platform",
+            token=self._api_token,
+        )
 
     def _setup_proxy(self, proxy: dict[str, str] | str) -> None:
         """Configure proxy settings for Qiskit/IBM provider.
@@ -85,49 +83,39 @@ class QiskitAdapter(QuantumAdapter):
         """
         import os
 
-        # Convert dict proxy to URL format if needed
         if isinstance(proxy, dict):
             https_proxy = proxy.get("https")
             http_proxy = proxy.get("http")
-            # Prefer HTTPS proxy for IBM Quantum
             proxy_url = https_proxy or http_proxy
         else:
             proxy_url = proxy
 
         if proxy_url:
-            # Set environment variables for qiskit and underlying libraries
             os.environ["HTTP_PROXY"] = proxy_url
             os.environ["HTTPS_PROXY"] = proxy_url
             os.environ["http_proxy"] = proxy_url
             os.environ["https_proxy"] = proxy_url
 
     def is_available(self) -> bool:
-        """Check if the Qiskit adapter is available (IBM provider initialized).
-
-        Returns:
-            bool: True if the IBM provider was successfully initialized.
-        """
-        return check_qiskit() and hasattr(self, '_provider') and self._provider is not None
+        """Check if the Qiskit adapter is available (IBM service initialized)."""
+        return check_qiskit() and hasattr(self, "_service") and self._service is not None
 
     # -------------------------------------------------------------------------
     # Circuit translation
     # -------------------------------------------------------------------------
 
-    def translate_circuit(self, originir: str) -> "qiskit.QuantumCircuit":
+    def translate_circuit(self, originir: str) -> qiskit.QuantumCircuit:
         """Translate an OriginIR string to a Qiskit QuantumCircuit.
 
         The conversion path is OriginIR → QASM string → Qiskit QuantumCircuit.
-        This is the most compatible route given the current API surface of
-        ``uniqc.circuit_builder.qcircuit`` (which exposes QASM export
-        but not a direct Qiskit-native constructor).  An optimised
-        direct path can be evaluated in a future iteration if needed.
         """
         import qiskit
-        from uniqc.circuit_builder.qcircuit import Circuit
 
-        circuit = Circuit()
-        circuit.load_originir(originir)
-        qasm_str = circuit.qasm
+        from uniqc.originir import OriginIR_BaseParser
+
+        parser = OriginIR_BaseParser()
+        parser.parse(originir)
+        qasm_str = parser.to_qasm()
 
         return qiskit.QuantumCircuit.from_qasm_str(qasm_str)
 
@@ -136,7 +124,7 @@ class QiskitAdapter(QuantumAdapter):
     # -------------------------------------------------------------------------
 
     def submit(
-        self, circuit: "qiskit.QuantumCircuit", *, shots: int = 1000, **kwargs: Any
+        self, circuit: qiskit.QuantumCircuit, *, shots: int = 1000, **kwargs: Any
     ) -> str:
         """Submit a single circuit to IBM Quantum."""
         chip_id: str | None = kwargs.get("chip_id")
@@ -154,15 +142,22 @@ class QiskitAdapter(QuantumAdapter):
         )
 
     def submit_batch(
-        self, circuits: list["qiskit.QuantumCircuit"], *, shots: int = 1000, **kwargs: Any
-    ) -> str:
-        """Submit multiple circuits as a batch. Returns a single job ID."""
+        self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, **kwargs: Any
+    ) -> list[str]:
+        """Submit multiple circuits as a batch.
+
+        IBM executes all circuits in a single job, so this returns a single-element
+        list containing that job's ID. The batch result is retrieved via that ID.
+
+        Returns:
+            list[str]: Single-element list with the IBM job ID.
+        """
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: Any = kwargs.get("auto_mapping", False)
         circuit_optimize: bool = kwargs.get("circuit_optimize", True)
         task_name: str | None = kwargs.get("task_name")
 
-        return self._submit_impl(
+        job_id = self._submit_impl(
             circuits=circuits,
             chip_id=chip_id,
             shots=shots,
@@ -170,10 +165,11 @@ class QiskitAdapter(QuantumAdapter):
             circuit_optimize=circuit_optimize,
             task_name=task_name,
         )
+        return [job_id]
 
     def _submit_impl(
         self,
-        circuits: list["qiskit.QuantumCircuit"],
+        circuits: list[qiskit.QuantumCircuit],
         *,
         chip_id: str | None,
         shots: int,
@@ -181,42 +177,16 @@ class QiskitAdapter(QuantumAdapter):
         circuit_optimize: bool,
         task_name: str | None,
     ) -> str:
-        """Internal implementation shared by submit() and submit_batch().
-
-        Handles the common logic for submitting circuits to IBM Quantum:
-        1. Validates the backend exists
-        2. Checks shot count against backend limits
-        3. Applies circuit optimization
-        4. Handles qubit mapping/auto-mapping
-        5. Executes and returns job ID
-
-        Args:
-            circuits: List of Qiskit QuantumCircuit objects to submit.
-            chip_id: Backend name (e.g., 'ibmq_qasm_simulator').
-            shots: Number of measurement shots.
-            auto_mapping: Qubit mapping strategy:
-                - True: Use SABRE layout method for automatic qubit mapping
-                - list: Use as initial_layout for manual qubit mapping
-                - False/None: Default transpilation without special mapping
-            circuit_optimize: Whether to apply optimization level 3.
-            task_name: Unused but kept for API compatibility with other adapters.
-
-        Returns:
-            str: The IBM Quantum job ID for result retrieval.
-
-        Raises:
-            ValueError: If chip_id is not in available backends,
-                or if shots exceeds backend max_shots limit.
-        """
+        """Internal implementation shared by submit() and submit_batch()."""
         import qiskit
 
-        backends_name = [b.name for b in self._backends]
+        backends_name = [b.name for b in self._service.backends()]
         if chip_id not in backends_name:
             raise ValueError(f"no such chip, should be one of {backends_name}")
 
-        backend = self._provider.get_backend(chip_id)
+        backend = self._service.backend(chip_id)
 
-        max_shots = backend.max_shots
+        max_shots = backend.configuration().max_shots
         if shots > max_shots:
             raise ValueError(
                 f"maximum shots number exceeded, should less than {max_shots}"
@@ -246,7 +216,10 @@ class QiskitAdapter(QuantumAdapter):
                 circuits, backend=backend, optimization_level=1
             )
 
-        job = qiskit.execute(experiments=circuits, backend=backend, shots=shots)
+        from qiskit_ibm_runtime import Sampler
+
+        sampler = Sampler(mode=backend)
+        job = sampler.run(circuits, shots=shots)
         return job.job_id()
 
     # -------------------------------------------------------------------------
@@ -255,22 +228,52 @@ class QiskitAdapter(QuantumAdapter):
 
     def query(self, taskid: str) -> dict[str, Any]:
         """Query a single IBM Quantum job's status."""
-        job = self._provider.retrieve_job(job_id=taskid)
-        status = job.status().name
+        job = self._service.job(taskid)
+        status = job.status()
 
-        if status not in ("DONE",):
-            return {"status": status, "value": job.status().value}
+        status_name = status.name if hasattr(status, "name") else str(status)
 
-        taskinfo = job.result().to_dict()
+        if status_name not in ("DONE", "COMPLETED"):
+            return {"status": status_name, "value": status.value if hasattr(status, "value") else status_name}
+
+        raw_result = job.result()
         results = []
-        for single_result in taskinfo["results"]:
-            results.append(single_result["data"]["counts"])
+
+        # Qiskit Runtime Sampler returns PrimitiveResult — iterate over pub results
+        for pub_result in raw_result:
+            data = pub_result.data
+            # Each data field is a BitArray (one per measurement)
+            counts: dict[str, int] = {}
+            shots = None
+            n_bits = None
+
+            for field_name in dir(data):
+                if field_name.startswith("_"):
+                    continue
+                bit_array = getattr(data, field_name)
+                if hasattr(bit_array, "num_shots"):
+                    shots = bit_array.num_shots
+                    n_bits = bit_array.num_bits
+                    arr = bit_array._array  # shape: (shots, 1) or (shots,)
+                    arr = arr.flatten()
+                    for val in arr:
+                        val_int = int(val)
+                        # Convert to bitstring: q[0] as most significant bit
+                        bitstring = format(val_int, f"0{n_bits}b")
+                        # Reverse so q[0] is first character (MSB convention)
+                        bitstring = bitstring[::-1]
+                        counts[bitstring] = counts.get(bitstring, 0) + 1
+                    break
+
+            if shots is None:
+                counts = {}
+            results.append(counts)
 
         return {
             "status": TASK_STATUS_SUCCESS,
             "result": results,
-            "time": taskinfo["date"].strftime("%a %d %b %Y, %I:%M%p"),
-            "backend_name": taskinfo["backend_name"],
+            "time": job.creation_date.strftime("%a %d %b %Y, %I:%M%p") if hasattr(job, "creation_date") else "",
+            "backend_name": job.backend().name if hasattr(job, "backend") else "",
         }
 
     def query_batch(self, taskids: list[str]) -> dict[str, Any]:
@@ -278,14 +281,16 @@ class QiskitAdapter(QuantumAdapter):
         taskinfo: dict[str, Any] = {"status": TASK_STATUS_SUCCESS, "result": []}
         for taskid in taskids:
             result_i = self.query(taskid)
-            if result_i["status"] in ("ERROR", "CANCELLED"):
+            status = result_i.get("status", "")
+            if status in ("ERROR", "CANCELLED", "FAILED"):
                 taskinfo["status"] = TASK_STATUS_FAILED
                 break
-            elif result_i["status"] in (
+            elif status in (
                 "INITIALIZING",
                 "QUEUED",
                 "VALIDATING",
                 "RUNNING",
+                "EXECUTING",
             ):
                 taskinfo["status"] = TASK_STATUS_RUNNING
             if taskinfo["status"] == TASK_STATUS_SUCCESS:

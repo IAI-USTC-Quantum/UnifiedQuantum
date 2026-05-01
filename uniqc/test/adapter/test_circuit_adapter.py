@@ -2,13 +2,13 @@
 
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.circuit_adapter import (
     CircuitAdapter,
+    IBMCircuitAdapter,
     OriginQCircuitAdapter,
     QuafuCircuitAdapter,
-    IBMCircuitAdapter,
 )
+from uniqc.circuit_builder import Circuit
 
 
 class TestCircuitAdapterInterface:
@@ -96,7 +96,7 @@ class TestOriginQCircuitAdapterIntegration:
         pytest.importorskip("pyqpanda3")
 
     def test_adapt_simple_circuit(self):
-        """Test adapt with real pyqpanda3."""
+        """Test adapt returns OriginIR string (not QProg)."""
         adapter = OriginQCircuitAdapter()
         circuit = Circuit()
         circuit.h(0)
@@ -104,10 +104,13 @@ class TestOriginQCircuitAdapterIntegration:
         circuit.measure(0, 1)
 
         result = adapter.adapt(circuit)
-        assert result is not None
+        assert isinstance(result, str)
+        assert "QINIT" in result
+        assert "H" in result
+        assert "CNOT" in result
 
     def test_adapt_rotation_gates(self):
-        """Test adapt with rotation gates."""
+        """Test adapt with rotation gates returns OriginIR string."""
         adapter = OriginQCircuitAdapter()
         circuit = Circuit()
         circuit.rx(0, 0.5)
@@ -116,7 +119,10 @@ class TestOriginQCircuitAdapterIntegration:
         circuit.measure(0, 1, 2)
 
         result = adapter.adapt(circuit)
-        assert result is not None
+        assert isinstance(result, str)
+        assert "RX" in result
+        assert "RY" in result
+        assert "RZ" in result
 
 
 class TestQuafuCircuitAdapter:

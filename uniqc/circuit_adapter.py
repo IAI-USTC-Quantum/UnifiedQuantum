@@ -38,7 +38,7 @@ __all__ = [
 ]
 
 import abc
-from typing import TYPE_CHECKING, Any, List, TypeVar, Generic, Optional
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 if TYPE_CHECKING:
     from uniqc.circuit_builder.qcircuit import Circuit
@@ -55,7 +55,7 @@ class CircuitAdapter(abc.ABC, Generic[T]):
     """
 
     @abc.abstractmethod
-    def adapt(self, circuit: "Circuit") -> T:
+    def adapt(self, circuit: Circuit) -> T:
         """Convert a UnifiedQuantum Circuit to the provider's native circuit format.
 
         Args:
@@ -66,7 +66,7 @@ class CircuitAdapter(abc.ABC, Generic[T]):
         """
         ...
 
-    def adapt_batch(self, circuits: List["Circuit"]) -> List[T]:
+    def adapt_batch(self, circuits: list[Circuit]) -> list[T]:
         """Convert multiple UnifiedQuantum Circuits to provider-native format.
 
         Args:
@@ -78,7 +78,7 @@ class CircuitAdapter(abc.ABC, Generic[T]):
         return [self.adapt(c) for c in circuits]
 
     @abc.abstractmethod
-    def get_supported_gates(self) -> List[str]:
+    def get_supported_gates(self) -> list[str]:
         """Return the list of gate names supported by this adapter.
 
         Returns:
@@ -86,7 +86,7 @@ class CircuitAdapter(abc.ABC, Generic[T]):
         """
         ...
 
-    def _get_originir(self, circuit: "Circuit") -> str:
+    def _get_originir(self, circuit: Circuit) -> str:
         """Extract OriginIR string from a UnifiedQuantum Circuit.
 
         Args:
@@ -136,20 +136,22 @@ class OriginQCircuitAdapter(CircuitAdapter[Any]):
                     "Install it with: pip install pyqpanda3"
                 ) from e
 
-    def adapt(self, circuit: "Circuit") -> Any:
-        """Convert UnifiedQuantum Circuit to pyqpanda QProg.
+    def adapt(self, circuit: Circuit) -> str:
+        """Convert UnifiedQuantum Circuit to OriginIR string.
+
+        The OriginQAdapter.submit() receives this string and converts it
+        to QProg internally via translate_circuit(). Returning QProg here
+        would cause submit() to double-convert, breaking translate_circuit().
 
         Args:
             circuit: UnifiedQuantum Circuit object.
 
         Returns:
-            pyqpanda3.core.QProg object.
+            OriginIR format string.
         """
-        self._ensure_imports()
-        originir = self._get_originir(circuit)
-        return self._convert_originir(originir)
+        return self._get_originir(circuit)
 
-    def get_supported_gates(self) -> List[str]:
+    def get_supported_gates(self) -> list[str]:
         """Return the list of gate names supported by this adapter."""
         return self.SUPPORTED_GATES.copy()
 
@@ -162,11 +164,10 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
 
     # Gate mapping from OriginIR to Quafu
     SUPPORTED_GATES = [
-        "H", "X", "Y", "Z",
+        "H", "X", "Y", "Z", "S", "SX", "T",
         "RX", "RY", "RZ",
-        "CNOT", "CZ",
-        "MEASURE",
-        # Note: Quafu supports more gates, these are the most common ones
+        "CNOT", "CZ", "SWAP", "ISWAP",
+        "MEASURE", "BARRIER",
     ]
 
     def __init__(self) -> None:
@@ -187,7 +188,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
                     "Install it with: pip install pyquafu"
                 ) from e
 
-    def adapt(self, circuit: "Circuit") -> Any:
+    def adapt(self, circuit: Circuit) -> Any:
         """Convert UnifiedQuantum Circuit to quafu QuantumCircuit.
 
         Args:
@@ -202,7 +203,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
         originir = self._get_originir(circuit)
         lines = originir.splitlines()
         qc: Any = None
-        
+
         # Track control structure state
         control_stack: list[list[int]] = []  # Stack of control qubit lists
         dagger_count = 0  # Nested DAGGER counter (odd = dagger active)
@@ -262,13 +263,13 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
                 effective_control_qubits.extend(control_qubits)
             for ctrl in control_stack:
                 effective_control_qubits.extend(ctrl)
-            
+
             # Apply dagger from DAGGER block
             effective_dagger = dagger_flag or (dagger_count % 2 == 1)
 
             # Apply gates
             qc = self._apply_gate(
-                qc, operation, qubit, cbit, parameter, 
+                qc, operation, qubit, cbit, parameter,
                 effective_dagger, effective_control_qubits if effective_control_qubits else None
             )
 
@@ -280,11 +281,11 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
     def _apply_gate(
         self,
         qc: Any,
-        operation: Optional[str],
+        operation: str | None,
         qubit: Any,
         cbit: Any,
         parameter: Any,
-        dagger_flag: Optional[bool],
+        dagger_flag: bool | None,
         control_qubits: Any,
     ) -> Any:
         """Apply a single gate to the Quafu QuantumCircuit.
@@ -429,7 +430,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
 
         return qc
 
-    def get_supported_gates(self) -> List[str]:
+    def get_supported_gates(self) -> list[str]:
         """Return the list of gate names supported by this adapter."""
         return self.SUPPORTED_GATES.copy()
 
@@ -466,7 +467,7 @@ class IBMCircuitAdapter(CircuitAdapter[Any]):
                     "Install it with: pip install qiskit"
                 ) from e
 
-    def adapt(self, circuit: "Circuit") -> Any:
+    def adapt(self, circuit: Circuit) -> Any:
         """Convert UnifiedQuantum Circuit to qiskit QuantumCircuit.
 
         The conversion path is:
@@ -488,7 +489,7 @@ class IBMCircuitAdapter(CircuitAdapter[Any]):
 
     def adapt_with_transpilation(
         self,
-        circuit: "Circuit",
+        circuit: Circuit,
         backend: Any = None,
         optimization_level: int = 1,
         **kwargs: Any,
@@ -514,6 +515,6 @@ class IBMCircuitAdapter(CircuitAdapter[Any]):
 
         return qiskit_circuit
 
-    def get_supported_gates(self) -> List[str]:
+    def get_supported_gates(self) -> list[str]:
         """Return the list of gate names supported by this adapter."""
         return self.SUPPORTED_GATES.copy()
