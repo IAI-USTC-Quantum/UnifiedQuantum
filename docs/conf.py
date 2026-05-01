@@ -335,3 +335,18 @@ html_js_files = ['hide_myst_anchors.js']
 
 # pydata-sphinx-theme uses breadcrumbs by default; keep it enabled
 breadcrumbs = True
+
+# -- Options for LaTeX/PDF output --------------------------------------------
+latex_engine = 'xelatex'
+latex_use_xindy = False
+latex_elements = {
+    "fontpkg": (
+        r"\usepackage{fontspec}"
+        r"\setmainfont{Noto Serif CJK SC}"
+        r"\setsansfont{Noto Sans CJK SC}"
+        r"\setmonofont{Noto Sans Mono CJK SC}"
+    ),
+}
+
+latex_show_urls = "inline"
+latex_show_pagerefs = True

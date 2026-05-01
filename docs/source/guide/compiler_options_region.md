@@ -308,7 +308,7 @@ print(f"最长链: {result.chain}")  # 返回全芯片最长路径
 
 1. **贪心扩展**：从起始量子比特出发，每次选择 fidelity 最高的邻居
 2. **DFS 回溯**：若贪心陷入死路，用带剪枝的深度优先搜索找最长路径
-3. **保真度计算**：`F = ∏ fidelity(edge_i)`，即所有边 fidelity 的乘积
+3. **保真度计算**：`F = \prod fidelity(edge_i)`，即所有边 fidelity 的乘积
 
 ### 3.4 `find_best_2D_from_circuit`：寻找最优 2D 区域
 
@@ -342,7 +342,7 @@ print(f"预估成功率: {result.estimated_fidelity:.4f}")
 基于**乘积保真度公式**：
 
 ```
-P_success = ∏(1Q gate fidelity) × ∏(2Q gate fidelity) × ∏(readout fidelity)
+P_success = \prod(1Q gate fidelity) \times \prod(2Q gate fidelity) \times \prod(readout fidelity)
 ```
 
 ```python

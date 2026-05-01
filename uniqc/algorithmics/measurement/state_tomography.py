@@ -504,9 +504,9 @@ def tomography_summary(
 ) -> None:
     """Print a human-readable summary of a density matrix tomography result.
 
-    Shows eigenvalues, purity (:math:` mathrm{Tr}( rho^2)`), trace, and,
+    Shows eigenvalues, purity (:math:`\mathrm{Tr}(\rho^2)`), trace, and,
     if ``reference_state`` is provided, the fidelity
-    :math:`F( rho, \\sigma) = ( mathrm{Tr}sqrt{sqrt{ rho}\\sigmasqrt{ rho}})^2`.
+    :math:`F(\rho, \sigma) = (\mathrm{Tr} \sqrt{\sqrt{\rho}\,\sigma\sqrt{\rho}})^2`.
 
     Args:
         rho: Density matrix from :func:`state_tomography`.

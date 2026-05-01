@@ -16,6 +16,10 @@ APIDOC_IN     = ../uniqc
 APIDOC_EXCLUDE = $(APIDOC_IN)/test $(APIDOC_IN)/cli $(APIDOC_IN)/_version.py $(APIDOC_IN)/**/test_*.py
 APIDOC_FLAGS  = -f -e -T
 
+# Python for post-processing (replace Unicode math chars in generated tex)
+PYTHON        ?= python3
+TEXPATCHER    = $(SOURCEDIR)/_tex_patch.py
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
@@ -31,3 +35,11 @@ apidoc:
 # Runs apidoc first so every build starts from a fresh module index.
 %: apidoc Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Special target for PDF: patch the tex file before latexmk runs
+latexpdf: apidoc
+	@$(SPHINXBUILD) -b latex "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@if [ -f "$(TEXPATCHER)" ]; then \
+		$(PYTHON) $(TEXPATCHER) "$(BUILDDIR)/unifiedquantum.tex"; \
+		fi
+	@$(MAKE) -C "$(BUILDDIR)" LATEXMKOPTS="$(LATEXMKOPTS)" all-pdf

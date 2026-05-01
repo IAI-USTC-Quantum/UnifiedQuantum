@@ -76,8 +76,7 @@ def dicke_state_circuit(
 
     .. math::
 
-        |D(n,k)\rangle = \frac{1}{\sqrt{\binom{n}{k}}}
-        \sum_{x\,\in\,\{0,1\}^n,\;|x|=k} |x\rangle
+        |D(n,k)\rangle = \frac{1}{\sqrt{\binom{n}{k}}} \sum_{x \in \{0,1\}^n, |x|=k} |x\rangle
 
     This implementation uses the **SCUC** (Sequential Conditional Unitary
     Cascade) algorithm from Bärtschi & Eidenbenz (2019), built from CNOT,

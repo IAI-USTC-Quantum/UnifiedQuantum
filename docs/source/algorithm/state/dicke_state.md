@@ -4,7 +4,7 @@
 
 **Dicke 态** $|D(n,k)\rangle$ 是 $n$ 个量子比特上所有 Hamming 权重为 $k$ 的计算基态的等权叠加：
 
-$$|D(n,k)\rangle = \frac{1}{\sqrt{\binom{n}{k}}} \sum_{\substack{x \in \{0,1\}^n \\ |x| = k}} |x\rangle$$
+$$|D(n,k)\rangle = \frac{1}{\sqrt{\binom{n}{k}}} \sum_{x \in \{0,1\}^n, |x| = k} |x\rangle$$
 
 其中 $|x|$ 表示比特串 $x$ 中 1 的个数。
 

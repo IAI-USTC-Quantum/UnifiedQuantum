@@ -23,9 +23,7 @@ def dicke_state(
 
     .. math::
 
-        |D(n,k)\\rangle = \\frac{1}{\\sqrt{\\binom{n}{k}}}
-        \\sum_{\\substack{x \\in \\{0,1\\}^n \\\\
-        |x|=k}} |x\\rangle
+        D(n,k) = 1 \big/ \binom{n}{k} \quad \sum_{x \in \{0,1\}^n, |x|=k} x
 
     The target state vector is constructed directly and prepared using
     :func:`rotation_prepare`.

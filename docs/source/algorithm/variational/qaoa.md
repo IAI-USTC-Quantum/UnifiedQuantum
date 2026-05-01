@@ -23,7 +23,7 @@ QAOA 态的制备方式为：
 $$|\psi(\boldsymbol{\beta}, \boldsymbol{\gamma})\rangle
 = \prod_{l=1}^{p} e^{-i\beta_l H_M} e^{-i\gamma_l H_C} |+\rangle^{\otimes n}$$
 
-其中 $H_M = \sum_i X_i$ 是混合哈密顿量，$p$ 是层数（$p$ 越大 → 近似效果越好）。
+其中 $H_M = \sum_i X_i$ 是混合哈密顿量，$p$ 是层数（$p$ 越大 $\to$ 近似效果越好）。
 
 ### 算法流程
 

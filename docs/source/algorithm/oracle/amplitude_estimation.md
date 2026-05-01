@@ -11,14 +11,14 @@
 
 ### 数学原理
 
-设 $A|0\rangle = \sqrt{1-a}|坏\rangle + \sqrt{a}|好\rangle$，其中 $|好\rangle$
+设 $A|0\rangle = \sqrt{1-a}\lvert\text{坏}\rangle + \sqrt{a}\lvert\text{好}\rangle$，其中 $\lvert\text{好}\rangle$
 是由预言机标记的目标子空间。
 
 定义 Grover 算子：
 
-$$G = (2|ψ\rangle\langleψ| - I) \cdot U_f$$
+$$G = (2\lvert\psi\rangle\langle\psi\rvert - I) \cdot U_f$$
 
-其中 $U_f$ 是相位翻转预言机，$|ψ\rangle = A|0\rangle$。
+其中 $U_f$ 是相位翻转预言机，$\lvert\psi\rangle = A|0\rangle$。
 
 $G$ 的本征值为 $e^{\pm 2i\theta}$，其中 $\sin^2(\theta) = a$。
 
