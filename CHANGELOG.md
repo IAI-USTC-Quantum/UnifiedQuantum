@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`Circuit.get_matrix()`** (`uniqc/circuit_builder/matrix.py`): Extracts the unitary matrix representation of a `Circuit` by folding all gate matrices via tensor product and contraction. Supports all standard gates (`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`, controlled variants). Raises `NotMatrixableError` for gates without a finite unitary (e.g. measurement, decoherence channels).
+- **Measurement probability checks** (`uniqc/transpiler/compiler.py`): `_originir_to_circuit()` now correctly tracks MEASURE gates with non-contiguous qubit and classical bit registers via a deferred `pending_measurements` buffer, fixing circuits where qubits map to non-zero classical bits.
+
+### Changed
+
+- **`_originir_to_circuit()`** (`uniqc/transpiler/compiler.py`): Refactored to use explicit `QINIT`/`CREG`/`MEASURE` opcode handling and a `pending_measurements` dict instead of regex-based `re.findall`; correctly records `qubit_num`, `cbit_num`, `max_qubit`, and `measure_list`.
+- **`compile()` Qiskit import** (`uniqc/transpiler/compiler.py`): `transpile_qasm` is now lazily loaded via `_load_transpile_qasm()` — import is deferred until first `compile()` call, with a clear `CompilationFailedException` pointing to `pip install unified-quantum[qiskit]` when Qiskit is absent.
+- **`uniqc/transpiler/__init__.py`**: `plot_time_line` import is now lazy with a silent `None` fallback when matplotlib is unavailable; export style normalised to explicit `as` renaming for all public symbols.
+
 ## [0.0.7] - 2026-05-01
 
 ### Added
@@ -17,17 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`BackendOptionsFactory`**: Three-mode factory — accepts `None` (returns platform defaults), a `BackendOptions` instance (returned unchanged), or a `dict` (treated as `**kwargs`). Main integration point is `normalize_options()`.
 - **`RegionSelector`** (`uniqc/region_selector.py`): Finds optimal physical qubit regions from `ChipCharacterization` calibration data. `find_best_1D_chain(length)` uses greedy expansion with DFS backtracking fallback to return the lexicographically-first highest-fidelity chain. `find_best_2D_from_circuit(circuit)` enumerates rectangular subgraphs and scores them by `estimate_circuit_fidelity()`. All three methods support product-of-fidelities fidelity estimation.
 - **Top-level exports**: `compile`, `TranspilerConfig`, `CompilationResult`, `CompilationFailedException`, `RegionSelector`, `ChainSearchResult`, `RegionSearchResult`, `OriginQOptions`, `QuafuOptions`, `IBMOptions`, `DummyOptions`, `BackendOptionsFactory`, `BackendOptionsError` are now exported from `uniqc/__init__.py`.
-
-### Changed
-
-- **`submit_task()` / `submit_batch()`** (`uniqc/task_manager.py`): Added optional `options` parameter accepting `BackendOptions | dict | None`. When provided, options are normalised via `BackendOptionsFactory.normalize_options()` and merged with any extra `**kwargs`. Fully backward-compatible — existing `**kwargs`-only calls are unchanged.
-- **`uniqc/transpiler/__init__.py`**: Re-exports `compile`, `TranspilerConfig`, and `CompilationResult` from the new `compiler` submodule.
-- **`Platform` enum** (`uniqc/backend_info.py`): Added `DUMMY = "dummy"` variant to support the dummy simulator in `BackendOptions`.
-- **`submit_task(..., dummy=True)` / `submit_batch(..., dummy=True)`** (`uniqc/task_manager.py`): The `dummy=` parameter is deprecated. Use `backend="dummy"` instead, which now routes through the properly registered `DummyBackend` — no functional change for existing callers, but a `DeprecationWarning` is emitted.
-- **`DummyAdapter`** (`uniqc/task/adapters/dummy_adapter.py`): Now accepts `chip_characterization: ChipCharacterization | None` at construction. When provided, automatically derives realistic noise parameters from per-qubit (single-gate fidelity, T1/T2, readout fidelity) and per-pair (two-qubit gate fidelity) calibration data. Readout errors are also injected via the `readout_error` parameter of `OriginIR_NoisySimulator`. Explicit `noise_model` takes precedence over chip-derived noise.
-
-### Added
-
 - **`DummyBackend`** (`uniqc/backend.py`): New `QuantumBackend` subclass registered as `"dummy"` in `BACKENDS`. Accepts `config` dict with keys: `chip_characterization` (chip data auto-converted to noise), `chip_id` (fetched from OriginQ and auto-converted), `noise_model`, `available_qubits`, `available_topology`. Enables `get_backend("dummy")` and `submit_task(circuit, "dummy", ...)` as first-class citizens. Use cases::
 
     ```python
@@ -43,6 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     backend = get_backend("dummy", config={"chip_characterization": chip})
     task_id = backend.submit(circuit, shots=1000)
     ```
+
+### Changed
+
+- **`submit_task()` / `submit_batch()`** (`uniqc/task_manager.py`): Added optional `options` parameter accepting `BackendOptions | dict | None`. When provided, options are normalised via `BackendOptionsFactory.normalize_options()` and merged with any extra `**kwargs`. Fully backward-compatible — existing `**kwargs`-only calls are unchanged.
+- **`uniqc/transpiler/__init__.py`**: Re-exports `compile`, `TranspilerConfig`, and `CompilationResult` from the new `compiler` submodule.
+- **`Platform` enum** (`uniqc/backend_info.py`): Added `DUMMY = "dummy"` variant to support the dummy simulator in `BackendOptions`.
+- **`submit_task(..., dummy=True)` / `submit_batch(..., dummy=True)`** (`uniqc/task_manager.py`): The `dummy=` parameter is deprecated. Use `backend="dummy"` instead, which now routes through the properly registered `DummyBackend` — no functional change for existing callers, but a `DeprecationWarning` is emitted.
+- **`DummyAdapter`** (`uniqc/task/adapters/dummy_adapter.py`): Now accepts `chip_characterization: ChipCharacterization | None` at construction. When provided, automatically derives realistic noise parameters from per-qubit (single-gate fidelity, T1/T2, readout fidelity) and per-pair (two-qubit gate fidelity) calibration data. Readout errors are also injected via the `readout_error` parameter of `OriginIR_NoisySimulator`. Explicit `noise_model` takes precedence over chip-derived noise.
 
 ### Fixed
 
