@@ -56,7 +56,6 @@ class OriginQAdapter(QuantumAdapter):
         self._QCloudJob: Any = None
         self._JobStatus: Any = None
         self._DataBase: Any = None
-        self._QCloudSimulator: Any = None  # May be None on older pyqpanda3 versions
         self._convert_originir: Any = None
 
         # State for the current/last submitted job
@@ -66,14 +65,13 @@ class OriginQAdapter(QuantumAdapter):
     def _ensure_imports(self) -> None:
         """Lazily import pyqpanda3 modules.
 
-        ``QCloudSimulator`` is imported with feature detection: it may not be
-        available on older pyqpanda3 versions. When absent, simulator backends
-        will raise an informative error at submission time rather than at
-        adapter construction.
+        Hardware and simulator backends are both accessed via ``QCloudService.backend()``.
+        The returned ``QCloudBackend`` object exposes ``run()`` regardless of backend
+        type — there is no separate simulator class.
         """
         if self._service is None:
             try:
-                require("pyqpanda3", "originq")
+                require("pyqpanda3>=0.3.5", "originq")
                 from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
                 from pyqpanda3.qcloud import (
                     DataBase,
@@ -89,15 +87,6 @@ class OriginQAdapter(QuantumAdapter):
                 self._JobStatus = JobStatus
                 self._DataBase = DataBase
                 self._convert_originir = convert_originir_string_to_qprog
-
-                # QCloudSimulator may not exist on older pyqpanda3 versions (e.g. 0.3.5).
-                # Import it separately so other QCloud APIs remain usable even if it's absent.
-                try:
-                    from pyqpanda3.qcloud import QCloudSimulator  # noqa: F401
-                except ImportError:
-                    pass  # self._QCloudSimulator stays None
-                else:
-                    self._QCloudSimulator = QCloudSimulator
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize pyqpanda3 for OriginQ: {e}") from e
 
@@ -199,7 +188,7 @@ class OriginQAdapter(QuantumAdapter):
 
         backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
 
-        # Simulator backends require the QCloudSimulator API, not QCloudOptions
+        # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
             return self._submit_simulator(backend_name, circuit, shots=shots)
 
@@ -234,6 +223,9 @@ class OriginQAdapter(QuantumAdapter):
     def _submit_simulator(self, backend_name: str, circuit: str, *, shots: int = 1000) -> str:
         """Submit a circuit to an OriginQ simulator backend (full_amplitude, etc.).
 
+        Simulator backends use the same ``QCloudBackend.run()`` API as hardware
+        backends — there is no separate simulator class in pyqpanda3.
+
         Args:
             backend_name: Simulator backend name (e.g., ``"full_amplitude"``).
             circuit: OriginIR format circuit string.
@@ -241,22 +233,12 @@ class OriginQAdapter(QuantumAdapter):
 
         Returns:
             Task ID string.
-
-        Raises:
-            RuntimeError: If ``QCloudSimulator`` is not available (pyqpanda3 version
-                too old or ``pyqpanda3[qcloud]`` extra not installed).
         """
-        if self._QCloudSimulator is None:
-            raise RuntimeError(
-                f"QCloudSimulator is not available in the installed pyqpanda3 version. "
-                f"SIMULATOR backends (e.g. '{backend_name}') require a newer pyqpanda3 "
-                f"that includes pyqpanda3.qcloud.QCloudSimulator. "
-                f"Install with: pip install 'pyqpanda3>=0.4.0' or pip install 'unified-quantum[originq] --upgrade'"
-            )
+        self._ensure_imports()
         qprog = self.translate_circuit(circuit)
-        sim = self._QCloudSimulator(api_key=self._api_key, machine_name=backend_name)
-        result = sim.run(qprog, shots=shots)
-        return result.job_id() if hasattr(result, "job_id") else f"sim-{backend_name}"
+        backend = self._service.backend(backend_name)
+        job = backend.run(qprog, shots=shots)
+        return job.job_id()
 
     def submit_batch(self, circuits: list[str], *, shots: int = 1000, **kwargs: Any) -> str | list[str]:
         """Submit circuits as a group.
@@ -276,7 +258,7 @@ class OriginQAdapter(QuantumAdapter):
 
         backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
 
-        # Simulator backends require the QCloudSimulator API, not QCloudOptions
+        # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
             return self._submit_batch_simulator(backend_name, circuits, shots=shots)
 

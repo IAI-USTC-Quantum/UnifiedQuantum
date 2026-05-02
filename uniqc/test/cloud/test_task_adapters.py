@@ -450,7 +450,6 @@ class TestOriginQAdapterUnit:
         adapter._QCloudJob = None
         adapter._JobStatus = None
         adapter._DataBase = None
-        adapter._QCloudSimulator = None
         adapter._convert_originir = None
 
         chip = adapter.get_chip_characterization("wuyuan:d5")
