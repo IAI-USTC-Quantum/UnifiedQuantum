@@ -8,10 +8,13 @@
 [![codecov](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum/graph/badge.svg?token=PFQ6F7HQY7)](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum)
 [![Build and Test](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml)
 [![Quantum | AI](https://img.shields.io/badge/Quantum_Computing-AI-00e5ff?style=flat-square)](https://iai-ustc-quantum.github.io/)
+[![Skill](https://img.shields.io/badge/Skill-quantum--computing.skill-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
 
-**UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
+**[English](README_en.md)** | **中文版**
 
-UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, Quafu, and IBM Quantum under one consistent API.
+**UnifiedQuantum** — 非商业性量子计算聚合框架。
+
+UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、Quafu、IBM Quantum 等多平台后端于一套一致的 API 下。
 
 ---
 
@@ -62,18 +65,20 @@ uniqc result <task_id>
 
 ## 设计理念
 
-UnifiedQuantum 是一个**非商业性**的开源项目，四条基本立场贯穿整个设计：
+UnifiedQuantum 是一个**非商业性**的开源项目，致力于打造 **AI 时代原生**的量子计算应用框架：
 
-- **聚合**：把分散的量子云平台（OriginQ、Quafu、IBM Quantum 等）收拢到同一套接口下。
-- **统一**：从线路构建、模拟执行到任务管理，对外呈现一致的 API 与 CLI，不让用户为每家平台单独学一套。
-- **透明**：线路如何组装、如何被翻译、如何提交到后端，全部显式可见，没有隐藏的 magic。
-- **轻量**：依赖少、安装快、易于嵌入现有项目。
+- **AI 原生**：专为 AI 工作流设计，无缝集成到现代开发与推理流程中
+- **CLI-first**：开箱即用的命令行工具，一条命令完成线路构建、模拟、提交与结果分析
+- **聚合**：整合多种量子云平台（OriginQ、Quafu、IBM Quantum），提供统一接口
+- **统一**：一致的 API 设计，屏蔽各平台差异
+- **透明**：清晰的量子程序组装与执行方式，无隐藏行为
+- **轻量**：纯 Python 实现，安装简单，集成方便
 
-抽象上，UnifiedQuantum 的三个核心对象覆盖了完整的量子程序生命周期：
+> **配套 Skill**：在 [IAI-USTC-Quantum/quantum-computing.skill](https://github.com/IAI-USTC-Quantum/quantum-computing.skill) 中获取 Claude Code 集成指南与 AI 辅助量子编程工作流。
 
-- **Circuit** — 量子线路构建器，原生支持 OriginIR / OpenQASM 2.0 双格式输出。
-- **Backend** — 本地模拟器或真实量子硬件的统一句柄。
-- **Result** — 测量结果以原生 Python 结构返回（`dict` / `list` / `ndarray`），便于后处理。
+<p align="center">
+  <img src="concept_unified_platforms.png" alt="UnifiedQuantum 统一接入概念图" width="100%">
+</p>
 
 ---
 
