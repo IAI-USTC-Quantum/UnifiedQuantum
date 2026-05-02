@@ -221,6 +221,8 @@ def validate_config(
         return ["Configuration is empty"]
 
     for profile_name, profile_config in cfg.items():
+        if profile_name in META_KEYS:
+            continue
         if not isinstance(profile_config, dict):
             errors.append(f"Profile '{profile_name}' must be a dictionary")
             continue

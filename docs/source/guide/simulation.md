@@ -135,6 +135,8 @@ prob = sim.simulate_pmeasure(circuit.originir)
 | `density_matrix` | 含噪声模拟，双比特门为主 | ✅ | 较慢（内存 O(4^n)） |
 | `density_matrix_qutip` | 复杂噪声模型，高精度需求 | ✅ | 较慢，依赖 Qutip |
 
+> **CLI 注意**：`uniqc simulate --backend density` 在 CLI 层映射到 Python API 的 `densitymatrix` 后端，二者行为一致，无需额外转换。
+
 **选择建议**：
 - 一般无噪声模拟 → {class}`uniqc.simulator.OriginIR_Simulator`（基于 statevector）
 - 需要噪声模拟 → {class}`uniqc.simulator.OriginIR_NoisySimulator`（基于 density_matrix）

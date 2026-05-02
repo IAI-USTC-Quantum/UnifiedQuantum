@@ -2,7 +2,7 @@
 
 These tests verify that:
 1. Each adapter correctly translates OriginIR to provider-native circuits.
-2. Config is loaded from environment variables.
+2. Config is loaded from environment variables, with YAML config fallback (issue #45).
 3. Task modules delegate to adapters.
 
 Cloud tests require real credentials and are marked with @pytest.mark.cloud.
@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -103,44 +104,89 @@ class RunTestConfigEnvVars:
         assert config["task_group_size"] == 50
 
     def run_test_originq_config_deprecated_file_fallback(self, monkeypatch, tmp_path):
-        """File fallback is no longer supported - ImportError raised when env vars absent."""
+        """Deprecated JSON file format is not used; empty-token YAML raises ImportError.
+
+        The old ``originq_cloud_config.json`` format is not read.
+        Instead, ``~/.uniqc/uniqc.yml`` YAML config is checked as fallback (issue #45 fix).
+        With an empty-token YAML config, ImportError is correctly raised.
+        """
         monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
-
-        # Create a config file (should NOT be used anymore)
-        config_file = tmp_path / "originq_cloud_config.json"
-        config_file.write_text(
-            json.dumps(
-                {
-                    "apitoken": "file_key",
-                    "task_group_size": 50,
-                }
-            )
+        # Create a YAML config with empty token at the real config location
+        config_dir = tmp_path / ".uniqc"
+        config_dir.mkdir()
+        yaml_config = config_dir / "uniqc.yml"
+        yaml_config.write_text(
+            "active_profile: default\n"
+            "default:\n"
+            "  originq:\n"
+            "    token: \"\"\n"
         )
-        monkeypatch.chdir(tmp_path)
+        # Patch Path.home() so ~/.uniqc/uniqc.yml points to our temp dir
+        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
-        # Clear module cache to force re-import
-        if "uniqc.task.config" in sys.modules:
-            del sys.modules["uniqc.task.config"]
+        # Clear module cache
+        for mod in list(sys.modules):
+            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+                del sys.modules[mod]
 
         from uniqc.task.config import load_originq_config
 
-        # Should raise ImportError - file fallback is no longer supported
+        # Should raise ImportError since YAML token is empty
         with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
             load_originq_config()
 
     def run_test_originq_config_import_error_without_config(self, monkeypatch, tmp_path):
-        """ImportError raised when env vars are absent."""
-        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
-        monkeypatch.chdir(tmp_path)
+        """ImportError raised when env vars are absent and YAML config has no token.
 
-        # Force re-import by clearing module cache
-        if "uniqc.task.config" in sys.modules:
-            del sys.modules["uniqc.task.config"]
+        After the #45 fix, the YAML config file is checked as fallback.
+        With an empty-token YAML, ImportError is correctly raised.
+        """
+        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
+        config_dir = tmp_path / ".uniqc"
+        config_dir.mkdir()
+        yaml_config = config_dir / "uniqc.yml"
+        yaml_config.write_text(
+            "active_profile: default\n"
+            "default:\n"
+            "  originq:\n"
+            "    token: \"\"\n"
+        )
+        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+        for mod in list(sys.modules):
+            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+                del sys.modules[mod]
 
         from uniqc.task.config import load_originq_config
 
         with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
             load_originq_config()
+
+    def run_test_originq_config_yaml_fallback(self, monkeypatch, tmp_path):
+        """After #45, tokens are read from YAML config when env var is absent.
+
+        This test verifies the YAML fallback works correctly.
+        """
+        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
+        config_dir = tmp_path / ".uniqc"
+        config_dir.mkdir()
+        yaml_config = config_dir / "uniqc.yml"
+        yaml_config.write_text(
+            "active_profile: default\n"
+            "default:\n"
+            "  originq:\n"
+            '    token: "yaml-test-token"\n'
+        )
+        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+        for mod in list(sys.modules):
+            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+                del sys.modules[mod]
+
+        from uniqc.task.config import load_originq_config
+
+        cfg = load_originq_config()
+        assert cfg["api_key"] == "yaml-test-token"
 
 
 # ---------------------------------------------------------------------------
@@ -348,3 +394,70 @@ class TestOriginQAdapterUnit:
         result = adapter._format_counts("something")
         assert isinstance(result, dict)
         assert result == {"something": 1}
+
+    def run_test_get_chip_characterization_double_qubits_no_uv_accessor(self, monkeypatch):
+        """get_chip_characterization falls back to topology index when dq lacks u/v accessors.
+
+        Some pyqpanda3 chip_info() implementations return double_qubits_info() objects
+        that have get_fidelity() but lack get_qubit_u() / get_qubit_v(). The adapter
+        must use the topology index to look up the qubit pair instead of crashing.
+        """
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
+
+        # Minimal mock objects
+        mock_sq = type("MockSQ", (), {
+            "get_qubit_id": lambda self: 0,
+            "get_t1": lambda self: 50.0,
+            "get_t2": lambda self: 80.0,
+            "get_single_gate_fidelity": lambda self: 0.99,
+            "get_readout_fidelity": lambda self: 0.95,
+            "get_readout_fidelity_0": lambda self: 0.97,
+            "get_readout_fidelity_1": lambda self: 0.93,
+        })()
+
+        mock_dq = type("MockDQ", (), {
+            # No get_qubit_u / get_qubit_v — this is the case being tested
+            "get_fidelity": lambda self: 0.85,
+        })()
+
+        mock_ci = type("MockCI", (), {
+            "qubits_num": lambda self: 5,
+            "get_chip_topology": lambda self: [(0, 1), (1, 2), (2, 3)],
+            "available_qubits": lambda self: [0, 1, 2, 3, 4],
+            "single_qubit_info": lambda self: [mock_sq],
+            "double_qubits_info": lambda self: [mock_dq],
+        })()
+
+        mock_backend = type("MockBackend", (), {
+            "chip_info": lambda self: mock_ci,
+            "configuration": lambda self: type("MockCfg", (), {
+                "supported_gates": lambda self: ["x", "h", "cx", "cz"],
+                "single_qubit_gate_time": lambda self: 20.0,
+                "two_qubit_gate_time": lambda self: 300.0,
+            })(),
+        })()
+
+        mock_service = type("MockService", (), {
+            "backend": lambda self, name: mock_backend,
+        })()
+
+        from uniqc.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = mock_service
+        adapter._QCloudOptions = None
+        adapter._QCloudJob = None
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._convert_originir = None
+
+        chip = adapter.get_chip_characterization("wuyuan:d5")
+
+        assert chip is not None
+        assert len(chip.two_qubit_data) == 1
+        # Fallback to topology: index 0 → (0, 1)
+        assert chip.two_qubit_data[0].qubit_u == 0
+        assert chip.two_qubit_data[0].qubit_v == 1
+        # Fidelity was available even without u/v accessors
+        assert chip.two_qubit_data[0].gates[0].fidelity == 0.85

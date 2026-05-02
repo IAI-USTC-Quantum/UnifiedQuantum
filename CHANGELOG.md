@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`Circuit.get_matrix()`** (`uniqc/circuit_builder/matrix.py`): Extracts the unitary matrix representation of a `Circuit` by folding all gate matrices via tensor product and contraction. Supports all standard gates (`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`, controlled variants). Raises `NotMatrixableError` for gates without a finite unitary (e.g. measurement, decoherence channels).
+- **Measurement probability checks** (`uniqc/transpiler/compiler.py`): `_originir_to_circuit()` now correctly tracks MEASURE gates with non-contiguous qubit and classical bit registers via a deferred `pending_measurements` buffer, fixing circuits where qubits map to non-zero classical bits.
+
+### Changed
+
+- **`_originir_to_circuit()`** (`uniqc/transpiler/compiler.py`): Refactored to use explicit `QINIT`/`CREG`/`MEASURE` opcode handling and a `pending_measurements` dict instead of regex-based `re.findall`; correctly records `qubit_num`, `cbit_num`, `max_qubit`, and `measure_list`.
+- **`compile()` Qiskit import** (`uniqc/transpiler/compiler.py`): `transpile_qasm` is now lazily loaded via `_load_transpile_qasm()` — import is deferred until first `compile()` call, with a clear `CompilationFailedException` pointing to `pip install unified-quantum[qiskit]` when Qiskit is absent.
+- **`uniqc/transpiler/__init__.py`**: `plot_time_line` import is now lazy with a silent `None` fallback when matplotlib is unavailable; export style normalised to explicit `as` renaming for all public symbols.
+
+## [0.0.7.post1] - 2026-05-01
+
+### Fixed
+
+- **`uniqc simulate --backend density`** (`uniqc/cli/simulate.py`): The CLI `--backend density` option is now correctly normalised to the Python API backend name `densitymatrix`. Previously the simulator raised "Unknown backend type: density" because the raw CLI value was passed directly without mapping. (`#39`)
+- **`uniqc submit --dry-run` duplicate `shots` argument** (`uniqc/cli/submit.py`): Fixed `TypeError: dry_run_task() got multiple values for keyword argument 'shots'` caused by `shots` being passed both as a direct keyword argument and inside `**kwargs` in `_handle_dry_run()`. (`#40`)
+- **`dry_run_task(backend="dummy")`** (`uniqc/task_manager.py`): `DummyAdapter` is now registered in the `dry_run_task()` adapter map, allowing `dry_run_task(circuit, backend="dummy")` to work without requiring an explicit `dummy=True` override. (`#40`)
+- **`uniqc backend list --format json` TypeError** (`uniqc/cli/backend.py`): Fixed `TypeError: json must be str` when running `--format json` by passing the list as `data=json_data` to Rich's `console.print_json()` keyword argument. (`#41`)
+- **`uniqc config validate` rejects `active_profile`** (`uniqc/config.py`): `validate_config()` now correctly skips the `active_profile` top-level metadata key (previously reported as "Profile 'active_profile' must be a dictionary"). The `META_KEYS` frozenset was already defined but not consulted during validation. (`#42`)
+- **`uniqc submit` batch dummy mode leaves failed tasks** (`uniqc/cli/submit.py`, `uniqc/task_manager.py`): Fixed two bugs: (1) `_submit_batch()` now correctly passes `backend="dummy"` instead of `backend="originq"` when `--platform dummy`; (2) `submit_batch()` now calls the existing `_submit_batch_dummy()` helper which pre-populates task results, instead of going through the backend registry path which left tasks in a perpetual `RUNNING` → `FAILED` state. (`#43`)
+- **Dummy backend shot count integrity** (`uniqc/task/result_types.py`): `UnifiedResult.from_probabilities()` now uses `round()` instead of `int()` for converting probabilities to counts, with explicit compensation to guarantee `sum(counts.values()) == shots`. Previously `int()` truncation could cause counts to sum below the requested shot count due to floating-point precision errors. (`#44`)
+- **Python API tokens not read from YAML config** (`uniqc/task/config.py`): `load_originq_config()`, `load_quafu_config()`, and `load_ibm_config()` now fall back to reading tokens from `~/.uniqc/uniqc.yml` (written by `uniqc config set`) when the respective environment variable is not set. This unifies CLI and Python API credential handling. (`#45`)
+- **`unified-quantum[all]` qiskit conflict** (`pyproject.toml`): Removed `qiskit-ibm-provider>=0.10` from the `qiskit` and `all` extras. `qiskit-ibm-provider` is only compatible with qiskit 0.44–0.46 and is incompatible with `qiskit>=1.0`. IBM Quantum users should install `qiskit-ibm-runtime` separately for qiskit 1.x/2.x support. (`#46`)
+- **`uniqc backend chip-display` shows `0,0` qubit pairs** (`uniqc/task/adapters/originq_adapter.py`): `get_chip_characterization()` now uses the chip topology index to look up qubit pair `(u, v)` identifiers, fixing the per-pair 2Q gate table showing repeated `0, 0` for all pairs. The previous fallback of `hasattr(dq, "get_qubit_u")` was returning `False` for the OriginQ `double_qubits_info()` objects. (`#47`)
+- **OriginQ simulator backends not usable via `submit_task`** (`uniqc/task/adapters/originq_adapter.py`): Simulator backends (`full_amplitude`, `partial_amplitude`, `single_amplitude`) are now routed to the `QCloudSimulator` API instead of the QPU `QCloudOptions` path. Previously all OriginQ backends used `backend.run(qprog, shots, options=QCloudOptions(...))` which raised "Run with QCloudOptions is only for QPU" for simulator backends. (`#48`)
+
 ## [0.0.7] - 2026-05-01
 
 ### Added

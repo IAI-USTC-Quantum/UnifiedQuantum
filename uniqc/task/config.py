@@ -1,6 +1,7 @@
 """Unified configuration management for task backends.
 
-All configuration is read from environment variables.
+Configuration is read from environment variables, with a fallback to the
+shared ``~/.uniqc/uniqc.yml`` configuration file (written by ``uniqc config set``).
 
 Environment variables
 ---------------------
@@ -30,21 +31,46 @@ import os
 from typing import Any
 
 
+def _load_token_from_yaml(platform: str) -> str | None:
+    """Load token for ``platform`` from the shared YAML config file.
+
+    Args:
+        platform: One of ``originq``, ``quafu``, ``ibm``.
+
+    Returns:
+        Token string, or ``None`` if not found or config file is absent.
+    """
+    try:
+        from uniqc.config import get_active_profile, get_platform_config
+
+        profile = get_active_profile()
+        plat_cfg = get_platform_config(platform, profile)
+        return plat_cfg.get("token", "") or None
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # OriginQ Cloud
 # ---------------------------------------------------------------------------
 
 def load_originq_config() -> dict[str, Any]:
-    """Load OriginQ Cloud configuration from environment variables.
+    """Load OriginQ Cloud configuration from environment variables or YAML config.
+
+    The YAML config is checked as a fallback when ``ORIGINQ_API_KEY`` is not set.
+    This allows ``uniqc config set`` to configure both the CLI and Python API.
 
     Returns:
         dict with keys: api_key, task_group_size, available_qubits
 
     Raises:
-        ImportError: If required environment variable is not set.
+        ImportError: If required configuration is not found.
     """
     api_key = os.getenv("ORIGINQ_API_KEY")
     task_group_size_str = os.getenv("ORIGINQ_TASK_GROUP_SIZE")
+
+    if not api_key:
+        api_key = _load_token_from_yaml("originq")
 
     if api_key:
         return {
@@ -55,7 +81,8 @@ def load_originq_config() -> dict[str, Any]:
 
     raise ImportError(
         "OriginQ Cloud config not found. "
-        "Set ORIGINQ_API_KEY environment variable."
+        "Set ORIGINQ_API_KEY environment variable, "
+        "or add your token to ~/.uniqc/uniqc.yml under the active profile."
     )
 
 
@@ -64,22 +91,28 @@ def load_originq_config() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def load_quafu_config() -> dict[str, Any]:
-    """Load Quafu configuration from environment variables.
+    """Load Quafu configuration from environment variables or YAML config.
+
+    The YAML config is checked as a fallback when ``QUAFU_API_TOKEN`` is not set.
 
     Returns:
         dict with key: api_token
 
     Raises:
-        ImportError: If the environment variable is not set.
+        ImportError: If the configuration is not found.
     """
     api_token = os.getenv("QUAFU_API_TOKEN")
+
+    if not api_token:
+        api_token = _load_token_from_yaml("quafu")
 
     if api_token:
         return {"api_token": api_token}
 
     raise ImportError(
         "Quafu config not found. "
-        "Set QUAFU_API_TOKEN environment variable."
+        "Set QUAFU_API_TOKEN environment variable, "
+        "or add your token to ~/.uniqc/uniqc.yml under the active profile."
     )
 
 
@@ -88,22 +121,28 @@ def load_quafu_config() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def load_ibm_config() -> dict[str, Any]:
-    """Load IBM Quantum configuration from environment variables.
+    """Load IBM Quantum configuration from environment variables or YAML config.
+
+    The YAML config is checked as a fallback when ``IBM_TOKEN`` is not set.
 
     Returns:
         dict with key: api_token
 
     Raises:
-        ImportError: If the environment variable is not set.
+        ImportError: If the configuration is not found.
     """
     api_token = os.getenv("IBM_TOKEN")
+
+    if not api_token:
+        api_token = _load_token_from_yaml("ibm")
 
     if api_token:
         return {"api_token": api_token}
 
     raise ImportError(
         "IBM Quantum config not found. "
-        "Set IBM_TOKEN environment variable."
+        "Set IBM_TOKEN environment variable, "
+        "or add your token to ~/.uniqc/uniqc.yml under the active profile."
     )
 
 

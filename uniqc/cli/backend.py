@@ -210,7 +210,7 @@ def list_backends(
             json_data.append(b.to_dict())
 
     if format == "json":
-        console.print_json(json_data)
+        console.print_json(data=json_data)
         return
 
     if not rows:

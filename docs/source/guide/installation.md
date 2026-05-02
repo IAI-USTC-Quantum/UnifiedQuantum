@@ -139,6 +139,8 @@ uv pip install unified-quantum[qiskit]
 pip install unified-quantum[qiskit]
 ```
 
+> **注意**：`[qiskit]` extra 包含 `qiskit>=1.0` 和 `qiskit-aer`，不含 `qiskit-ibm-provider`（`qiskit-ibm-provider` 仅兼容 qiskit 0.44–0.46，与 qiskit>=1.0 不兼容）。如需使用 IBM Quantum 访问接口，请在安装 `unified-quantum[qiskit]` 后单独安装 `pip install qiskit-ibm-runtime`（qiskit 1.x/2.x 的 IBM Quantum 接口）。
+
 ### 高级模拟 (QuTiP)
 
 ```bash

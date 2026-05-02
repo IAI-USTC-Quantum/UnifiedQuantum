@@ -19,11 +19,9 @@
 
 ### 基本用法
 
-```bash
-# 列出所有平台的后端（默认只显示 available）
-uniqc backend list
+### 仅显示指定平台
 
-# 仅显示指定平台
+```bash
 uniqc backend list --platform originq
 uniqc backend list --platform quafu
 uniqc backend list --platform ibm

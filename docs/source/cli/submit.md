@@ -82,6 +82,8 @@ uniqc submit circuit1.ir circuit2.ir --platform originq --dry-run
 ┃ 2   FAIL     —                    —        Unsupported gate 'T'   ┃
 ```
 
+> **dummy 平台**：`--dry-run --platform dummy` 和 `backend="dummy"` 的 dry-run 验证现在支持 `backend="dummy"` 作为后端标识符，不再需要显式传入 `dummy=True`。
+
 ### 使用场景
 
 - 在正式提交前验证电路是否被目标平台接受

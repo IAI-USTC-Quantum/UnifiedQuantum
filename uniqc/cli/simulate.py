@@ -80,14 +80,17 @@ def _run_simulation(content: str, backend: str, shots: int) -> dict[str, float]:
 
     source_format = _detect_format(content)
 
+    # Normalise CLI backend names to Python API names
+    backend_type = "densitymatrix" if backend == "density" else backend
+
     if source_format == "qasm":
         parser = OpenQASM2_BaseParser()
         parser.parse(content)
-        sim = QASM_Simulator(backend_type=backend)
+        sim = QASM_Simulator(backend_type=backend_type)
     else:
         parser = OriginIR_BaseParser()
         parser.parse(content)
-        sim = OriginIR_Simulator(backend_type=backend)
+        sim = OriginIR_Simulator(backend_type=backend_type)
 
     n_qubits = max(int(parser.n_qubit or 1), 1)
 

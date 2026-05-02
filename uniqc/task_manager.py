@@ -221,6 +221,7 @@ def dry_run_task(
         "originq": OriginQAdapter,
         "quafu": QuafuAdapter,
         "ibm": QiskitAdapter,
+        "dummy": DummyAdapter,
     }
 
     if use_dummy:
@@ -500,6 +501,12 @@ def submit_task(
         )
         backend = "dummy"
 
+    # Route dummy backend through _submit_dummy which pre-populates the result.
+    # This ensures 'uniqc result <task_id>' returns data immediately without
+    # needing a subsequent query against a cloud backend.
+    if backend == "dummy":
+        return _submit_dummy(circuit, "dummy", shots=shots, metadata=metadata, **kwargs)
+
     # Resolve backend instance
     try:
         backend_instance = backend_module.get_backend(backend)
@@ -512,16 +519,12 @@ def submit_task(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
-    # Convert circuit using adapter (not needed for dummy backend)
-    if backend == "dummy":
-        # Dummy backend accepts OriginIR directly
-        native_circuit = circuit.originir
-    else:
-        try:
-            adapter = _get_adapter(backend)
-            native_circuit = adapter.adapt(circuit)
-        except Exception as e:
-            raise _map_adapter_error(e, backend) from e
+    # Convert circuit using adapter
+    try:
+        adapter = _get_adapter(backend)
+        native_circuit = adapter.adapt(circuit)
+    except Exception as e:
+        raise _map_adapter_error(e, backend) from e
 
     # Submit to backend
     try:
@@ -664,6 +667,12 @@ def submit_batch(
         )
         backend = "dummy"
 
+    # Route dummy backend to _submit_batch_dummy which pre-populates results.
+    # Use backend=="dummy" directly (consistent with submit_task() fix) so that
+    # submit_batch(..., backend="dummy", dummy=None) also works.
+    if backend == "dummy":
+        return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
+
     # Resolve backend instance
     try:
         backend_instance = backend_module.get_backend(backend)
@@ -676,16 +685,12 @@ def submit_batch(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
-    # Convert circuits using adapter (not needed for dummy backend)
-    if backend == "dummy":
-        # Dummy backend accepts OriginIR strings directly
-        native_circuits = [c.originir for c in circuits]
-    else:
-        try:
-            adapter = _get_adapter(backend)
-            native_circuits = adapter.adapt_batch(circuits)
-        except Exception as e:
-            raise _map_adapter_error(e, backend) from e
+    # Convert circuits using adapter
+    try:
+        adapter = _get_adapter(backend)
+        native_circuits = adapter.adapt_batch(circuits)
+    except Exception as e:
+        raise _map_adapter_error(e, backend) from e
 
     # Submit batch to backend
     try:

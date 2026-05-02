@@ -42,7 +42,7 @@ def _handle_dry_run(
 
     # Build kwargs for backend-specific options
     # --backend maps to backend_name for OriginQ, chip_id for IBM/Quafu
-    kwargs: dict = {"shots": shots}
+    kwargs: dict = {}
     if backend_name:
         if platform == "originq":
             kwargs["backend_name"] = backend_name
@@ -248,7 +248,7 @@ def _submit_batch(
 
     # Use dummy mode if platform is 'dummy'
     dummy = platform == "dummy"
-    backend = "originq" if dummy else platform
+    backend = "dummy" if dummy else platform
 
     return submit_batch(parsed_circuits, backend=backend, dummy=dummy, **kwargs)
 

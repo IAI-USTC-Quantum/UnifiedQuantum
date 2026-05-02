@@ -141,7 +141,13 @@ class UnifiedResult:
             ...     {"00": 0.5, "11": 0.5}, 1000, "originq", "task-2"
             ... )
         """
-        counts = {k: int(v * shots) for k, v in probabilities.items()}
+        raw_counts = {k: v * shots for k, v in probabilities.items()}
+        counts = {k: round(v) for k, v in raw_counts.items()}
+        # Compensate rounding error so total exactly equals shots
+        diff = shots - sum(counts.values())
+        if diff != 0 and counts:
+            key = sorted(counts)[0]
+            counts[key] += diff
         return cls(
             counts=counts,
             probabilities=probabilities,

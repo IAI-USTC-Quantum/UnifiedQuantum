@@ -128,6 +128,26 @@ results = adapter.query_sync(task_id, interval=2.0, timeout=60.0)
 `XX`, `YY`, `ZZ`, `XY`, `PHASE2Q`, `UU15`, `I`, `BARRIER`, `MEASURE`
 以及 `CONTROL`/`DAGGER` 块。
 
+#### OriginQ 模拟器后端
+
+OriginQ 云平台提供三种模拟器后端，可通过 `backend_name` 参数使用：
+
+| `backend_name` | 说明 | 用途 |
+|---|---|---|
+| `full_amplitude` | 全振幅模拟 | 多比特精确模拟 |
+| `partial_amplitude` | 部分振幅 | 大规模线路的部分比特模拟 |
+| `single_amplitude` | 单振幅 | 特定基态振幅计算 |
+
+```python
+from uniqc.task_manager import submit_task
+
+# 使用 OriginQ 模拟器后端
+task_id = submit_task(circuit, backend="originq", backend_name="full_amplitude", shots=1000)
+result = wait_for_result(task_id, backend="originq")
+```
+
+> 注意：模拟器后端在 `uniqc backend list --platform originq` 中以 `Type = sim` 标识，与 QPU 硬件后端（`Type = hw`）分开列出。模拟器后端使用 `QCloudSimulator` API 而非 QPU 的 `QCloudOptions`。
+
 ### 4.2 Quafu
 
 `QuafuAdapter.translate_circuit()`（OriginIR → quafu.QuantumCircuit）支持：
