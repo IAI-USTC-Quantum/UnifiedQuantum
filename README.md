@@ -8,13 +8,13 @@
 [![codecov](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum/graph/badge.svg?token=PFQ6F7HQY7)](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum)
 [![Build and Test](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml)
 [![Quantum | AI](https://img.shields.io/badge/Quantum_Computing-AI-00e5ff?style=flat-square)](https://iai-ustc-quantum.github.io/)
-[![Skill](https://img.shields.io/badge/Skill-IAI--USTC--Quantum-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
+[![Skill](https://img.shields.io/badge/Skill-quantum--computing.skill-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
 
 **[English](README_en.md)** | **中文版**
 
-**UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
+**UnifiedQuantum** — 非商业性量子计算聚合框架。
 
-UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, Quafu, and IBM Quantum under one consistent API.
+UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、Quafu、IBM Quantum 等多平台后端于一套一致的 API 下。
 
 ---
 
@@ -75,10 +75,6 @@ UnifiedQuantum 是一个**非商业性**的开源项目，致力于打造 **AI �
 - **轻量**：纯 Python 实现，安装简单，集成方便
 
 > **配套 Skill**：在 [IAI-USTC-Quantum/quantum-computing.skill](https://github.com/IAI-USTC-Quantum/quantum-computing.skill) 中获取 Claude Code 集成指南与 AI 辅助量子编程工作流。
-
-| 线路构建 | 原生 API 或任意工具，输出 OriginIR / QASM2 |
-| CLI 执行 | 统一接口：模拟、云端、任务管理 |
-| 结果分析 | 原生 Python 结构，易于集成 |
 
 <p align="center">
   <img src="concept_unified_platforms.png" alt="UnifiedQuantum 统一接入概念图" width="100%">

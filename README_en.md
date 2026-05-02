@@ -8,7 +8,7 @@
 [![codecov](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum/graph/badge.svg?token=PFQ6F7HQY7)](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum)
 [![Build and Test](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml)
 [![Quantum | AI](https://img.shields.io/badge/Quantum_Computing-AI-00e5ff?style=flat-square)](https://iai-ustc-quantum.github.io/)
-[![Skill](https://img.shields.io/badge/Skill-IAI--USTC--Quantum-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
+[![Skill](https://img.shields.io/badge/Skill-quantum--computing.skill-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
 
 **[中文版](README.md)** | **English**
 
@@ -75,10 +75,6 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 - **Lightweight**: Pure Python, easy to install and integrate
 
 > **Companion Skill**: Get the Claude Code integration guide and AI-assisted quantum programming workflow at [IAI-USTC-Quantum/quantum-computing.skill](https://github.com/IAI-USTC-Quantum/quantum-computing.skill).
-
-| Circuit Construction | Native API or any tool, output OriginIR / QASM2 |
-| CLI Execution | Unified: simulation, cloud, task management |
-| Result Analysis | Native Python structures, easy to integrate |
 
 <p align="center">
   <img src="concept_unified_platforms.png" alt="UnifiedQuantum Platform Unification Concept" width="100%">
