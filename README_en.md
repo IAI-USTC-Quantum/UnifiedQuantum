@@ -8,7 +8,7 @@
 [![codecov](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum/graph/badge.svg?token=PFQ6F7HQY7)](https://codecov.io/github/IAI-USTC-Quantum/UnifiedQuantum)
 [![Build and Test](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions/workflows/build_and_test.yml)
 [![Quantum | AI](https://img.shields.io/badge/Quantum_Computing-AI-00e5ff?style=flat-square)](https://iai-ustc-quantum.github.io/)
-[![Skill](https://img.shields.io/badge/SkillHub-quantum--computing-58a6ff?style=flat-square)](https://www.skillhub.cn/skills/quantum-computing)
+[![Skill](https://img.shields.io/badge/Skill-IAI--USTC--Quantum-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum/quantum-computing.skill)
 
 **[中文版](README.md)** | **English**
 
