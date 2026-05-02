@@ -43,7 +43,7 @@ class TestExponentialFit:
         fidelities = [1.0] * len(depths)
         result = fit_exponential(depths, fidelities)
         assert result["r"] == pytest.approx(1.0, abs=0.01)
-        assert result["method"] in ("scipy_curve_fit", "numpy_fallback", "mean_fallback")
+        assert result["method"] in ("scipy_curve_fit", "numpy_fallback", "numpy_fallback_pairwise", "mean_fallback")
 
     def test_exponential_decay_known_r(self):
         """Synthetic data with known r = 0.99, A=1, B=0."""
