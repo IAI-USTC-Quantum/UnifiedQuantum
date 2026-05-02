@@ -245,7 +245,14 @@ class XEBenchmarker:
             task_id = self.adapter.submit(originir, shots=self.shots)
             result = self.adapter.query(task_id)
             raw = result.get("result", {})
-            counts = raw.get("counts", {})
+            # Unify result format: some adapters return {counts: {...}},
+            # others return the counts dict directly.
+            if hasattr(raw, "counts"):
+                counts = raw.counts
+            elif isinstance(raw, dict):
+                counts = raw
+            else:
+                counts = {}
             probs = _counts_to_probs(counts, measured_qubits)
 
             # Apply readout EM if available

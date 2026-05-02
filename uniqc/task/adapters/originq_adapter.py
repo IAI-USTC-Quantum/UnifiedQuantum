@@ -44,7 +44,16 @@ class OriginQAdapter(QuantumAdapter):
 
     name = "originq"
 
-    def __init__(self) -> None:
+    def __init__(self, backend_name: str | None = None) -> None:
+        """Initialize the OriginQ adapter.
+
+        Args:
+            backend_name: Default backend name for submit() calls that don't
+                specify one. If None, defaults to "PQPUMESH8" (3-qubit
+                fully-connected hardware). Hardware backends (PQPUMESH8,
+                WK_C180, etc.) require explicit naming since there is no
+                single "default" chip in the cloud account.
+        """
         config = load_originq_config()
         self._api_key = config["api_key"]
         self._task_group_size = config.get("task_group_size", 200)
@@ -59,7 +68,7 @@ class OriginQAdapter(QuantumAdapter):
         self._convert_originir: Any = None
 
         # State for the current/last submitted job
-        self._last_backend_name: str = "origin:wuyuan:d5"
+        self._last_backend_name: str = backend_name if backend_name else "PQPUMESH8"
         self._last_n_qubits: int | None = None
 
     def _ensure_imports(self) -> None:
@@ -189,7 +198,7 @@ class OriginQAdapter(QuantumAdapter):
         """
         self._ensure_imports()
 
-        backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
+        backend_name = kwargs.get("backend_name", self._last_backend_name)
 
         # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -259,7 +268,7 @@ class OriginQAdapter(QuantumAdapter):
         """
         self._ensure_imports()
 
-        backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
+        backend_name = kwargs.get("backend_name", self._last_backend_name)
 
         # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -428,6 +437,10 @@ class OriginQAdapter(QuantumAdapter):
                 if isinstance(c, dict):
                     for k, v in c.items():
                         merged[k] = merged.get(k, 0) + v
+                elif isinstance(c, str):
+                    # OriginQ cloud returns a flat list of bitstrings (one per shot)
+                    # when submitted as single-circuit, not a dict of {bitstring: count}.
+                    merged[c] = merged.get(c, 0) + 1
             return merged
         else:
             return {str(counts): 1}
@@ -628,7 +641,7 @@ class OriginQAdapter(QuantumAdapter):
         from uniqc.circuit_adapter import OriginQCircuitAdapter
         from uniqc.task.adapters.base import _dry_run_failed, _dry_run_success
 
-        backend_name = kwargs.get("backend_name", "origin:wuyuan:d5")
+        backend_name = kwargs.get("backend_name", self._last_backend_name)
 
         # Extract qubit count from OriginIR QINIT line (no API call)
         circuit_qubits: int | None = None

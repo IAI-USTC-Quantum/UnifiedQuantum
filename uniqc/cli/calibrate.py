@@ -131,7 +131,9 @@ def xeb_cmd(
         if backend == "dummy":
             adapter = DummyAdapter()
         elif backend.startswith("origin"):
-            adapter = OriginQAdapter()
+            # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
+            chip = backend.split(":", 1)[1] if ":" in backend else backend
+            adapter = OriginQAdapter(backend_name=chip)
         else:
             adapter = DummyAdapter()
 
@@ -236,7 +238,8 @@ def readout_cmd(
     if backend == "dummy":
         adapter = DummyAdapter()
     elif backend.startswith("origin"):
-        adapter = OriginQAdapter()
+        chip = backend.split(":", 1)[1] if ":" in backend else backend
+        adapter = OriginQAdapter(backend_name=chip)
     else:
         adapter = DummyAdapter()
 

@@ -15,7 +15,13 @@ __all__ = [
 
 
 def _get_adapter(backend: str, **kwargs) -> Any:
-    """Get a QuantumAdapter for the given backend name."""
+    """Get a QuantumAdapter for the given backend name.
+
+    Args:
+        backend: Backend identifier, e.g. "dummy", "originq:PQPUMESH8".
+            For OriginQ backends the chip name (after "originq:") is extracted
+            and passed as ``backend_name`` to ``OriginQAdapter``.
+    """
     from uniqc.task.adapters import (
         DummyAdapter,
         OriginQAdapter,
@@ -25,7 +31,9 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     if backend == "dummy":
         return DummyAdapter(**kwargs)
     elif backend.startswith("origin"):
-        return OriginQAdapter(**kwargs)
+        # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
+        chip = backend.split(":", 1)[1] if ":" in backend else backend
+        return OriginQAdapter(backend_name=chip, **kwargs)
     elif backend.startswith("quafu"):
         return QuafuAdapter(**kwargs)
     else:

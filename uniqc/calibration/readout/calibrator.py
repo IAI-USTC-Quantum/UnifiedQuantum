@@ -8,6 +8,7 @@ and saves results to the calibration cache.
 from __future__ import annotations
 
 import pathlib
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -220,18 +221,35 @@ class ReadoutCalibrator:
         return self._submit_and_measure_2q(c, qubit_u, qubit_v)
 
     def _submit_and_measure(self, circuit: Circuit) -> dict[int, int]:
-        """Submit a 1-qubit circuit and return counts as {0: n0, 1: n1}."""
+        """Submit a 1-qubit circuit and return counts as {0: n0, 1: n1}.
+
+        Polls the cloud backend until the task completes (up to 60s timeout)
+        to ensure we get actual shot counts rather than a "running" status.
+        """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
-        result = self.adapter.query(task_id)
-        unified = result.get("result")
-        if hasattr(unified, "counts"):
-            counts = unified.counts
-        elif isinstance(unified, dict):
-            counts = unified
-        else:
-            counts = {}
-        return {int(k): v for k, v in counts.items()}
+
+        # Poll until task completes (cloud backends are async by default)
+        timeout = 60.0
+        interval = 2.0
+        elapsed = 0.0
+        while elapsed < timeout:
+            result = self.adapter.query(task_id)
+            status = result.get("status", "")
+            if status == "success":
+                unified = result.get("result")
+                if hasattr(unified, "counts"):
+                    counts = unified.counts
+                elif isinstance(unified, dict):
+                    counts = unified
+                else:
+                    counts = {}
+                return {int(k): v for k, v in counts.items()}
+            time.sleep(interval)
+            elapsed += interval
+
+        # Timeout: return empty counts
+        return {}
 
     def _submit_and_measure_2q(
         self, circuit: Circuit, qubit_u: int, qubit_v: int
@@ -240,23 +258,35 @@ class ReadoutCalibrator:
 
         Converts simulator outcome indices (0="00", 1="01", 2="10", 3="11")
         to integers where qubit_u is the LSB.
+        Polls the cloud backend until the task completes (up to 60s timeout).
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
-        result = self.adapter.query(task_id)
-        unified = result.get("result")
-        if hasattr(unified, "counts"):
-            counts = unified.counts
-        elif isinstance(unified, dict):
-            counts = unified
-        else:
-            counts = {}
 
-        out = {}
-        for k, v in counts.items():
-            k_int = int(k, 2)
-            out[k_int] = v
-        return out
+        # Poll until task completes
+        timeout = 60.0
+        interval = 2.0
+        elapsed = 0.0
+        while elapsed < timeout:
+            result = self.adapter.query(task_id)
+            status = result.get("status", "")
+            if status == "success":
+                unified = result.get("result")
+                if hasattr(unified, "counts"):
+                    counts = unified.counts
+                elif isinstance(unified, dict):
+                    counts = unified
+                else:
+                    counts = {}
+                out = {}
+                for k, v in counts.items():
+                    k_int = int(k, 2)
+                    out[k_int] = v
+                return out
+            time.sleep(interval)
+            elapsed += interval
+
+        return {}
 
 
 def _utc_now() -> str:
