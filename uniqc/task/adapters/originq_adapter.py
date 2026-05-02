@@ -8,7 +8,7 @@ Installation:
 
 from __future__ import annotations
 
-__all__ = ["OriginQAdapter"]
+__all__ = ["BackendUnavailableError", "OriginQAdapter"]
 
 import time
 import warnings
@@ -29,6 +29,25 @@ from uniqc.task.optional_deps import require
 def _avg(values: list[float]) -> float | None:
     """Return the arithmetic mean of a list, or None if the list is empty."""
     return sum(values) / len(values) if values else None
+
+
+class BackendUnavailableError(RuntimeError):
+    """Raised when a hardware backend is currently unavailable.
+
+    Hardware backends may become unavailable due to maintenance, queue
+    congestion, or other operational reasons. Use
+    ``OriginQAdapter.get_available_backends()`` to enumerate backends that
+    can currently accept jobs.
+    """
+
+    def __init__(self, backend_name: str) -> None:
+        self.backend_name = backend_name
+        available = None  # filled by caller
+        msg = (
+            f"Hardware backend '{backend_name}' is currently unavailable. "
+            f"To see available backends, run: uniqc backend list --info"
+        )
+        super().__init__(msg)
 
 
 class OriginQAdapter(QuantumAdapter):
@@ -161,6 +180,51 @@ class OriginQAdapter(QuantumAdapter):
 
         return results
 
+    def get_available_backends(self) -> list[dict[str, Any]]:
+        """Return only backends that are currently available.
+
+        Hardware backends may become unavailable due to maintenance or queue
+        congestion. Use this method to get a curated list of backends that
+        can accept jobs right now.
+
+        Simulator backends (``full_amplitude``, ``partial_amplitude``,
+        ``single_amplitude``) are always considered available.
+
+        Returns:
+            List of backend dicts (same format as ``list_backends()``) filtered
+            to ``available == True``.
+        """
+        all_backends = self.list_backends()
+        return [b for b in all_backends if b["available"]]
+
+    def _validate_backend(self, backend_name: str) -> None:
+        """Raise BackendUnavailableError if a hardware backend is not available.
+
+        Simulator backends are always considered available.
+
+        Args:
+            backend_name: Backend name to validate.
+
+        Raises:
+            BackendUnavailableError: If the backend is a hardware backend
+                but is currently unavailable.
+        """
+        if backend_name in ORIGINQ_SIMULATOR_NAMES:
+            return  # Simulators are always available
+
+        all_backends = self.list_backends()
+        for b in all_backends:
+            if b["name"] == backend_name:
+                if not b["available"]:
+                    raise BackendUnavailableError(backend_name)
+                return
+
+        # Backend name not found at all — let submit() fail naturally
+        # (could be a typo or unsupported backend)
+
+    # Cache for backend availability (refreshed per adapter instance)
+    _backend_avail_cache: dict[str, bool] = {}
+
     # -------------------------------------------------------------------------
     # Circuit translation (OriginIR to QProg)
     # -------------------------------------------------------------------------
@@ -199,6 +263,9 @@ class OriginQAdapter(QuantumAdapter):
         self._ensure_imports()
 
         backend_name = kwargs.get("backend_name", self._last_backend_name)
+
+        # Validate hardware backend availability before attempting submission
+        self._validate_backend(backend_name)
 
         # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -269,6 +336,9 @@ class OriginQAdapter(QuantumAdapter):
         self._ensure_imports()
 
         backend_name = kwargs.get("backend_name", self._last_backend_name)
+
+        # Validate hardware backend availability before attempting submission
+        self._validate_backend(backend_name)
 
         # Simulator backends use the same QCloudBackend.run() API as hardware
         if backend_name in ORIGINQ_SIMULATOR_NAMES:

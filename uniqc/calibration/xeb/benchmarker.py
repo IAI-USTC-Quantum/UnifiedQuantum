@@ -263,8 +263,12 @@ class XEBenchmarker:
                 if total > 0:
                     probs = {int(k): v / total for k, v in mitigated.items()}
 
-            # Convert to fixed-length array
-            n = 2 ** len(measured_qubits)
+            # Convert to fixed-length array.
+            # Use len(p_ideal) as the array size (ground truth) to avoid
+            # mismatches from circuit.qubit_num, which includes unused ancilla
+            # qubits in 2q XEB circuits (e.g. qubit_num=11 for pair (0,10)).
+            p_ideal = self._get_ideal_probs(originir)
+            n = len(p_ideal) if p_ideal is not None else (2 ** len(measured_qubits))
             arr = np.zeros(n)
             for k, v in probs.items():
                 arr[int(k)] = v
