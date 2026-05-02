@@ -104,3 +104,20 @@ from .network_utils import (
 )
 
 from .version import __version__
+
+# Calibration module
+from . import calibration  # noqa: F401
+from .calibration import (
+    XEBResult,
+    ReadoutCalibrationResult,
+    save_calibration_result,
+    load_calibration_result,
+    find_cached_results,
+)
+
+# QEM module
+from . import qem  # noqa: F401
+from .qem import M3Mitigator, StaleCalibrationError, ReadoutEM  # noqa: F401
+
+# Algorithm workflows
+from . import algorithm  # noqa: F401

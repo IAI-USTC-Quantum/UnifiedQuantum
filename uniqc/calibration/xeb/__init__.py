@@ -1,0 +1,21 @@
+"""XEB: Cross-Entropy Benchmarking module."""
+
+from .circuits import (
+    generate_1q_xeb_circuits,
+    generate_2q_xeb_circuit,
+    generate_2q_xeb_circuits,
+    generate_parallel_2q_xeb_circuits,
+)
+from .fitter import compute_hellinger_fidelity, fit_exponential
+from .patterns import ParallelPatternGenerator, ParallelPatternResult
+
+__all__ = [
+    "generate_1q_xeb_circuits",
+    "generate_2q_xeb_circuit",
+    "generate_2q_xeb_circuits",
+    "generate_parallel_2q_xeb_circuits",
+    "compute_hellinger_fidelity",
+    "fit_exponential",
+    "ParallelPatternGenerator",
+    "ParallelPatternResult",
+]
