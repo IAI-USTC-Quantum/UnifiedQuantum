@@ -34,6 +34,8 @@ _1Q_GATES = [
 def _random_gate(rng) -> tuple[str, float | None]:
     """Pick a random single-qubit gate and optionally a parameter."""
     name, n_params = rng.choice(_1Q_GATES)
+    name = str(name)
+    n_params = int(n_params)
     if n_params == 0:
         return name, None
     angle = rng.uniform(0, 2 * math.pi)
@@ -89,7 +91,7 @@ def generate_1q_xeb_circuits(
             c = Circuit(1)
             for _ in range(depth):
                 _add_random_layer(c, [qubit], rng)
-            c.measure(qubit, 0)
+            c.measure(qubit)
             circuits.append(c)
 
     return circuits
@@ -127,8 +129,8 @@ def generate_2q_xeb_circuit(
         _add_random_layer(c, [qubit_u, qubit_v], rng)
         c.add_gate(entangler_gate, qubits=[qubit_u, qubit_v])
 
-    c.measure(qubit_u, 0)
-    c.measure(qubit_v, 1)
+    c.measure(qubit_u)
+    c.measure(qubit_v)
     return c
 
 
@@ -157,7 +159,7 @@ def generate_2q_xeb_circuits(
     for depth in depths:
         for i in range(n_circuits):
             c = generate_2q_xeb_circuit(
-                qubit_u, qubit_v, depth, entangler_gate, seed=seed + i if seed else None
+                qubit_u, qubit_v, depth, entangler_gate, seed=seed + i if seed is not None else None
             )
             circuits.append(c)
     return circuits
@@ -211,7 +213,7 @@ def generate_parallel_2q_xeb_circuits(
                 gate = entangler_gates.get((pu, pv), entangler_gates.get((pv, pu), "CNOT"))
                 c.add_gate(gate, qubits=[qubit_map[pu], qubit_map[pv]])
         for i in range(n_total):
-            c.measure(i, i)
+            c.measure(i)
         circuits.append(c)
 
     return circuits

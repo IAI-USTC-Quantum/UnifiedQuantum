@@ -18,6 +18,7 @@ from uniqc.cli.output import (
     print_error,
     print_info,
     print_success,
+    print_warning,
 )
 
 app = typer.Typer(help="Run chip calibration experiments (XEB, readout, patterns).")

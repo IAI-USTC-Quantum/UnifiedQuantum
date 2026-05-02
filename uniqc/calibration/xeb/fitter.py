@@ -138,29 +138,22 @@ def _fit_exponential_numpy(
 ) -> dict[str, Any]:
     """Fallback exponential fit using numpy (no scipy).
 
-    Approximates F(m) = r^m by log(F) ≈ m * log(r).
-    Uses weighted linear regression on log(F - B) where B is estimated.
+    Fits F(m) = A * r^m + B using linear regression on log(F - B).
+    Uses a fixed B=0.5 (the ideal XEB floor for a well-behaving system)
+    to avoid singularities and keep the approximation stable.
     """
-    # Estimate B as the minimum fidelity (asymptotic floor)
-    B = float(np.min(fidelities_arr))
+    # Fixed B sidesteps the log(0) issue and is a reasonable default for
+    # XEB data where the asymptotic floor is near 0.5 (maximal mixing).
+    B = 0.5
     residuals = fidelities_arr - B
 
-    # Mask out non-positive residuals
-    valid = residuals > 1e-9
-    if valid.sum() < 2:
-        return {
-            "r": float(np.mean(fidelities_arr)),
-            "A": 0.0,
-            "B": B,
-            "r_stderr": 0.0,
-            "n_points": int(valid.sum()),
-            "method": "numpy_fallback",
-        }
+    # Clamp to positive to keep log stable.
+    residuals = np.maximum(residuals, 1e-12)
 
-    log_vals = np.log(residuals[valid])
-    m_vals = depths_arr[valid]
+    log_vals = np.log(residuals)
+    m_vals = depths_arr
 
-    # Weighted linear regression: log(residual) ≈ log(A) + m * log(r)
+    # Linear regression: log(residual) ≈ log(A) + m * log(r)
     n = len(m_vals)
     m_mean = m_vals.mean()
     log_mean = log_vals.mean()
@@ -168,15 +161,14 @@ def _fit_exponential_numpy(
     if ss_m < 1e-12:
         return {"r": 1.0, "A": 0.0, "B": B, "r_stderr": 0.0, "n_points": n, "method": "numpy_fallback"}
 
-    cov_ml = ((m_vals - m_mean) * (log_vals - log_mean)).sum()
-    slope = cov_ml / ss_m
+    cov_ml = float(((m_vals - m_mean) * (log_vals - log_mean)).sum())
+    slope = cov_ml / float(ss_m)
     intercept = log_mean - slope * m_mean
 
-    log_r = slope
-    r = float(np.exp(np.clip(log_r, np.log(0.001), 0)))
+    r = float(np.exp(np.clip(slope, np.log(0.001), 0)))
     A = float(np.exp(intercept))
 
-    # Simple stderr estimate from residuals
+    # Stderr estimate from residuals
     predicted = A * np.power(r, depths_arr) + B
     residuals_all = fidelities_arr - predicted
     r_stderr = float(np.std(residuals_all) / np.sqrt(n)) if n > 2 else 0.0

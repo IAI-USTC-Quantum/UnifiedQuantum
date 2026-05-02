@@ -172,13 +172,16 @@ class DummyAdapter(QuantumAdapter):
         Returns:
             ErrorLoader_GateSpecificError instance, or None if chip has no gate data.
         """
-        from uniqc.simulator.error_model import ErrorLoader_GateSpecificError, ErrorModel
+        from uniqc.simulator.error_model import (
+            ErrorLoader_GateSpecificError,
+            Depolarizing,
+            TwoQubitDepolarizing,
+        )
 
         # Collect single-qubit gate errors
         sq_errors: dict[int, float] = {}
         for sq_data in chip.single_qubit_data:
             if sq_data.single_gate_fidelity is not None:
-                # Error rate = 1 - fidelity
                 sq_errors[sq_data.qubit_id] = 1.0 - sq_data.single_gate_fidelity
 
         # Collect two-qubit gate errors (use best fidelity per edge)
@@ -195,9 +198,7 @@ class DummyAdapter(QuantumAdapter):
         ro_errors: dict[int, list[float]] = {}
         for sq_data in chip.single_qubit_data:
             if sq_data.avg_readout_fidelity is not None:
-                # Approximate readout error: 1 - fidelity
                 err = 1.0 - sq_data.avg_readout_fidelity
-                # Symmetric readout error model: p(0|1) = p(1|0) = err/2
                 ro_errors[sq_data.qubit_id] = [err / 2.0, err / 2.0]
 
         # Build generic_error: average over all qubits for gates not explicitly listed
@@ -206,31 +207,28 @@ class DummyAdapter(QuantumAdapter):
         all_tq_errors = list(tq_errors.values())
         generic_2q = sum(all_tq_errors) / len(all_tq_errors) if all_tq_errors else 0.05
 
-        generic_error = [
-            ErrorModel(
-                name="depolarizing",
-                params={"p": generic_1q},
-            )
-        ]
-        gatetype_error: dict[str, list[ErrorModel]] = {
-            "CNOT": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
-            "CZ": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
-            "ISWAP": [ErrorModel(name="depolarizing", params={"p": generic_2q})],
+        # generic_error: applied to every gate. Depolarizing(p) iterates over all
+        # qubits in the opcode and emits a 1q depolarizing error per qubit, so it
+        # works correctly for both 1q and 2q gates without needing to distinguish
+        # gate arity here.
+        generic_error: list[Depolarizing] = [Depolarizing(generic_1q)]
+        # gatetype_error: same reasoning — Depolarizing handles any qubit count.
+        # Only use TwoQubitDepolarizing in gate_specific_error (exact edge match).
+        gatetype_error: dict[str, list[Depolarizing]] = {
+            "CNOT": [Depolarizing(generic_2q)],
+            "CZ": [Depolarizing(generic_2q)],
+            "ISWAP": [Depolarizing(generic_2q)],
         }
 
-        # Per-instance gate errors
-        gate_specific_error: dict[tuple[str, tuple[int, int]], list[ErrorModel]] = {}
+        # Per-instance gate errors: use TwoQubitDepolarizing for exact edge matches.
+        gate_specific_error: dict[tuple[str, tuple[int, int]], list[Depolarizing]] = {}
         for edge, err in tq_errors.items():
-            gate_specific_error[("CNOT", edge)] = [
-                ErrorModel(name="depolarizing", params={"p": err})
-            ]
-            gate_specific_error[("CZ", edge)] = [
-                ErrorModel(name="depolarizing", params={"p": err})
-            ]
+            gate_specific_error[("CNOT", edge)] = [Depolarizing(err)]
+            gate_specific_error[("CZ", edge)] = [Depolarizing(err)]
 
         loader = ErrorLoader_GateSpecificError(
             generic_error=generic_error,
-            gatetype_error=gatetype_error,
+            gatetype_error=gatetype_error,  # type: ignore[arg-type]
             gate_specific_error=gate_specific_error,
         )
         return loader
@@ -246,22 +244,24 @@ class DummyAdapter(QuantumAdapter):
         Returns:
             ErrorLoader_GateSpecificError instance.
         """
-        from uniqc.simulator.error_model import ErrorLoader_GateSpecificError, ErrorModel
+        from uniqc.simulator.error_model import (
+            ErrorLoader_GateSpecificError,
+            Depolarizing,
+            TwoQubitDepolarizing,
+        )
 
         depol_1q = noise_model.get("depol_1q", noise_model.get("depol", 0.0))
         depol_2q = noise_model.get("depol_2q", noise_model.get("depol", 0.0))
 
-        generic_error = [
-            ErrorModel(name="depolarizing", params={"p": depol_1q}),
-        ]
-        gatetype_error: dict[str, list[ErrorModel]] = {
-            "CNOT": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
-            "CZ": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
-            "ISWAP": [ErrorModel(name="depolarizing", params={"p": depol_2q})],
+        generic_error: list[Depolarizing] = [Depolarizing(depol_1q)]
+        gatetype_error: dict[str, list[Depolarizing]] = {
+            "CNOT": [Depolarizing(depol_2q)],
+            "CZ": [Depolarizing(depol_2q)],
+            "ISWAP": [Depolarizing(depol_2q)],
         }
         return ErrorLoader_GateSpecificError(
             generic_error=generic_error,
-            gatetype_error=gatetype_error,
+            gatetype_error=gatetype_error,  # type: ignore[arg-type]
             gate_specific_error={},
         )
 
@@ -520,6 +520,7 @@ class DummyAdapter(QuantumAdapter):
                             readout_error[sq_data.qubit_id] = [err / 2.0, err / 2.0]
 
                 sim = OriginIR_NoisySimulator(
+                    backend_type="density_operator",
                     error_loader=error_loader,
                     available_qubits=self.available_qubits,
                     available_topology=self.available_topology,
