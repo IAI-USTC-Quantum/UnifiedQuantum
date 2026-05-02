@@ -394,3 +394,71 @@ class TestOriginQAdapterUnit:
         result = adapter._format_counts("something")
         assert isinstance(result, dict)
         assert result == {"something": 1}
+
+    def run_test_get_chip_characterization_double_qubits_no_uv_accessor(self, monkeypatch):
+        """get_chip_characterization falls back to topology index when dq lacks u/v accessors.
+
+        Some pyqpanda3 chip_info() implementations return double_qubits_info() objects
+        that have get_fidelity() but lack get_qubit_u() / get_qubit_v(). The adapter
+        must use the topology index to look up the qubit pair instead of crashing.
+        """
+        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
+
+        # Minimal mock objects
+        mock_sq = type("MockSQ", (), {
+            "get_qubit_id": lambda self: 0,
+            "get_t1": lambda self: 50.0,
+            "get_t2": lambda self: 80.0,
+            "get_single_gate_fidelity": lambda self: 0.99,
+            "get_readout_fidelity": lambda self: 0.95,
+            "get_readout_fidelity_0": lambda self: 0.97,
+            "get_readout_fidelity_1": lambda self: 0.93,
+        })()
+
+        mock_dq = type("MockDQ", (), {
+            # No get_qubit_u / get_qubit_v — this is the case being tested
+            "get_fidelity": lambda self: 0.85,
+        })()
+
+        mock_ci = type("MockCI", (), {
+            "qubits_num": lambda self: 5,
+            "get_chip_topology": lambda self: [(0, 1), (1, 2), (2, 3)],
+            "available_qubits": lambda self: [0, 1, 2, 3, 4],
+            "single_qubit_info": lambda self: [mock_sq],
+            "double_qubits_info": lambda self: [mock_dq],
+        })()
+
+        mock_backend = type("MockBackend", (), {
+            "chip_info": lambda self: mock_ci,
+            "configuration": lambda self: type("MockCfg", (), {
+                "supported_gates": lambda self: ["x", "h", "cx", "cz"],
+                "single_qubit_gate_time": lambda self: 20.0,
+                "two_qubit_gate_time": lambda self: 300.0,
+            })(),
+        })()
+
+        mock_service = type("MockService", (), {
+            "backend": lambda self, name: mock_backend,
+        })()
+
+        from uniqc.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = mock_service
+        adapter._QCloudOptions = None
+        adapter._QCloudJob = None
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._QCloudSimulator = None
+        adapter._convert_originir = None
+
+        chip = adapter.get_chip_characterization("wuyuan:d5")
+
+        assert chip is not None
+        assert len(chip.two_qubit_data) == 1
+        # Fallback to topology: index 0 → (0, 1)
+        assert chip.two_qubit_data[0].qubit_u == 0
+        assert chip.two_qubit_data[0].qubit_v == 1
+        # Fidelity was available even without u/v accessors
+        assert chip.two_qubit_data[0].gates[0].fidelity == 0.85

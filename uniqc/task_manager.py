@@ -501,6 +501,12 @@ def submit_task(
         )
         backend = "dummy"
 
+    # Route dummy backend through _submit_dummy which pre-populates the result.
+    # This ensures 'uniqc result <task_id>' returns data immediately without
+    # needing a subsequent query against a cloud backend.
+    if backend == "dummy":
+        return _submit_dummy(circuit, "dummy", shots=shots, metadata=metadata, **kwargs)
+
     # Resolve backend instance
     try:
         backend_instance = backend_module.get_backend(backend)
@@ -513,16 +519,12 @@ def submit_task(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
-    # Convert circuit using adapter (not needed for dummy backend)
-    if backend == "dummy":
-        # Dummy backend accepts OriginIR directly
-        native_circuit = circuit.originir
-    else:
-        try:
-            adapter = _get_adapter(backend)
-            native_circuit = adapter.adapt(circuit)
-        except Exception as e:
-            raise _map_adapter_error(e, backend) from e
+    # Convert circuit using adapter
+    try:
+        adapter = _get_adapter(backend)
+        native_circuit = adapter.adapt(circuit)
+    except Exception as e:
+        raise _map_adapter_error(e, backend) from e
 
     # Submit to backend
     try:
