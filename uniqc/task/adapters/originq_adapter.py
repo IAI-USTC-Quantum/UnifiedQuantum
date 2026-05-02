@@ -68,10 +68,13 @@ class OriginQAdapter(QuantumAdapter):
         Hardware and simulator backends are both accessed via ``QCloudService.backend()``.
         The returned ``QCloudBackend`` object exposes ``run()`` regardless of backend
         type — there is no separate simulator class.
+
+        Version requirement (``pyqpanda3>=0.3.5``) is enforced via ``pyproject.toml``,
+        not here. ``require()`` accepts only a module name.
         """
         if self._service is None:
             try:
-                require("pyqpanda3>=0.3.5", "originq")
+                require("pyqpanda3", "originq")
                 from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
                 from pyqpanda3.qcloud import (
                     DataBase,

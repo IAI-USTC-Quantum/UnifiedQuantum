@@ -667,8 +667,10 @@ def submit_batch(
         )
         backend = "dummy"
 
-    # Route dummy backend to _submit_batch_dummy which pre-populates results
-    if use_dummy and backend == "dummy":
+    # Route dummy backend to _submit_batch_dummy which pre-populates results.
+    # Use backend=="dummy" directly (consistent with submit_task() fix) so that
+    # submit_batch(..., backend="dummy", dummy=None) also works.
+    if backend == "dummy":
         return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
 
     # Resolve backend instance
@@ -683,16 +685,12 @@ def submit_batch(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
-    # Convert circuits using adapter (not needed for dummy backend)
-    if backend == "dummy":
-        # Dummy backend accepts OriginIR strings directly
-        native_circuits = [c.originir for c in circuits]
-    else:
-        try:
-            adapter = _get_adapter(backend)
-            native_circuits = adapter.adapt_batch(circuits)
-        except Exception as e:
-            raise _map_adapter_error(e, backend) from e
+    # Convert circuits using adapter
+    try:
+        adapter = _get_adapter(backend)
+        native_circuits = adapter.adapt_batch(circuits)
+    except Exception as e:
+        raise _map_adapter_error(e, backend) from e
 
     # Submit batch to backend
     try:
