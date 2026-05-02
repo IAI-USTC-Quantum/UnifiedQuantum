@@ -240,13 +240,26 @@ class XEBenchmarker:
     def _get_noisy_probs(
         self, originir: str, measured_qubits: list[int]
     ) -> np.ndarray | None:
-        """Get noisy probability distribution by submitting to the adapter."""
+        """Get noisy probability distribution.
+
+        Tries adapter.simulate_pmeasure (DummyAdapter with chip characterization)
+        for exact probabilities without shot noise. Falls back to submit/query
+        for real cloud backends.
+        """
         try:
+            # Path 1: DummyAdapter with chip characterization — exact probabilities
+            if hasattr(self.adapter, "simulate_pmeasure"):
+                probs_list = self.adapter.simulate_pmeasure(originir)
+                arr = np.array(probs_list, dtype=float)
+                # Apply readout EM in probability space if available
+                if self.readout_em is not None:
+                    arr = _apply_readout_em_to_probs(arr, self.readout_em, measured_qubits)
+                return arr
+
+            # Path 2: Real cloud backends — use shot sampling via submit/query
             task_id = self.adapter.submit(originir, shots=self.shots)
             result = self.adapter.query(task_id)
             raw = result.get("result", {})
-            # Unify result format: some adapters return {counts: {...}},
-            # others return the counts dict directly.
             if hasattr(raw, "counts"):
                 counts = raw.counts
             elif isinstance(raw, dict):
@@ -255,18 +268,12 @@ class XEBenchmarker:
                 counts = {}
             probs = _counts_to_probs(counts, measured_qubits)
 
-            # Apply readout EM if available
             if self.readout_em is not None:
                 mitigated = self.readout_em.mitigate_counts(counts, measured_qubits)
-                # Normalize
                 total = sum(mitigated.values())
                 if total > 0:
                     probs = {int(k): v / total for k, v in mitigated.items()}
 
-            # Convert to fixed-length array.
-            # Use len(p_ideal) as the array size (ground truth) to avoid
-            # mismatches from circuit.qubit_num, which includes unused ancilla
-            # qubits in 2q XEB circuits (e.g. qubit_num=11 for pair (0,10)).
             p_ideal = self._get_ideal_probs(originir)
             n = len(p_ideal) if p_ideal is not None else (2 ** len(measured_qubits))
             arr = np.zeros(n)
@@ -309,6 +316,60 @@ def _mean_fidelities_by_depth(
             fid = _circuit_fidelity(c, benchmarker)
             fidelity_by_depth[d].append(fid)
     return [float(np.mean(fidelity_by_depth[d])) for d in depths]
+
+
+def _apply_readout_em_to_probs(
+    probs_arr: np.ndarray, readout_em: Any, measured_qubits: list[int]
+) -> np.ndarray:
+    """Apply readout EM confusion matrix to a probability vector.
+
+    Works in probability space (exact pmeasure output) rather than counts.
+    The confusion matrix P(measured | prepared) is inverted via M3 to get
+    P(prepared | measured), then applied to the observed probability vector.
+    """
+    from uniqc.qem import ReadoutEM
+
+    if not isinstance(readout_em, ReadoutEM):
+        return probs_arr
+
+    n = len(measured_qubits)
+    if n == 1:
+        try:
+            cm = readout_em._get_confusion_matrix(measured_qubits[0])
+        except Exception:
+            return probs_arr
+        if cm is None or len(cm) != 2:
+            return probs_arr
+        # Invert 2x2 confusion matrix: P(prepared|measured) = inv(P(measured|prepared))
+        C = np.array([[cm[0][0], cm[0][1]], [cm[1][0], cm[1][1]]], dtype=float)
+        det = C[0, 0] * C[1, 1] - C[0, 1] * C[1, 0]
+        if abs(det) < 1e-10:
+            return probs_arr
+        inv = np.array([[C[1, 1], -C[0, 1]], [-C[1, 0], C[0, 0]]], dtype=float) / det
+        mitigated = inv @ probs_arr[:2]
+        result = probs_arr.copy()
+        result[:2] = mitigated
+        return result
+    elif n == 2:
+        try:
+            cm = readout_em._get_confusion_matrix((measured_qubits[0], measured_qubits[1]))
+        except Exception:
+            return probs_arr
+        if cm is None or len(cm) != 4:
+            return probs_arr
+        C = np.array(cm, dtype=float)
+        det = (C[0,0]*C[1,1] - C[0,1]*C[1,0]) * (C[2,2]*C[3,3] - C[2,3]*C[3,2]) - \
+              (C[0,0]*C[2,1] - C[0,1]*C[2,0]) * (C[1,2]*C[3,3] - C[1,3]*C[3,2])
+        if abs(det) < 1e-10:
+            return probs_arr
+        try:
+            inv = np.linalg.inv(C)
+        except Exception:
+            return probs_arr
+        result = probs_arr.copy()
+        result[:4] = inv @ probs_arr[:4]
+        return result
+    return probs_arr
 
 
 def _circuit_fidelity(circuit, benchmarker: XEBenchmarker) -> float:

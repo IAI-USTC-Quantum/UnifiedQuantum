@@ -483,6 +483,47 @@ class DummyAdapter(QuantumAdapter):
             ),
         )
 
+    def simulate_pmeasure(self, originir: str) -> list[float]:
+        """Return exact measurement probabilities (noiseless or noisy).
+
+        Unlike ``_simulate`` (which uses shot sampling), this always returns
+        the exact probability vector from ``simulate_pmeasure`` — no sampling
+        noise. This is the correct method for fidelity computation where you
+        compare two exact distributions.
+
+        Args:
+            originir: Circuit in OriginIR format.
+
+        Returns:
+            List of probabilities (length = 2 ** n_qubits).
+        """
+        Simulator = self._get_simulator_cls()
+        error_loader = self._get_error_loader()
+
+        if error_loader is not None:
+            try:
+                from uniqc.simulator import OriginIR_NoisySimulator
+            except ImportError:
+                sim = Simulator(
+                    available_qubits=self.available_qubits,
+                    available_topology=self.available_topology,
+                )
+            else:
+                sim = OriginIR_NoisySimulator(
+                    backend_type="density_operator",
+                    error_loader=error_loader,
+                    available_qubits=self.available_qubits,
+                    available_topology=self.available_topology,
+                    readout_error={},
+                )
+        else:
+            sim = Simulator(
+                available_qubits=self.available_qubits,
+                available_topology=self.available_topology,
+            )
+
+        return sim.simulate_pmeasure(originir)
+
     def _simulate(self, originir: str, shots: int) -> UnifiedResult:
         """Run simulation using the OriginIR simulator (noiseless or noisy).
 

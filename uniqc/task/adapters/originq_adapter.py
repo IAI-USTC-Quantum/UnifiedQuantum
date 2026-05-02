@@ -576,7 +576,10 @@ class OriginQAdapter(QuantumAdapter):
         Parameters
         ----------
         backend_name:
-            Full backend name, e.g. ``"origin:wuyuan:d5"``.
+            Backend name, e.g. ``"origin:wuyuan:wk180"``, ``"originq:WK_C180"``,
+            or the bare chip name ``"WK_C180"``. The chip name is extracted by
+            stripping any ``origin:`` or ``originq:`` prefix because
+            ``QCloudBackend.chip_info()`` only accepts bare chip names.
 
         Returns
         -------
@@ -595,7 +598,33 @@ class OriginQAdapter(QuantumAdapter):
         )
 
         self._ensure_imports()
-        backend = self._service.backend(backend_name)
+
+        # The bare chip name may or may not be prefixed with "origin:" or "originq:".
+        # pyqpanda3 chip_info() requires the BARE chip name (e.g. "WK_C180"),
+        # not the qualified form (e.g. "origin:wuyuan:wk180"). The raw
+        # service.backends() keys ARE the bare chip names. We look up the
+        # backend_name (with any prefix stripped) against this registry
+        # to find the canonical bare chip name before calling chip_info().
+        raw_backends = self._service.backends()
+        # Strip known prefixes to get a search key
+        search_key = backend_name
+        for p in ("originq:", "origin:"):
+            if search_key.startswith(p):
+                search_key = search_key[len(p):]
+
+        # Try exact bare name first, then fall back to case-insensitive search
+        chip_name: str = search_key  # default
+        if search_key in raw_backends:
+            chip_name = search_key
+        else:
+            # Case-insensitive fallback: "wk180" → "WK_C180"
+            search_lower = search_key.lower()
+            for raw_name in raw_backends:
+                if raw_name.lower() == search_lower:
+                    chip_name = raw_name
+                    break
+
+        backend = self._service.backend(chip_name)
 
         try:
             ci = backend.chip_info()
@@ -603,7 +632,7 @@ class OriginQAdapter(QuantumAdapter):
             return None
 
         # Available qubits
-        available_qubits = tuple(ci.available_qubits())
+        available_qubits = tuple(int(q) for q in ci.available_qubits())
 
         # Connectivity
         raw_topo = ci.get_chip_topology() or []
@@ -617,7 +646,7 @@ class OriginQAdapter(QuantumAdapter):
             avg_ro = sq.get_readout_fidelity() if hasattr(sq, "get_readout_fidelity") else None
             single_qubit_data.append(
                 SingleQubitData(
-                    qubit_id=sq.get_qubit_id() if hasattr(sq, "get_qubit_id") else 0,
+                    qubit_id=int(sq.get_qubit_id()) if hasattr(sq, "get_qubit_id") else 0,
                     t1=sq.get_t1(),
                     t2=sq.get_t2(),
                     single_gate_fidelity=sq.get_single_gate_fidelity(),
@@ -676,8 +705,8 @@ class OriginQAdapter(QuantumAdapter):
 
         return ChipCharacterization(
             platform=Platform.ORIGINQ,
-            chip_name=backend_name,
-            full_id=f"originq:{backend_name}",
+            chip_name=chip_name,
+            full_id=f"originq:{chip_name}",
             available_qubits=available_qubits,
             connectivity=connectivity,
             single_qubit_data=tuple(single_qubit_data),

@@ -138,37 +138,66 @@ def _fit_exponential_numpy(
 ) -> dict[str, Any]:
     """Fallback exponential fit using numpy (no scipy).
 
-    Fits F(m) = A * r^m + B using linear regression on log(F - B).
-    Uses a fixed B=0.5 (the ideal XEB floor for a well-behaving system)
-    to avoid singularities and keep the approximation stable.
+    Fits F(m) = A * r^m + B using linear regression on log(F - B),
+    with a robust per-layer fidelity estimate derived from all adjacent
+    (depth, fidelity) pairs. When the data is non-monotonic (positive slope
+    due to noise/variance), the pairwise ratio method provides a sensible r
+    instead of falling back to r=1.0.
     """
-    # Fixed B sidesteps the log(0) issue and is a reasonable default for
-    # XEB data where the asymptotic floor is near 0.5 (maximal mixing).
+    n = len(depths_arr)
     B = 0.5
-    residuals = fidelities_arr - B
 
-    # Clamp to positive to keep log stable.
-    residuals = np.maximum(residuals, 1e-12)
-
+    # ---- Method 1: linear regression on log(F - B) ----
+    residuals = np.maximum(fidelities_arr - B, 1e-12)
     log_vals = np.log(residuals)
-    m_vals = depths_arr
-
-    # Linear regression: log(residual) ≈ log(A) + m * log(r)
-    n = len(m_vals)
+    m_vals = depths_arr.astype(float)
     m_mean = m_vals.mean()
     log_mean = log_vals.mean()
     ss_m = ((m_vals - m_mean) ** 2).sum()
-    if ss_m < 1e-12:
-        return {"r": 1.0, "A": 0.0, "B": B, "r_stderr": 0.0, "n_points": n, "method": "numpy_fallback"}
 
-    cov_ml = float(((m_vals - m_mean) * (log_vals - log_mean)).sum())
-    slope = cov_ml / float(ss_m)
-    intercept = log_mean - slope * m_mean
+    if ss_m >= 1e-12:
+        cov_ml = float(((m_vals - m_mean) * (log_vals - log_mean)).sum())
+        slope = cov_ml / float(ss_m)
+        intercept = log_mean - slope * m_mean
+        r_lin = float(np.exp(np.clip(slope, np.log(0.001), 0)))
+        A_lin = float(np.exp(intercept))
+    else:
+        r_lin = 1.0
+        A_lin = 0.0
 
-    r = float(np.exp(np.clip(slope, np.log(0.001), 0)))
-    A = float(np.exp(intercept))
+    # ---- Method 2: pairwise geometric-mean r (robust to non-monotonic data) ----
+    # For F(m) = A * r^m + B, take adjacent pairs:
+    #   (F_i - B) / (F_j - B) ≈ r^(m_i - m_j)
+    #   => r ≈ ((F_i - B) / (F_j - B)) ^ (1/(m_i - m_j))
+    log_ratios: list[float] = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            delta_m = float(depths_arr[j] - depths_arr[i])
+            num = max(fidelities_arr[i] - B, 1e-12)
+            den = max(fidelities_arr[j] - B, 1e-12)
+            log_ratios.append((np.log(num) - np.log(den)) / delta_m)
 
-    # Stderr estimate from residuals
+    if log_ratios:
+        mean_log_r = float(np.mean(log_ratios))
+        r_pair = float(np.exp(np.clip(mean_log_r, np.log(0.001), 0)))
+    else:
+        r_pair = 1.0
+
+    # Prefer the linear regression result when the slope is negative (physically
+    # expected for XEB decay). When slope >= 0 the data is non-monotonic and the
+    # pairwise estimate is more reliable.
+    if ss_m >= 1e-12 and cov_ml < 0:
+        r = r_lin
+        A = A_lin
+        method = "numpy_fallback"
+    else:
+        # Pairwise estimate is the primary result for non-monotonic data.
+        # Use it to back-solve A from the first data point: A = (F_0 - B) / r^m0
+        r = r_pair
+        A = float((fidelities_arr[0] - B) / max(r ** depths_arr[0], 1e-12))
+        method = "numpy_fallback_pairwise"
+
+    # Stderr estimate
     predicted = A * np.power(r, depths_arr) + B
     residuals_all = fidelities_arr - predicted
     r_stderr = float(np.std(residuals_all) / np.sqrt(n)) if n > 2 else 0.0
@@ -179,5 +208,5 @@ def _fit_exponential_numpy(
         "B": B,
         "r_stderr": r_stderr,
         "n_points": n,
-        "method": "numpy_fallback",
+        "method": method,
     }
