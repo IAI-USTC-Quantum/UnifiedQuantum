@@ -21,25 +21,76 @@ from uniqc.cli.output import (
     print_warning,
 )
 
-app = typer.Typer(help="Run chip calibration experiments (XEB, readout, patterns).")
+app = typer.Typer(
+    help=(
+        "Run chip calibration experiments — XEB benchmarking (1q/2q/parallel), "
+        "readout error calibration, and parallel execution pattern analysis. "
+        "Results are cached to ~/.uniqc/calibration_cache/ with TTL freshness enforcement."
+    ),
+)
 
 HELP = "Run calibration experiments: XEB benchmarking and readout error calibration."
 
 
 @app.command("xeb", help="Run cross-entropy benchmarking (1q and/or 2q).")
 def xeb_cmd(
-    qubits: list[int] | None = typer.Option(None, "--qubits", "-q", help="Qubit indices"),
-    xeb_type: str = typer.Option("both", "--type", help="1q, 2q, or both"),
-    shots: int = typer.Option(1000, "--shots", help="Shots per circuit"),
-    depths: list[int] | None = typer.Option(None, "--depths", "-d", help="Circuit depths"),
-    n_circuits: int = typer.Option(50, "--n-circuits", help="Circuits per depth"),
-    pattern: str = typer.Option("auto", "--pattern", help="auto or circuit"),
-    circuit_file: str | None = typer.Option(None, "--circuit", help="OriginIR file for circuit-based pattern"),
-    backend: str = typer.Option("dummy", "--backend", "-b", help="Backend name"),
-    output: str | None = typer.Option(None, "--output", "-o", help="Output JSON file"),
-    no_readout_em: bool = typer.Option(False, "--no-readout-em", help="Skip readout EM"),
-    max_age_hours: float = typer.Option(24.0, "--max-age-hours", help="Max calibration data age"),
-    seed: int | None = typer.Option(None, "--seed", help="Random seed"),
+    qubits: list[int] | None = typer.Option(
+        None, "--qubits", "-q",
+        help="Qubit indices to benchmark. Defaults to [0,1,2,3].",
+    ),
+    xeb_type: str = typer.Option(
+        "both", "--type",
+        help="Benchmark type: '1q' (single-qubit gates), '2q' (two-qubit gates), or 'both'.",
+    ),
+    shots: int = typer.Option(
+        1000, "--shots",
+        help="Number of shots per circuit. Higher shots → tighter fidelity estimates.",
+    ),
+    depths: list[int] | None = typer.Option(
+        None, "--depths", "-d",
+        help="Circuit depths (number of random layers). Defaults to [5, 10, 20, 50].",
+    ),
+    n_circuits: int = typer.Option(
+        50, "--n-circuits",
+        help="Number of random circuits per depth. More circuits → tighter fit.",
+    ),
+    pattern: str = typer.Option(
+        "auto", "--pattern",
+        help="'auto' (run XEB) or 'circuit' (analyze OriginIR file for parallel patterns).",
+    ),
+    circuit_file: str | None = typer.Option(
+        None, "--circuit",
+        help="OriginIR file path — required when --pattern circuit is set.",
+    ),
+    backend: str = typer.Option(
+        "dummy", "--backend", "-b",
+        help=(
+            "Backend name. 'dummy' runs local noisy simulation. "
+            "When a ChipCharacterization is available (e.g. via OriginQAdapter), "
+            "DummyAdapter injects per-qubit and per-pair gate fidelities into the noisy simulator."
+        ),
+    ),
+    output: str | None = typer.Option(
+        None, "--output", "-o",
+        help="Output JSON file path. Results include fidelity_per_layer, fit_r, and fit_stderr.",
+    ),
+    no_readout_em: bool = typer.Option(
+        False, "--no-readout-em",
+        help="Skip readout error mitigation before fidelity computation. "
+             "Not recommended — readout errors bias fidelity estimates downward.",
+    ),
+    max_age_hours: float = typer.Option(
+        24.0, "--max-age-hours",
+        help="Maximum age of cached calibration data (hours). Stale data raises an error.",
+    ),
+    seed: int | None = typer.Option(
+        None, "--seed",
+        help=(
+            "Random seed for circuit generation (int). "
+            "seed=0 is a valid seed (not the same as seed=None). "
+            "Same seed + same depths + same n_circuits → identical circuits."
+        ),
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Run XEB benchmarking on specified qubits."""
@@ -145,12 +196,32 @@ def xeb_cmd(
 
 @app.command("readout", help="Run readout error calibration (1q and/or 2q).")
 def readout_cmd(
-    qubits: list[int] | None = typer.Option(None, "--qubits", "-q", help="Qubit indices"),
-    readout_type: str = typer.Option("both", "--type", help="1q, 2q, or both"),
-    shots: int = typer.Option(1000, "--shots", help="Shots per calibration circuit"),
-    backend: str = typer.Option("dummy", "--backend", "-b", help="Backend name"),
-    output: str | None = typer.Option(None, "--output", "-o", help="Output JSON file"),
-    max_age_hours: float = typer.Option(24.0, "--max-age-hours", help="Max calibration data age"),
+    qubits: list[int] | None = typer.Option(
+        None, "--qubits", "-q",
+        help="Qubit indices to calibrate. Defaults to [0,1,2,3].",
+    ),
+    readout_type: str = typer.Option(
+        "both", "--type",
+        help="'1q' (per-qubit confusion matrices), '2q' (joint pair matrices), or 'both'.",
+    ),
+    shots: int = typer.Option(
+        1000, "--shots",
+        help="Number of shots per calibration circuit. "
+             "Higher shots → more accurate confusion matrix.",
+    ),
+    backend: str = typer.Option(
+        "dummy", "--backend", "-b",
+        help="Backend name ('dummy' for local simulation).",
+    ),
+    output: str | None = typer.Option(
+        None, "--output", "-o",
+        help="Output JSON file. Contains confusion matrix, assignment fidelity, and calibrated_at.",
+    ),
+    max_age_hours: float = typer.Option(
+        24.0, "--max-age-hours",
+        help="Maximum age of cached calibration data (hours). "
+             "Stale data raises StaleCalibrationError in downstream QEM.",
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Run readout calibration and save confusion matrices."""
@@ -207,10 +278,24 @@ def readout_cmd(
 
 @app.command("pattern", help="Analyze parallel execution patterns for 2-qubit gates.")
 def pattern_cmd(
-    qubits: list[int] | None = typer.Option(None, "--qubits", "-q", help="Qubit indices"),
-    pattern_type: str = typer.Option("auto", "--type", help="auto or circuit"),
-    circuit_file: str | None = typer.Option(None, "--circuit", "-c", help="OriginIR file for circuit mode"),
-    output: str | None = typer.Option(None, "--output", "-o", help="Output JSON file"),
+    qubits: list[int] | None = typer.Option(
+        None, "--qubits", "-q",
+        help="Qubit indices defining the chip topology (linear chain by default). "
+             "Example: --qubits 0 1 2 3 builds topology [(0,1),(1,2),(2,3)].",
+    ),
+    pattern_type: str = typer.Option(
+        "auto", "--type",
+        help="'auto' (from topology) or 'circuit' (from OriginIR file).",
+    ),
+    circuit_file: str | None = typer.Option(
+        None, "--circuit", "-c",
+        help="OriginIR file path — required when --type circuit is set. "
+             "Extracts parallel execution pattern from gate-level circuit.",
+    ),
+    output: str | None = typer.Option(
+        None, "--output", "-o",
+        help="Output JSON file. Contains n_rounds, chromatic_number, and per-round groups.",
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Analyze parallel execution patterns for 2-qubit gates."""

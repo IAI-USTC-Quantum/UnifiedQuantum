@@ -16,7 +16,8 @@ from uniqc.circuit_builder import Circuit
 c = Circuit()
 c.h(0)
 c.cnot(0, 1)
-c.measure(0, 1)
+c.measure(0)
+c.measure(1)
 
 # 输出 OriginIR 格式，可供 CLI 使用
 open('circuit.ir', 'w').write(c.originir)

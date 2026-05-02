@@ -352,3 +352,124 @@ save_calibration_result(result, type_prefix="readout_1q", cache_dir="/tmp/calibr
 1. **TTL 由 QEM 层强制执行** — 校准模块只写缓存，从不删除；QEM 模块在读取时检查 `calibrated_at` 时间戳，超出 `max_age_hours` 则抛出 `StaleCalibrationError`
 2. **XEB 使用 ReadoutEM** — 所有 XEB 基准测试在计算 Hellinger fidelity 之前先应用读出误差修正
 3. **工作流与芯片无关** — `algorithm/` 下的工作流接受任意 `QuantumAdapter`，WK180 示例仅用于演示真实硬件集成
+
+---
+
+## 附录：API 注意事项
+
+### `Circuit.measure()` 的正确用法
+
+`Circuit.measure()` API 将**所有位置参数**视为量子比特索引：
+
+```python
+c = Circuit(4)
+
+# ✓ 正确：测量量子比特 0, 1, 2, 3
+c.measure(0, 1, 2, 3)
+
+# ✗ 错误：不要传入经典比特索引
+c.measure(0, 0)   # 这意味着"测量量子比特 0 两次"！
+
+# ✓ 单比特测量
+c.measure(0)
+
+# ✓ 2q 测量
+c.measure(0)
+c.measure(1)
+```
+
+> **历史兼容性**：某些旧代码可能使用 `c.measure(qubit, cbit)` 格式（将第二个参数当作经典比特索引）。此写法在新版 API 中已被移除。如遇此问题，请将 `c.measure(q, b)` 改为 `c.measure(q)`。
+
+### DummyAdapter 含噪模拟与 ChipCharacterization
+
+`DummyAdapter` 支持从真实芯片的校准数据中注入噪声，实现高保真度本地模拟：
+
+```python
+from uniqc.task.adapters import DummyAdapter
+from uniqc.cli.chip_info import (
+    ChipCharacterization, SingleQubitData, TwoQubitData,
+    TwoQubitGateData, QubitTopology, Platform,
+)
+
+# 构建芯片特性数据
+chip_char = ChipCharacterization(
+    platform=Platform.ORIGINQ,
+    chip_name="my_chip",
+    full_id="test:0",
+    available_qubits=(0, 1),
+    connectivity=(QubitTopology(u=0, v=1),),
+    single_qubit_data=(
+        SingleQubitData(
+            qubit_id=0,
+            single_gate_fidelity=0.999,   # 单比特门保真度
+            readout_fidelity_0=0.99,      # |0⟩ 读出保真度
+            readout_fidelity_1=0.98,       # |1⟩ 读出保真度
+            avg_readout_fidelity=0.985,    # 平均读出保真度
+        ),
+        SingleQubitData(qubit_id=1, single_gate_fidelity=0.999,
+                       readout_fidelity_0=0.99, readout_fidelity_1=0.98,
+                       avg_readout_fidelity=0.985),
+    ),
+    two_qubit_data=(
+        TwoQubitData(
+            qubit_u=0, qubit_v=1,
+            gates=(TwoQubitGateData(gate="CNOT", fidelity=0.97),)
+        ),
+    ),
+    calibrated_at="2026-05-02T00:00:00+00:00",
+)
+
+# 创建含噪模拟器
+adapter = DummyAdapter(chip_characterization=chip_char)
+```
+
+注入的噪声类型：
+- **单比特门**：由 `single_gate_fidelity` 推导的去极化噪声
+- **双比特门**：由 `TwoQubitGateData.fidelity` 推导的去极化噪声
+- **读出误差**：由 `readout_fidelity_0/1` 构建的混淆矩阵
+
+使用 `OriginQAdapter` 时，可直接从云端获取芯片特性：
+
+```python
+from uniqc.task.adapters import OriginQAdapter, DummyAdapter
+
+# 从云端获取 WK180 芯片特性
+orig_adapter = OriginQAdapter()
+chip_char = orig_adapter.get_chip_characterization("origin:wuyuan:wk180")
+
+# 用真实数据做本地含噪模拟
+local_adapter = DummyAdapter(chip_characterization=chip_char)
+```
+
+> **注意**：`chip_characterization` 为 `None` 时，DummyAdapter 执行理想（无噪声）模拟。
+
+### XEB 电路的可复现性
+
+所有 XEB 电路生成器使用 `np.random.default_rng(seed)` 构造本地 RNG，支持完全确定性复现：
+
+```python
+from uniqc.calibration.xeb.circuits import (
+    generate_1q_xeb_circuits,
+    generate_2q_xeb_circuits,
+    generate_parallel_2q_xeb_circuits,
+)
+
+# ✓ seed=0 是有效的随机种子（不是 None）
+circuits = generate_1q_xeb_circuits(
+    qubit=0,
+    depths=[5, 10, 20],
+    n_circuits=50,
+    seed=0,   # 有效种子，会被正确使用
+)
+
+# 同一 seed 产生完全相同的电路序列
+circuits2 = generate_1q_xeb_circuits(
+    qubit=0,
+    depths=[5, 10, 20],
+    n_circuits=50,
+    seed=0,
+)
+assert circuits[0].originir == circuits2[0].originir
+```
+
+> `seed=None`（默认）每次生成不同的随机电路。`seed=0` 产生固定序列（适用于基准测试和回归测试）。

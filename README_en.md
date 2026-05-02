@@ -16,6 +16,15 @@
 
 UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, Quafu, and IBM Quantum under one consistent API.
 
+Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and quantum error mitigation (QEM) toolkit**:
+
+- **XEB cross-entropy benchmarking**: `uniqc calibrate xeb` measures per-layer gate fidelity in 1q, 2q, and parallel-2q modes
+- **Readout calibration + M3 mitigation**: confusion matrix characterisation and linear-inversion correction
+- **Local noisy simulation**: `DummyAdapter` accepts `ChipCharacterization` data (gate fidelity, T1/T2, readout confusion) to inject realistic hardware noise locally
+- **DSatur parallel scheduling**: automatically partitions 2q gates into minimum parallel rounds
+
+All calibration results are written to `~/.uniqc/calibration_cache/`; the QEM layer reads them back and enforces TTL freshness.
+
 ---
 
 ## Core Workflow
@@ -40,7 +49,8 @@ from uniqc.circuit_builder import Circuit
 c = Circuit()
 c.h(0)
 c.cnot(0, 1)
-c.measure(0, 1)
+c.measure(0)
+c.measure(1)
 
 # Output OriginIR format for CLI consumption
 open('circuit.ir', 'w').write(c.originir)
