@@ -6,11 +6,18 @@
 
 ### 当前建议先看哪个版本
 
-如果你是从较早版本直接升级，先看 `v0.0.5`。
+如果你是从较早版本直接升级，先看 `v0.0.7`。
 
-这是目前最新的正式发布。它一方面补齐了上一轮 CLI / 打包相关改动后的几个实际使用问题，另一方面也把发布链路里会影响安装体验的可选依赖边界进一步收紧。
+这是目前最新的正式发布。它一次性带来大量新功能（矩阵提取、chip-display、AI 友好帮助、chip 数据层、增强转码器、dry-run 验证），同时也是目前功能最完整的版本。
 
 升级时最值得先确认的是：
+
+- 你是否在使用 `uniqc backend chip-display` 查看芯片表征数据（新命令，已整合到 `uniqc backend` 下）
+- 你是否在用 `submit_task(backend="dummy")` 而非已废弃的 `submit_task(dummy=True)`（后者仍可用但会触发警告）
+- 你是否在 Python API 中手动拼接 OriginIR 并提交——`uniqc submit --dry-run` 可以先做一次离线校验
+- Qiskit 用户是否需要单独安装 `qiskit-ibm-runtime`（`qiskit-ibm-provider` 已从 extras 中移除，因与 qiskit ≥ 1.0 不兼容）
+
+如果你是从更早版本直接升级，`v0.0.5` 仍然值得补读，因为它补齐了上一轮 CLI / 打包相关改动后的几个实际使用问题：
 
 - `uniqc` CLI 在位置参数后跟选项的常见写法现在已经稳定可用
 - QASM 到 OriginIR 的转换会保留 `MEASURE`，`uniqc simulate` 也能直接吃 QASM
@@ -28,28 +35,63 @@
 
 ## 版本解读
 
+### `v0.0.7`
+
+这是一次功能大幅增强的版本，涵盖从量子线路分析到云端提交的全链路改进。
+
+这版最明显的用户侧收益有六类：
+
+- **`Circuit.get_matrix()`**：新增 `circuit.get_matrix()` 方法，直接提取线路的酉矩阵表示，适用于验证小规模电路。
+- **`uniqc backend chip-display`**：新命令，全屏展示芯片表征数据（T1/T2、单双比特门保真度、读取保真度、拓扑），支持 OriginQ / Quafu / IBM 所有平台。
+- **AI 友好帮助系统**：每个 `--help` 输出均包含文档链接和 Rich 面板引导；`--ai-hints` 选项（及 `UNIQC_AI_HINTS=1` 环境变量）提供 AI 工作流提示。
+- **chip 数据层**：统一的 `ChipCharacterization` 数据结构持久化在 `~/.uniqc/backend-cache/`，`ChipService` 封装跨平台获取逻辑。
+- **增强转码器 + `RegionSelector`**：新 `compile()` API 支持 chip-aware fidelity-weighted routing，`RegionSelector` 自动找最优比特链/区域。
+- **dry-run 验证**：`uniqc submit --dry-run` 可在提交前做离线校验，`submit_task` / `submit_batch` 的 Python API 也有对应接口。
+
+如果你正在从 `v0.0.6` 或更早版本迁移，建议优先复核：
+
+- 你是否有使用 `uniqc chip` 命令——它已移至 `uniqc backend chip-display`
+- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy")`（会收到警告，但向后兼容）
+- 你是否依赖 `uniqc submit` 的结果格式——v0.0.7 已统一所有平台适配器返回扁平 `{bitstring: shots}` dict
+
+### `v0.0.7.post1`
+
+这是一个紧急补丁，修复 v0.0.7 引入或未覆盖的 10 个实际使用问题（#39–#48）：
+
+- `uniqc simulate --backend density` 正确映射到 `densitymatrix` 后端
+- `uniqc submit --dry-run` 不再因重复 `shots` 参数而报 TypeError
+- `dry_run_task(backend="dummy")` 正常工作（DummyAdapter 已正确注册）
+- `uniqc backend list --format json` 输出正确的 JSON
+- `uniqc config validate` 不再误报 `active_profile` 元数据键
+- `submit_batch` 的 dummy 模式不再遗留 RUNNING → FAILED 状态的任务
+- `DummyResult.from_probabilities()` 用 `round()` 替代 `int()` 保证 shot 总数精确
+- Python API 的 OriginQ / Quafu / IBM Token 从 YAML 配置文件读取
+- `qiskit-ibm-provider` 已从 extras 中移除（与 qiskit ≥ 1.0 不兼容）
+- `uniqc backend chip-display` 正确显示双比特门对的 `(u, v)` 标识符（不再全是 `0, 0`）
+- OriginQ 模拟器后端（`full_amplitude` 等）现在可以通过 `submit_task` 正常使用
+
 ### `v0.0.5`
 
-这是一次以“把上一轮结构调整真正打磨到可发布可安装”为目标的发布。
+这是一次以"把上一轮结构调整真正打磨到可发布可安装"为目标的发布。
 
 这版最明显的用户侧收益有四类：
 
 - CLI 参数解析恢复为更自然的调用方式，不再容易把位置参数后的选项误判成子命令
 - QASM / OriginIR / dummy / 结果展示这条链路上的几个实用 bug 被补齐，CLI 日常使用更顺手
 - TorchQuantum 相关依赖改成真正按需，基础安装不会再因为发布元数据或导入链过早触发可选依赖而变脆
-- 文档与回归测试一起补上，发布链路更接近“改完就能发、发了就能装”
+- 文档与回归测试一起补上，发布链路更接近"改完就能发、发了就能装"
 
 如果你已经在用 `v0.0.4` 或 `v0.0.4.post1`，升级到这版时建议优先复核：
 
 - 你是否有把 QASM 先转 OriginIR 再模拟的临时绕路脚本
 - 你是否在脚本里手工处理 `task show` / `result` 的输出结构
-- 你是否因为 TorchQuantum / qutip 缺失而遇到过“明明没用那个功能却导入失败”的情况
+- 你是否因为 TorchQuantum / qutip 缺失而遇到过"明明没用那个功能却导入失败"的情况
 
 ### `v0.0.4.post1`
 
 这个版本是一次紧急性质更强的补丁发布，重点是修复 wheel 构建绑定错误 Python 解释器导致的 ABI 不匹配问题。
 
-如果你之前遇到过“能装上 wheel，但导入扩展模块时 ABI / Python 版本不匹配”的现象，优先确认自己是否已经越过这一版。
+如果你之前遇到过"能装上 wheel，但导入扩展模块时 ABI / Python 版本不匹配"的现象，优先确认自己是否已经越过这一版。
 
 ### `v0.0.4`
 
