@@ -16,15 +16,19 @@ const TYPE_FILTERS = [
 ] as const;
 
 const PLATFORM_FILTERS = [
-  { id: "all", label: "All" },
   { id: "originq", label: "OriginQ" },
   { id: "ibm", label: "IBM" },
-  { id: "quafu", label: "Quafu" },
+  { id: "quark", label: "Quark" },
+  { id: "quafu", label: "Quafu (deprecated)" },
 ] as const;
+const DEFAULT_PLATFORM_FILTERS: PlatformFilter[] = ["originq", "ibm", "quark"];
 
 type AvailabilityFilter = (typeof AVAILABILITY_FILTERS)[number]["id"];
 type TypeFilter = (typeof TYPE_FILTERS)[number]["id"];
 type PlatformFilter = (typeof PLATFORM_FILTERS)[number]["id"];
+const PLATFORM_LABELS = Object.fromEntries(
+  PLATFORM_FILTERS.map((item) => [item.id, item.label])
+) as Record<PlatformFilter, string>;
 
 function fmtPercent(value: number | null | undefined): string {
   return value == null ? "N/A" : `${(value * 100).toFixed(2)}%`;
@@ -44,11 +48,16 @@ function fmtAge(seconds: number | null | undefined): string {
 }
 
 function statusForBackend(backend: BackendSummary): string {
+  if (backend.platform === "quafu") return "deprecated";
   if (backend.available) return "available";
   if (backend.status_kind === "deprecated") return "deprecated";
   if (backend.status_kind === "busy") return "running";
   if (backend.status_kind === "unavailable") return "unavailable";
   return backend.status || "unknown";
+}
+
+function platformLabel(platform: string): string {
+  return PLATFORM_LABELS[platform as PlatformFilter] ?? platform;
 }
 
 function metric(label: string, value: string) {
@@ -66,7 +75,7 @@ export function BackendsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("available");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("hardware");
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
+  const [platformFilters, setPlatformFilters] = useState<PlatformFilter[]>(DEFAULT_PLATFORM_FILTERS);
   const [query, setQuery] = useState("");
   const [refreshingBackends, setRefreshingBackends] = useState(false);
 
@@ -108,13 +117,21 @@ export function BackendsPage() {
       if (availabilityFilter === "available" && !backend.available) return false;
       if (typeFilter === "hardware" && !backend.is_hardware) return false;
       if (typeFilter === "simulator" && !backend.is_simulator) return false;
-      if (platformFilter !== "all" && backend.platform !== platformFilter) return false;
+      if (!platformFilters.includes(backend.platform as PlatformFilter)) return false;
       if (!normalizedQuery) return true;
       return `${backend.platform} ${backend.name} ${backend.id}`.toLowerCase().includes(normalizedQuery);
     });
-  }, [backends, availabilityFilter, typeFilter, platformFilter, query]);
+  }, [backends, availabilityFilter, typeFilter, platformFilters, query]);
 
   const selected = filtered.find((backend) => backend.id === selectedId) ?? filtered[0] ?? null;
+
+  function togglePlatformFilter(platform: PlatformFilter) {
+    setPlatformFilters((current) => (
+      current.includes(platform)
+        ? current.filter((item) => item !== platform)
+        : [...current, platform]
+    ));
+  }
 
   return (
     <div className="backend-page">
@@ -164,15 +181,19 @@ export function BackendsPage() {
               </button>
             ))}
           </div>
-          <div className="segmented" aria-label="Platform filter">
+          <div className="checkbox-filter-group" aria-label="Platform filter">
             {PLATFORM_FILTERS.map((item) => (
-              <button
+              <label
                 key={item.id}
-                className={platformFilter === item.id ? "active" : ""}
-                onClick={() => setPlatformFilter(item.id)}
+                className={platformFilters.includes(item.id) ? "active" : ""}
               >
+                <input
+                  type="checkbox"
+                  checked={platformFilters.includes(item.id)}
+                  onChange={() => togglePlatformFilter(item.id)}
+                />
                 {item.label}
-              </button>
+              </label>
             ))}
           </div>
         </div>
@@ -210,7 +231,7 @@ export function BackendsPage() {
               <div className="backend-card-header">
                 <div>
                   <strong>{backend.name}</strong>
-                  <span>{backend.platform} · {backend.num_qubits} qubits · {backend.is_simulator ? "simulator" : "hardware"}</span>
+                  <span>{platformLabel(backend.platform)} · {backend.num_qubits} qubits · {backend.is_simulator ? "simulator" : "hardware"}</span>
                 </div>
                 <StatusBadge status={statusForBackend(backend)} />
               </div>

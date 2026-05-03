@@ -276,6 +276,7 @@ class RunTestAdapterAvailability:
         adapter = OriginQAdapter()
         assert adapter.is_available() is True
 
+    @pytest.mark.requires_quafu
     def run_test_quafu_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test Quafu adapter availability with config."""
         write_uniqc_config(tmp_path, {"quafu": {"token": "test_token"}})

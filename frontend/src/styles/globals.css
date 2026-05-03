@@ -340,6 +340,37 @@ body {
   background: #1f2937;
   color: var(--text);
 }
+.checkbox-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.checkbox-filter-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1320;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-filter-group label.active {
+  border-color: #38bdf8;
+  background: #1f2937;
+  color: var(--text);
+}
+.checkbox-filter-group input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #38bdf8;
+}
 .search-box {
   display: inline-flex;
   align-items: center;
