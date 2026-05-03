@@ -30,6 +30,7 @@ __all__ = [
 
 qasm2_oir_mapping = {
     ("id", "I"),
+    ("barrier", "BARRIER"),
     ("h", "H"),
     ("x", "X"),
     ("y", "Y"),
@@ -80,7 +81,9 @@ def get_opcode_from_QASM2(operation, qubits, cbits, parameters):
     """
 
     # 1-qubit gates
-    if operation == "id":
+    if operation == "barrier":
+        return ("BARRIER", qubits, cbits, parameters, False, None)
+    elif operation == "id":
         return ("I", qubits, cbits, parameters, False, None)
     elif operation == "h":
         return ("H", qubits, cbits, parameters, False, None)
@@ -228,6 +231,11 @@ def get_QASM2_from_opcode(
         raise NotImplementedError(f"The operation {operation} is not supported in UnifiedQuantum.")
 
     operation_qasm2 = OriginIR_QASM2_dict[operation]
+
+    if operation_qasm2 == "barrier":
+        if dagger_flag or control_qubits_set:
+            raise NotImplementedError("BARRIER does not support dagger or control qubits in QASM export.")
+        return operation_qasm2, qubits, cbits, parameters
 
     # Dagger flag is supported only when operation is S or T or SX
     # These gates will skip the dagger flag:

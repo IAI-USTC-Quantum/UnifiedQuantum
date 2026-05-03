@@ -6,9 +6,23 @@ from .converter import convert_oir_to_qasm as convert_oir_to_qasm
 from .converter import convert_qasm_to_oir as convert_qasm_to_oir
 
 try:
-    from uniqc.visualization.timeline import plot_time_line
+    from uniqc.visualization.timeline import (
+        TimelineDurationError,
+        TimelineGate,
+        TimelineSchedule,
+        circuit_to_html,
+        plot_time_line,
+        plot_time_line_html,
+        schedule_circuit,
+    )
 except ImportError:
+    TimelineDurationError = None
+    TimelineGate = None
+    TimelineSchedule = None
+    circuit_to_html = None
     plot_time_line = None
+    plot_time_line_html = None
+    schedule_circuit = None
 
 
 def draw(*args, **kwargs):

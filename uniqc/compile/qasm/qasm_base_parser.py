@@ -65,7 +65,7 @@ class OpenQASM2_BaseParser:
            2. qreg definitions are collected together; so as creg definitions.
            3. program body is line-wise, separated by semicolons
            4. measurements must be at the end of the program body.
-           5. barriers will be ignored.
+           5. barriers are kept in the program body.
         '''
         if self.raw_qasm is None:
             raise ValueError("No raw qasm code provided.")
@@ -99,9 +99,6 @@ class OpenQASM2_BaseParser:
                 continue
             elif code.startswith('OPENQASM'):
                 continue
-            elif code.startswith('barrier'):
-                continue
-            
             # handle qreg and creg definitions
             elif code.startswith('qreg'):
                 collected_qregs.append(code)
