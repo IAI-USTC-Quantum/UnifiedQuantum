@@ -146,14 +146,14 @@ uv pip install unified-quantum
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
-# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖，并按当前包索引升级解析
-uv sync --all-extras --group dev --upgrade
+# Maintainer / 全量开发环境：安装 dev、docs 和全部可选后端依赖，并按当前包索引升级解析
+uv sync --all-extras --group dev --group docs --upgrade
 
 # 运行完整测试套件
 uv run pytest uniqc/test
 ```
 
-维护者环境不应把 qiskit、QuTiP、pyquafu 等可选模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
+维护者环境不应把 qiskit、QuTiP、pyquafu、Sphinx 等可选或文档模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
 
 **Requirements:**
 - CMake >= 3.26
@@ -223,8 +223,12 @@ uniqc result <task_id>
 uniqc config init
 uniqc config set originq.token YOUR_TOKEN
 
-# 也可以用 python -m 调用（等价于 uniqc）
-python -m uniqc simulate circuit.ir
+# 备选模块入口
+python -m uniqc.cli simulate circuit.ir
+
+# 校准与 QEM 数据准备
+uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
+uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10
 ```
 
 ### 后端信息查询

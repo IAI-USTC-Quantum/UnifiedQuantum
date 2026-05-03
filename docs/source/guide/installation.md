@@ -58,8 +58,8 @@ git submodule update --init --recursive
 #### 构建并安装
 
 ```bash
-# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖，并按当前包索引升级解析
-uv sync --all-extras --group dev --upgrade
+# Maintainer / 全量开发环境：安装 dev、docs 和全部可选后端依赖，并按当前包索引升级解析
+uv sync --all-extras --group dev --group docs --upgrade
 
 # 验证完整测试套件
 uv run pytest uniqc/test
@@ -175,9 +175,9 @@ pip install unified-quantum[all]
 
 ## 开发者补充
 
-维护者应使用 `uv sync --all-extras --group dev --upgrade` 建立全量环境；缺少任意可选后端依赖都应视为开发环境不完整，而不是测试阻断的正常原因。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
+维护者应使用 `uv sync --all-extras --group dev --group docs --upgrade` 建立全量环境；缺少任意可选后端依赖或文档构建依赖都应视为开发环境不完整，而不是测试阻断的正常原因。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
 
-如需本地构建文档，可进入 `docs/` 目录后安装文档依赖并执行 `make html`。这一步仅在维护文档时需要，普通安装可跳过。
+如需本地构建文档，使用上述全量环境后进入 `docs/` 目录执行 `make html`。这一步仅在维护文档时需要，普通安装可跳过。
 
 ## 下一步
 

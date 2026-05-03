@@ -6,6 +6,7 @@ Provides calibration experiment commands for XEB benchmarking and readout calibr
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 from typing import Any
@@ -14,8 +15,10 @@ import typer
 
 from uniqc.cli.output import (
     AI_HINTS_OPTION,
+    build_ref_str,
     console,
     print_error,
+    print_ai_hints,
     print_info,
     print_success,
     print_warning,
@@ -25,11 +28,12 @@ app = typer.Typer(
     help=(
         "Run chip calibration experiments — XEB benchmarking (1q/2q/parallel), "
         "readout error calibration, and parallel execution pattern analysis. "
-        "Results are cached to ~/.uniqc/calibration_cache/ with TTL freshness enforcement."
+        "Results are cached to ~/.uniqc/calibration_cache/ with TTL freshness enforcement.\n"
+        f"  {build_ref_str('calibrate')}"
     ),
 )
 
-HELP = "Run calibration experiments: XEB benchmarking and readout error calibration."
+HELP = f"Run calibration experiments: XEB benchmarking and readout error calibration\n  {build_ref_str('calibrate')}"
 
 
 @app.command("xeb", help="Run cross-entropy benchmarking (1q and/or 2q).")
@@ -91,11 +95,14 @@ def xeb_cmd(
             "Same seed + same depths + same n_circuits → identical circuits."
         ),
     ),
-    ctx: typer.Context = typer.Context,
+    ai_hints: bool = AI_HINTS_OPTION,
 ) -> None:
     """Run XEB benchmarking on specified qubits."""
     from uniqc.algorithms.workflows import xeb_workflow
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
+
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("calibrate-xeb")
 
     if depths is None:
         depths = [5, 10, 20, 50]
@@ -233,11 +240,14 @@ def readout_cmd(
         help="Maximum age of cached calibration data (hours). "
              "Stale data raises StaleCalibrationError in downstream QEM.",
     ),
-    ctx: typer.Context = typer.Context,
+    ai_hints: bool = AI_HINTS_OPTION,
 ) -> None:
     """Run readout calibration and save confusion matrices."""
     from uniqc.calibration.readout import ReadoutCalibrator
     from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
+
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("calibrate-readout")
 
     if qubits is None:
         qubits = [0, 1, 2, 3]
@@ -308,10 +318,13 @@ def pattern_cmd(
         None, "--output", "-o",
         help="Output JSON file. Contains n_rounds, chromatic_number, and per-round groups.",
     ),
-    ctx: typer.Context = typer.Context,
+    ai_hints: bool = AI_HINTS_OPTION,
 ) -> None:
     """Analyze parallel execution patterns for 2-qubit gates."""
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
+
+    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+        print_ai_hints("calibrate-pattern")
 
     if pattern_type == "circuit":
         if not circuit_file:

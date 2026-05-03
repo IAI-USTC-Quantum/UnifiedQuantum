@@ -18,6 +18,8 @@ Usage::
 
 from __future__ import annotations
 
+import importlib
+
 __all__ = [
     "MissingDependencyError",
     "require",
@@ -83,9 +85,28 @@ def require(name: str, extra: str):
         >>> # MissingDependencyError: Package 'quafu' is required...
     """
     try:
-        return __import__(name)
+        return importlib.import_module(name)
     except ImportError as e:
         raise MissingDependencyError(name, extra) from e
+    except Exception as e:
+        raise MissingDependencyError(
+            name,
+            extra,
+            install_hint=(
+                f"The package is installed but failed to import cleanly: {e!r}. "
+                f"Upgrade or reinstall with: pip install --upgrade unified-quantum[{extra}]"
+            ),
+        ) from e
+
+
+def _can_import(*names: str) -> bool:
+    """Return ``True`` only if all optional modules import cleanly."""
+    try:
+        for name in names:
+            importlib.import_module(name)
+        return True
+    except Exception:
+        return False
 
 
 def check_quafu() -> bool:
@@ -94,11 +115,7 @@ def check_quafu() -> bool:
     Returns:
         True if quafu can be imported, False otherwise.
     """
-    try:
-        import quafu  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return _can_import("quafu")
 
 
 def check_qiskit() -> bool:
@@ -107,12 +124,7 @@ def check_qiskit() -> bool:
     Returns:
         True if both packages can be imported, False otherwise.
     """
-    try:
-        import qiskit  # noqa: F401
-        import qiskit_ibm_runtime  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return _can_import("qiskit", "qiskit_ibm_runtime")
 
 
 def check_pyqpanda3() -> bool:
@@ -121,11 +133,7 @@ def check_pyqpanda3() -> bool:
     Returns:
         True if pyqpanda3 can be imported, False otherwise.
     """
-    try:
-        import pyqpanda3  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return _can_import("pyqpanda3")
 
 
 def check_uniqc_cpp() -> bool:
@@ -134,11 +142,7 @@ def check_uniqc_cpp() -> bool:
     Returns:
         True if uniqc_cpp can be imported, False otherwise.
     """
-    try:
-        import uniqc_cpp  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return _can_import("uniqc_cpp")
 
 
 def check_qutip() -> bool:
@@ -147,12 +151,7 @@ def check_qutip() -> bool:
     Returns:
         True if qutip and qutip_qip can be imported, False otherwise.
     """
-    try:
-        import qutip  # noqa: F401
-        import qutip_qip  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return _can_import("qutip", "qutip_qip")
 
 
 def check_simulation(target: str = "cpp") -> bool:

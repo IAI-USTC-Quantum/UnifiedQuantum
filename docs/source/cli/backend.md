@@ -55,7 +55,7 @@ uniqc backend list --info
 ```
 ┏━━━━━━━━━━━━━━━━━ Available Backends ━━━━━━━━━━━━━━━━━━━┓
 ┃ Platform  Name                    Qubits  Status    Type ┃
-┃ originq   origin:wuyuan:d5           180  available  hw  ┃
+┃ originq   WK_C180                    180  available  hw  ┃
 ┃ originq   origin:simulator:01          0  available  sim ┃
 ┃ quafu     ScQ-P18                     18  available  hw  ┃
 ┃ ibm       ibm_fez                    127  available  hw  ┃
@@ -96,19 +96,19 @@ uniqc backend update -c
 
 ```bash
 # 查看单个后端详情
-uniqc backend show originq:wuyuan:d5
-uniqc backend show originq:wuyuan:d6
-uniqc backend show originq:simulator:01
+uniqc backend show originq:WK_C180
+uniqc backend show originq:PQPUMESH8
+uniqc backend show originq:full_amplitude
 ```
 
 ### 输出格式
 
 ```bash
 # 详细表格输出（默认，rich 格式）
-uniqc backend show originq:wuyuan:d5
+uniqc backend show originq:WK_C180
 
 # JSON 输出
-uniqc backend show originq:wuyuan:d5 --format json
+uniqc backend show originq:WK_C180 --format json
 ```
 
 rich 格式输出包含以下面板：
@@ -126,7 +126,7 @@ rich 格式输出包含以下面板：
 
 ```bash
 # 查看芯片标定数据（使用缓存，若无缓存则自动拉取）
-uniqc backend chip-display originq/wuyuan:d5
+uniqc backend chip-display originq/WK_C180
 uniqc backend chip-display quafu/ScQ-P18
 uniqc backend chip-display ibm/sherbrooke
 ```
@@ -135,8 +135,8 @@ uniqc backend chip-display ibm/sherbrooke
 
 ```bash
 # 强制从云端重新拉取标定数据
-uniqc backend chip-display originq/wuyuan:d5 --update
-uniqc backend chip-display originq/wuyuan:d5 -u
+uniqc backend chip-display originq/WK_C180 --update
+uniqc backend chip-display originq/WK_C180 -u
 ```
 
 ### 输出内容
@@ -175,13 +175,13 @@ uniqc config validate
 uniqc backend list --platform originq
 
 # 3. 查看后端详情（含保真度和拓扑）
-uniqc backend show originq:wuyuan:d5
+uniqc backend show originq:WK_C180
 
 # 4. 查看芯片标定数据
-uniqc backend chip-display originq/wuyuan:d5 --update
+uniqc backend chip-display originq/WK_C180 --update
 
 # 5. 提交任务（使用查得的后端名）
-uniqc submit circuit.ir --platform originq --backend originq:wuyuan:d5 --shots 1000
+uniqc submit circuit.ir --platform originq --backend WK_C180 --shots 1000
 ```
 
 ## 选项速查

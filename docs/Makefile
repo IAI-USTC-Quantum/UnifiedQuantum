@@ -13,8 +13,9 @@ BUILDDIR      = _build
 # target below will refresh it first.
 APIDOC_OUT    = source
 APIDOC_IN     = ../uniqc
-APIDOC_EXCLUDE = $(APIDOC_IN)/test $(APIDOC_IN)/cli $(APIDOC_IN)/_version.py $(APIDOC_IN)/**/test_*.py
+APIDOC_EXCLUDE = $(APIDOC_IN)/test $(APIDOC_IN)/cli $(APIDOC_IN)/_version.py $(APIDOC_IN)/**/test_*.py $(APIDOC_IN)/algorithms/core/measurement/test_measurement.py
 APIDOC_FLAGS  = -f -e -T
+APIDOC_CLEAN  = $(APIDOC_OUT)/uniqc.rst $(APIDOC_OUT)/uniqc.*.rst
 
 # Python for post-processing (replace Unicode math chars in generated tex)
 PYTHON        ?= python3
@@ -28,6 +29,7 @@ help:
 
 # Regenerate the per-module reference rst (uniqc*.rst) from the source tree.
 apidoc:
+	rm -f $(APIDOC_CLEAN)
 	$(SPHINXAPIDOC) $(APIDOC_FLAGS) -o $(APIDOC_OUT) $(APIDOC_IN) $(APIDOC_EXCLUDE)
 
 # Catch-all target: route all unknown targets to Sphinx using the new

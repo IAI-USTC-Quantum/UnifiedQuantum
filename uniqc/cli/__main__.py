@@ -1,4 +1,4 @@
-"""Entry point for python -m uniqc."""
+"""Entry point for python -m uniqc.cli."""
 
 from .main import app
 

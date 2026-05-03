@@ -9,7 +9,7 @@
 uniqc submit circuit.ir --platform originq --shots 1000
 
 # 指定后端名称
-uniqc submit circuit.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
+uniqc submit circuit.ir --platform originq --backend WK_C180 --shots 1000
 
 # 提交并等待结果
 uniqc submit circuit.ir --platform originq --wait --timeout 300
@@ -50,7 +50,7 @@ uniqc submit circuit1.ir circuit2.ir circuit3.ir --platform originq
 uniqc submit circuit.ir --platform originq --dry-run
 
 # 指定后端进行验证
-uniqc submit circuit.ir --platform originq --backend originq:wuyuan:d5 --dry-run
+uniqc submit circuit.ir --platform originq --backend WK_C180 --dry-run
 
 # 批量试运行多个电路
 uniqc submit circuit1.ir circuit2.ir --platform originq --dry-run
@@ -62,7 +62,7 @@ uniqc submit circuit1.ir circuit2.ir --platform originq --dry-run
 
 ```
 [DRY-RUN PASSED] Circuit is valid for backend 'originq' with 2 qubits
-  Backend: originq:wuyuan:d5
+  Backend: WK_C180
   Circuit qubits: 2
 ```
 
@@ -78,7 +78,7 @@ uniqc submit circuit1.ir circuit2.ir --platform originq --dry-run
 ```
 ┏━━━━━━━━━ Dry-Run Results ━━━━━━━━━━┓
 ┃ #   Status   Backend              Qubits   Details/Error            ┃
-┃ 1   PASS     originq:wuyuan:d5      2      Circuit is valid         ┃
+┃ 1   PASS     WK_C180                2      Circuit is valid         ┃
 ┃ 2   FAIL     —                    —        Unsupported gate 'T'   ┃
 ```
 

@@ -440,7 +440,7 @@ def chip_display(
     Workflow:
       - Pick a backend from: uniqc backend list
       - Force refresh if calibration has been updated: uniqc backend chip-display originq/wuyuan:d5 --update
-      - Use this data for qubit selection: see the analyzer module.
+      - Use this data for qubit selection with RegionSelector.
     """
     if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
         print_ai_hints("backend-chip-display")
