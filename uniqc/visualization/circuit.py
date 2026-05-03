@@ -4,7 +4,7 @@ This module provides text-based circuit drawing capabilities for
 quantum programs in OriginIR or QASM format.
 """
 
-__all__ = ["draw"]
+__all__ = ["draw", "draw_html"]
 from pyqpanda3.core import draw_qprog, PIC_TYPE
 from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
 from uniqc.compile.converter import convert_qasm_to_oir, convert_oir_to_qasm
@@ -40,6 +40,25 @@ def draw(ir_str, language='OriginIR'):
 
     print(draw_qprog(qprog, PIC_TYPE.TEXT, {}, param_show=True))
     return qprog
+
+
+def draw_html(ir_str, language='OriginIR', output_path=None, *, title="Quantum circuit"):
+    """Render a static HTML/SVG circuit diagram.
+
+    The HTML output is intentionally static: gates expose parameters and raw
+    operation data through native SVG hover tooltips, with no editable state or
+    JavaScript dependency.
+    """
+    if language == 'OriginIR':
+        circuit_text = ir_str
+    elif language == 'QASM':
+        circuit_text = convert_qasm_to_oir(ir_str)
+    else:
+        raise ValueError(f"Unsupported language: {language}. \n")
+
+    from uniqc.visualization.timeline import circuit_to_html
+
+    return circuit_to_html(circuit_text, output_path=output_path, title=title)
 
 
 if __name__ == '__main__':

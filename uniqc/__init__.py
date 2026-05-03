@@ -148,9 +148,12 @@ except ImportError:
     warnings.warn("uniqc is not installed with UniqcCpp.", stacklevel=2)
 
 try:
-    from .visualization import plot_time_line
+    from .visualization import circuit_to_html, plot_time_line, plot_time_line_html, schedule_circuit
 except ImportError:
+    circuit_to_html = None  # type: ignore[assignment]
     plot_time_line = None  # type: ignore[assignment]
+    plot_time_line_html = None  # type: ignore[assignment]
+    schedule_circuit = None  # type: ignore[assignment]
 
 try:
     from ._version import __version__
@@ -269,6 +272,7 @@ __all__ = [
     "calculate_expectation",
     "calculate_multi_basis_expectation",
     "check_proxy_connectivity",
+    "circuit_to_html",
     "circuit_def",
     "classical_shadow",
     "clear_cache",
@@ -309,6 +313,7 @@ __all__ = [
     "parameter_shift_gradient",
     "pauli_expectation",
     "plot_time_line",
+    "plot_time_line_html",
     "qaoa_ansatz",
     "qem",
     "qft_circuit",
@@ -319,6 +324,7 @@ __all__ = [
     "save_task",
     "shadow_expectation",
     "shots2prob",
+    "schedule_circuit",
     "state_tomography",
     "submit_batch",
     "submit_task",

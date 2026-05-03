@@ -72,6 +72,7 @@ class OpenQASM2_LineParser:  # noqa: N801
         + "$"
     )
     regexp_measure_str: str = "^" + "measure" + blank + qreg_str + "->" + blank + qreg_str + "$"
+    regexp_barrier_str: str = "^" + "barrier" + blank + f"({qreg_str}{comma}{blank})*{qreg_str}" + "$"
 
     # Compiled regex objects
     regexp_qreg: re.Pattern[str] = re.compile(regexp_qreg_str)
@@ -84,6 +85,7 @@ class OpenQASM2_LineParser:  # noqa: N801
     regexp_2qnp: re.Pattern[str] = re.compile(regexp_2qnp_str)
     regexp_3qnp: re.Pattern[str] = re.compile(regexp_3qnp_str)
     regexp_measure: re.Pattern[str] = re.compile(regexp_measure_str)
+    regexp_barrier: re.Pattern[str] = re.compile(regexp_barrier_str)
 
     def __init__(self) -> None: ...
 
@@ -419,6 +421,14 @@ class OpenQASM2_LineParser:  # noqa: N801
         return qreg_name, qubit_index, creg_name, creg_index
 
     @staticmethod
+    def handle_barrier(line: str) -> list[tuple[str, int]]:
+        """Parse an indexed QASM barrier statement."""
+        matches = OpenQASM2_LineParser.regexp_barrier.match(line)
+        if matches is None:
+            raise AttributeError("Invalid barrier statement")
+        return [(name, int(index)) for name, index in re.findall(OpenQASM2_LineParser.qreg_str, line)]
+
+    @staticmethod
     def parse_line(
         line: str,
     ) -> tuple[str | None, tuple[str, int] | list[tuple[str, int]] | None, tuple[str, int] | None, Any]:
@@ -545,7 +555,7 @@ class OpenQASM2_LineParser:  # noqa: N801
                 ) = OpenQASM2_LineParser.handle_2q3p(line)  # type: ignore[assignment]
                 q = [(qreg_name1, qubit_index1), (qreg_name2, qubit_index2)]
             elif operation == "barrier":
-                pass
+                q = OpenQASM2_LineParser.handle_barrier(line)
             elif operation == "measure":
                 qreg_name, qubit_index, creg_name, creg_index = OpenQASM2_LineParser.handle_measure(line)
                 operation = "measure"  # type: ignore[assignment]

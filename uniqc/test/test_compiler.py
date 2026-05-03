@@ -94,6 +94,19 @@ class TestCompileOutputFormats:
         assert isinstance(result, str)
         assert "OPENQASM" in result
 
+    def test_compile_preserves_barrier(self, linear_topology):
+        from uniqc.circuit_builder import Circuit
+        from uniqc.compile.compiler import compile
+
+        circuit = Circuit(2)
+        circuit.h(0)
+        circuit.barrier(0, 1)
+        circuit.cnot(0, 1)
+
+        result = compile(circuit, backend_info=linear_topology, output_format="originir")
+        assert isinstance(result, str)
+        assert "BARRIER" in result
+
 
 class TestCompileWithChipCharacterization:
     """Tests for chip-characterization-aware compilation."""
