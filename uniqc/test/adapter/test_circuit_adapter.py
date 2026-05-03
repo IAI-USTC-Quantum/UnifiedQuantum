@@ -92,8 +92,8 @@ class TestOriginQCircuitAdapterIntegration:
 
     @pytest.fixture(autouse=True)
     def check_pyqpanda3(self):
-        """Skip tests if pyqpanda3 is not available."""
-        pytest.importorskip("pyqpanda3")
+        """Require pyqpanda3 in the default development environment."""
+        import pyqpanda3  # noqa: F401
 
     def test_adapt_simple_circuit(self):
         """Test adapt returns OriginIR string (not QProg)."""
@@ -144,8 +144,8 @@ class TestQuafuCircuitAdapterIntegration:
 
     @pytest.fixture(autouse=True)
     def check_quafu(self):
-        """Skip tests if quafu is not available."""
-        pytest.importorskip("quafu")
+        """Require quafu in the default development environment."""
+        import quafu  # noqa: F401
 
     def test_adapt_simple_circuit(self):
         """Test adapt with real quafu."""
@@ -237,8 +237,8 @@ class TestIBMCircuitAdapterIntegration:
 
     @pytest.fixture(autouse=True)
     def check_qiskit(self):
-        """Skip tests if qiskit is not available."""
-        pytest.importorskip("qiskit")
+        """Require qiskit in the default development environment."""
+        import qiskit  # noqa: F401
 
     def test_adapt_simple_circuit(self):
         """Test adapt with real qiskit."""

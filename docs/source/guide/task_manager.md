@@ -42,17 +42,12 @@ pip install unified-quantum[simulation]
 pip install unified-quantum[all]
 ```
 
-### 配置环境变量
+### 配置云平台凭据
 
 ```bash
-# OriginQ Cloud
-export ORIGINQ_API_KEY="your-api-key"
-
-# Quafu
-export QUAFU_API_TOKEN="your-quafu-token"
-
-# IBM Quantum
-export IBM_TOKEN="your-ibm-token"
+uniqc config set originq.token "your-api-key"
+uniqc config set quafu.token "your-quafu-token"
+uniqc config set ibm.token "your-ibm-token"
 ```
 
 ### 基本用法

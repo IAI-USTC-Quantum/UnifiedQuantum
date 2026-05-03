@@ -18,8 +18,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from uniqc.cli.main import app
 from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus
+from uniqc.cli.main import app
 
 runner = CliRunner()
 
@@ -191,7 +191,7 @@ def test_uniqc_result_tolerates_nested_result(monkeypatch):
 
 
 def test_profile_list_hides_meta_keys(tmp_path: Path, monkeypatch):
-    config_file = tmp_path / "uniqc.yml"
+    config_file = tmp_path / "config.yaml"
     monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
 
     from uniqc.backend_adapter.config import save_config

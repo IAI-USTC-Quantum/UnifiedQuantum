@@ -431,7 +431,7 @@ class IBMBackend(QuantumBackend):
         Proxies can be configured in multiple ways (in priority order):
         1. Explicit config dict passed to constructor
         2. Environment variables (HTTP_PROXY, HTTPS_PROXY)
-        3. uniqc.yml configuration file
+        3. config.yaml configuration file
 
     Example:
         >>> # Using config file
@@ -474,7 +474,7 @@ class IBMBackend(QuantumBackend):
         Loads from (in priority order):
         1. Explicit config dict passed to constructor
         2. Environment variables (HTTP_PROXY, HTTPS_PROXY)
-        3. uniqc.yml configuration file
+        3. config.yaml configuration file
         """
         from uniqc.backend_adapter.config import get_ibm_config
         from uniqc.backend_adapter.network_utils import (
@@ -509,7 +509,7 @@ class IBMBackend(QuantumBackend):
         if env_proxies.get("http") or env_proxies.get("https"):
             if self._proxy_config is None:
                 self._proxy_config = {}
-            # Merge: file config first, then override with env vars
+            # Merge: file config first, then override with proxy env vars
             if env_proxies.get("http"):
                 self._proxy_config["http"] = env_proxies["http"]
             if env_proxies.get("https"):

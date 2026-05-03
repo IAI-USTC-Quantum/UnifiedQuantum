@@ -154,8 +154,6 @@ class IBMAdapter(QuantumAdapter):
     def list_backends(self) -> list[dict[str, Any]]:
         # QiskitAdapter does not implement list_backends; delegate to IBMAdapter
         # via the runtime service. Re-instantiate the original logic here.
-        from uniqc.backend_adapter.config import sync_tokens_to_env
-        sync_tokens_to_env()
         config = load_ibm_config()
         token: str = config["api_token"]
         import qiskit_ibm_provider

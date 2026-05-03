@@ -3,7 +3,7 @@
 This module provides centralized configuration management for quantum cloud platforms
 including OriginQ (本源量子), Quafu (夸父), and IBM Quantum.
 
-Configuration file location: ~/.uniqc/uniqc.yml
+Configuration file location: ~/.uniqc/config.yaml
 
 Example configuration structure::
 
@@ -29,7 +29,7 @@ import yaml
 
 # Configuration file path
 CONFIG_DIR = Path.home() / ".uniqc"
-CONFIG_FILE = CONFIG_DIR / "uniqc.yml"
+CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
 # Default configuration template
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -111,14 +111,14 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
         return DEFAULT_CONFIG.copy()
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             config = yaml.safe_load(f)
         if config is None:
             return DEFAULT_CONFIG.copy()
         return config
     except yaml.YAMLError as e:
         raise ConfigError(f"Failed to parse YAML configuration: {e}") from e
-    except IOError as e:
+    except OSError as e:
         raise ConfigError(f"Failed to read configuration file: {e}") from e
 
 
@@ -133,10 +133,10 @@ def save_config(config: dict[str, Any], config_path: str | Path | None = None) -
         ConfigError: If configuration file cannot be written.
     """
     path = Path(config_path) if config_path else CONFIG_FILE
-    
+
     # Ensure parent directory exists (for both default and custom paths)
     path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     try:
         with open(path, "w", encoding="utf-8") as f:
             yaml.dump(
@@ -146,7 +146,7 @@ def save_config(config: dict[str, Any], config_path: str | Path | None = None) -
                 allow_unicode=True,
                 sort_keys=False,
             )
-    except IOError as e:
+    except OSError as e:
         raise ConfigError(f"Failed to write configuration file: {e}") from e
 
 
@@ -356,7 +356,7 @@ def set_active_profile(
     if profile not in config:
         raise ProfileNotFoundError(
             f"Profile '{profile}' not found in configuration. "
-            f"Available profiles: {', '.join(k for k in config.keys() if k not in META_KEYS)}"
+            f"Available profiles: {', '.join(k for k in config if k not in META_KEYS)}"
         )
 
     config["active_profile"] = profile
@@ -365,61 +365,43 @@ def set_active_profile(
 
 # Convenience functions for specific platforms
 
-def get_originq_config(profile: str = "default") -> dict[str, Any]:
+def get_originq_config(profile: str | None = None) -> dict[str, Any]:
     """Get OriginQ (本源量子) configuration.
 
     Args:
-        profile: Configuration profile name (default: "default").
+        profile: Configuration profile name. If None, uses the active profile.
 
     Returns:
         OriginQ configuration dictionary.
     """
+    if profile is None:
+        profile = get_active_profile()
     return get_platform_config("originq", profile)
 
 
-def get_quafu_config(profile: str = "default") -> dict[str, Any]:
+def get_quafu_config(profile: str | None = None) -> dict[str, Any]:
     """Get Quafu (夸父) configuration.
 
     Args:
-        profile: Configuration profile name (default: "default").
+        profile: Configuration profile name. If None, uses the active profile.
 
     Returns:
         Quafu configuration dictionary.
     """
+    if profile is None:
+        profile = get_active_profile()
     return get_platform_config("quafu", profile)
 
 
-def get_ibm_config(profile: str = "default") -> dict[str, Any]:
+def get_ibm_config(profile: str | None = None) -> dict[str, Any]:
     """Get IBM Quantum configuration.
 
     Args:
-        profile: Configuration profile name (default: "default").
+        profile: Configuration profile name. If None, uses the active profile.
 
     Returns:
         IBM Quantum configuration dictionary.
     """
+    if profile is None:
+        profile = get_active_profile()
     return get_platform_config("ibm", profile)
-
-
-def sync_tokens_to_env(profile: str = "default") -> None:
-    """Sync API tokens from the YAML config file into environment variables.
-
-    Call this before instantiating adapters that read from env vars
-    (``ORIGINQ_API_KEY``, ``QUAFU_API_TOKEN``, ``IBM_TOKEN``) so that
-    tokens stored in the config file are picked up.
-
-    Idempotent: only overwrites an env var if the config file has a
-    non-empty token for that platform.
-    """
-    cfg = load_config()
-    profile_data = cfg.get(profile, {})
-    for platform, env_var, field in [
-        ("originq", "ORIGINQ_API_KEY", "token"),
-        ("quafu", "QUAFU_API_TOKEN", "token"),
-        ("ibm", "IBM_TOKEN", "token"),
-    ]:
-        if platform in profile_data:
-            token = profile_data[platform].get(field, "")
-            if token:
-                os.environ[env_var] = token
-

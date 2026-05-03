@@ -6,7 +6,7 @@ This module tests the proxy detection and connectivity checking utilities.
 from __future__ import annotations
 
 import os
-import platform
+import socket
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -16,8 +16,30 @@ from uniqc.backend_adapter.network_utils import (
     check_proxy_connectivity,
     detect_system_proxy,
     get_ibm_proxy_from_config,
-    test_ibm_connectivity,
 )
+from uniqc.backend_adapter.network_utils import (
+    test_ibm_connectivity as check_ibm_connectivity,
+)
+from uniqc.test.cloud._config_helpers import platform_has_token, write_uniqc_config
+
+
+def ibm_config_has_proxy() -> bool:
+    """Return True when the active IBM config has a non-empty proxy."""
+    try:
+        from uniqc.backend_adapter.config import get_ibm_config
+
+        return bool(get_ibm_proxy_from_config(get_ibm_config()))
+    except Exception:
+        return False
+
+
+def unused_local_port() -> int:
+    """Return a currently unused localhost TCP port for unreachable-proxy checks."""
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
 
 
 class TestDetectSystemProxy(unittest.TestCase):
@@ -55,21 +77,19 @@ class TestDetectSystemProxy(unittest.TestCase):
             self.assertEqual(result["http"], "http://http-proxy.example.com:8080")
             self.assertEqual(result["https"], "https://https-proxy.example.com:8443")
 
-    @unittest.skipIf(platform.system() == "Windows", "Windows env vars are case-insensitive")
     def test_detect_http_proxy_lowercase(self):
-        """Test detection of http_proxy (lowercase) - Unix only."""
+        """Test detection of http_proxy (lowercase)."""
         with patch.dict(os.environ, {"http_proxy": "http://proxy.example.com:8080"}, clear=True):
             result = detect_system_proxy()
             self.assertEqual(result["http"], "http://proxy.example.com:8080")
 
-    @unittest.skipIf(platform.system() == "Windows", "Windows env vars are case-insensitive")
     def test_uppercase_takes_precedence(self):
-        """Test that uppercase env vars take precedence over lowercase - Unix only."""
+        """Test that uppercase env vars take precedence over lowercase when both exist."""
         env_vars = {
             "HTTP_PROXY": "http://uppercase.example.com:8080",
             "http_proxy": "http://lowercase.example.com:9090"
         }
-        with patch.dict(os.environ, env_vars, clear=True):
+        with patch("uniqc.backend_adapter.network_utils.os.environ", env_vars):
             result = detect_system_proxy()
             self.assertEqual(result["http"], "http://uppercase.example.com:8080")
 
@@ -178,34 +198,24 @@ class TestGetIbmProxyFromConfig(unittest.TestCase):
         self.assertIsNone(result)
 
 
-@pytest.mark.cloud
 class TestTestIbmConnectivity:
-    """Tests for test_ibm_connectivity function."""
+    """Unit tests for check_ibm_connectivity behavior."""
 
-    def setup_method(self):
-        """Save original environment variables."""
-        self.original_token = os.environ.get("IBM_TOKEN")
+    def test_no_token_provided_and_no_yaml_token(self, monkeypatch, tmp_path):
+        """Test when no token is provided and the YAML config has no IBM token."""
+        write_uniqc_config(tmp_path, {"ibm": {"token": ""}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-    def teardown_method(self):
-        """Restore original environment variables."""
-        if self.original_token is None:
-            os.environ.pop("IBM_TOKEN", None)
-        else:
-            os.environ["IBM_TOKEN"] = self.original_token
-
-    def test_no_token_provided_and_no_env_var(self):
-        """Test when no token is provided and no env var is set."""
-        os.environ.pop("IBM_TOKEN", None)
-
-        result = test_ibm_connectivity()
+        result = check_ibm_connectivity()
 
         assert result["success"] is False
         assert "token not provided" in result["message"]
         assert result["response_time_ms"] is None
 
-    def test_uses_env_var_token(self):
-        """Test that IBM_TOKEN env var is used when token not provided."""
-        os.environ["IBM_TOKEN"] = "env_token_123"
+    def test_uses_yaml_token(self, monkeypatch, tmp_path):
+        """Test that the active YAML IBM token is used when token is not provided."""
+        write_uniqc_config(tmp_path, {"ibm": {"token": "yaml_token_123"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         # Mock the actual HTTP request to avoid network calls
         with patch("urllib.request.OpenerDirector.open") as mock_open:
@@ -214,7 +224,7 @@ class TestTestIbmConnectivity:
             mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
             mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-            result = test_ibm_connectivity()
+            result = check_ibm_connectivity()
 
             # Should attempt to connect (actual result depends on mock)
             assert result is not None
@@ -222,11 +232,16 @@ class TestTestIbmConnectivity:
     def test_with_explicit_proxy(self):
         """Test with explicit proxy configuration."""
         proxy = {"https": "http://proxy.example.com:8080"}
+        with patch("urllib.request.OpenerDirector.open") as mock_open:
+            mock_response = MagicMock()
+            mock_response.getcode.return_value = 200
+            mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
+            mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-        result = test_ibm_connectivity(
-            token="test_token",
-            proxy=proxy
-        )
+            result = check_ibm_connectivity(
+                token="test_token",
+                proxy=proxy
+            )
 
         # Verify proxy is recorded in result
         assert result["proxy_used"] == proxy
@@ -239,7 +254,7 @@ class TestTestIbmConnectivity:
             mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
             mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-            result = test_ibm_connectivity(
+            result = check_ibm_connectivity(
                 token="test_token",
                 proxy="http://proxy.example.com:8080"
             )
@@ -252,7 +267,7 @@ class TestTestIbmConnectivity:
         with patch("urllib.request.OpenerDirector.open") as mock_open:
             mock_open.side_effect = Exception("Connection refused")
 
-            result = test_ibm_connectivity(token="test_token")
+            result = check_ibm_connectivity(token="test_token")
 
             assert result["success"] is False
             assert "Connection failed" in result["message"]
@@ -260,14 +275,63 @@ class TestTestIbmConnectivity:
 
 
 @pytest.mark.cloud
-class TestIntegration:
-    """Integration tests combining multiple functions."""
+class TestRealIbmConnectivity:
+    """Real IBM connectivity and proxy behavior tests."""
 
-    def test_system_proxy_to_ibm_connectivity(self):
+    @pytest.mark.skipif(
+        not platform_has_token("ibm"),
+        reason="ibm.token not set in ~/.uniqc/config.yaml",
+    )
+    def test_real_ibm_connectivity_without_proxy(self):
+        """Test real IBM endpoint connectivity without an explicit proxy."""
+        result = check_ibm_connectivity(proxy={})
+
+        assert result["success"] is True
+        assert result["response_time_ms"] is not None
+
+    @pytest.mark.skipif(
+        not platform_has_token("ibm") or not ibm_config_has_proxy(),
+        reason="ibm.token and ibm.proxy not set in ~/.uniqc/config.yaml",
+    )
+    def test_real_ibm_connectivity_with_config_proxy(self):
+        """Test real IBM endpoint connectivity through configured proxy."""
+        from uniqc.backend_adapter.config import get_ibm_config
+
+        proxy = get_ibm_proxy_from_config(get_ibm_config())
+        assert proxy
+
+        result = check_ibm_connectivity(proxy=proxy)
+
+        assert result["success"] is True
+        assert result["proxy_used"] == proxy
+        assert result["response_time_ms"] is not None
+
+    def test_unreachable_proxy_fails(self):
+        """Test that an unreachable proxy produces a connectivity failure."""
+        port = unused_local_port()
+        proxy = {"https": f"http://127.0.0.1:{port}"}
+
+        result = check_ibm_connectivity(
+            token="test_token",
+            proxy=proxy,
+            timeout=0.2,
+        )
+
+        assert result["success"] is False
+        assert "Connection failed" in result["message"]
+        assert result["proxy_used"] == proxy
+        assert result["response_time_ms"] is not None
+
+
+class TestIntegration:
+    """Unit tests combining multiple network utility functions."""
+
+    def test_system_proxy_to_ibm_connectivity(self, monkeypatch, tmp_path):
         """Test full flow from system proxy detection to IBM connectivity."""
+        write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
         with patch.dict(os.environ, {
             "HTTPS_PROXY": "http://proxy.example.com:8080",
-            "IBM_TOKEN": "test_token"
         }):
             # Detect system proxy
             proxies = detect_system_proxy()
@@ -280,7 +344,7 @@ class TestIntegration:
                 mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
                 mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-                result = test_ibm_connectivity(proxy=proxies)
+                result = check_ibm_connectivity(proxy=proxies)
                 assert result["success"] is True
 
 

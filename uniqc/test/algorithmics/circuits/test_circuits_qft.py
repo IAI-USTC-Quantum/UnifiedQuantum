@@ -14,7 +14,6 @@ class TestQFTCircuit:
 
     def test_3qubit_qft_uniform_distribution(self):
         """3-qubit QFT on |0⟩ should produce uniform probability 1/8 for each basis state."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         c = Circuit()
@@ -29,7 +28,6 @@ class TestQFTCircuit:
 
     def test_1qubit_qft_is_hadamard(self):
         """1-qubit QFT on |0⟩ is equivalent to a single H gate."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         # QFT circuit
@@ -62,7 +60,6 @@ class TestQFTCircuit:
 
     def test_qft_then_iqft_identity(self):
         """QFT followed by inverse QFT should return to |0⟩."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         c = Circuit()

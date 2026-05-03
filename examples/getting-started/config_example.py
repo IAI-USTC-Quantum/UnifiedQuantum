@@ -5,16 +5,15 @@ quantum cloud platform configurations.
 """
 
 from uniqc.backend_adapter.config import (
+    create_default_config,
+    get_ibm_config,
+    get_originq_config,
+    get_platform_config,
+    get_quafu_config,
     load_config,
     save_config,
-    get_platform_config,
-    validate_config,
     update_platform_config,
-    create_default_config,
-    get_originq_config,
-    get_quafu_config,
-    get_ibm_config,
-    DEFAULT_CONFIG,
+    validate_config,
 )
 
 
@@ -23,10 +22,10 @@ def example_1_create_default_config():
     print("=" * 60)
     print("Example 1: Create default configuration")
     print("=" * 60)
-    
-    # Create default config at ~/.uniqc/uniqc.yml
+
+    # Create default config at ~/.uniqc/config.yaml
     create_default_config()
-    print("✓ Default configuration created at ~/.uniqc/uniqc.yml")
+    print("✓ Default configuration created at ~/.uniqc/config.yaml")
     print()
 
 
@@ -63,15 +62,15 @@ def example_3_get_platform_config():
     print("=" * 60)
     print("Example 3: Get platform configuration")
     print("=" * 60)
-    
+
     # Get OriginQ configuration
     originq = get_platform_config("originq")
     print(f"OriginQ token: {originq.get('token', 'Not set')}")
-    
+
     # Get Quafu configuration
     quafu = get_platform_config("quafu")
     print(f"Quafu token: {quafu.get('token', 'Not set')}")
-    
+
     # Get IBM configuration
     ibm = get_platform_config("ibm")
     print(f"IBM token: {ibm.get('token', 'Not set')}")
@@ -85,12 +84,12 @@ def example_4_convenience_functions():
     print("=" * 60)
     print("Example 4: Convenience functions")
     print("=" * 60)
-    
+
     # These are shorthand for get_platform_config()
     originq = get_originq_config()
     quafu = get_quafu_config()
     ibm = get_ibm_config()
-    
+
     print(f"OriginQ: {originq.get('token', 'Not set')}")
     print(f"Quafu: {quafu.get('token', 'Not set')}")
     print(f"IBM: {ibm.get('token', 'Not set')}")
@@ -126,10 +125,10 @@ def example_6_validate_config():
     print("=" * 60)
     print("Example 6: Validate configuration")
     print("=" * 60)
-    
+
     # Validate current configuration
     errors = validate_config()
-    
+
     if errors:
         print("Configuration errors found:")
         for error in errors:
@@ -144,7 +143,7 @@ def example_7_environment_variable():
     print("=" * 60)
     print("Example 7: Environment variable UNIQC_PROFILE")
     print("=" * 60)
-    
+
     print("Set UNIQC_PROFILE environment variable to switch profiles:")
     print("  export UNIQC_PROFILE=prod")
     print("  python your_script.py")
@@ -160,10 +159,10 @@ def main():
     print("\n" + "=" * 60)
     print("UnifiedQuantum Configuration Management Examples")
     print("=" * 60 + "\n")
-    
-    # Note: These examples create/modify ~/.uniqc/uniqc.yml
+
+    # Note: These examples create/modify ~/.uniqc/config.yaml
     # Uncomment the ones you want to run
-    
+
     # example_1_create_default_config()
     # example_2_load_and_modify()
     # example_3_get_platform_config()
@@ -171,7 +170,7 @@ def main():
     # example_5_multiple_profiles()
     # example_6_validate_config()
     example_7_environment_variable()
-    
+
     print("=" * 60)
     print("Examples completed!")
     print("=" * 60)

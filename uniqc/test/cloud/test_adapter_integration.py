@@ -1,18 +1,19 @@
 """End-to-end integration tests for Quafu and IBM adapters.
 
 These tests require real API credentials and network access.
-They are skipped unless the corresponding environment variables are set.
+They are skipped unless the active ``~/.uniqc/config.yaml`` profile has tokens.
 
 Run locally:
-    QUAFU_API_TOKEN=xxx pytest uniqc/test/cloud/test_adapter_integration.py -v -m cloud
-    IBM_TOKEN=xxx pytest uniqc/test/cloud/test_adapter_integration.py -v -m cloud
+    uniqc config set quafu.token xxx
+    uniqc config set ibm.token xxx
+    pytest uniqc/test/cloud/test_adapter_integration.py -v -m cloud
 """
 
 from __future__ import annotations
 
-import os
-
 import pytest
+
+from uniqc.test.cloud._config_helpers import platform_has_token
 
 ORIGINIR_BELL = """
 QINIT 2
@@ -48,7 +49,7 @@ MEASURE q[2], c[2]
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not os.environ.get("QUAFU_API_TOKEN"), reason="QUAFU_API_TOKEN not set")
+@pytest.mark.skipif(not platform_has_token("quafu"), reason="quafu.token not set in ~/.uniqc/config.yaml")
 class RunTestQuafuAdapterReal:
     """End-to-end tests for QuafuAdapter with real credentials."""
 
@@ -166,7 +167,7 @@ class RunTestQuafuAdapterReal:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not os.environ.get("IBM_TOKEN"), reason="IBM_TOKEN not set")
+@pytest.mark.skipif(not platform_has_token("ibm"), reason="ibm.token not set in ~/.uniqc/config.yaml")
 class RunTestQiskitAdapterReal:
     """End-to-end tests for QiskitAdapter with real credentials."""
 

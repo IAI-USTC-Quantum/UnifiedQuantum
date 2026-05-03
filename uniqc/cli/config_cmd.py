@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import typer
 
@@ -13,7 +12,6 @@ from .output import (
     console,
     print_ai_hints,
     print_error,
-    print_info,
     print_json,
     print_success,
     print_table,
@@ -44,7 +42,7 @@ def init(
     from uniqc.backend_adapter.config import create_default_config
 
     create_default_config()
-    print_success("Configuration file created at ~/.uniqc/uniqc.yml")
+    print_success("Configuration file created at ~/.uniqc/config.yaml")
 
 
 @app.command()
@@ -142,10 +140,7 @@ def list_config(
         token = platform_config.get("token", "")
         required = PLATFORM_REQUIRED_FIELDS.get(platform, [])
 
-        if token:
-            status = "[green]Configured[/green]"
-        else:
-            status = "[red]Missing token[/red]"
+        status = "[green]Configured[/green]" if token else "[red]Missing token[/red]"
 
         missing = [f for f in required if not platform_config.get(f)]
         if missing and token:
@@ -191,7 +186,7 @@ def validate(
 @app.command()
 def profile(
     action: str = typer.Argument(..., help="Action: list/use/create"),
-    name: Optional[str] = typer.Argument(None, help="Profile name"),
+    name: str | None = typer.Argument(None, help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Manage configuration profiles.
@@ -212,7 +207,7 @@ def profile(
         config = load_config()
         active = get_active_profile()
         rows = []
-        for profile_name in config.keys():
+        for profile_name in config:
             if profile_name in META_KEYS:
                 continue
             marker = "[green]*[/green]" if profile_name == active else " "
@@ -230,7 +225,7 @@ def profile(
         if not name:
             print_error("Profile name required")
             raise typer.Exit(1)
-        from uniqc.backend_adapter.config import CONFIG_FILE, load_config, save_config
+        from uniqc.backend_adapter.config import load_config, save_config
 
         config = load_config()
         if name in config:

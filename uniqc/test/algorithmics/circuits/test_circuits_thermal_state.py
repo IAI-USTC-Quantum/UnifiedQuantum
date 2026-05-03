@@ -21,8 +21,6 @@ class TestThermalStateCircuit:
 
     def test_beta_zero_maximally_mixed(self):
         """beta=0 → maximally mixed state: p(0) ≈ p(1) ≈ 0.5."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
-
         c = Circuit()
         thermal_state_circuit(c, beta=0.0, qubits=[0])
         probs = self._simulate_1qubit(c)
@@ -32,8 +30,6 @@ class TestThermalStateCircuit:
 
     def test_beta_large_ground_state(self):
         """beta→∞ → ground state |0⟩: p(0) ≈ 1."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
-
         c = Circuit()
         thermal_state_circuit(c, beta=100.0, qubits=[0])
         probs = self._simulate_1qubit(c)
@@ -42,8 +38,6 @@ class TestThermalStateCircuit:
 
     def test_beta_one_intermediate(self):
         """beta=1 should give p(0) > p(1) but p(1) > 0."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
-
         c = Circuit()
         thermal_state_circuit(c, beta=1.0, qubits=[0])
         probs = self._simulate_1qubit(c)

@@ -3,17 +3,10 @@
 from __future__ import annotations
 
 import importlib
-import os
 
 import pytest
 
-from uniqc.backend_adapter.task.optional_deps import SIMULATION_AVAILABLE
 
-
-@pytest.mark.skipif(
-    not SIMULATION_AVAILABLE,
-    reason="simulation dependencies not installed"
-)
 @pytest.mark.requires_cpp
 class TestDummyAdapter:
     """Tests for DummyAdapter."""

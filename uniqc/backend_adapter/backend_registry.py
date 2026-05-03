@@ -211,10 +211,6 @@ _NORMALISERS = {
 
 def _build_adapter(platform: Platform):
     """Instantiate the correct adapter for ``platform``."""
-    # Sync YAML tokens → env vars so adapters that read from env work correctly.
-    from uniqc.backend_adapter.config import sync_tokens_to_env
-
-    sync_tokens_to_env()
     if platform == Platform.ORIGINQ:
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 

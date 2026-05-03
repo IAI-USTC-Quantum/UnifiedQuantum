@@ -5,20 +5,14 @@ from collections.abc import Iterable
 
 import numpy as np
 import pytest
+import qiskit  # noqa: F401
 
 from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.matrix import NotMatrixableError, _opcode_matrix, get_matrix
-from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 from uniqc.compile import compile
 from uniqc.compile.compiler import _originir_to_circuit
-
-try:
-    import qiskit  # noqa: F401
-
-    QISKIT_AVAILABLE = True
-except ImportError:
-    QISKIT_AVAILABLE = False
+from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 
 
 def _assert_same_up_to_global_phase(
@@ -135,7 +129,7 @@ def _simulate_probabilities_np(originir: str, *, max_qubits: int = 10) -> np.nda
 
 
 def _simulate_probabilities_qutip(originir: str) -> np.ndarray:
-    qutip = pytest.importorskip("qutip")
+    import qutip
 
     opcodes, measurements = _parse_originir(originir)
     labels = _active_qubits(opcodes, measurements)
@@ -297,7 +291,8 @@ class TestGetMatrix:
             get_matrix(circuit)
 
     def test_get_matrix_matches_qutip_evolution(self):
-        pytest.importorskip("qutip")
+        import qutip  # noqa: F401
+
         circuit = Circuit(3)
         circuit.h(0)
         circuit.rx(1, 0.17)
@@ -336,7 +331,6 @@ MEASURE q[12], c[0]
     assert circuit.cbit_num == 2
 
 
-@pytest.mark.skipif(not QISKIT_AVAILABLE, reason="Qiskit not installed")
 def test_compile_preserves_50_random_6q_measurement_probabilities(all_to_all_6q_info: BackendInfo):
     for seed in range(50):
         circuit = _random_measured_6q_circuit(seed)

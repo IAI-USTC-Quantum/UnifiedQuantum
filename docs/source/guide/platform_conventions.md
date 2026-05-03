@@ -218,17 +218,16 @@ ibm_sherbrooke         # 真实硬件 Sherbrooke
 
 ## 6. 配置约定 {#platform-configuration}
 
-### 6.1 环境变量（优先级最高）
+### 6.1 YAML 配置文件（~/.uniqc/config.yaml）
 
 ```bash
-export ORIGINQ_API_KEY="your-originq-key"
-export QUAFU_API_TOKEN="your-quafu-token"
-export IBM_TOKEN="your-ibm-token"
+uniqc config set originq.token "your-originq-key"
+uniqc config set quafu.token "your-quafu-token"
+uniqc config set ibm.token "your-ibm-token"
 ```
 
-### 6.2 YAML 配置文件（~/.uniqc/uniqc.yml）
-
 ```yaml
+active_profile: default
 default:
   originq:
     token: "your-originq-key"
@@ -241,9 +240,9 @@ default:
       https: "https://proxy:8080"
 ```
 
-`sync_tokens_to_env()` 在 `backend_registry._build_adapter()` 内部自动调用，用户无需手动触发。
+适配器直接读取 active profile 下的平台配置，不再通过 API token 环境变量注入凭据。
 
-### 6.3 IBM 代理配置
+### 6.2 IBM 代理配置
 
 ```python
 # 方式1：通过构造函数传入
