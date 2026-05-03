@@ -60,7 +60,7 @@ class RunTestConfigEnvVars:
         # Ensure no config file exists
         monkeypatch.chdir(tmp_path)
 
-        from uniqc.task.config import load_originq_config
+        from uniqc.backend_adapter.task.config import load_originq_config
 
         config = load_originq_config()
         assert config["api_key"] == "test_key_123"
@@ -71,7 +71,7 @@ class RunTestConfigEnvVars:
         monkeypatch.setenv("QUAFU_API_TOKEN", "quafu_secret_token")
         monkeypatch.chdir(tmp_path)
 
-        from uniqc.task.config import load_quafu_config
+        from uniqc.backend_adapter.task.config import load_quafu_config
 
         config = load_quafu_config()
         assert config["api_token"] == "quafu_secret_token"
@@ -81,7 +81,7 @@ class RunTestConfigEnvVars:
         monkeypatch.setenv("IBM_TOKEN", "ibm_secret_token")
         monkeypatch.chdir(tmp_path)
 
-        from uniqc.task.config import load_ibm_config
+        from uniqc.backend_adapter.task.config import load_ibm_config
 
         config = load_ibm_config()
         assert config["api_token"] == "ibm_secret_token"
@@ -96,7 +96,7 @@ class RunTestConfigEnvVars:
         monkeypatch.setenv("ORIGINQ_TASK_GROUP_SIZE", "50")
         monkeypatch.chdir(tmp_path)
 
-        from uniqc.task.config import load_dummy_config
+        from uniqc.backend_adapter.task.config import load_dummy_config
 
         config = load_dummy_config()
         assert config["available_qubits"] == [0, 1, 2, 3]
@@ -126,10 +126,10 @@ class RunTestConfigEnvVars:
 
         # Clear module cache
         for mod in list(sys.modules):
-            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
                 del sys.modules[mod]
 
-        from uniqc.task.config import load_originq_config
+        from uniqc.backend_adapter.task.config import load_originq_config
 
         # Should raise ImportError since YAML token is empty
         with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
@@ -154,10 +154,10 @@ class RunTestConfigEnvVars:
         monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
         for mod in list(sys.modules):
-            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
                 del sys.modules[mod]
 
-        from uniqc.task.config import load_originq_config
+        from uniqc.backend_adapter.task.config import load_originq_config
 
         with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
             load_originq_config()
@@ -180,10 +180,10 @@ class RunTestConfigEnvVars:
         monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
         for mod in list(sys.modules):
-            if mod.startswith("uniqc.task.config") or mod.startswith("uniqc.config"):
+            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
                 del sys.modules[mod]
 
-        from uniqc.task.config import load_originq_config
+        from uniqc.backend_adapter.task.config import load_originq_config
 
         cfg = load_originq_config()
         assert cfg["api_key"] == "yaml-test-token"
@@ -202,7 +202,7 @@ class RunTestOriginQAdapterIntegration:
 
     def run_test_translate_circuit(self):
         """Test that translate_circuit converts OriginIR to QProg."""
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter()
         result = adapter.translate_circuit(ORIGINIR_BELL)
@@ -210,7 +210,7 @@ class RunTestOriginQAdapterIntegration:
 
     def run_test_submit_and_query(self):
         """Test submit and query with real service."""
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter()
         task_id = adapter.submit(ORIGINIR_BELL, shots=1000)
@@ -221,7 +221,7 @@ class RunTestOriginQAdapterIntegration:
 
     def run_test_submit_batch(self):
         """Test submit_batch with real service."""
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter()
         circuits = [ORIGINIR_BELL] * 2
@@ -249,7 +249,7 @@ CNOT q[0], q[1]
 MEASURE q[0], c[0]
 """.strip()
 
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         result = adapter.translate_circuit(originir)
@@ -257,7 +257,7 @@ MEASURE q[0], c[0]
 
     def run_test_submit_and_query(self):
         """Test submit and query with real service."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
 
@@ -283,7 +283,7 @@ class RunTestIBMAdapterIntegration:
 
     def run_test_translate_circuit(self):
         """Test circuit translation with real qiskit."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         result = adapter.translate_circuit(ORIGINIR_BELL)
@@ -292,7 +292,7 @@ class RunTestIBMAdapterIntegration:
 
     def run_test_submit_and_query(self):
         """Test submit and query with real service."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
 
@@ -313,14 +313,14 @@ class RunTestAdapterAvailability:
         """Test OriginQ adapter availability with config."""
         monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
 
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter()
         assert adapter.is_available() is True
 
     def run_test_quafu_adapter_available_with_config(self, monkeypatch):
         """Test Quafu adapter availability with config."""
-        from uniqc.task.optional_deps import check_quafu
+        from uniqc.backend_adapter.task.optional_deps import check_quafu
 
         monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
 
@@ -330,7 +330,7 @@ class RunTestAdapterAvailability:
         if not quafu_available:
             pytest.skip("quafu not installed")
 
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         assert isinstance(adapter.is_available(), bool)
@@ -339,7 +339,7 @@ class RunTestAdapterAvailability:
         """Test IBM adapter availability with config."""
         import os
 
-        from uniqc.task.optional_deps import check_qiskit
+        from uniqc.backend_adapter.task.optional_deps import check_qiskit
 
         if not check_qiskit():
             pytest.skip("qiskit not installed")
@@ -352,7 +352,7 @@ class RunTestAdapterAvailability:
 
         monkeypatch.setenv("IBM_TOKEN", real_token)
 
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         assert isinstance(adapter.is_available(), bool)
@@ -369,7 +369,7 @@ class TestOriginQAdapterUnit:
     def run_test_format_counts_returns_dict(self, monkeypatch):
         """_format_counts returns {bitstring: shots} dict, not list of dicts."""
         monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter.__new__(OriginQAdapter)
         adapter._api_key = "test"
@@ -441,7 +441,7 @@ class TestOriginQAdapterUnit:
             "backend": lambda self, name: mock_backend,
         })()
 
-        from uniqc.task.adapters import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter.__new__(OriginQAdapter)
         adapter._api_key = "test"

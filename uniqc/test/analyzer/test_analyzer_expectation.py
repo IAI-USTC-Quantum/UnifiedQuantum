@@ -1,9 +1,9 @@
-"""Comprehensive unit tests for uniqc.analyzer.expectation."""
+"""Comprehensive unit tests for uniqc.utils.expectation."""
 
 import numpy as np
 import pytest
 
-from uniqc.analyzer.expectation import (
+from uniqc.utils.expectation import (
     calculate_expectation,
     calculate_exp_X,
     calculate_exp_Y,

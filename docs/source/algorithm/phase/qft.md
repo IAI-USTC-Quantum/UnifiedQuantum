@@ -38,7 +38,7 @@ $$CR_z(\theta) = R_z(\theta/2) \cdot \text{CNOT} \cdot R_z(-\theta/2) \cdot \tex
 ### `qft_circuit`
 
 ```python
-from uniqc.algorithmics.circuits import qft_circuit
+from uniqc import qft_circuit
 
 c = Circuit(3)
 qft_circuit(c, qubits=[0, 1, 2], swaps=True)
@@ -59,9 +59,9 @@ qft_circuit(c, qubits=[0, 1, 2], swaps=True)
 ### 完整示例
 
 ```python
-from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.state_preparation import basis_state
-from uniqc.algorithmics.circuits import qft_circuit
+from uniqc import Circuit
+from uniqc import basis_state
+from uniqc import qft_circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
 
 # 准备输入态 |5⟩ 并做 QFT

@@ -22,10 +22,10 @@ import math
 # Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.state_preparation import basis_state
-from uniqc.algorithmics.circuits import qft_circuit
+from uniqc import basis_state
+from uniqc import qft_circuit
 
 
 def run_qft(n_qubits: int, input_state: int, shots: int = 4096) -> dict:

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from uniqc.backend_info import Platform
+from uniqc.backend_adapter.backend_info import Platform
 from uniqc.cli.chip_cache import get_chip, save_chip
 
 if TYPE_CHECKING:
@@ -38,9 +38,9 @@ def fetch_chip_characterization(
         Bare backend name as reported by the platform, e.g. ``"wuyuan:d5"``
         (OriginQ), ``"ScQ-P18"`` (Quafu), ``"ibm-sherbrooke"`` (IBM).
     platform:
-        One of :attr:`~uniqc.backend_info.Platform.ORIGINQ`,
-        :attr:`~uniqc.backend_info.Platform.QUAFU`,
-        :attr:`~uniqc.backend_info.Platform.IBM`.
+        One of :attr:`~uniqc.backend_adapter.backend_info.Platform.ORIGINQ`,
+        :attr:`~uniqc.backend_adapter.backend_info.Platform.QUAFU`,
+        :attr:`~uniqc.backend_adapter.backend_info.Platform.IBM`.
     force_refresh:
         If False (the default), return cached data when available.
         If True, always re-fetch from the platform API.
@@ -80,7 +80,7 @@ def fetch_chip_characterization(
 def _fetch_originq(backend_name: str):
     """Fetch chip characterization from OriginQ Cloud."""
     try:
-        from uniqc.task.adapters.originq_adapter import OriginQAdapter
+        from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
     except (ImportError, Exception):
         return None
 
@@ -101,7 +101,7 @@ def _fetch_originq(backend_name: str):
 def _fetch_quafu(backend_name: str):
     """Fetch chip characterization from Quafu."""
     try:
-        from uniqc.task.adapters.quafu_adapter import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
     except (ImportError, Exception):
         return None
 
@@ -122,7 +122,7 @@ def _fetch_quafu(backend_name: str):
 def _fetch_ibm(backend_name: str):
     """Fetch chip characterization from IBM Quantum."""
     try:
-        from uniqc.task.adapters.ibm_adapter import IBMAdapter
+        from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
     except (ImportError, Exception):
         return None
 
@@ -152,13 +152,13 @@ def fetch_all_chips(
 
     Used by ``uniqc chip update --platform``.
     """
-    from uniqc.backend_registry import fetch_all_backends
+    from uniqc.backend_adapter.backend_registry import fetch_all_backends
 
     results: list[ChipCharacterization] = []
     all_backends = fetch_all_backends() if platform is None else {}
 
     if platform is not None:
-        from uniqc.backend_registry import fetch_platform_backends
+        from uniqc.backend_adapter.backend_registry import fetch_platform_backends
         backends, _ = fetch_platform_backends(platform)
         if backends:
             all_backends[platform] = backends

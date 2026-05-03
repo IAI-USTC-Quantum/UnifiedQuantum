@@ -2,7 +2,7 @@
 
 import pytest
 
-from uniqc.circuit_adapter import (
+from uniqc.backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
     OriginQCircuitAdapter,

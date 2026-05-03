@@ -11,6 +11,7 @@
 
    guide/installation
    guide/quickstart
+   guide/best_practices
 
 核心操作
 --------
@@ -24,6 +25,7 @@
    guide/task_manager
    guide/compiler_options_region
    guide/pytorch
+   guide/calibration
 
 格式互转与语言接口
 ------------------

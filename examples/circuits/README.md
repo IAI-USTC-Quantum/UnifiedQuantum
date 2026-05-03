@@ -1,6 +1,6 @@
 # UnifiedQuantum Circuit Examples
 
-基于 `uniqc.algorithmics.circuits` 组件库的示例代码。
+基于 `uniqc` 根导出的算法组件示例代码。
 
 ## 示例列表
 

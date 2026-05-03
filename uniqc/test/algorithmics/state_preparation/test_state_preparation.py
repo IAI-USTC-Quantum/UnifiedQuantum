@@ -25,7 +25,7 @@ def _ensure_n_qubits(circuit: Circuit, n: int) -> None:
 class TestBasisState:
 
     def run_test_zero_state(self):
-        from uniqc.algorithmics.state_preparation import basis_state
+        from uniqc.algorithms.core.state_preparation import basis_state
         c = Circuit()
         _ensure_n_qubits(c, 3)
         c2 = Circuit()
@@ -37,7 +37,7 @@ class TestBasisState:
         np.testing.assert_allclose(sv, expected, atol=1e-10)
 
     def run_test_single_bit(self):
-        from uniqc.algorithmics.state_preparation import basis_state
+        from uniqc.algorithms.core.state_preparation import basis_state
         c = Circuit()
         basis_state(c, 1, qubits=[0])
         sv = _statevector(c)
@@ -45,7 +45,7 @@ class TestBasisState:
         np.testing.assert_allclose(sv, expected, atol=1e-10)
 
     def run_test_multi_qubit(self):
-        from uniqc.algorithmics.state_preparation import basis_state
+        from uniqc.algorithms.core.state_preparation import basis_state
         c = Circuit()
         _ensure_n_qubits(c, 3)
         c2 = Circuit()
@@ -60,12 +60,12 @@ class TestBasisState:
     def run_test_negative_raises(self):
         c = Circuit()
         _ensure_n_qubits(c, 1)
-        from uniqc.algorithmics.state_preparation import basis_state
+        from uniqc.algorithms.core.state_preparation import basis_state
         with pytest.raises(ValueError):
             basis_state(c, -1)
 
     def run_test_custom_qubits(self):
-        from uniqc.algorithmics.state_preparation import basis_state
+        from uniqc.algorithms.core.state_preparation import basis_state
         c = Circuit()
         _ensure_n_qubits(c, 4)
         c2 = Circuit()
@@ -82,7 +82,7 @@ class TestBasisState:
 class TestHadamardSuperposition:
 
     def run_test_single_qubit(self):
-        from uniqc.algorithmics.state_preparation import hadamard_superposition
+        from uniqc.algorithms.core.state_preparation import hadamard_superposition
         c = Circuit()
         hadamard_superposition(c, qubits=[0])
         sv = _statevector(c)
@@ -90,7 +90,7 @@ class TestHadamardSuperposition:
         np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-10)
 
     def run_test_two_qubit(self):
-        from uniqc.algorithmics.state_preparation import hadamard_superposition
+        from uniqc.algorithms.core.state_preparation import hadamard_superposition
         c = Circuit()
         hadamard_superposition(c, qubits=[0, 1])
         sv = _statevector(c)
@@ -98,7 +98,7 @@ class TestHadamardSuperposition:
         np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-10)
 
     def run_test_custom_qubits(self):
-        from uniqc.algorithmics.state_preparation import hadamard_superposition
+        from uniqc.algorithms.core.state_preparation import hadamard_superposition
         c = Circuit()
         _ensure_n_qubits(c, 3)
         hadamard_superposition(c, qubits=[0, 2])
@@ -114,7 +114,7 @@ class TestHadamardSuperposition:
 class TestRotationPrepare:
 
     def run_test_zero_state(self):
-        from uniqc.algorithmics.state_preparation import rotation_prepare
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
         c = Circuit()
         target = np.array([1, 0, 0, 0], dtype=complex)
         rotation_prepare(c, target)
@@ -123,7 +123,7 @@ class TestRotationPrepare:
         np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-8)
 
     def run_test_bell_state(self):
-        from uniqc.algorithmics.state_preparation import rotation_prepare
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
         c = Circuit()
         target = np.array([1, 0, 0, 1], dtype=complex) / np.sqrt(2)
         rotation_prepare(c, target)
@@ -131,7 +131,7 @@ class TestRotationPrepare:
         np.testing.assert_allclose(np.abs(sv), np.abs(target), atol=1e-8)
 
     def run_test_normalisation(self):
-        from uniqc.algorithmics.state_preparation import rotation_prepare
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
         c = Circuit()
         target = np.array([3, 4], dtype=complex)
         rotation_prepare(c, target)
@@ -141,13 +141,13 @@ class TestRotationPrepare:
 
     def run_test_non_power_of_2_raises(self):
         c = Circuit()
-        from uniqc.algorithmics.state_preparation import rotation_prepare
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
         with pytest.raises(ValueError):
             rotation_prepare(c, np.array([1, 0, 0]))
 
     def run_test_zero_vector_raises(self):
         c = Circuit()
-        from uniqc.algorithmics.state_preparation import rotation_prepare
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
         with pytest.raises(ValueError):
             rotation_prepare(c, np.array([0, 0]))
 
@@ -157,7 +157,7 @@ class TestRotationPrepare:
 class TestThermalState:
 
     def run_test_zero_beta(self):
-        from uniqc.algorithmics.state_preparation import thermal_state
+        from uniqc.algorithms.core.state_preparation import thermal_state
         c = Circuit()
         thermal_state(c, beta=0.0, qubits=[0])
         sv = _statevector(c)
@@ -165,7 +165,7 @@ class TestThermalState:
         np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-10)
 
     def run_test_large_beta(self):
-        from uniqc.algorithmics.state_preparation import thermal_state
+        from uniqc.algorithms.core.state_preparation import thermal_state
         c = Circuit()
         _ensure_n_qubits(c, 1)
         c2 = Circuit()
@@ -178,12 +178,12 @@ class TestThermalState:
     def run_test_negative_beta_raises(self):
         c = Circuit()
         _ensure_n_qubits(c, 1)
-        from uniqc.algorithmics.state_preparation import thermal_state
+        from uniqc.algorithms.core.state_preparation import thermal_state
         with pytest.raises(ValueError):
             thermal_state(c, beta=-1.0)
 
     def run_test_custom_hamiltonian(self):
-        from uniqc.algorithmics.state_preparation import thermal_state
+        from uniqc.algorithms.core.state_preparation import thermal_state
         c = Circuit()
         H = np.array([[0, 1], [1, 0]], dtype=complex)
         thermal_state(c, beta=100.0, hamiltonian=H, qubits=[0])
@@ -197,7 +197,7 @@ class TestThermalState:
 class TestDickeState:
 
     def run_test_k0(self):
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         c = Circuit()
         _ensure_n_qubits(c, 3)
         c2 = Circuit()
@@ -209,7 +209,7 @@ class TestDickeState:
         np.testing.assert_allclose(sv, expected, atol=1e-10)
 
     def run_test_kn(self):
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         c = Circuit()
         dicke_state(c, qubits=[0, 1, 2], k=3)
         sv = _statevector(c)
@@ -218,7 +218,7 @@ class TestDickeState:
         np.testing.assert_allclose(sv, expected, atol=1e-10)
 
     def run_test_d31(self):
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         c = Circuit()
         dicke_state(c, qubits=[0, 1, 2], k=1)
         sv = _statevector(c)
@@ -229,7 +229,7 @@ class TestDickeState:
         np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-8)
 
     def run_test_d42(self):
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         c = Circuit()
         dicke_state(c, qubits=[0, 1, 2, 3], k=2)
         sv = _statevector(c)
@@ -243,13 +243,13 @@ class TestDickeState:
     def run_test_k_exceeds_n_raises(self):
         c = Circuit()
         _ensure_n_qubits(c, 2)
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         with pytest.raises(ValueError):
             dicke_state(c, k=3)
 
     def run_test_negative_k_raises(self):
         c = Circuit()
         _ensure_n_qubits(c, 2)
-        from uniqc.algorithmics.state_preparation import dicke_state
+        from uniqc.algorithms.core.state_preparation import dicke_state
         with pytest.raises(ValueError):
             dicke_state(c, k=-1)

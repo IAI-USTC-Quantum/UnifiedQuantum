@@ -19,7 +19,7 @@ import pytest
 from typer.testing import CliRunner
 
 from uniqc.cli.main import app
-from uniqc.task_manager import TaskInfo, TaskStatus
+from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus
 
 runner = CliRunner()
 
@@ -58,7 +58,7 @@ MEASURE q[1], c[1]
 
 
 def test_qasm_to_originir_preserves_measurements():
-    from uniqc.qasm import OpenQASM2_BaseParser
+    from uniqc.compile.qasm import OpenQASM2_BaseParser
 
     qasm_str = """OPENQASM 2.0;
 include "qelib1.inc";
@@ -148,8 +148,8 @@ def test_task_show_tolerates_nested_result(monkeypatch):
         },
     )
 
-    monkeypatch.setattr("uniqc.task_manager.get_task", lambda _tid: task_info)
-    monkeypatch.setattr("uniqc.task_manager.query_task", lambda _tid: task_info)
+    monkeypatch.setattr("uniqc.backend_adapter.task_manager.get_task", lambda _tid: task_info)
+    monkeypatch.setattr("uniqc.backend_adapter.task_manager.query_task", lambda _tid: task_info)
 
     result = runner.invoke(app, ["task", "show", "dummy-abc"])
 
@@ -192,9 +192,9 @@ def test_uniqc_result_tolerates_nested_result(monkeypatch):
 
 def test_profile_list_hides_meta_keys(tmp_path: Path, monkeypatch):
     config_file = tmp_path / "uniqc.yml"
-    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
+    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
 
-    from uniqc.config import save_config
+    from uniqc.backend_adapter.config import save_config
 
     save_config(
         {

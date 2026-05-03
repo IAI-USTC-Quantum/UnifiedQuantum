@@ -18,8 +18,8 @@ def qiskit_available():
 def run_test_transpile_qasm():
     """Test QASM transpilation."""
     pytest.importorskip("qiskit")
-    from uniqc.transpiler.qiskit_transpiler import transpile_qasm
-    from uniqc.transpiler._utils import CompilationFailedException
+    from uniqc.compile.qiskit_transpiler import transpile_qasm
+    from uniqc.compile._utils import CompilationFailedException
 
     qasm_str = """
 OPENQASM 2.0;
@@ -59,7 +59,7 @@ cx q[1], q[2];
 def run_test_transpile_originir():
     """Test OriginIR transpilation."""
     pytest.importorskip("qiskit")
-    from uniqc.transpiler.qiskit_transpiler import transpile_originir
+    from uniqc.compile.qiskit_transpiler import transpile_originir
     from uniqc.circuit_builder import Circuit
 
     circ = Circuit(2)
@@ -78,8 +78,8 @@ def run_test_transpile_originir():
 def run_test_qiskit_error_handling():
     """Test error handling."""
     pytest.importorskip("qiskit")
-    from uniqc.transpiler.qiskit_transpiler import transpile_qasm
-    from uniqc.transpiler._utils import CompilationFailedException
+    from uniqc.compile.qiskit_transpiler import transpile_qasm
+    from uniqc.compile._utils import CompilationFailedException
 
     # Test invalid optimization level
     try:
@@ -99,7 +99,7 @@ def run_test_qiskit_error_handling():
 def run_test_optimization_levels():
     """Test different optimization levels."""
     pytest.importorskip("qiskit")
-    from uniqc.transpiler.qiskit_transpiler import transpile_qasm
+    from uniqc.compile.qiskit_transpiler import transpile_qasm
 
     qasm_str = """
 OPENQASM 2.0;

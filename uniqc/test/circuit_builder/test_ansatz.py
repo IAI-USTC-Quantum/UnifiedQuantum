@@ -5,7 +5,7 @@ import pytest
 
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator.originir_simulator import OriginIR_Simulator
-from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+from uniqc.algorithms.core.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 
 
 def _statevector(circuit: Circuit) -> np.ndarray:

@@ -10,7 +10,7 @@
 - 如何添加测量指令 `measure`
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 # 创建线路
 circuit = Circuit()

@@ -16,6 +16,15 @@
 
 UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、Quafu、IBM Quantum 等多平台后端于一套一致的 API 下。
 
+除了核心的线路构建和执行能力，UnifiedQuantum 还提供完整的**本地芯片校准与量子错误缓解（QEM）工具链**：
+
+- **XEB 交叉熵基准测试**：`uniqc calibrate xeb` 测量每层门保真度，支持单比特、双比特和并行 2q 模式
+- **读出误差校准 + M3 缓解**：混淆矩阵标定与线性求逆修正
+- **本地含噪模拟**：将真实芯片的校准数据（门保真度、T1/T2、读出混淆矩阵）注入 `DummyAdapter`，在本地重现硬件噪声特性
+- **DSatur 并行调度**：自动将 2q 门分配到最小并行轮次
+
+所有校准结果写入 `~/.uniqc/calibration_cache/`，QEM 模块读取并强制 TTL 新鲜度策略。
+
 ---
 
 ## 核心工作流
@@ -35,12 +44,13 @@ uv pip install unified-quantum
 ### 2. 构建线路（支持原生 API 或任意第三方工具）
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()
 c.h(0)
 c.cnot(0, 1)
-c.measure(0, 1)
+c.measure(0)
+c.measure(1)
 
 # 输出 OriginIR 格式，可供 CLI 使用
 open('circuit.ir', 'w').write(c.originir)
@@ -136,12 +146,14 @@ uv pip install unified-quantum
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
-# 安装 CLI + Python 包（开发模式，源码可编辑，含全部可选依赖）
-uv tool install -e .[all]
+# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖，并按当前包索引升级解析
+uv sync --all-extras --group dev --upgrade
 
-# 仅安装 Python 包（开发模式，不含可选依赖）
-uv pip install -e . --no-build-isolation
+# 运行完整测试套件
+uv run pytest uniqc/test
 ```
+
+维护者环境不应把 qiskit、QuTiP、pyquafu 等可选模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
 
 **Requirements:**
 - CMake >= 3.26
@@ -188,7 +200,7 @@ uv pip install unified-quantum[pytorch]
 uv pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 ```
 
-不安装 TorchQuantum 不会影响核心功能、QuTiP 模拟、云平台适配器或常规 `uniqc.pytorch` 功能；只有 TorchQuantum 专用后端与示例会在实际使用时提示缺少该依赖。
+不安装 TorchQuantum 不会影响核心功能、QuTiP 模拟、云平台适配器或常规 `uniqc.torch_adapter` 功能；只有 TorchQuantum 专用后端与示例会在实际使用时提示缺少该依赖。
 
 ---
 

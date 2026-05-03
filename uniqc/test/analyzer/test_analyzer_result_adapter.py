@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from uniqc.analyzer.result_adapter import (
+from uniqc.utils.result_adapter import (
     shots2prob,
     kv2list,
     list2kv,

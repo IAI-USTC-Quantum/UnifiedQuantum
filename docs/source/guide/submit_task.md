@@ -266,7 +266,7 @@ task_id = submit_task(circuit, backend='originq', chip_id='...', circuit_optimiz
 - 如果你还没有完成线路验证，先回到 [本地模拟](simulation.md)
 - 如果你还不清楚线路如何构建，先阅读 [构建量子线路](circuit.md)
 - API 参考：
-  - {mod}`uniqc.task_manager`
-  - {mod}`uniqc.backend`
-  - {mod}`uniqc.task.adapters`
-  - {mod}`uniqc.task.normalizers`
+  - {mod}`uniqc.backend_adapter.task_manager`
+  - {mod}`uniqc.backend_adapter.backend`
+  - {mod}`uniqc.backend_adapter.task.adapters`
+  - {mod}`uniqc.backend_adapter.task.normalizers`

@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.measurement import state_tomography, tomography_summary
+from uniqc.algorithms.core.measurement import state_tomography, tomography_summary
 
 
 class TestSingleQubitTomography:

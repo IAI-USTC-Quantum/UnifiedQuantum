@@ -12,27 +12,31 @@ UnifiedQuantum 公开 API 的完整参考文档。
    uniqc.circuit_builder.parameter
    uniqc.circuit_builder.named_circuit
    uniqc.simulator
-   uniqc.originir
-   uniqc.qasm
-   uniqc.transpiler.compiler
-   uniqc.transpiler
-   uniqc.analyzer
-   uniqc.algorithmics
-   uniqc.task
-   uniqc.task.adapters
-   uniqc.task.config
-   uniqc.task.normalizers
-   uniqc.task.result_types
-   uniqc.algorithmics.ansatz
-   uniqc.algorithmics.circuits
-   uniqc.algorithmics.measurement
-   uniqc.algorithmics.state_preparation
-   uniqc.config
-   uniqc.backend
-   uniqc.circuit_adapter
-   uniqc.task_manager
-   uniqc.region_selector
-   uniqc.task.options
+   uniqc.compile.originir
+   uniqc.compile.qasm
+   uniqc.compile.compiler
+   uniqc.compile
+   uniqc.utils
+   uniqc.visualization
+   uniqc.algorithms.core
+   uniqc.algorithms.workflows
+   uniqc.backend_adapter.task
+   uniqc.backend_adapter.task.adapters
+   uniqc.backend_adapter.task.config
+   uniqc.backend_adapter.task.normalizers
+   uniqc.backend_adapter.task.result_types
+   uniqc.algorithms.core.ansatz
+   uniqc.algorithms.core.circuits
+   uniqc.algorithms.core.measurement
+   uniqc.algorithms.core.state_preparation
+   uniqc.backend_adapter.config
+   uniqc.backend_adapter.backend
+   uniqc.backend_adapter.backend_info
+   uniqc.backend_adapter.backend_registry
+   uniqc.backend_adapter.circuit_adapter
+   uniqc.backend_adapter.task_manager
+   uniqc.backend_adapter.region_selector
+   uniqc.backend_adapter.task.options
    uniqc.exceptions
-   uniqc.network_utils
-   uniqc.pytorch
+   uniqc.backend_adapter.network_utils
+   uniqc.torch_adapter

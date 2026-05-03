@@ -21,7 +21,7 @@ python examples/state_preparation/hadamard_superposition.py --n-qubits 3
 ## 代码解析
 
 ```python
-from uniqc.algorithmics.state_preparation import hadamard_superposition
+from uniqc import hadamard_superposition
 
 c = Circuit()
 hadamard_superposition(c, qubits=[0, 1, 2])

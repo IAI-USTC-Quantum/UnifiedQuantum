@@ -32,7 +32,7 @@ python examples/state_preparation/rotation_prepare.py --state random
 
 ```python
 import numpy as np
-from uniqc.algorithmics.state_preparation import rotation_prepare
+from uniqc import rotation_prepare
 
 target = np.array([1, 0, 0, 1]) / np.sqrt(2)  # Bell 态
 c = Circuit()

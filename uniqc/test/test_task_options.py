@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from uniqc.backend_info import Platform
-from uniqc.task.options import (
+from uniqc.backend_adapter.backend_info import Platform
+from uniqc.backend_adapter.task.options import (
     BackendOptionsError,
     BackendOptionsFactory,
     DummyOptions,

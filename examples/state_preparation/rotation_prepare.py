@@ -20,9 +20,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.originir_simulator import OriginIR_Simulator
-from uniqc.algorithmics.state_preparation import rotation_prepare
+from uniqc import rotation_prepare
 
 
 def _fidelity(sv1, sv2):

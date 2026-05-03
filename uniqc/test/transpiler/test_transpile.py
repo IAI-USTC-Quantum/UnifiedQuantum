@@ -1,6 +1,6 @@
 from uniqc.test._utils import uniq_test
-from uniqc.transpiler.timeline import format_result, create_time_line_table, plot_time_line
-from uniqc.transpiler import plot_time_line as plot_time_line_exported
+from uniqc.compile.timeline import format_result, create_time_line_table, plot_time_line
+from uniqc.compile import plot_time_line as plot_time_line_exported
 import json
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from uniqc.task.result_types import UnifiedResult
+from uniqc.backend_adapter.task.result_types import UnifiedResult
 
 
 class TestUnifiedResult:

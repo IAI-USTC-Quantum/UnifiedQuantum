@@ -54,7 +54,7 @@
 最常用的模拟器，直接模拟 OriginIR 格式的线路。
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator import OriginIR_Simulator
 
 circuit = Circuit()

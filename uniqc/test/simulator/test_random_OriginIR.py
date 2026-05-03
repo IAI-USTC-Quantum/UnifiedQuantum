@@ -52,9 +52,8 @@ def _test_random_originir_compare_density_operator(backend_1 = 'density_operator
                                                   gate_set = available_originir_gates,
                                                   error_channel = available_originir_error_channels_without_kraus):
     
-    err_list = []    
-    good_circuit_list = []
-    bad_circuit_list = []
+    err_list = []
+    passed_count = 0
     for i in range(random_batchsize):
         originir_code = random_originir(
             n_qubits=n_qubits, 
@@ -71,26 +70,16 @@ def _test_random_originir_compare_density_operator(backend_1 = 'density_operator
         if err:
             print('Test failed!')
             err_list.append(err)
-            bad_circuit_list.append((originir_code, err))
         else:
             print('Test passed!')
-            good_circuit_list.append((originir_code, None))
+            passed_count += 1
 
 
     print(len(err_list), 'circuits failed')
-    print(random_batchsize - len(err_list), 'circuits passed')
-
-    # log good and bad circuits
-    with open('good_circuits.txt', 'w') as f:
-        for circuit, result in good_circuit_list:
-            f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    with open('bad_circuits.txt', 'w') as f:
-        for e in err_list:
-            f.write(str(e) + '\n')
+    print(passed_count, 'circuits passed')
 
     if len(err_list) > 0:
-        raise ValueError('Some circuits failed!')
+        raise ValueError(f'Some circuits failed:\n{err_list[0]}')
     
 
 @uniq_test('Test Random OriginIR Density Operator')

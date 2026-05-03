@@ -11,7 +11,7 @@ Key exports:
 __all__ = ["OriginIR_Simulator", "OriginIR_NoisySimulator"]
 import random
 from typing import Dict, List, Tuple, TYPE_CHECKING, Union
-from uniqc.originir.originir_base_parser import OriginIR_BaseParser
+from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
 import warnings
 from .opcode_simulator import OpcodeSimulator
 from .base_simulator import BaseNoisySimulator, BaseSimulator

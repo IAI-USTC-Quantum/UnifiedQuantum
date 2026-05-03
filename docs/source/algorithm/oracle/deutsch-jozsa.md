@@ -39,7 +39,7 @@ $$|\psi_2\rangle = \frac{1}{2^n} \sum_{x,z} (-1)^{x \cdot z + f(x)} |z\rangle \o
 ### `deutsch_jozsa_oracle`
 
 ```python
-from uniqc.algorithmics.circuits import deutsch_jozsa_oracle
+from uniqc import deutsch_jozsa_oracle
 
 # 构建均衡 oracle（3 个数据比特，显式传入比特索引列表）
 oracle = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=True)
@@ -57,8 +57,8 @@ oracle = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=False)
 ### `deutsch_jozsa_circuit`
 
 ```python
-from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import deutsch_jozsa_circuit, deutsch_jozsa_oracle
+from uniqc import Circuit
+from uniqc import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 
 n = 3
 oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=True)

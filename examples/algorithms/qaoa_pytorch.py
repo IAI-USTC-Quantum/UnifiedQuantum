@@ -6,7 +6,7 @@ with Adam optimizer, using TorchQuantum's differentiable simulation.
 
 try:
     import torch
-    from uniqc.algorithmics.training.qaoa_torch import QAOASolver
+    from uniqc import QAOASolver
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch]")

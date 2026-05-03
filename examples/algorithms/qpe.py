@@ -24,9 +24,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.measurement import basis_rotation_measurement
+from uniqc import basis_rotation_measurement
 
 
 def apply_cu1(circuit: Circuit, control: int, target: int, theta: float) -> None:

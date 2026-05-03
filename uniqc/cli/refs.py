@@ -65,7 +65,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Getting started with circuit building",
-            "Use the Python API: from uniqc.circuit_builder import Circuit. "
+            "Use the Python API: from uniqc import Circuit. "
             "See the docs for a full circuit builder guide.",
         ),
         (

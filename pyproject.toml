@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
+requires = ["setuptools", "setuptools_scm", "wheel"]
 build-backend = "setuptools.build_meta"
 # setup.py is retained for custom CMakeExtension / CMakeBuild logic
 
@@ -33,11 +33,11 @@ classifiers = [
 dependencies = [
     "numpy",
     "requests",
-    "pyyaml>=6.0",
-    "sympy>=1.12",
-    "typing-extensions>=4.0",
-    "typer>=0.9.0",
-    "rich>=13.0.0",
+    "pyyaml",
+    "sympy",
+    "typing-extensions",
+    "typer",
+    "rich",
     "scipy",
 ]
 
@@ -48,46 +48,30 @@ dependencies = [
 uniqc = "uniqc.cli.main:app"
 
 [project.optional-dependencies]
-quafu = ["pyquafu>=0.4.0"]
-qiskit = ["qiskit>=1.0", "qiskit-aer", "qiskit-ibm-runtime>=0.25.0"]
-originq = ["pyqpanda3>=0.3.5"]
-simulation = ["qutip>=5.0", "qutip-qip>=0.4"]
+quafu = ["pyquafu"]
+qiskit = ["qiskit", "qiskit-aer", "qiskit-ibm-runtime"]
+originq = ["pyqpanda3"]
+simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
-pytorch = ["torch>=2.0"]
+pytorch = ["torch"]
 all = [
-    "pyquafu>=0.4.0",
-    # NOTE: qiskit-ibm-provider is incompatible with qiskit>=1.0 (it requires qiskit 0.44-0.46).
-    # IBM Quantum users should install qiskit-ibm-runtime separately for qiskit 1.x/2.x support.
-    "qiskit>=1.0", "qiskit-aer",
-    "qiskit-ibm-runtime>=0.25.0",
-    "pyqpanda3>=0.3.5",
-    "qutip>=5.0", "qutip-qip>=0.4",
+    "pyquafu",
+    "qiskit", "qiskit-aer",
+    "qiskit-ibm-runtime",
+    "pyqpanda3",
+    "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
-    "torch>=2.0",
-    "dill>=0.4.1",
+    "torch",
+    "dill",
 ]
 
 [tool.setuptools]
 zip-safe = false
-packages = [
-    "uniqc",
-    "uniqc.cli",
-    "uniqc.algorithmics",
-    "uniqc.algorithmics.ansatz",
-    "uniqc.algorithmics.circuits",
-    "uniqc.algorithmics.measurement",
-    "uniqc.algorithmics.state_preparation",
-    "uniqc.algorithmics.training",
-    "uniqc.analyzer",
-    "uniqc.circuit_builder",
-    "uniqc.originir",
-    "uniqc.pytorch",
-    "uniqc.qasm",
-    "uniqc.simulator",
-    "uniqc.task",
-    "uniqc.task.adapters",
-    "uniqc.transpiler",
-]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["uniqc*"]
+exclude = ["uniqc.test*"]
 
 [tool.ruff]
 line-length = 120
@@ -103,8 +87,9 @@ indent-style = "space"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=7.1.0",
+    "pytest",
+    "pytest-cov",
+    "tomli",
 ]
 
 [tool.setuptools_scm]

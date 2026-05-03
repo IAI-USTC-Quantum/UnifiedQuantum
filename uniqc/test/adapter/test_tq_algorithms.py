@@ -7,8 +7,8 @@ import pytest
 torchquantum = pytest.importorskip("torchquantum", reason="torchquantum not installed")
 
 
-from uniqc.algorithmics.training.qaoa_torch import QAOASolver
-from uniqc.algorithmics.training.vqe_torch import VQESolver, build_h2_hamiltonian
+from uniqc.algorithms.core.training.qaoa_torch import QAOASolver
+from uniqc.algorithms.core.training.vqe_torch import VQESolver, build_h2_hamiltonian
 
 
 class TestVQE:

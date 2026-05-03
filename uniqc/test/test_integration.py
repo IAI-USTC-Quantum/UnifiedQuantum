@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from uniqc.backend_info import Platform
+from uniqc.backend_adapter.backend_info import Platform
 from uniqc.cli.chip_info import (
     ChipCharacterization,
     ChipGlobalInfo,
@@ -13,8 +13,8 @@ from uniqc.cli.chip_info import (
     TwoQubitData,
     TwoQubitGateData,
 )
-from uniqc.task.optional_deps import SIMULATION_AVAILABLE
-from uniqc.task.options import (
+from uniqc.backend_adapter.task.optional_deps import SIMULATION_AVAILABLE
+from uniqc.backend_adapter.task.options import (
     BackendOptionsFactory,
     IBMOptions,
     OriginQOptions,
@@ -100,7 +100,7 @@ class TestRegionSelectorIntegration:
     def test_regionselector_chain_with_chain_topology(self):
         """RegionSelector works with a simple linear chain chip."""
         chip = _make_chip(list(range(5)), [(0, 1), (1, 2), (2, 3), (3, 4)])
-        from uniqc.region_selector import RegionSelector
+        from uniqc.backend_adapter.region_selector import RegionSelector
 
         rs = RegionSelector(chip)
 
@@ -117,7 +117,7 @@ class TestRegionSelectorIntegration:
         # 0 is hub connected to 1,2,3,4
         edges = [(0, 1), (0, 2), (0, 3), (0, 4)]
         chip = _make_chip(list(range(5)), edges)
-        from uniqc.region_selector import RegionSelector
+        from uniqc.backend_adapter.region_selector import RegionSelector
 
         rs = RegionSelector(chip)
 
@@ -129,7 +129,7 @@ class TestRegionSelectorIntegration:
     def test_fidelity_estimates_differ_by_region(self):
         """Two regions with different characteristics give different fidelity estimates."""
         from uniqc.circuit_builder import Circuit
-        from uniqc.region_selector import RegionSelector
+        from uniqc.backend_adapter.region_selector import RegionSelector
 
         # Two disconnected subgraphs: 0-1-2 has tq_fid=0.95, 3-4 has tq_fid=0.90
         edges = [(0, 1), (1, 2), (3, 4)]
@@ -225,7 +225,7 @@ class TestDummySubmitIntegration:
     def test_submit_task_with_options_dict(self):
         """submit_task accepts a dict as the options parameter via backend='dummy'."""
         from uniqc.circuit_builder import Circuit
-        from uniqc.task_manager import submit_task
+        from uniqc.backend_adapter.task_manager import submit_task
 
         circuit = Circuit(2)
         circuit.h(0)
@@ -243,8 +243,8 @@ class TestDummySubmitIntegration:
     def test_submit_task_with_backend_options_instance(self):
         """submit_task accepts a BackendOptions subclass instance."""
         from uniqc.circuit_builder import Circuit
-        from uniqc.task.options import DummyOptions
-        from uniqc.task_manager import submit_task
+        from uniqc.backend_adapter.task.options import DummyOptions
+        from uniqc.backend_adapter.task_manager import submit_task
 
         circuit = Circuit(2)
         circuit.h(0)
@@ -258,7 +258,7 @@ class TestDummySubmitIntegration:
     def test_submit_task_options_and_kwargs_merged(self):
         """When both options= and **kwargs are provided, they are merged."""
         from uniqc.circuit_builder import Circuit
-        from uniqc.task_manager import submit_task
+        from uniqc.backend_adapter.task_manager import submit_task
 
         circuit = Circuit(2)
         circuit.h(0)

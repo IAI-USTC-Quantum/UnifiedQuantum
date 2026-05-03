@@ -13,7 +13,7 @@ from uniqc.test._utils import uniq_test
 def _check_simulation_available():
     """Check if simulation dependencies are available."""
     try:
-        from uniqc.task.optional_deps import SIMULATION_AVAILABLE
+        from uniqc.backend_adapter.task.optional_deps import SIMULATION_AVAILABLE
         return SIMULATION_AVAILABLE
     except ImportError:
         return False

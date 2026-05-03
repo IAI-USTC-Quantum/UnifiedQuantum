@@ -1,6 +1,6 @@
 import uniqc
 from uniqc.simulator import (StatevectorSimulator)
-from uniqc.qasm import OpenQASM2_LineParser
+from uniqc.compile.qasm import OpenQASM2_LineParser
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import seed
 from uniqc.simulator import OriginIR_Simulator, OriginIR_NoisySimulator

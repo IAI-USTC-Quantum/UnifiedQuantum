@@ -73,8 +73,8 @@ def _run_simulation(content: str, backend: str, shots: int) -> dict[str, float]:
     messages stay visible to the user.
     """
     from uniqc.cli.circuit import _detect_format
-    from uniqc.originir import OriginIR_BaseParser
-    from uniqc.qasm import OpenQASM2_BaseParser
+    from uniqc.compile.originir import OriginIR_BaseParser
+    from uniqc.compile.qasm import OpenQASM2_BaseParser
     from uniqc.simulator import OriginIR_Simulator
     from uniqc.simulator.qasm_simulator import QASM_Simulator
 

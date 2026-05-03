@@ -80,7 +80,7 @@ H2_HAMILTONIAN = [
 ### 2. Build the ansatz
 
 ```python
-from uniqc.algorithmics.ansatz import uccsd_ansatz
+from uniqc import uccsd_ansatz
 
 circuit = uccsd_ansatz(n_qubits=4, n_electrons=2, params=theta)
 ```

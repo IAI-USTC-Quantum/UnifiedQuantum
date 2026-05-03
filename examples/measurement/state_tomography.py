@@ -19,9 +19,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.measurement import state_tomography, tomography_summary
+from uniqc import state_tomography, tomography_summary
 
 
 def run_tomography_demo(n_shots=2000):

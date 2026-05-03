@@ -2,7 +2,7 @@ import numpy as np
 
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.random_originir import random_originir
-from uniqc.originir import OriginIR_BaseParser
+from uniqc.compile.originir import OriginIR_BaseParser
 from uniqc.simulator.originir_simulator import OriginIR_Simulator
 from uniqc.test._utils import NotMatchError, uniq_test
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from uniqc.task.optional_deps import (
+from uniqc.backend_adapter.task.optional_deps import (
     MissingDependencyError,
     require,
     check_quafu,

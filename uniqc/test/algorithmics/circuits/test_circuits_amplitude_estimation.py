@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import (
+from uniqc.algorithms.core.circuits import (
     amplitude_estimation_circuit,
     amplitude_estimation_result,
     grover_operator,

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import grover_oracle, grover_diffusion
+from uniqc.algorithms.core.circuits import grover_oracle, grover_diffusion
 
 
 def _simulate_probs(circuit, n_qubits):

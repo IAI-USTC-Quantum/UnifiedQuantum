@@ -10,7 +10,7 @@ try:
     from sklearn.datasets import make_moons
     from sklearn.preprocessing import StandardScaler
 
-    from uniqc.algorithmics.training.hybrid_model import HybridQCLModel
+    from uniqc import HybridQCLModel
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch] scikit-learn")

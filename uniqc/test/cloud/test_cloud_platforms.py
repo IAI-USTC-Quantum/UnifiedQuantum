@@ -54,7 +54,7 @@ class TestConfigLoading:
 
     def test_load_config_file_not_exists(self, tmp_path: Path) -> None:
         """Test that default config is returned when file doesn't exist."""
-        from uniqc.config import load_config, DEFAULT_CONFIG
+        from uniqc.backend_adapter.config import load_config, DEFAULT_CONFIG
 
         non_existent = tmp_path / "non_existent.yml"
         result = load_config(non_existent)
@@ -62,7 +62,7 @@ class TestConfigLoading:
 
     def test_load_existing_config(self, tmp_path: Path) -> None:
         """Test loading an existing configuration file."""
-        from uniqc.config import load_config, save_config
+        from uniqc.backend_adapter.config import load_config, save_config
 
         config_file = tmp_path / "test_config.yml"
         test_config = {
@@ -80,7 +80,7 @@ class TestConfigLoading:
 
     def test_load_config_all_platforms(self, tmp_path: Path) -> None:
         """Test loading configuration for all three platforms."""
-        from uniqc.config import (
+        from uniqc.backend_adapter.config import (
             load_config, save_config,
             get_platform_config, SUPPORTED_PLATFORMS
         )
@@ -113,7 +113,7 @@ class TestConfigLoading:
 
     def test_load_config_different_profiles(self, tmp_path: Path) -> None:
         """Test loading configuration with different profiles."""
-        from uniqc.config import load_config, save_config, get_platform_config
+        from uniqc.backend_adapter.config import load_config, save_config, get_platform_config
 
         config_file = tmp_path / "uniqc.yml"
         test_config = {
@@ -140,7 +140,7 @@ class TestConfigLoading:
 
     def test_validate_config_valid(self) -> None:
         """Test validating a valid configuration."""
-        from uniqc.config import validate_config
+        from uniqc.backend_adapter.config import validate_config
 
         valid_config = {
             "default": {
@@ -154,7 +154,7 @@ class TestConfigLoading:
 
     def test_validate_config_missing_required_fields(self) -> None:
         """Test validating configuration with missing required fields."""
-        from uniqc.config import validate_config
+        from uniqc.backend_adapter.config import validate_config
 
         invalid_config = {
             "default": {
@@ -178,7 +178,7 @@ class TestBackendFactory:
         """Test getting OriginQ backend returns correct type."""
         monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
 
-        from uniqc.backend import get_backend, OriginQBackend
+        from uniqc.backend_adapter.backend import get_backend, OriginQBackend
 
         backend = get_backend("originq", use_cache=False)
         assert isinstance(backend, OriginQBackend)
@@ -188,7 +188,7 @@ class TestBackendFactory:
         """Test getting Quafu backend returns correct type."""
         monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
 
-        from uniqc.backend import get_backend, QuafuBackend
+        from uniqc.backend_adapter.backend import get_backend, QuafuBackend
 
         backend = get_backend("quafu", use_cache=False)
         assert isinstance(backend, QuafuBackend)
@@ -198,7 +198,7 @@ class TestBackendFactory:
         """Test getting IBM backend returns correct type."""
         monkeypatch.setenv("IBM_TOKEN", "test_token")
 
-        from uniqc.backend import get_backend, IBMBackend
+        from uniqc.backend_adapter.backend import get_backend, IBMBackend
 
         backend = get_backend("ibm", use_cache=False)
         assert isinstance(backend, IBMBackend)
@@ -206,14 +206,14 @@ class TestBackendFactory:
 
     def test_get_backend_unknown_raises(self) -> None:
         """Test that unknown backend name raises ValueError."""
-        from uniqc.backend import get_backend
+        from uniqc.backend_adapter.backend import get_backend
 
         with pytest.raises(ValueError, match="Unknown backend"):
             get_backend("unknown_platform")
 
     def test_list_backends(self) -> None:
         """Test listing available backends."""
-        from uniqc.backend import list_backends, BACKENDS
+        from uniqc.backend_adapter.backend import list_backends, BACKENDS
 
         backends = list_backends()
         assert "originq" in backends
@@ -238,7 +238,7 @@ class TestCircuitAdapters:
 
     def test_originq_adapter_supported_gates(self) -> None:
         """Test OriginQ adapter returns supported gates."""
-        from uniqc.circuit_adapter import OriginQCircuitAdapter
+        from uniqc.backend_adapter.circuit_adapter import OriginQCircuitAdapter
 
         adapter = OriginQCircuitAdapter()
         gates = adapter.get_supported_gates()
@@ -251,7 +251,7 @@ class TestCircuitAdapters:
 
     def test_quafu_adapter_supported_gates(self) -> None:
         """Test Quafu adapter returns supported gates."""
-        from uniqc.circuit_adapter import QuafuCircuitAdapter
+        from uniqc.backend_adapter.circuit_adapter import QuafuCircuitAdapter
 
         adapter = QuafuCircuitAdapter()
         gates = adapter.get_supported_gates()
@@ -263,7 +263,7 @@ class TestCircuitAdapters:
 
     def test_ibm_adapter_supported_gates(self) -> None:
         """Test IBM adapter returns supported gates."""
-        from uniqc.circuit_adapter import IBMCircuitAdapter
+        from uniqc.backend_adapter.circuit_adapter import IBMCircuitAdapter
 
         adapter = IBMCircuitAdapter()
         gates = adapter.get_supported_gates()
@@ -290,14 +290,14 @@ class TestOriginQIntegration:
 
     def test_originq_connection(self) -> None:
         """Test real OriginQ connection."""
-        from uniqc.backend import get_backend
+        from uniqc.backend_adapter.backend import get_backend
 
         backend = get_backend("originq", use_cache=False)
         assert backend.is_available()
 
     def test_originq_submit_and_query(self) -> None:
         """Test real OriginQ submit and query workflow."""
-        from uniqc.backend import get_backend
+        from uniqc.backend_adapter.backend import get_backend
 
         backend = get_backend("originq", use_cache=False)
 
@@ -321,14 +321,14 @@ class TestQuafuIntegration:
 
     def test_quafu_connection(self) -> None:
         """Test real Quafu connection."""
-        from uniqc.backend import get_backend
+        from uniqc.backend_adapter.backend import get_backend
 
         backend = get_backend("quafu", use_cache=False)
         # Note: is_available depends on quafu package
 
     def test_quafu_translate_circuit(self) -> None:
         """Test real Quafu circuit translation."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         circuit = adapter.translate_circuit(ORIGINIR_BELL)
@@ -346,14 +346,14 @@ class TestIBMIntegration:
 
     def test_ibm_connection(self) -> None:
         """Test real IBM Quantum connection."""
-        from uniqc.backend import get_backend
+        from uniqc.backend_adapter.backend import get_backend
 
         backend = get_backend("ibm", use_cache=False)
         # Note: is_available depends on qiskit packages
 
     def test_ibm_translate_circuit(self) -> None:
         """Test real IBM circuit translation."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         circuit = adapter.translate_circuit(ORIGINIR_BELL)
@@ -373,7 +373,7 @@ class TestCacheManagement:
         """Test saving and loading backend cache."""
         monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
 
-        from uniqc.backend import OriginQBackend, _get_cache_file_path
+        from uniqc.backend_adapter.backend import OriginQBackend, _get_cache_file_path
 
         cache_dir = tmp_path / "cache"
         backend = OriginQBackend(cache_dir=cache_dir, config={"test": "value"})
@@ -390,7 +390,7 @@ class TestCacheManagement:
         """Test clearing backend cache."""
         monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
 
-        from uniqc.backend import OriginQBackend, _get_cache_file_path
+        from uniqc.backend_adapter.backend import OriginQBackend, _get_cache_file_path
 
         cache_dir = tmp_path / "cache"
         backend = OriginQBackend(cache_dir=cache_dir)
@@ -416,7 +416,7 @@ class TestCompatibilityWithExistingTests:
     def test_config_imports(self) -> None:
         """Test that config module imports work correctly."""
         from uniqc import config
-        from uniqc.config import (
+        from uniqc.backend_adapter.config import (
             load_config,
             save_config,
             get_platform_config,
@@ -433,22 +433,23 @@ class TestCompatibilityWithExistingTests:
         assert isinstance(DEFAULT_CONFIG, dict)
 
     def test_circuit_adapter_imports(self) -> None:
-        """Test that circuit_adapter module imports work correctly."""
-        from uniqc import circuit_adapter
-        from uniqc.circuit_adapter import (
-            CircuitAdapter,
+        """Test that circuit adapter public imports work correctly."""
+        from uniqc import CircuitAdapter, IBMCircuitAdapter, OriginQCircuitAdapter, QuafuCircuitAdapter
+        from uniqc.backend_adapter.circuit_adapter import (
+            CircuitAdapter as BackendCircuitAdapter,
             OriginQCircuitAdapter,
             QuafuCircuitAdapter,
             IBMCircuitAdapter,
         )
 
-        assert issubclass(OriginQCircuitAdapter, CircuitAdapter)
-        assert issubclass(QuafuCircuitAdapter, CircuitAdapter)
-        assert issubclass(IBMCircuitAdapter, CircuitAdapter)
+        assert CircuitAdapter is BackendCircuitAdapter
+        assert issubclass(OriginQCircuitAdapter, BackendCircuitAdapter)
+        assert issubclass(QuafuCircuitAdapter, BackendCircuitAdapter)
+        assert issubclass(IBMCircuitAdapter, BackendCircuitAdapter)
 
     def test_backend_imports(self) -> None:
         """Test that backend module imports work correctly."""
-        from uniqc.backend import (
+        from uniqc.backend_adapter.backend import (
             QuantumBackend,
             OriginQBackend,
             QuafuBackend,
@@ -467,7 +468,7 @@ class TestCompatibilityWithExistingTests:
 
     def test_task_adapters_imports(self) -> None:
         """Test that task.adapters module imports work correctly."""
-        from uniqc.task.adapters import (
+        from uniqc.backend_adapter.task.adapters import (
             QuantumAdapter,
             OriginQAdapter,
             QuafuAdapter,

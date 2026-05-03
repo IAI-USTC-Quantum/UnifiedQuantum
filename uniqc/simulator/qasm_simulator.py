@@ -10,7 +10,7 @@ Key exports:
 
 __all__ = ["QASM_Simulator", "QASM_Noisy_Simulator"]
 from typing import Dict, List, Tuple, TYPE_CHECKING
-from uniqc.qasm import OpenQASM2_BaseParser
+from uniqc.compile.qasm import OpenQASM2_BaseParser
 import warnings
 
 from .error_model import ErrorLoader
