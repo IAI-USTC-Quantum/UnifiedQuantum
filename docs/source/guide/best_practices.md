@@ -7,11 +7,11 @@ UnifiedQuantum 现在按功能边界组织模块，日常代码优先从 `uniqc`
 仓库由 `uv` 管理。维护者做全量开发和全量测试时，应使用完整 extras 和 dev 依赖：
 
 ```bash
-uv sync --all-extras --group dev --upgrade
+uv sync --all-extras --group dev --group docs --upgrade
 uv run pytest uniqc/test
 ```
 
-`qiskit`、`qutip`、`pyquafu`、`torch` 等模块缺失表示开发环境不完整，不应作为跳过全量测试的常规理由。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。
+`qiskit`、`qutip`、`pyquafu`、`torch`、`sphinx` 等模块缺失表示开发环境不完整，不应作为跳过全量测试或文档构建的常规理由。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。
 
 ## 路径一：构建线路并本地模拟
 

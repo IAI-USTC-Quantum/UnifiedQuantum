@@ -136,12 +136,14 @@ uv pip install unified-quantum
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
-# Install CLI + Python package (editable, all optional deps)
-uv tool install -e .[all]
+# Maintainer / full development environment: dev, docs, and all optional backend deps
+uv sync --all-extras --group dev --group docs --upgrade
 
-# Python package only (editable, no optional deps)
-uv pip install -e . --no-build-isolation
+# Run the full test suite
+uv run pytest uniqc/test
 ```
+
+Maintainer environments should not treat missing optional backend packages or documentation packages such as qiskit, QuTiP, pyquafu, or Sphinx as normal skip conditions. `pyproject.toml` does not pin third-party dependency versions and `uv.lock` is not tracked on `main`; full development and CI should resolve the latest available dependencies and expose upstream compatibility issues early.
 
 **Requirements:**
 - CMake >= 3.26
@@ -207,8 +209,12 @@ uniqc result <task_id>
 uniqc config init
 uniqc config set originq.token YOUR_TOKEN
 
-# python -m also works (equivalent to uniqc)
-python -m uniqc simulate circuit.ir
+# Alternative module entrypoint
+python -m uniqc.cli simulate circuit.ir
+
+# Calibration and QEM data preparation
+uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
+uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10
 ```
 
 ### Backend Information

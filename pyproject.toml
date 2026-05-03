@@ -91,6 +91,17 @@ dev = [
     "pytest-cov",
     "tomli",
 ]
+docs = [
+    "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx_rtd_theme",
+    "recommonmark",
+    "sphinx-markdown-tables",
+    "linkify-it-py",
+    "myst_parser",
+    "setuptools_scm",
+    "intersphinx-registry",
+]
 
 [tool.setuptools_scm]
 write_to = "uniqc/_version.py"

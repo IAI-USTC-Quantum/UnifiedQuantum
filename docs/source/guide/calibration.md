@@ -435,7 +435,7 @@ from uniqc.backend_adapter.task.adapters import OriginQAdapter, DummyAdapter
 
 # 从云端获取 WK180 芯片特性
 orig_adapter = OriginQAdapter()
-chip_char = orig_adapter.get_chip_characterization("origin:wuyuan:wk180")
+chip_char = orig_adapter.get_chip_characterization("WK_C180")
 
 # 用真实数据做本地含噪模拟
 local_adapter = DummyAdapter(chip_characterization=chip_char)

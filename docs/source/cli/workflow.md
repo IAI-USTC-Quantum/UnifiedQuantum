@@ -32,13 +32,13 @@ uniqc config validate
 
 # 4. 查看可用后端
 uniqc backend list --platform originq
-uniqc backend show origin:wuyuan:d5
+uniqc backend show originq:WK_C180
 
 # 5. 试运行验证（可选，不消耗额度）
 uniqc submit bell.ir --platform originq --dry-run
 
 # 6. 提交任务
-uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5 --shots 1000
+uniqc submit bell.ir --platform originq --backend WK_C180 --shots 1000
 
 # 7. 查询结果
 uniqc result TASK_ID --platform originq --wait
@@ -53,13 +53,13 @@ uniqc task list --platform originq
 # 批量试运行验证
 uniqc submit circuit1.ir circuit2.ir circuit3.ir \
     --platform originq \
-    --backend origin:wuyuan:d5 \
+    --backend WK_C180 \
     --dry-run
 
 # 批量提交多个电路
 uniqc submit circuit1.ir circuit2.ir circuit3.ir \
     --platform originq \
-    --backend origin:wuyuan:d5 \
+    --backend WK_C180 \
     --shots 1000 \
     --format json
 

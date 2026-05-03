@@ -15,9 +15,9 @@
 
 | 模块 | 文件 | 用途 |
 |------|------|------|
-| 增强编译 (`compile`) | `uniqc/transpiler/compiler.py` | Qiskit 感知路由 + 多格式输出 |
-| 后端选项 (`BackendOptions`) | `uniqc/task/options.py` | 类型化后端选项 |
-| 区域选择器 (`RegionSelector`) | `uniqc/region_selector.py` | 最优量子比特区域发现 |
+| 增强编译 (`compile`) | `uniqc/compile/compiler.py` | Qiskit 感知路由 + 多格式输出 |
+| 后端选项 (`BackendOptions`) | `uniqc/backend_adapter/task/options.py` | 类型化后端选项 |
+| 区域选择器 (`RegionSelector`) | `uniqc/backend_adapter/region_selector.py` | 最优量子比特区域发现 |
 
 ---
 
@@ -107,7 +107,7 @@ compiled = compile(circuit, config=config, ...)
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 
 adapter = OriginQAdapter()
-chip = adapter.get_chip_characterization("origin:wuyuan:d5")
+chip = adapter.get_chip_characterization("WK_C180")
 
 compiled = compile(
     circuit,
@@ -138,7 +138,7 @@ transpile_qasm(qasm_strs, ...)
 
 ### 2.1 为什么需要 `BackendOptions`？
 
-现有 `submit_task(circuit, "originq", shots=1000, backend_name="origin:wuyuan:d5")` 的问题：
+现有 `submit_task(circuit, "originq", shots=1000, backend_name="WK_C180")` 的问题：
 
 - **无 IDE 自动补全**：字符串参数无法提供类型提示
 - **无文档注解**：不知道有哪些可选参数
@@ -164,7 +164,7 @@ BackendOptions（基类）
 from uniqc import OriginQOptions
 
 opts = OriginQOptions(
-    backend_name="origin:wuyuan:d5",  # 默认
+    backend_name="WK_C180",           # OriginQ 后端名
     circuit_optimize=True,             # 默认 True，后端执行时优化
     measurement_amend=False,           # 默认 False，测量误差缓解
     auto_mapping=False,                # 默认 False
@@ -221,7 +221,7 @@ from uniqc import BackendOptionsFactory, OriginQOptions
 
 # 从 kwargs dict 构建
 opts = BackendOptionsFactory.from_kwargs("originq", {
-    "backend_name": "origin:wuyuan:d6",
+    "backend_name": "WK_C180",
     "circuit_optimize": False,
 })
 assert isinstance(opts, OriginQOptions)
@@ -242,17 +242,17 @@ opts = BackendOptionsFactory.normalize_options(
 from uniqc import submit_task, OriginQOptions
 
 # 方式 1：直接传入 BackendOptions 实例（推荐）
-opts = OriginQOptions(backend_name="origin:wuyuan:d6", shots=2000)
+opts = OriginQOptions(backend_name="WK_C180", shots=2000)
 task_id = submit_task(circuit, "originq", options=opts)
 
 # 方式 2：传入 dict（底层自动转换为 BackendOptions）
 task_id = submit_task(circuit, "originq", shots=500, options={
-    "backend_name": "origin:wuyuan:d6",
+    "backend_name": "WK_C180",
 })
 
 # 方式 3：纯 kwargs（向后完全兼容，无变化）
 task_id = submit_task(circuit, "originq", shots=500,
-    backend_name="origin:wuyuan:d6",
+    backend_name="WK_C180",
 )
 ```
 
@@ -278,7 +278,7 @@ from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc import RegionSelector
 
 adapter = OriginQAdapter()
-chip = adapter.get_chip_characterization("origin:wuyuan:d5")
+chip = adapter.get_chip_characterization("WK_C180")
 selector = RegionSelector(chip)
 ```
 
@@ -400,7 +400,7 @@ circuit.measure(list(range(5)), list(range(5)))
 
 # 2. 获取芯片标定
 adapter = OriginQAdapter()
-chip = adapter.get_chip_characterization("origin:wuyuan:d5")
+chip = adapter.get_chip_characterization("WK_C180")
 
 # 3. 找最优量子比特区域
 selector = RegionSelector(chip)
@@ -459,7 +459,7 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 | 字段 | 类型 | 默认值 |
 |------|------|--------|
-| `backend_name` | `str` | `"origin:wuyuan:d5"` |
+| `backend_name` | `str` | `"WK_C180"` |
 | `circuit_optimize` | `bool` | `True` |
 | `measurement_amend` | `bool` | `False` |
 | `auto_mapping` | `bool` | `False` |

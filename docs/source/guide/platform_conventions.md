@@ -185,9 +185,9 @@ if "T" not in gates:
 ### OriginQ
 
 ```
-origin:wuyuan:d5     # 五岳 D5 硬件
-origin:wuyuan:d6     # 五岳 D6 硬件
-origin:simulator:01   # 模拟器
+WK_C180         # 180 比特硬件
+PQPUMESH8       # 8 比特硬件
+full_amplitude  # 全振幅模拟器
 ```
 
 可用 `OriginQAdapter().list_backends()` 查询所有可用后端。
@@ -297,7 +297,7 @@ adapter = DummyAdapter()
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 
 originq = OriginQAdapter()
-chip = originq.get_chip_characterization("origin:wuyuan:d5")
+chip = originq.get_chip_characterization("WK_C180")
 adapter = DummyAdapter(chip_characterization=chip)
 
 # 提交（结果立即可用，无需等待）
@@ -346,15 +346,15 @@ uniqc submit circuit.ir --platform dummy --dry-run
 
 ## 9. 统一后端工厂：`get_backend()` {#platform-get-backend}
 
-`get_backend()` 是量子后端工厂函数（`uniqc/backend.py`），用于获取平台后端实例。
+`get_backend()` 是量子后端工厂函数（`uniqc.backend_adapter.backend`），用于获取平台后端实例。日常代码优先从 `uniqc` 直接导入。
 
 ```python
-from uniqc.backend_adapter.backend import get_backend
+from uniqc import get_backend
 
 # 获取 DummyBackend（含芯片标定噪声模拟）
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 
-chip = OriginQAdapter().get_chip_characterization("origin:wuyuan:d5")
+chip = OriginQAdapter().get_chip_characterization("WK_C180")
 backend = get_backend("dummy", config={"chip_characterization": chip})
 task_id = backend.submit(circuit, shots=1000)
 

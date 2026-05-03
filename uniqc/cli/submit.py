@@ -14,7 +14,7 @@ from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error,
 HELP = f"Submit circuits to quantum cloud platforms\n  {build_ref_str('submit')}"
 INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
 PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/ibm/dummy")
-BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'origin:wuyuan:d5' for OriginQ)")
+BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'WK_C180' for OriginQ)")
 SHOTS_OPTION = typer.Option(1000, "--shots", "-s", help="Number of measurement shots")
 NAME_OPTION = typer.Option(None, "--name", help="Task name")
 WAIT_OPTION = typer.Option(False, "--wait", "-w", help="Wait for result after submission")

@@ -49,6 +49,22 @@ CMD_REFS: dict[str, list[tuple[str, str]]] = {
         ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-config"),
         ("GitHub", GITHUB_URL),
     ],
+    "calibrate": [
+        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html"),
+        ("GitHub", GITHUB_URL),
+    ],
+    "calibrate-xeb": [
+        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#xeb"),
+        ("GitHub", GITHUB_URL),
+    ],
+    "calibrate-readout": [
+        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#readout"),
+        ("GitHub", GITHUB_URL),
+    ],
+    "calibrate-pattern": [
+        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#pattern"),
+        ("GitHub", GITHUB_URL),
+    ],
 }
 
 # ----------------------------------------------------------------------
@@ -117,7 +133,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Picking the right backend",
             "Run uniqc backend list to see backends, then pass the full name with --backend. "
-            "Example: --backend 'originq:origin:wuyuan:d5'",
+            "Example: --backend WK_C180",
         ),
     ],
     "result": [
@@ -187,8 +203,8 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Select a backend for submission",
-            "Copy the Name column value (e.g., originq:origin:wuyuan:d5) and pass it to "
-            "uniqc submit circuit.qasm --platform originq --backend 'originq:origin:wuyuan:d5'",
+            "Copy the Name column value (e.g., WK_C180) and pass it to "
+            "uniqc submit circuit.qasm --platform originq --backend WK_C180",
         ),
         (
             "Hardware vs simulator",
@@ -209,7 +225,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Use this backend for submission",
             "Pass the full identifier to --backend: "
-            "uniqc submit circuit.qasm --platform originq --backend 'originq:origin:wuyuan:d5'",
+            "uniqc submit circuit.qasm --platform originq --backend WK_C180",
         ),
         (
             "Compare backends",
@@ -266,7 +282,55 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Next: use for qubit selection",
             "Chip characterization data can be used programmatically to select optimal qubit "
-            "subgraphs for your circuit — see the analyzer module for qubit-picking utilities.",
+            "subgraphs for your circuit — use RegionSelector from uniqc.",
+        ),
+    ],
+    "calibrate": [
+        (
+            "Start with readout calibration",
+            "Run uniqc calibrate readout --backend dummy --qubits 0 1 before trying QEM locally. "
+            "For hardware, first confirm the backend with uniqc backend list --platform originq.",
+        ),
+        (
+            "XEB workflow",
+            "Run uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10 for a quick local check. "
+            "Use more depths and --n-circuits for production calibration.",
+        ),
+    ],
+    "calibrate-xeb": [
+        (
+            "Quick local check",
+            "Use --backend dummy --type 1q --qubits 0 1 --depths 5 10 to validate the workflow without cloud credentials.",
+        ),
+        (
+            "Hardware calibration",
+            "Use a backend name from uniqc backend list --platform originq. "
+            "The workflow reads chip characterization when the adapter exposes it.",
+        ),
+        (
+            "Readout mitigation",
+            "Readout EM is enabled by default. Pass --no-readout-em only when you explicitly want raw XEB fidelity.",
+        ),
+    ],
+    "calibrate-readout": [
+        (
+            "QEM input data",
+            "The command writes confusion matrices to ~/.uniqc/calibration_cache/. "
+            "QEM checks calibrated_at freshness when loading them.",
+        ),
+        (
+            "Scope the qubits",
+            "Pass --qubits with the exact measured qubits used by your experiment so mitigation and calibration match.",
+        ),
+    ],
+    "calibrate-pattern": [
+        (
+            "Auto mode",
+            "Pass --qubits 0 1 2 3 to analyze a simple chain topology and derive non-overlapping 2q rounds.",
+        ),
+        (
+            "Circuit mode",
+            "Pass --type circuit --circuit circuit.ir to extract parallel 2q gate groups from OriginIR.",
         ),
     ],
 }
