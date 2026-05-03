@@ -79,7 +79,7 @@ uniqc --help
 
 ### Q：配置文件存储在哪里？
 
-配置文件位于 `~/.uniqc/uniqc.yml`。可以通过 `uniqc config init` 重新初始化。
+配置文件位于 `~/.uniqc/config.yaml`。可以通过 `uniqc config init` 重新初始化。
 
 ### Q：如何切换不同的云平台账户？
 

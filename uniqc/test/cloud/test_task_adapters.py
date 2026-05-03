@@ -2,7 +2,7 @@
 
 These tests verify that:
 1. Each adapter correctly translates OriginIR to provider-native circuits.
-2. Config is loaded from environment variables, with YAML config fallback (issue #45).
+2. Config is loaded from ``~/.uniqc/config.yaml`` via the active profile.
 3. Task modules delegate to adapters.
 
 Cloud tests require real credentials and are marked with @pytest.mark.cloud.
@@ -10,12 +10,9 @@ Cloud tests require real credentials and are marked with @pytest.mark.cloud.
 
 from __future__ import annotations
 
-import json
-import os
-import sys
-from pathlib import Path
-
 import pytest
+
+from uniqc.test.cloud._config_helpers import platform_has_token, write_uniqc_config
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -49,16 +46,16 @@ MEASURE q[2], c[2]
 # ---------------------------------------------------------------------------
 
 
-class RunTestConfigEnvVars:
-    """Config loading from environment variables (preferred)."""
+class RunTestConfigYaml:
+    """Config loading from the active YAML profile."""
 
-    def run_test_originq_config_from_env(self, monkeypatch, tmp_path):
-        """OriginQ config is read from ORIGINQ_API_KEY env var."""
-        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
-        monkeypatch.setenv("ORIGINQ_TASK_GROUP_SIZE", "100")
-
-        # Ensure no config file exists
-        monkeypatch.chdir(tmp_path)
+    def run_test_originq_config_from_yaml(self, monkeypatch, tmp_path):
+        """OriginQ config is read from ~/.uniqc/config.yaml."""
+        write_uniqc_config(
+            tmp_path,
+            {"originq": {"token": "test_key_123", "task_group_size": 100}},
+        )
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.config import load_originq_config
 
@@ -66,35 +63,40 @@ class RunTestConfigEnvVars:
         assert config["api_key"] == "test_key_123"
         assert config["task_group_size"] == 100
 
-    def run_test_quafu_config_from_env(self, monkeypatch, tmp_path):
-        """Quafu config is read from QUAHU_API_TOKEN env var."""
-        monkeypatch.setenv("QUAFU_API_TOKEN", "quafu_secret_token")
-        monkeypatch.chdir(tmp_path)
+    def run_test_quafu_config_from_yaml(self, monkeypatch, tmp_path):
+        """Quafu config is read from ~/.uniqc/config.yaml."""
+        write_uniqc_config(tmp_path, {"quafu": {"token": "quafu_secret_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.config import load_quafu_config
 
         config = load_quafu_config()
         assert config["api_token"] == "quafu_secret_token"
 
-    def run_test_ibm_config_from_env(self, monkeypatch, tmp_path):
-        """IBM config is read from IBM_TOKEN env var."""
-        monkeypatch.setenv("IBM_TOKEN", "ibm_secret_token")
-        monkeypatch.chdir(tmp_path)
+    def run_test_ibm_config_from_yaml(self, monkeypatch, tmp_path):
+        """IBM config is read from ~/.uniqc/config.yaml."""
+        write_uniqc_config(tmp_path, {"ibm": {"token": "ibm_secret_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.config import load_ibm_config
 
         config = load_ibm_config()
         assert config["api_token"] == "ibm_secret_token"
 
-    def run_test_dummy_config_from_env(self, monkeypatch, tmp_path):
-        """OriginQ Dummy config is read from ORIGINQ_* env vars."""
-        monkeypatch.setenv("ORIGINQ_AVAILABLE_QUBITS", json.dumps([0, 1, 2, 3]))
-        monkeypatch.setenv(
-            "ORIGINQ_AVAILABLE_TOPOLOGY",
-            json.dumps([[0, 1], [1, 2], [2, 3]]),
+    def run_test_dummy_config_from_yaml(self, monkeypatch, tmp_path):
+        """OriginQ Dummy config is read from the OriginQ YAML section."""
+        write_uniqc_config(
+            tmp_path,
+            {
+                "originq": {
+                    "token": "",
+                    "available_qubits": [0, 1, 2, 3],
+                    "available_topology": [[0, 1], [1, 2], [2, 3]],
+                    "task_group_size": 50,
+                }
+            },
         )
-        monkeypatch.setenv("ORIGINQ_TASK_GROUP_SIZE", "50")
-        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.config import load_dummy_config
 
@@ -103,90 +105,35 @@ class RunTestConfigEnvVars:
         assert config["available_topology"] == [[0, 1], [1, 2], [2, 3]]
         assert config["task_group_size"] == 50
 
-    def run_test_originq_config_deprecated_file_fallback(self, monkeypatch, tmp_path):
-        """Deprecated JSON file format is not used; empty-token YAML raises ImportError.
-
-        The old ``originq_cloud_config.json`` format is not read.
-        Instead, ``~/.uniqc/uniqc.yml`` YAML config is checked as fallback (issue #45 fix).
-        With an empty-token YAML config, ImportError is correctly raised.
-        """
-        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
-        # Create a YAML config with empty token at the real config location
-        config_dir = tmp_path / ".uniqc"
-        config_dir.mkdir()
-        yaml_config = config_dir / "uniqc.yml"
-        yaml_config.write_text(
-            "active_profile: default\n"
-            "default:\n"
-            "  originq:\n"
-            "    token: \"\"\n"
-        )
-        # Patch Path.home() so ~/.uniqc/uniqc.yml points to our temp dir
-        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-        # Clear module cache
-        for mod in list(sys.modules):
-            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
-                del sys.modules[mod]
+    def run_test_originq_config_import_error_without_token(self, monkeypatch, tmp_path):
+        """ImportError is raised when the active YAML config has no OriginQ token."""
+        write_uniqc_config(tmp_path, {"originq": {"token": ""}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.config import load_originq_config
 
-        # Should raise ImportError since YAML token is empty
-        with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
+        with pytest.raises(ImportError, match="originq.token"):
             load_originq_config()
 
-    def run_test_originq_config_import_error_without_config(self, monkeypatch, tmp_path):
-        """ImportError raised when env vars are absent and YAML config has no token.
+    def run_test_active_profile_is_used(self, monkeypatch, tmp_path):
+        """Task config respects active_profile from ~/.uniqc/config.yaml."""
+        from uniqc.backend_adapter.config import save_config
 
-        After the #45 fix, the YAML config file is checked as fallback.
-        With an empty-token YAML, ImportError is correctly raised.
-        """
-        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
-        config_dir = tmp_path / ".uniqc"
-        config_dir.mkdir()
-        yaml_config = config_dir / "uniqc.yml"
-        yaml_config.write_text(
-            "active_profile: default\n"
-            "default:\n"
-            "  originq:\n"
-            "    token: \"\"\n"
+        config_file = tmp_path / ".uniqc" / "config.yaml"
+        save_config(
+            {
+                "active_profile": "prod",
+                "default": {"originq": {"token": "default-token"}},
+                "prod": {"originq": {"token": "prod-token"}},
+            },
+            config_file,
         )
-        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-        for mod in list(sys.modules):
-            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
-                del sys.modules[mod]
-
-        from uniqc.backend_adapter.task.config import load_originq_config
-
-        with pytest.raises(ImportError, match="ORIGINQ_API_KEY"):
-            load_originq_config()
-
-    def run_test_originq_config_yaml_fallback(self, monkeypatch, tmp_path):
-        """After #45, tokens are read from YAML config when env var is absent.
-
-        This test verifies the YAML fallback works correctly.
-        """
-        monkeypatch.delenv("ORIGINQ_API_KEY", raising=False)
-        config_dir = tmp_path / ".uniqc"
-        config_dir.mkdir()
-        yaml_config = config_dir / "uniqc.yml"
-        yaml_config.write_text(
-            "active_profile: default\n"
-            "default:\n"
-            "  originq:\n"
-            '    token: "yaml-test-token"\n'
-        )
-        monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-
-        for mod in list(sys.modules):
-            if mod.startswith("uniqc.backend_adapter.task.config") or mod.startswith("uniqc.backend_adapter.config"):
-                del sys.modules[mod]
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
 
         from uniqc.backend_adapter.task.config import load_originq_config
 
         cfg = load_originq_config()
-        assert cfg["api_key"] == "yaml-test-token"
+        assert cfg["api_key"] == "prod-token"
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +142,7 @@ class RunTestConfigEnvVars:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not os.environ.get("ORIGINQ_API_KEY"), reason="ORIGINQ_API_KEY not set")
+@pytest.mark.skipif(not platform_has_token("originq"), reason="originq.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_pyqpanda3
 class RunTestOriginQAdapterIntegration:
     """Integration tests for OriginQ adapter with real pyqpanda3 and credentials."""
@@ -235,7 +182,7 @@ class RunTestOriginQAdapterIntegration:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not os.environ.get("QUAFU_API_TOKEN"), reason="QUAFU_API_TOKEN not set")
+@pytest.mark.skipif(not platform_has_token("quafu"), reason="quafu.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_quafu
 class RunTestQuafuAdapterIntegration:
     """Integration tests for Quafu adapter with real quafu and credentials."""
@@ -276,7 +223,7 @@ MEASURE q[0], c[0]
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not os.environ.get("IBM_TOKEN"), reason="IBM_TOKEN not set")
+@pytest.mark.skipif(not platform_has_token("ibm"), reason="ibm.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_qiskit
 class RunTestIBMAdapterIntegration:
     """Integration tests for IBM adapter with real qiskit and credentials."""
@@ -309,48 +256,31 @@ class RunTestIBMAdapterIntegration:
 class RunTestAdapterAvailability:
     """Each adapter reports availability based on installed packages / config."""
 
-    def run_test_originq_adapter_available_with_config(self, monkeypatch):
+    def run_test_originq_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test OriginQ adapter availability with config."""
-        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key")
+        write_uniqc_config(tmp_path, {"originq": {"token": "test_key"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter()
         assert adapter.is_available() is True
 
-    def run_test_quafu_adapter_available_with_config(self, monkeypatch):
+    def run_test_quafu_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test Quafu adapter availability with config."""
-        from uniqc.backend_adapter.task.optional_deps import check_quafu
-
-        monkeypatch.setenv("QUAFU_API_TOKEN", "test_token")
-
-        # Check if quafu is actually installed
-        quafu_available = check_quafu()
-
-        if not quafu_available:
-            pytest.skip("quafu not installed")
+        write_uniqc_config(tmp_path, {"quafu": {"token": "test_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         assert isinstance(adapter.is_available(), bool)
 
-    def run_test_ibm_adapter_available_with_config(self, monkeypatch):
+    def run_test_ibm_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test IBM adapter availability with config."""
-        import os
-
-        from uniqc.backend_adapter.task.optional_deps import check_qiskit
-
-        if not check_qiskit():
-            pytest.skip("qiskit not installed")
-
-        # QiskitRuntimeService validates tokens against IBM servers, so we need
-        # a real token — skip if none is available
-        real_token = os.environ.get("IBM_TOKEN")
-        if not real_token:
-            pytest.skip("IBM_TOKEN not set")
-
-        monkeypatch.setenv("IBM_TOKEN", real_token)
+        write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("qiskit_ibm_runtime.QiskitRuntimeService", lambda **_kwargs: object())
 
         from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
@@ -366,9 +296,8 @@ class RunTestAdapterAvailability:
 class TestOriginQAdapterUnit:
     """Unit tests for OriginQ adapter using mocks."""
 
-    def run_test_format_counts_returns_dict(self, monkeypatch):
+    def run_test_format_counts_returns_dict(self):
         """_format_counts returns {bitstring: shots} dict, not list of dicts."""
-        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         adapter = OriginQAdapter.__new__(OriginQAdapter)
@@ -395,15 +324,13 @@ class TestOriginQAdapterUnit:
         assert isinstance(result, dict)
         assert result == {"something": 1}
 
-    def run_test_get_chip_characterization_double_qubits_no_uv_accessor(self, monkeypatch):
+    def run_test_get_chip_characterization_double_qubits_no_uv_accessor(self):
         """get_chip_characterization falls back to topology index when dq lacks u/v accessors.
 
         Some pyqpanda3 chip_info() implementations return double_qubits_info() objects
         that have get_fidelity() but lack get_qubit_u() / get_qubit_v(). The adapter
         must use the topology index to look up the qubit pair instead of crashing.
         """
-        monkeypatch.setenv("ORIGINQ_API_KEY", "test_key_123")
-
         # Minimal mock objects
         mock_sq = type("MockSQ", (), {
             "get_qubit_id": lambda self: 0,

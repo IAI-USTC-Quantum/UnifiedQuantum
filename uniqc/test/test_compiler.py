@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import pytest
+import qiskit  # noqa: F401
 
 from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
-from uniqc.backend_adapter.task.optional_deps import QISKIT_AVAILABLE
-
-pytestmark = pytest.mark.skipif(not QISKIT_AVAILABLE, reason="Qiskit not installed")
 
 
 @pytest.fixture

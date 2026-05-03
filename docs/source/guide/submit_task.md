@@ -40,7 +40,7 @@
 4. **提交任务** —— 调用 `submit_task()` 提交任务
 5. **查询结果** —— 通过 `wait_for_result()` 或 `query_task()` 获取结果
 
-与本地模拟相比，这条路径多出了平台账号、环境变量配置、网络访问、任务排队与远端状态查询等因素。
+与本地模拟相比，这条路径多出了平台账号、配置文件、网络访问、任务排队与远端状态查询等因素。
 
 ## 统一云平台接口 {#guide-submit-task-unified-api}
 
@@ -48,27 +48,21 @@ UnifiedQuantum 提供统一的云平台接入层，通过一致的接口操作 O
 
 ### 配置方式
 
-推荐使用环境变量配置：
+云平台 API key 统一通过 `~/.uniqc/config.yaml` 配置：
 
 ```bash
-# OriginQ Cloud 配置
-export ORIGINQ_API_KEY="your-originq-token"
-
-# Quafu 配置
-export QUAFU_API_TOKEN="your-quafu-token"
-
-# IBM Quantum 配置
-export IBM_TOKEN="your-ibm-token"
+uniqc config set originq.token "your-originq-token"
+uniqc config set quafu.token "your-quafu-token"
+uniqc config set ibm.token "your-ibm-token"
 ```
 
-或者使用 YAML 配置文件 `~/.uniqc/uniqc.yml`：
+对应的 YAML 配置文件结构如下：
 
 ```yaml
+active_profile: default
 default:
   originq:
     token: "your-originq-token"
-    submit_url: "https://..."
-    query_url: "https://..."
   quafu:
     token: "your-quafu-token"
   ibm:

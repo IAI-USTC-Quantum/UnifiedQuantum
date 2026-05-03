@@ -284,7 +284,8 @@ class TestQuantumLayerWithPytorch:
 
     def test_quantum_layer_initialization(self):
         """Test QuantumLayer initialization."""
-        torch = pytest.importorskip("torch")
+        import torch  # noqa: F401
+
         from uniqc.torch_adapter.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()
@@ -299,7 +300,8 @@ class TestQuantumLayerWithPytorch:
 
     def test_quantum_layer_extra_repr(self):
         """Test QuantumLayer.extra_repr."""
-        pytest.importorskip("torch")
+        import torch  # noqa: F401
+
         from uniqc.torch_adapter.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()

@@ -9,7 +9,7 @@
 uniqc config init
 ```
 
-配置文件位置：`~/.uniqc/uniqc.yml`
+配置文件位置：`~/.uniqc/config.yaml`
 
 ## 设置配置项
 
@@ -43,7 +43,7 @@ uniqc config list --format json
 uniqc config validate
 ```
 
-> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/uniqc.yml` 中的 token 配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python 云的 `OriginQAdapter`、`QuafuAdapter` 等适配器直接读取（通过 `uniqc config` 模块 fallback）。使用 Python API 时无需额外设置环境变量。
+> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/config.yaml` 中的 token 配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python 云的 `OriginQAdapter`、`QuafuAdapter` 等适配器直接读取（通过 `uniqc config` 模块 fallback）。使用 Python API 时无需额外设置环境变量。
 
 ## 配置 Profile 管理
 

@@ -82,10 +82,7 @@ def _parse_proxy_url(proxy_url: str) -> tuple[str, int] | None:
 
         # Default ports for http and https
         if port is None:
-            if parsed.scheme == "https":
-                port = 443
-            else:
-                port = 80
+            port = 443 if parsed.scheme == "https" else 80
 
         return (host, port)
     except Exception:
@@ -129,7 +126,7 @@ def check_proxy_connectivity(
         sock = socket.create_connection((host, port), timeout=timeout)
         sock.close()
         return True
-    except (socket.timeout, socket.error, OSError):
+    except (TimeoutError, OSError):
         return False
 
 
@@ -179,7 +176,7 @@ def test_ibm_connectivity(
     """Test connectivity to IBM Quantum services.
 
     Args:
-        token: IBM Quantum API token. If None, tries to load from environment.
+        token: IBM Quantum API token. If None, loads from ``~/.uniqc/config.yaml``.
         proxy: Proxy configuration. Can be:
             - None: uses system proxy settings
             - str: proxy URL (used for both http and https)
@@ -205,11 +202,16 @@ def test_ibm_connectivity(
 
     # Get token if not provided
     if token is None:
-        token = os.getenv("IBM_TOKEN")
+        try:
+            from uniqc.backend_adapter.config import get_ibm_config
+
+            token = get_ibm_config().get("token") or None
+        except Exception:
+            token = None
         if token is None:
             return {
                 "success": False,
-                "message": "IBM token not provided and IBM_TOKEN env var not set",
+                "message": "IBM token not provided and ~/.uniqc/config.yaml has no active IBM token",
                 "proxy_used": proxy,
                 "response_time_ms": None,
             }

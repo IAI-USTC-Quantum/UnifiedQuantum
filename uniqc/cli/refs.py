@@ -240,7 +240,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
     "config": [
         (
             "First-time setup (step by step)",
-            "1. uniqc config init — create ~/.uniqc/uniqc.yml with default settings\n"
+            "1. uniqc config init — create ~/.uniqc/config.yaml with default settings\n"
             "2. uniqc config set originq.token <YOUR_TOKEN> — set your API token\n"
             "   (Token URLs: OriginQ: q.本源量子.com | Quafu: quafu.baike.scut.cn | IBM: quantum.ibm.com)\n"
             "3. uniqc config validate — verify the configuration is valid\n"

@@ -328,10 +328,6 @@ class TestOriginIRGateCoverage:
         for gate in available_originir_1q2p_gates:
             assert gate in available_originir_gates, f"1q2p gate '{gate}' missing"
 
-    @pytest.mark.xfail(
-        reason="BUG: available_originir_1q3p_gates (e.g. 'U3') is defined but "
-               "never added to available_originir_gates in originir_spec.py"
-    )
     def test_1q3p_gates_present(self):
         for gate in available_originir_1q3p_gates:
             assert gate in available_originir_gates, f"1q3p gate '{gate}' missing"
@@ -376,10 +372,6 @@ class TestOriginIRGateValues:
         for gate in available_originir_1q2p_gates:
             _assert_gate_entry(available_originir_gates, gate, 1, 'param', 2)
 
-    @pytest.mark.xfail(
-        reason="BUG: 'U3' in available_originir_1q3p_gates is absent from "
-               "available_originir_gates (update block missing in originir_spec.py)"
-    )
     def test_1q3p_gates_have_qubit1_param3(self):
         for gate in available_originir_1q3p_gates:
             _assert_gate_entry(available_originir_gates, gate, 1, 'param', 3)
@@ -421,10 +413,6 @@ class TestOriginIRGateValues:
     def test_RPhi_gate(self):
         _assert_gate_entry(available_originir_gates, 'RPhi', 1, 'param', 2)
 
-    @pytest.mark.xfail(
-        reason="BUG: 'U3' is absent from available_originir_gates; "
-               "the 1q3p update block is missing in originir_spec.py"
-    )
     def test_U3_gate(self):
         _assert_gate_entry(available_originir_gates, 'U3', 1, 'param', 3)
 
@@ -1179,4 +1167,3 @@ class TestOriginIRConsistency:
                     f"Channel '{ch}' appears in multiple error channel lists"
                 )
                 seen.add(ch)
-

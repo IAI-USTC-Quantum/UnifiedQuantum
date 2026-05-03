@@ -93,6 +93,32 @@ addopts = -v
 
 两个 workflow 现已统一使用 pytest。
 
+## 当前测试口径
+
+默认开发环境应通过 `uv sync --all-extras --group dev --group docs` 安装完整依赖。因此，除明确的 `cloud` 集成测试和当前已知的 `torchquantum` 缺失问题外，测试不应因为 `qiskit`、`qutip`、`pyqpanda3`、`quafu`、`torch` 或本地 simulator 缺失而被跳过。此类依赖缺失应暴露为环境问题，而不是被静默 skip。
+
+推荐的本地/CI 默认口径：
+
+```bash
+uv run pytest uniqc/test -m "not cloud"
+```
+
+当前默认口径下只允许以下 skip：
+
+- `torchquantum not installed`：known issue，覆盖 TorchQuantum 相关测试。
+
+`@pytest.mark.cloud` 只用于真实云平台或真实网络依赖场景，包括：
+
+- 需要真实 `~/.uniqc/config.yaml` token 的 OriginQ、Quafu、IBM submit/query 或 backend connectivity。
+- 真实 IBM endpoint 连通性检查。
+- 真实 proxy 行为检查，包括配置 proxy 可用性和不可达 proxy 的失败路径。
+
+不应标记为 `cloud` 的测试：
+
+- 只验证 YAML token 读取、proxy 参数构造、错误返回结构的单元测试。
+- HTTP/socket 已完全 mock 的网络工具测试。
+- 只依赖默认 dev 依赖包的电路翻译、模拟、转译、矩阵和 adapter 单元行为。
+
 ## Cloud Tests
 
 Tests marked with `@pytest.mark.cloud` require real cloud credentials and network access.
@@ -100,17 +126,22 @@ Tests marked with `@pytest.mark.cloud` require real cloud credentials and networ
 ### Running Cloud Tests Locally
 
 ```bash
-# Set required credentials
-export ORIGINQ_API_KEY="your-key"
-export QUAFU_API_TOKEN="your-token"
-export IBM_TOKEN="your-token"
+# Set required credentials in ~/.uniqc/config.yaml
+uniqc config set originq.token "your-key"
+uniqc config set quafu.token "your-token"
+uniqc config set ibm.token "your-token"
 
-# Run all tests including cloud tests
+# Run cloud tests
 pytest uniqc/test/ -v -m cloud
 
 # Run specific platform tests
 pytest uniqc/test/ -v -m "cloud and requires_pyqpanda3"
+
+# Run IBM real network/proxy checks only
+pytest uniqc/test/cloud/test_network_utils.py -v -m cloud
 ```
+
+IBM proxy cloud tests read `ibm.proxy` from `~/.uniqc/config.yaml` when testing a configured proxy. The unreachable-proxy test uses a closed localhost port to verify failure handling through the real network stack without depending on an external proxy service.
 
 ### CI Behavior
 

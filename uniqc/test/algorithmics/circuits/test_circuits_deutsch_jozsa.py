@@ -38,7 +38,6 @@ class TestDeutschJozsaCircuit:
 
     def test_constant_oracle_measures_all_zero(self):
         """Constant oracle → measurement result should be all zeros."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         n = 3
@@ -59,7 +58,6 @@ class TestDeutschJozsaCircuit:
 
     def test_balanced_oracle_measures_non_zero(self):
         """Balanced oracle → measurement result should NOT be all zeros."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         n = 3
@@ -79,7 +77,6 @@ class TestDeutschJozsaCircuit:
 
     def test_1qubit_deutsch_balanced(self):
         """1-qubit Deutsch problem with balanced oracle should give non-zero."""
-        pytest.importorskip("uniqc.simulator.qasm_simulator")
         from uniqc.simulator.qasm_simulator import QASM_Simulator
 
         oracle = deutsch_jozsa_oracle(qubits=[0], balanced=True)

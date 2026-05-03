@@ -4,12 +4,18 @@ Thank you for your interest in contributing to UnifiedQuantum! This document out
 
 ## Environment Setup
 
+UnifiedQuantum currently recommends [uv](https://github.com/astral-sh/uv) for dependency
+management in local development. Maintainers and contributors should prefer `uv sync`
+to create/update the development environment and `uv run ...` to execute tools inside
+that environment. Pip commands are kept below only as a fallback for environments where
+uv cannot be used.
+
 ### Prerequisites
 
 - Python 3.10 – 3.13
-- [uv](https://github.com/astral-sh/uv) (package manager — install via `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- [uv](https://github.com/astral-sh/uv) (recommended package manager — install via `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Git
-- CMake >= 3.26 (C++ backend build — see [CMake Requirement](#cmake-requirement) below)
+- CMake >= 3.22 (C++ backend build — see [CMake Requirement](#cmake-requirement) below)
 - C++ compiler with C++17 support (e.g. `g++` >= 8, `clang++` >= 10)
 
 ### Clone & Install
@@ -19,16 +25,28 @@ git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantu
 cd UnifiedQuantum
 ```
 
-#### Recommended: Full Development Environment (includes C++ extension + all optional dependencies)
+#### Recommended: Full Development Environment with uv
+
+Use uv to install the editable project, all optional dependencies, and the development
+and documentation dependency groups:
 
 ```bash
-uv tool install -e ".[all]"
+uv sync --all-extras --group dev --group docs
 ```
 
-This installs the package in **editable mode** with:
+This creates or updates `.venv` and installs the package in **editable mode** with:
 - The C++ simulation backend (`uniqc_cpp`) compiled via pybind11/CMake
 - All optional dependencies (Qiskit, Quafu, IBM Runtime, visualization tools, etc.)
 - Development tools (pytest, ruff, pre-commit)
+
+Run project commands through uv so they use the managed environment:
+
+```bash
+uv run pytest uniqc/test
+uv run ruff check .
+uv run ruff format .
+uv run pre-commit run --all-files
+```
 
 #### CMake Requirement
 
@@ -40,7 +58,7 @@ pip install cmake --upgrade
 
 The newer cmake is installed to `~/.local/bin/` or your Python bin directory — make sure it comes first in `PATH` before the system cmake.
 
-#### Without uv (pip only)
+#### Without uv (pip only fallback)
 
 ```bash
 pip install cmake --upgrade
@@ -109,10 +127,10 @@ ci: add coverage reporting to GitHub Actions
 
 3. **Run checks locally** before pushing:
    ```bash
-   ruff check .
-   ruff format .
-   pytest
-   pre-commit run --all-files
+   uv run ruff check .
+   uv run ruff format .
+   uv run pytest uniqc/test
+   uv run pre-commit run --all-files
    ```
 
 4. **Commit** your changes with a clear message.
@@ -162,10 +180,10 @@ We use [Ruff](https://docs.astral.sh/ruff/) for linting and formatting:
 
 ```bash
 # Check for issues
-ruff check .
+uv run ruff check .
 
 # Auto-fix and format
-ruff format .
+uv run ruff format .
 ```
 
 Run these before committing. The pre-commit hook will also run them automatically.
@@ -175,7 +193,7 @@ Run these before committing. The pre-commit hook will also run them automaticall
 Run the test suite with [pytest](https://pytest.org/):
 
 ```bash
-pytest
+uv run pytest uniqc/test
 ```
 
 The project uses [GitHub Actions](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions) for CI. If you encounter test failures, please open an issue.

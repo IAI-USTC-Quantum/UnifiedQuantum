@@ -89,6 +89,8 @@ indent-style = "space"
 dev = [
     "pytest",
     "pytest-cov",
+    "ruff",
+    "pre-commit",
     "tomli",
 ]
 docs = [

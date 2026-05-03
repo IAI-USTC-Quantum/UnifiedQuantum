@@ -269,15 +269,15 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 
 ## 配置管理 {#advanced-adapter-configuration}
 
-### 环境变量
+### 配置文件
 
-适配器通过环境变量读取配置：
+适配器通过 `~/.uniqc/config.yaml` 的 active profile 读取云平台 API key：
 
-| 平台 | 环境变量 | 说明 |
-|------|----------|------|
-| OriginQ | `ORIGINQ_API_KEY` | API 密钥 |
-| Quafu | `QUAFU_API_TOKEN` | API Token |
-| IBM | `IBM_TOKEN` | IBM Quantum Token |
+| 平台 | 配置键 | 说明 |
+|------|--------|------|
+| OriginQ | `originq.token` | API 密钥 |
+| Quafu | `quafu.token` | API Token |
+| IBM | `ibm.token` | IBM Quantum Token |
 | Dummy | `UNIQC_DUMMY` | 启用 Dummy 模式 |
 
 ### 配置加载

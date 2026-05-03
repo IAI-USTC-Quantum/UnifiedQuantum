@@ -1,25 +1,20 @@
 """Tests for transpiler qiskit_transpiler module."""
 import pytest
+import qiskit  # noqa: F401
 
-from uniqc.test._utils import uniq_test, NotMatchError
+from uniqc.test._utils import uniq_test
 
 
 @pytest.fixture(scope="module")
 def qiskit_available():
     """Check if qiskit is available."""
-    try:
-        pytest.importorskip("qiskit")
-        return True
-    except pytest.skip.Exception:
-        return False
+    return True
 
 
 @uniq_test('Test Transpiler Qiskit: transpile_qasm')
 def run_test_transpile_qasm():
     """Test QASM transpilation."""
-    pytest.importorskip("qiskit")
     from uniqc.compile.qiskit_transpiler import transpile_qasm
-    from uniqc.compile._utils import CompilationFailedException
 
     qasm_str = """
 OPENQASM 2.0;
@@ -52,15 +47,14 @@ cx q[1], q[2];
     # Test custom basis gates
     transpiled_custom = transpile_qasm(qasm_str, topology=topology, basis_gates=['cx', 'u3'])
     assert 'OPENQASM 2.0' in transpiled_custom
-    print(f"Transpiled with custom basis gates")
+    print("Transpiled with custom basis gates")
 
 
 @uniq_test('Test Transpiler Qiskit: transpile_originir')
 def run_test_transpile_originir():
     """Test OriginIR transpilation."""
-    pytest.importorskip("qiskit")
-    from uniqc.compile.qiskit_transpiler import transpile_originir
     from uniqc.circuit_builder import Circuit
+    from uniqc.compile.qiskit_transpiler import transpile_originir
 
     circ = Circuit(2)
     circ.h(0)
@@ -77,9 +71,8 @@ def run_test_transpile_originir():
 @uniq_test('Test Transpiler Qiskit: Error Handling')
 def run_test_qiskit_error_handling():
     """Test error handling."""
-    pytest.importorskip("qiskit")
-    from uniqc.compile.qiskit_transpiler import transpile_qasm
     from uniqc.compile._utils import CompilationFailedException
+    from uniqc.compile.qiskit_transpiler import transpile_qasm
 
     # Test invalid optimization level
     try:
@@ -98,7 +91,6 @@ def run_test_qiskit_error_handling():
 @uniq_test('Test Transpiler Qiskit: Different Optimization Levels')
 def run_test_optimization_levels():
     """Test different optimization levels."""
-    pytest.importorskip("qiskit")
     from uniqc.compile.qiskit_transpiler import transpile_qasm
 
     qasm_str = """
