@@ -89,7 +89,7 @@ class TestDetectSystemProxy(unittest.TestCase):
             "HTTP_PROXY": "http://uppercase.example.com:8080",
             "http_proxy": "http://lowercase.example.com:9090"
         }
-        with patch.dict(os.environ, env_vars, clear=True):
+        with patch("uniqc.backend_adapter.network_utils.os.environ", env_vars):
             result = detect_system_proxy()
             self.assertEqual(result["http"], "http://uppercase.example.com:8080")
 
