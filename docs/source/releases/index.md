@@ -33,6 +33,19 @@
 
 这些变化并不只是内部清理，对已有脚本、命令和缓存位置都可能有影响。
 
+## 发布前可验证路径检查
+
+在创建新的 `v*` tag 前，维护者必须完成一次人工可验证路径检查。这不是 CI，而是通过 [最佳实践](../best_practices/index.md) 中的 executed notebooks 确认用户主路径没有失效。
+
+发布前至少检查：
+
+1. 重新运行 `python scripts/generate_best_practice_notebooks.py`，确认 notebooks 中的输出和图仍然合理。
+2. 检查最佳实践覆盖矩阵是否仍覆盖当前版本支持的路径：配置 key、后端缓存、裸 `Circuit`、Named Circuit、虚拟/本地后端、API/CLI 提交、结果可视化、变分线路、Torch 集成、Calibration 和 QEM。
+3. 检查 `CHANGELOG.md` 的 `[Unreleased]` 内容是否准确、完整。
+4. 检查本页是否已经写入用户可见的升级重点、迁移说明和兼容性变化。
+5. 通过文档构建或 `scripts/generate_release_notes.py` 确认 Release note 的自动生成内容正确。
+6. 如果真实云平台没有完成验证，明确记录 dummy/dry-run 已验证的范围和真实平台验证缺口。
+
 ## 版本解读
 
 ### `v0.0.7`

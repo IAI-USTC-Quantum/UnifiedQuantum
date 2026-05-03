@@ -5,6 +5,7 @@ recommonmark
 sphinx-markdown-tables
 linkify-it-py
 myst_parser
+nbsphinx
 numpy
 setuptools_scm
 intersphinx-registry

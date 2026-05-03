@@ -101,6 +101,7 @@ docs = [
     "sphinx-markdown-tables",
     "linkify-it-py",
     "myst_parser",
+    "nbsphinx",
     "setuptools_scm",
     "intersphinx-registry",
 ]

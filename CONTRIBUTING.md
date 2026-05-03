@@ -169,10 +169,18 @@ Please update:
 
 Before creating a new `v*` tag, maintainers should quickly review the release-notes page and make sure:
 
-1. `docs/source/releases/index.md` reflects the main user-visible changes in the upcoming release.
-2. Recent commits and tag messages are clear enough for the generated version record.
-3. Any rename, migration, or compatibility change is mentioned explicitly.
-4. The docs site builds successfully with the updated release-notes content.
+1. Re-run the best-practices notebooks with `python scripts/generate_best_practice_notebooks.py` and review the executed outputs and figures.
+2. Confirm the best-practices coverage matrix still matches the supported user paths: config, backend cache, bare/named circuits, API/CLI submission, dummy or virtual backends, visualization, variational circuits, Torch integration, calibration, and QEM.
+3. Check `CHANGELOG.md` and make sure the `[Unreleased]` section is accurate.
+4. Check `docs/source/releases/index.md` and make sure it reflects the main user-visible changes in the upcoming release.
+5. Confirm the generated release history is correct by building the docs or running `scripts/generate_release_notes.py`.
+6. Ensure recent commits and tag messages are clear enough for the generated version record.
+7. Mention any rename, migration, compatibility change, or incomplete real-cloud verification explicitly.
+8. Build the docs site successfully with the updated release-notes and best-practices notebook content.
+
+The best-practices notebooks are a release-time verifiable path check, not CI.
+They should stay small enough to run locally, but complete enough to show users a
+working path from configuration through execution and result interpretation.
 
 ## Code Style
 
