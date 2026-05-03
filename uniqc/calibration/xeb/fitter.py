@@ -12,6 +12,7 @@ import numpy as np
 
 __all__ = [
     "compute_hellinger_fidelity",
+    "compute_linear_xeb",
     "fit_exponential",
 ]
 
@@ -46,11 +47,61 @@ def compute_hellinger_fidelity(
     return float(overlap ** 2)
 
 
+def compute_linear_xeb(
+    p_ideal: np.ndarray,
+    p_observed: np.ndarray,
+    *,
+    normalized: bool = True,
+    eps: float = 1e-12,
+) -> float:
+    """Compute the standard linear XEB estimator.
+
+    Unnormalized linear XEB is ``N * sum_x p_observed(x) p_ideal(x) - 1``.
+    For small-qubit calibration circuits, the Porter-Thomas assumption is often
+    weak, so the default uses the normalized estimator:
+
+    ``(dot(p_observed, p_ideal) - 1/N) / (dot(p_ideal, p_ideal) - 1/N)``.
+
+    The normalized form has baseline 0 for uniform/random output and 1 for
+    exactly ideal output. If the ideal distribution is uniform, the normalized
+    estimator is undefined and ``nan`` is returned.
+    """
+    p_ideal = np.asarray(p_ideal, dtype=np.float64)
+    p_observed = np.asarray(p_observed, dtype=np.float64)
+
+    if len(p_ideal) != len(p_observed):
+        raise ValueError("p_ideal and p_observed must have the same length")
+    if len(p_ideal) == 0:
+        return float("nan")
+
+    p_ideal = np.clip(p_ideal, 0, None)
+    p_observed = np.clip(p_observed, 0, None)
+    ideal_total = p_ideal.sum()
+    observed_total = p_observed.sum()
+    if ideal_total <= eps or observed_total <= eps:
+        return float("nan")
+    p_ideal = p_ideal / ideal_total
+    p_observed = p_observed / observed_total
+
+    n_states = len(p_ideal)
+    overlap = float(np.dot(p_observed, p_ideal))
+    uniform_overlap = 1.0 / n_states
+
+    if not normalized:
+        return float(n_states * overlap - 1.0)
+
+    ideal_contrast = float(np.dot(p_ideal, p_ideal) - uniform_overlap)
+    if abs(ideal_contrast) <= eps:
+        return float("nan")
+    return float((overlap - uniform_overlap) / ideal_contrast)
+
+
 def fit_exponential(
     depths: list[int],
     fidelities: list[float],
     *,
     shots: int | None = None,
+    baseline: float | None = 0.0,
 ) -> dict[str, Any]:
     """Fit the exponential decay model F(m) = A * r^m + B.
 
@@ -60,7 +111,7 @@ def fit_exponential(
 
     Args:
         depths: List of circuit depths (m values).
-        fidelities: List of Hellinger fidelities measured at each depth.
+        fidelities: List of XEB values measured at each depth.
             Average over multiple circuits at the same depth before passing.
 
     Returns:
@@ -73,6 +124,9 @@ def fit_exponential(
     """
     depths_arr = np.asarray(depths, dtype=np.float64)
     fidelities_arr = np.asarray(fidelities, dtype=np.float64)
+    finite = np.isfinite(depths_arr) & np.isfinite(fidelities_arr)
+    depths_arr = depths_arr[finite]
+    fidelities_arr = fidelities_arr[finite]
 
     if len(depths_arr) < 2:
         return {
@@ -88,21 +142,31 @@ def fit_exponential(
     try:
         from scipy.optimize import curve_fit
     except ImportError:
-        return _fit_exponential_numpy(depths_arr, fidelities_arr)
+        return _fit_exponential_numpy(depths_arr, fidelities_arr, baseline=baseline)
 
-    def model(m, A, r, B):
+    def model_fixed_baseline(m, A, r):
+        return A * np.power(r, m) + float(baseline)
+
+    def model_free_baseline(m, A, r, B):
         return A * np.power(r, m) + B
 
-    # Initial guess: A ≈ 1-B, B ≈ min(fidelities), r ≈ mid-range
-    B0 = float(np.min(fidelities_arr))
-    ratio = np.mean(fidelities_arr[1:] / np.maximum(fidelities_arr[:-1], 1e-12))
+    # Initial guess: A ≈ F(0)-B, r ≈ adjacent ratio
+    B0 = float(np.min(fidelities_arr)) if baseline is None else float(baseline)
+    shifted = fidelities_arr - B0
+    ratio = np.mean(shifted[1:] / np.maximum(shifted[:-1], 1e-12))
     r0 = float(np.clip(ratio, 0.5, 0.999))
-    A0 = 1.0 - B0
+    A0 = float(max(fidelities_arr[0] - B0, 1e-6))
 
-    p0 = [A0, r0, B0]
-    # Bounds: A > 0, 0 < r <= 1, B >= 0
-    lower = [0.0, 0.001, 0.0]
-    upper = [2.0, 1.0, 0.5]
+    if baseline is None:
+        p0 = [A0, r0, B0]
+        lower = [-2.0, 0.001, -1.0]
+        upper = [2.0, 1.0, 1.0]
+        model = model_free_baseline
+    else:
+        p0 = [A0, r0]
+        lower = [-2.0, 0.001]
+        upper = [2.0, 1.0]
+        model = model_fixed_baseline
 
     try:
         popt, pcov = curve_fit(
@@ -113,10 +177,16 @@ def fit_exponential(
             bounds=(lower, upper),
             maxfev=10000,
         )
-        A, r, B = popt
+        if baseline is None:
+            A, r, B = popt
+            r_index = 1
+        else:
+            A, r = popt
+            B = float(baseline)
+            r_index = 1
         # Standard error on r
-        if pcov.shape == (3, 3):
-            r_var = pcov[1, 1]
+        if pcov.shape[0] > r_index:
+            r_var = pcov[r_index, r_index]
             r_stderr = float(np.sqrt(max(r_var, 0)))
         else:
             r_stderr = 0.0
@@ -129,12 +199,14 @@ def fit_exponential(
             "method": "scipy_curve_fit",
         }
     except Exception:
-        return _fit_exponential_numpy(depths_arr, fidelities_arr)
+        return _fit_exponential_numpy(depths_arr, fidelities_arr, baseline=baseline)
 
 
 def _fit_exponential_numpy(
     depths_arr: np.ndarray,
     fidelities_arr: np.ndarray,
+    *,
+    baseline: float | None = 0.0,
 ) -> dict[str, Any]:
     """Fallback exponential fit using numpy (no scipy).
 
@@ -144,17 +216,30 @@ def _fit_exponential_numpy(
     due to noise/variance), the pairwise ratio method provides a sensible r
     instead of falling back to r=1.0.
     """
-    n = len(depths_arr)
-    B = 0.5
+    B = float(np.min(fidelities_arr)) if baseline is None else float(baseline)
 
     # ---- Method 1: linear regression on log(F - B) ----
-    residuals = np.maximum(fidelities_arr - B, 1e-12)
-    log_vals = np.log(residuals)
-    m_vals = depths_arr.astype(float)
+    residuals = fidelities_arr - B
+    positive = residuals > 1e-12
+    if positive.sum() < 2:
+        return {
+            "r": 0.0,
+            "A": float(fidelities_arr[0] - B) if len(fidelities_arr) else 0.0,
+            "B": B,
+            "r_stderr": 0.0,
+            "n_points": len(depths_arr),
+            "method": "numpy_insufficient_positive_points",
+        }
+
+    log_vals = np.log(residuals[positive])
+    m_vals = depths_arr[positive].astype(float)
+    f_vals = fidelities_arr[positive].astype(float)
+    n = len(m_vals)
     m_mean = m_vals.mean()
     log_mean = log_vals.mean()
     ss_m = ((m_vals - m_mean) ** 2).sum()
 
+    cov_ml = 0.0
     if ss_m >= 1e-12:
         cov_ml = float(((m_vals - m_mean) * (log_vals - log_mean)).sum())
         slope = cov_ml / float(ss_m)
@@ -172,9 +257,11 @@ def _fit_exponential_numpy(
     log_ratios: list[float] = []
     for i in range(n):
         for j in range(i + 1, n):
-            delta_m = float(depths_arr[j] - depths_arr[i])
-            num = max(fidelities_arr[i] - B, 1e-12)
-            den = max(fidelities_arr[j] - B, 1e-12)
+            delta_m = float(m_vals[j] - m_vals[i])
+            if abs(delta_m) <= 1e-12:
+                continue
+            num = max(f_vals[i] - B, 1e-12)
+            den = max(f_vals[j] - B, 1e-12)
             log_ratios.append((np.log(num) - np.log(den)) / delta_m)
 
     if log_ratios:
@@ -194,12 +281,12 @@ def _fit_exponential_numpy(
         # Pairwise estimate is the primary result for non-monotonic data.
         # Use it to back-solve A from the first data point: A = (F_0 - B) / r^m0
         r = r_pair
-        A = float((fidelities_arr[0] - B) / max(r ** depths_arr[0], 1e-12))
+        A = float((f_vals[0] - B) / max(r ** m_vals[0], 1e-12))
         method = "numpy_fallback_pairwise"
 
     # Stderr estimate
-    predicted = A * np.power(r, depths_arr) + B
-    residuals_all = fidelities_arr - predicted
+    predicted = A * np.power(r, m_vals) + B
+    residuals_all = f_vals - predicted
     r_stderr = float(np.std(residuals_all) / np.sqrt(n)) if n > 2 else 0.0
 
     return {

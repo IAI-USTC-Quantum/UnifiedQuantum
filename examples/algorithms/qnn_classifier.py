@@ -10,7 +10,7 @@ try:
     from sklearn.datasets import make_moons
     from sklearn.preprocessing import StandardScaler
 
-    from uniqc.algorithmics.training.qnn import QNNClassifier
+    from uniqc import QNNClassifier
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch] scikit-learn")

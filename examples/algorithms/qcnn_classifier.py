@@ -8,7 +8,7 @@ try:
     import torch
     import torch.nn as nn
 
-    from uniqc.algorithmics.training.qcnn import QCNNClassifier
+    from uniqc import QCNNClassifier
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch]")
@@ -18,7 +18,7 @@ except ImportError as e:
 
 def generate_state_dataset(n_qubits: int, n_samples: int):
     """Generate dataset of GHZ (label=1) and |0...0> (label=0) states."""
-    from uniqc.circuit_builder import Circuit
+    from uniqc import Circuit
     from uniqc.simulator import OriginIR_Simulator
 
     sim = OriginIR_Simulator(backend_type="statevector")

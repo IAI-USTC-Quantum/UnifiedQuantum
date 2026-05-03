@@ -31,7 +31,7 @@
 ## 基本用法
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 circuit = Circuit()
 circuit.h(0)
@@ -126,10 +126,10 @@ remapped = circuit.remapping({0: 3, 1: 5})
 
 ## 可视化
 
-{func}`uniqc.transpiler.draw.draw` 用于绘制线路图：
+{func}`uniqc.compile.draw.draw` 用于绘制线路图：
 
 ```python
-from uniqc.transpiler.draw import draw
+from uniqc.compile.draw import draw
 
 draw(circuit.originir)
 ```
@@ -160,7 +160,7 @@ print(matrix.round(4))
 ### 创建带命名寄存器的电路
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 # 创建带有两个命名寄存器的电路
 c = Circuit(qregs={"data": 4, "ancilla": 2})
@@ -196,7 +196,7 @@ UnifiedQuantum 支持符号化参数，可以在运行时绑定具体值。这�
 ### 创建参数
 
 ```python
-from uniqc.circuit_builder import Parameter
+from uniqc import Parameter
 
 # 创建命名参数
 theta = Parameter("theta")
@@ -243,7 +243,7 @@ phi.bind(0.3)
 使用 `Parameters` 创建参数数组：
 
 ```python
-from uniqc.circuit_builder import Parameters
+from uniqc import Parameters
 
 # 创建 4 个参数：alpha_0, alpha_1, alpha_2, alpha_3
 alphas = Parameters("alpha", size=4)
@@ -262,7 +262,7 @@ c.rx(0, alphas[0])
 ### 定义子程序
 
 ```python
-from uniqc.circuit_builder import circuit_def, Circuit
+from uniqc import circuit_def, Circuit
 
 @circuit_def(name="bell_pair", qregs={"q": 2})
 def bell_pair(circ, q):

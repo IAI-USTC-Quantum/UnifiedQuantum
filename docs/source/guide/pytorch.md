@@ -36,8 +36,8 @@ pip install unified-quantum[pytorch]
 
 ```python
 import torch
-from uniqc.pytorch import QuantumLayer
-from uniqc.circuit_builder import Circuit, Parameter
+from uniqc.torch_adapter import QuantumLayer
+from uniqc import Circuit, Parameter
 from uniqc.simulator import OriginIR_Simulator
 
 # 定义电路模板
@@ -152,8 +152,8 @@ layer = QuantumLayer(
 ```python
 import torch
 import torch.nn as nn
-from uniqc.pytorch import QuantumLayer
-from uniqc.circuit_builder import Circuit, Parameter
+from uniqc.torch_adapter import QuantumLayer
+from uniqc import Circuit, Parameter
 from uniqc.simulator import OriginIR_Simulator
 import numpy as np
 
@@ -218,7 +218,7 @@ for epoch in range(50):
 当需要并行执行多个电路时，可以使用 `batch_execute` 工具：
 
 ```python
-from uniqc.pytorch import batch_execute, batch_execute_with_params
+from uniqc.torch_adapter import batch_execute, batch_execute_with_params
 from uniqc.simulator import OriginIR_Simulator
 
 # 定义执行函数
@@ -278,12 +278,12 @@ results = batch_execute_with_params(
 
 ## 相关 API
 
-- {mod}`uniqc.pytorch` — PyTorch 集成模块
-- {class}`uniqc.pytorch.QuantumLayer` — 量子层封装
-- {func}`uniqc.pytorch.parameter_shift_gradient` — Parameter-shift 梯度计算
-- {func}`uniqc.pytorch.batch_execute` — 并行电路执行
-- {func}`uniqc.pytorch.batch_execute_with_params` — 参数化批量执行
-- {func}`uniqc.pytorch.compute_all_gradients` — 计算所有参数梯度
+- {mod}`uniqc.torch_adapter` — PyTorch 集成模块
+- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装
+- {func}`uniqc.torch_adapter.parameter_shift_gradient` — Parameter-shift 梯度计算
+- {func}`uniqc.torch_adapter.batch_execute` — 并行电路执行
+- {func}`uniqc.torch_adapter.batch_execute_with_params` — 参数化批量执行
+- {func}`uniqc.torch_adapter.compute_all_gradients` — 计算所有参数梯度
 
 ## 下一步
 

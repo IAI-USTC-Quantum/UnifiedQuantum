@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import deutsch_jozsa_circuit, deutsch_jozsa_oracle
+from uniqc.algorithms.core.circuits import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 
 
 class TestDeutschJozsaOracle:

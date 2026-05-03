@@ -62,8 +62,8 @@ $$D = H^{\otimes n} \cdot (2|0\rangle\langle 0| - I) \cdot H^{\otimes n}$$
 ### grover_oracle
 
 ```python
-from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import grover_oracle, grover_diffusion
+from uniqc import Circuit
+from uniqc import grover_oracle, grover_diffusion
 
 c = Circuit()
 n_qubits = 3

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import dicke_state_circuit
+from uniqc.algorithms.core.circuits import dicke_state_circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
 
 

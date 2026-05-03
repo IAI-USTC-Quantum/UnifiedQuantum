@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.measurement import pauli_expectation
+from uniqc.algorithms.core.measurement import pauli_expectation
 
 
 class TestSingleQubitPauli:

@@ -15,7 +15,7 @@ from typing import Any
 from uniqc.circuit_builder import Circuit
 
 if False:
-    from uniqc.task.adapters.base import QuantumAdapter
+    from uniqc.backend_adapter.task.adapters.base import QuantumAdapter
 
 __all__ = ["ReadoutCalibrator"]
 
@@ -211,13 +211,10 @@ class ReadoutCalibrator:
             Bitstring encoding: bit 0 = qubit_u (LSB), bit 1 = qubit_v.
         """
         c = Circuit(2)
-        # Map physical qubits to circuit indices 0 and 1
-        q_map = {qubit_u: 0, qubit_v: 1}
         for gate, q in prep_gates:
-            c.add_gate(gate, qubits=[q_map[q]])
-        # Single-argument measure: c.measure(0) → q[0]→c[0], c.measure(1) → q[1]→c[1]
-        c.measure(0)
-        c.measure(1)
+            c.add_gate(gate, qubits=[q])
+        c.measure(qubit_u)
+        c.measure(qubit_v)
         return self._submit_and_measure_2q(c, qubit_u, qubit_v)
 
     def _submit_and_measure(self, circuit: Circuit) -> dict[int, int]:
@@ -230,7 +227,7 @@ class ReadoutCalibrator:
         task_id = self.adapter.submit(originir, shots=self.shots)
 
         # Poll until task completes (cloud backends are async by default)
-        timeout = 60.0
+        timeout = 300.0
         interval = 2.0
         elapsed = 0.0
         while elapsed < timeout:
@@ -244,12 +241,13 @@ class ReadoutCalibrator:
                     counts = unified
                 else:
                     counts = {}
-                return {int(k): v for k, v in counts.items()}
+                return {_outcome_to_int(k, 1): v for k, v in counts.items()}
+            if status == "failed":
+                raise RuntimeError(f"Readout calibration circuit failed: {result.get('result') or result.get('error')}")
             time.sleep(interval)
             elapsed += interval
 
-        # Timeout: return empty counts
-        return {}
+        raise TimeoutError(f"Timed out waiting for readout calibration task {task_id}")
 
     def _submit_and_measure_2q(
         self, circuit: Circuit, qubit_u: int, qubit_v: int
@@ -264,7 +262,7 @@ class ReadoutCalibrator:
         task_id = self.adapter.submit(originir, shots=self.shots)
 
         # Poll until task completes
-        timeout = 60.0
+        timeout = 300.0
         interval = 2.0
         elapsed = 0.0
         while elapsed < timeout:
@@ -280,14 +278,27 @@ class ReadoutCalibrator:
                     counts = {}
                 out = {}
                 for k, v in counts.items():
-                    k_int = int(k, 2)
+                    k_int = _outcome_to_int(k, 2)
                     out[k_int] = v
                 return out
+            if status == "failed":
+                raise RuntimeError(f"Readout calibration circuit failed: {result.get('result') or result.get('error')}")
             time.sleep(interval)
             elapsed += interval
 
-        return {}
+        raise TimeoutError(f"Timed out waiting for readout calibration task {task_id}")
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _outcome_to_int(outcome: Any, width: int) -> int:
+    if isinstance(outcome, int):
+        return outcome
+    text = str(outcome).strip()
+    if text.startswith("0b"):
+        return int(text, 2)
+    if set(text) <= {"0", "1"}:
+        return int(text[-width:] if width > 0 else text, 2)
+    return int(text)

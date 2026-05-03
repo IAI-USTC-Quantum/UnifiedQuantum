@@ -48,7 +48,7 @@ def list_tasks(
     if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
         print_ai_hints("task-list")
 
-    from uniqc.task_manager import list_tasks as _list_tasks
+    from uniqc.backend_adapter.task_manager import list_tasks as _list_tasks
 
     tasks = _list_tasks(status=status, backend=platform)
 
@@ -91,7 +91,7 @@ def show(
     if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
         print_ai_hints("task-show")
 
-    from uniqc.task_manager import get_task, query_task
+    from uniqc.backend_adapter.task_manager import get_task, query_task
 
     task_info = get_task(task_id)
 
@@ -157,7 +157,7 @@ def clear(
     if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
         print_ai_hints("task-list")
 
-    from uniqc.task_manager import clear_completed_tasks, clear_cache, list_tasks
+    from uniqc.backend_adapter.task_manager import clear_completed_tasks, clear_cache, list_tasks
 
     if status:
         count = clear_completed_tasks()

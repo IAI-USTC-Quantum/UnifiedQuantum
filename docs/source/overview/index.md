@@ -11,7 +11,7 @@ pip install unified-quantum
 
 ```python
 # 步骤 2：构建线路（支持 UnifiedQuantum 原生或任意第三方工具）
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()
 c.h(0)
@@ -58,7 +58,7 @@ UnifiedQuantum 提供原生的 Circuit API，但你也可以使用 Qiskit、Cirq
 
 **进阶功能**
 
-{OriginIR} | {OpenQASM 2.0} | {PyTorch} | {Task Manager} | Transpiler | {Circuit Analysis}
+{OriginIR} | {OpenQASM 2.0} | {PyTorch} | {Task Manager} | Compile | {Circuit Analysis}
 
 **命令行工具**
 

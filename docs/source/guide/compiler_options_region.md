@@ -36,8 +36,8 @@
 ### 1.2 核心签名
 
 ```python
-from uniqc.transpiler import compile
-from uniqc.transpiler.compiler import TranspilerConfig
+from uniqc.compile import compile
+from uniqc import TranspilerConfig
 
 # 最简用法
 compiled = compile(circuit, backend_info=backend_info)
@@ -81,7 +81,7 @@ assert "OPENQASM" in qasm
 ### 1.5 `TranspilerConfig`：类型化配置
 
 ```python
-from uniqc.transpiler.compiler import TranspilerConfig
+from uniqc import TranspilerConfig
 
 config = TranspilerConfig(
     type="qiskit",               # 目前仅支持 "qiskit"，预留扩展
@@ -104,7 +104,7 @@ compiled = compile(circuit, config=config, ...)
 4. 返回插入的 SWAP 数量和预估电路成功率
 
 ```python
-from uniqc.task.adapters.originq_adapter import OriginQAdapter
+from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 
 adapter = OriginQAdapter()
 chip = adapter.get_chip_characterization("origin:wuyuan:d5")
@@ -274,7 +274,7 @@ task_id = submit_task(circuit, "originq", shots=500,
 ### 3.2 初始化
 
 ```python
-from uniqc.task.adapters.originq_adapter import OriginQAdapter
+from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc import RegionSelector
 
 adapter = OriginQAdapter()
@@ -386,9 +386,9 @@ from uniqc import (
     submit_task,
     BackendOptionsFactory,
 )
-from uniqc.task.adapters.originq_adapter import OriginQAdapter
-from uniqc.transpiler import compile
-from uniqc.circuit_builder import Circuit
+from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
+from uniqc.compile import compile
+from uniqc import Circuit
 
 # 1. 构建电路
 circuit = Circuit()
@@ -425,7 +425,7 @@ print(f"任务 ID: {task_id}")
 
 ```python
 from uniqc import QuafuOptions, submit_task
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 circuit = Circuit()
 circuit.h(0)

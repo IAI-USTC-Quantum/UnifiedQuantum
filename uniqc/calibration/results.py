@@ -180,12 +180,17 @@ def find_cached_results(
     result_type: str,
     *,
     max_age_hours: float | None = None,
+    cache_dir: pathlib.Path | str | None = None,
 ) -> list[pathlib.Path]:
     """Find cached calibration result files matching backend + type.
 
     Optionally filters by age.
     """
-    cache_dir = ensure_cache_dir()
+    if cache_dir is None:
+        cache_dir = ensure_cache_dir()
+    else:
+        cache_dir = pathlib.Path(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{result_type}_{backend}_"
     results = []
     for p in cache_dir.iterdir():

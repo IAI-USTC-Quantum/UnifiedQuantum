@@ -1,4 +1,4 @@
-"""Tests for uniqc.config module."""
+"""Tests for uniqc.backend_adapter.config module."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 
 from uniqc import config
-from uniqc.config import (
+from uniqc.backend_adapter.config import (
     DEFAULT_CONFIG,
     ConfigError,
     ConfigValidationError,

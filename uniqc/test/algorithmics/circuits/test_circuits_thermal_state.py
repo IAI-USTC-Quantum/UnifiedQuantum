@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import thermal_state_circuit
+from uniqc.algorithms.core.circuits import thermal_state_circuit
 
 
 class TestThermalStateCircuit:

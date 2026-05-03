@@ -22,10 +22,10 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.originir_simulator import OriginIR_Simulator
-from uniqc.algorithmics.ansatz import uccsd_ansatz
-from uniqc.algorithmics.measurement import pauli_expectation
+from uniqc import uccsd_ansatz
+from uniqc import pauli_expectation
 
 
 # ── Toy Hamiltonian: H₂ (STO-3G, 2-electron, 4 spin-orbital) ──────────

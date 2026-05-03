@@ -27,9 +27,9 @@ import sys
 # Add parent directory to path so we can import uniqc when running as a script
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.circuits import ghz_state, w_state, cluster_state
+from uniqc import ghz_state, w_state, cluster_state
 
 
 def run_state(state_type: str, n_qubits: int, shots: int = 4096) -> dict:

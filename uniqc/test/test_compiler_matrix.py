@@ -6,12 +6,12 @@ from collections.abc import Iterable
 import numpy as np
 import pytest
 
-from uniqc.backend_info import BackendInfo, Platform, QubitTopology
+from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.matrix import NotMatrixableError, _opcode_matrix, get_matrix
-from uniqc.originir.originir_line_parser import OriginIR_LineParser
-from uniqc.transpiler import compile
-from uniqc.transpiler.compiler import _originir_to_circuit
+from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
+from uniqc.compile import compile
+from uniqc.compile.compiler import _originir_to_circuit
 
 try:
     import qiskit  # noqa: F401

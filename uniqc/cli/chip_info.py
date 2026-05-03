@@ -10,7 +10,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from uniqc.backend_info import Platform, QubitTopology
+from uniqc.backend_adapter.backend_info import Platform, QubitTopology
 
 __all__ = [
     "SingleQubitData",

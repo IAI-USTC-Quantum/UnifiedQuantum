@@ -58,11 +58,11 @@ git submodule update --init --recursive
 #### 构建并安装
 
 ```bash
-# 安装 CLI + Python 包（开发模式，源码可编辑，含全部可选依赖，推荐）
-uv tool install -e .[all]
+# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖
+uv sync --all-extras --group dev
 
-# 仅安装 Python 包（开发模式，不含可选依赖）
-uv pip install -e . --no-build-isolation
+# 验证完整测试套件
+uv run pytest uniqc/test
 ```
 
 > **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.26），请先运行 `pip install cmake --upgrade` 后再执行上述命令。
@@ -139,7 +139,7 @@ uv pip install unified-quantum[qiskit]
 pip install unified-quantum[qiskit]
 ```
 
-> **注意**：`[qiskit]` extra 包含 `qiskit>=1.0` 和 `qiskit-aer`，不含 `qiskit-ibm-provider`（`qiskit-ibm-provider` 仅兼容 qiskit 0.44–0.46，与 qiskit>=1.0 不兼容）。如需使用 IBM Quantum 访问接口，请在安装 `unified-quantum[qiskit]` 后单独安装 `pip install qiskit-ibm-runtime`（qiskit 1.x/2.x 的 IBM Quantum 接口）。
+> **注意**：`[qiskit]` extra 包含 `qiskit`、`qiskit-aer` 和 `qiskit-ibm-runtime`。项目不在 `pyproject.toml` 中钉住第三方依赖版本，具体版本由当前包索引解析得到。
 
 ### 高级模拟 (QuTiP)
 
@@ -174,6 +174,8 @@ pip install unified-quantum[all]
 ```
 
 ## 开发者补充
+
+维护者应使用仓库中的 `uv.lock` 和 `uv sync --all-extras --group dev` 建立全量环境；缺少任意可选后端依赖都应视为开发环境不完整，而不是测试阻断的正常原因。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，依赖解析问题应通过更新锁文件或上游兼容性审查处理。
 
 如需本地构建文档，可进入 `docs/` 目录后安装文档依赖并执行 `make html`。这一步仅在维护文档时需要，普通安装可跳过。
 

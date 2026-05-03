@@ -67,7 +67,7 @@ def show_result(
 
 def _query_result(task_id: str, platform: str | None) -> dict | None:
     """Query task result using the unified task_manager API."""
-    from uniqc.task_manager import query_task
+    from uniqc.backend_adapter.task_manager import query_task
 
     task_info = query_task(task_id, backend=platform)
     if task_info and task_info.result:
@@ -77,7 +77,7 @@ def _query_result(task_id: str, platform: str | None) -> dict | None:
 
 def _wait_for_result(task_id: str, platform: str | None, timeout: float) -> dict | None:
     """Wait for task result."""
-    from uniqc.task_manager import wait_for_result
+    from uniqc.backend_adapter.task_manager import wait_for_result
 
     return wait_for_result(task_id, backend=platform, timeout=timeout)
 

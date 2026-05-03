@@ -48,6 +48,7 @@ class M3Mitigator:
         max_age_hours: float = 24.0,
         backend: str = "dummy",
         qubit: int | tuple[int, int] | None = None,
+        cache_dir: str | pathlib.Path | None = None,
     ) -> None:
         if calibration_result is not None:
             self._cal = calibration_result
@@ -59,11 +60,17 @@ class M3Mitigator:
         self._backend = backend
         self._qubit = qubit
         self._max_age_hours = max_age_hours
+        self._cache_dir = cache_dir
 
     @property
     def calibration_result(self) -> Any:
         if self._cal is None:
-            self._cal = self._load_from_cache(self._backend, self._qubit, self._max_age_hours)
+            self._cal = self._load_from_cache(
+                self._backend,
+                self._qubit,
+                self._max_age_hours,
+                self._cache_dir,
+            )
         return self._cal
 
     def mitigate_counts(
@@ -155,9 +162,15 @@ class M3Mitigator:
         return d
 
     def _load_from_cache(
-        self, backend: str, qubit: int | tuple | None, max_age_hours: float
+        self,
+        backend: str,
+        qubit: int | tuple | None,
+        max_age_hours: float,
+        cache_dir: str | pathlib.Path | None = None,
     ) -> dict[str, Any]:
         """Find and load the freshest calibration result from cache."""
+        import json
+
         from uniqc.calibration.results import find_cached_results
 
         if qubit is None:
@@ -165,7 +178,12 @@ class M3Mitigator:
 
         result_type = "readout_2q" if isinstance(qubit, tuple) else "readout_1q"
 
-        paths = find_cached_results(backend, result_type, max_age_hours=max_age_hours)
+        paths = find_cached_results(
+            backend,
+            result_type,
+            max_age_hours=max_age_hours,
+            cache_dir=cache_dir,
+        )
         if not paths:
             raise FileNotFoundError(
                 f"No fresh calibration result found for backend={backend}, "
@@ -173,8 +191,29 @@ class M3Mitigator:
                 f"Run calibration first."
             )
 
-        # Use the most recent
-        latest = max(paths, key=lambda p: p.stat().st_mtime)
+        matching_paths: list[pathlib.Path] = []
+        expected_qubit = tuple(qubit) if isinstance(qubit, tuple) else qubit
+        for path in paths:
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+            except Exception:
+                continue
+            cached_qubit = data.get("qubit")
+            if isinstance(cached_qubit, list):
+                cached_qubit = tuple(cached_qubit)
+            if cached_qubit == expected_qubit:
+                matching_paths.append(path)
+
+        if not matching_paths:
+            raise FileNotFoundError(
+                f"No fresh calibration result found for backend={backend}, "
+                f"qubit={qubit}, max_age_hours={max_age_hours}. "
+                f"Run calibration first."
+            )
+
+        # Use the most recent exact qubit/pair match.
+        latest = max(matching_paths, key=lambda p: p.stat().st_mtime)
         return self._load_from_path(latest, max_age_hours)
 
     def _check_age(self, calibrated_at: str, max_age_hours: float) -> None:

@@ -10,7 +10,7 @@ Tests cover:
 import pytest
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.named_circuit import circuit_def, NamedCircuit
-from uniqc.originir.originir_line_parser import OriginIR_LineParser
+from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 
 
 # =============================================================================

@@ -1,5 +1,5 @@
 from uniqc.circuit_builder.qasm_spec import generate_sub_gateset_qasm
-from uniqc.qasm import OpenQASM2_BaseParser
+from uniqc.compile.qasm import OpenQASM2_BaseParser
 import uniqc.simulator as qsim
 import numpy as np
 

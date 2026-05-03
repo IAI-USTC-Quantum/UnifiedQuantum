@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "UnifiedQuantum"))
 
 def _get_wk180_backend(dummy: bool, backend_name: str | None) -> tuple:
     """Get adapter and chip characterization for WK180."""
-    from uniqc.task.adapters import DummyAdapter, OriginQAdapter
+    from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
     if dummy:
         # Fetch WK180 chip characterization from OriginQ cloud, then use DummyAdapter
@@ -39,7 +39,7 @@ def _get_wk180_backend(dummy: bool, backend_name: str | None) -> tuple:
         return adapter, chip_char
     else:
         # Use OriginQAdapter directly for real-machine execution
-        adapter = OriginQAdapter()
+        adapter = OriginQAdapter(backend_name=backend_name or "WK_C180")
         chip_char = adapter.get_chip_characterization(backend_name or "originq:wuyuan:wk180")
         return adapter, chip_char
 
@@ -73,7 +73,7 @@ def run_wk180_xeb(
     Returns:
         Dict with all XEB results.
     """
-    from uniqc.algorithm import xeb_workflow
+    from uniqc import xeb_workflow
 
     if depths is None:
         depths = [5, 10, 20, 50]
@@ -81,7 +81,14 @@ def run_wk180_xeb(
         qubits = [0, 1, 2, 3]
 
     adapter, chip_char = _get_wk180_backend(dummy, backend_name)
-    backend_label = "dummy" if dummy else (backend_name or "originq:wuyuan:wk180")
+    if dummy:
+        backend_label = "dummy"
+    elif backend_name is not None:
+        backend_label = backend_name
+    elif chip_char is not None:
+        backend_label = f"originq:{chip_char.chip_name}"
+    else:
+        backend_label = "originq:WK_C180"
 
     results: dict = {}
 

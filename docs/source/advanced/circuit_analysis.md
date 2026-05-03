@@ -29,7 +29,7 @@ remapped = circuit.remapping({0: 3, 1: 5})
 ## 可视化
 
 ```python
-from uniqc.transpiler import draw
+from uniqc.compile import draw
 
 draw(circuit.originir)
 ```

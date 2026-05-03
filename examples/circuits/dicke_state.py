@@ -19,9 +19,9 @@ sys.path.insert(0, __file__.rsplit("/", 2)[0])
 
 import numpy as np
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.circuits import dicke_state_circuit
+from uniqc import dicke_state_circuit
 
 
 def run_dicke(n_qubits, k, shots):

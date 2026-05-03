@@ -27,7 +27,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-from uniqc.backend_info import Platform
+from uniqc.backend_adapter.backend_info import Platform
 from uniqc.cli.chip_info import ChipCharacterization
 
 DEFAULT_CACHE_DIR = Path.home() / ".uniqc" / "backend-cache"

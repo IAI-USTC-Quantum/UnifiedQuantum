@@ -44,7 +44,7 @@ uv pip install unified-quantum
 ### 2. 构建线路（支持原生 API 或任意第三方工具）
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()
 c.h(0)
@@ -146,12 +146,14 @@ uv pip install unified-quantum
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
-# 安装 CLI + Python 包（开发模式，源码可编辑，含全部可选依赖）
-uv tool install -e .[all]
+# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖
+uv sync --all-extras --group dev
 
-# 仅安装 Python 包（开发模式，不含可选依赖）
-uv pip install -e . --no-build-isolation
+# 运行完整测试套件
+uv run pytest uniqc/test
 ```
+
+维护者环境不应把 qiskit、QuTiP、pyquafu 等可选模块缺失视为正常跳过条件；全量开发和全量测试应通过仓库的 `uv.lock` 解析完整依赖。`pyproject.toml` 不钉住第三方依赖版本，依赖版本由当前包索引和锁文件共同解析。
 
 **Requirements:**
 - CMake >= 3.26
@@ -198,7 +200,7 @@ uv pip install unified-quantum[pytorch]
 uv pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 ```
 
-不安装 TorchQuantum 不会影响核心功能、QuTiP 模拟、云平台适配器或常规 `uniqc.pytorch` 功能；只有 TorchQuantum 专用后端与示例会在实际使用时提示缺少该依赖。
+不安装 TorchQuantum 不会影响核心功能、QuTiP 模拟、云平台适配器或常规 `uniqc.torch_adapter` 功能；只有 TorchQuantum 专用后端与示例会在实际使用时提示缺少该依赖。
 
 ---
 

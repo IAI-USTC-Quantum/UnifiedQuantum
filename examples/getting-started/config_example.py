@@ -4,7 +4,7 @@ This example demonstrates how to use the new config module to manage
 quantum cloud platform configurations.
 """
 
-from uniqc.config import (
+from uniqc.backend_adapter.config import (
     load_config,
     save_config,
     get_platform_config,

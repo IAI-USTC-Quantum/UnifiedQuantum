@@ -59,7 +59,7 @@ export IBM_TOKEN="your-ibm-token"
 
 ```python
 from uniqc import Circuit
-from uniqc.task_manager import submit_task, wait_for_result
+from uniqc import submit_task, wait_for_result
 
 # 创建量子线路
 circuit = Circuit()
@@ -88,7 +88,7 @@ print(result['counts'])
 提交单个量子线路到云平台：
 
 ```python
-from uniqc.task_manager import submit_task
+from uniqc import submit_task
 
 task_id = submit_task(
     circuit,              # OriginIR 或 QASM 格式的线路字符串
@@ -113,7 +113,7 @@ task_id = submit_task(
 批量提交多个量子线路：
 
 ```python
-from uniqc.task_manager import submit_batch
+from uniqc import submit_batch
 
 task_ids = submit_batch(
     circuits,             # 线路列表
@@ -129,7 +129,7 @@ task_ids = submit_batch(
 查询单个任务状态：
 
 ```python
-from uniqc.task_manager import query_task
+from uniqc import query_task
 
 info = query_task(task_id, backend='originq')
 print(info['status'])  # 'running', 'success', 'failed'
@@ -140,7 +140,7 @@ print(info['status'])  # 'running', 'success', 'failed'
 阻塞等待任务完成并返回结果：
 
 ```python
-from uniqc.task_manager import wait_for_result
+from uniqc import wait_for_result
 
 result = wait_for_result(
     task_id,
@@ -157,7 +157,7 @@ result = wait_for_result(
 列出所有缓存的任务：
 
 ```python
-from uniqc.task_manager import list_tasks
+from uniqc import list_tasks
 
 tasks = list_tasks()
 for task in tasks:
@@ -169,7 +169,7 @@ for task in tasks:
 获取特定任务的详细信息：
 
 ```python
-from uniqc.task_manager import get_task
+from uniqc import get_task
 
 task_info = get_task(task_id)
 ```
@@ -179,7 +179,7 @@ task_info = get_task(task_id)
 清理已完成的任务：
 
 ```python
-from uniqc.task_manager import clear_completed_tasks
+from uniqc import clear_completed_tasks
 
 cleared = clear_completed_tasks()
 print(f"Cleared {cleared} tasks")
@@ -190,7 +190,7 @@ print(f"Cleared {cleared} tasks")
 清空所有缓存：
 
 ```python
-from uniqc.task_manager import clear_cache
+from uniqc import clear_cache
 
 clear_cache()
 ```
@@ -212,7 +212,7 @@ export UNIQC_DUMMY=1
 ### 检查 Dummy 模式
 
 ```python
-from uniqc.task_manager import is_dummy_mode
+from uniqc import is_dummy_mode
 
 if is_dummy_mode():
     print("Running in dummy mode - tasks will be simulated locally")
@@ -223,7 +223,7 @@ if is_dummy_mode():
 直接使用 `DummyAdapter` 进行本地模拟：
 
 ```python
-from uniqc.task.adapters.dummy_adapter import DummyAdapter
+from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 
 adapter = DummyAdapter()
 
@@ -244,7 +244,7 @@ result = adapter.query(task_id)
 使用 `TaskPersistence` 进行更细粒度的任务存储管理：
 
 ```python
-from uniqc.task.persistence import TaskPersistence
+from uniqc.backend_adapter.task.persistence import TaskPersistence
 
 # 创建持久化实例
 persistence = TaskPersistence()
@@ -276,7 +276,7 @@ persistence.clear_completed()
 
 任务数据默认存储在 `~/.uniqc/cache/tasks.sqlite` 单一 SQLite 数据库中。数据库使用
 `PRAGMA application_id`（常量值 `"UNIC"`）校验文件归属，并通过 `PRAGMA user_version`
-维护 schema 版本；打开时如发现新版本会自动按 `uniqc.task.store.MIGRATIONS` 顺序迁移。
+维护 schema 版本；打开时如发现新版本会自动按 `uniqc.backend_adapter.task.store.MIGRATIONS` 顺序迁移。
 可通过向 `TaskPersistence(cache_dir=...)` 或 `TaskStore(cache_dir=...)` 传入其他路径覆盖默认位置。
 
 ## 错误处理 {#guide-task-manager-error-handling}
@@ -286,10 +286,10 @@ persistence.clear_completed()
 当缺少平台依赖时抛出：
 
 ```python
-from uniqc.task.optional_deps import MissingDependencyError
+from uniqc.backend_adapter.task.optional_deps import MissingDependencyError
 
 try:
-    from uniqc.task.adapters.quafu_adapter import QuafuAdapter
+    from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
     adapter = QuafuAdapter()
 except MissingDependencyError as e:
     print(f"Missing dependency: {e.package}")
@@ -323,4 +323,4 @@ except MissingDependencyError as e:
 
 - 了解 [云平台适配器架构](../advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)
-- 参考 API 文档：{mod}`uniqc.task_manager`
+- 参考 API 文档：{mod}`uniqc.backend_adapter.task_manager`

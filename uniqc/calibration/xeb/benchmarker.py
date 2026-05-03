@@ -1,12 +1,14 @@
 """XEB benchmarker: executes XEB circuits and fits fidelity curves.
 
 The benchmarker integrates readout EM by optionally applying it to raw
-measurement counts before computing the Hellinger fidelity against the
+measurement counts before computing the linear XEB estimator against the
 noiseless ideal distribution.
 """
 
 from __future__ import annotations
 
+import pathlib
+import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
@@ -17,10 +19,10 @@ from uniqc.calibration.xeb.circuits import (
     generate_1q_xeb_circuits,
     generate_2q_xeb_circuit,
 )
-from uniqc.calibration.xeb.fitter import compute_hellinger_fidelity, fit_exponential
+from uniqc.calibration.xeb.fitter import compute_linear_xeb, fit_exponential
 
 if TYPE_CHECKING:
-    from uniqc.task.adapters.base import QuantumAdapter
+    from uniqc.backend_adapter.task.adapters.base import QuantumAdapter
 
 __all__ = ["XEBenchmarker"]
 
@@ -29,7 +31,7 @@ class XEBenchmarker:
     """Cross-entropy benchmarking engine.
 
     Executes random XEB circuits on a quantum adapter (or dummy backend),
-    computes Hellinger fidelities against the noiseless ideal distribution,
+    computes normalized linear XEB values against the noiseless ideal distribution,
     and fits an exponential decay model to extract the per-layer fidelity ``r``.
 
     Args:
@@ -53,7 +55,10 @@ class XEBenchmarker:
         self.shots = shots
         self.readout_em = readout_em
         self.seed = seed
+        self.cache_dir = pathlib.Path(cache_dir) if cache_dir is not None else None
         self._noiseless_sim = self._build_noiseless_simulator()
+        self.query_timeout = 300.0
+        self.query_interval = 2.0
 
     # -------------------------------------------------------------------------
     # Public API
@@ -96,7 +101,7 @@ class XEBenchmarker:
             n_circuits=n_circuits,
             shots=self.shots,
         )
-        save_calibration_result(result, type_prefix="xeb_1q")
+        save_calibration_result(result, type_prefix="xeb_1q", cache_dir=self.cache_dir)
         return result
 
     def run_2q(
@@ -119,6 +124,8 @@ class XEBenchmarker:
         Returns:
             ``XEBResult`` with per-layer fidelity ``r``.
         """
+        circuits = []
+        circuit_depths = []
         fidelity_by_depth: dict[int, list[float]] = {d: [] for d in depths}
 
         for d in depths:
@@ -130,10 +137,14 @@ class XEBenchmarker:
                     entangler_gate,
                     seed=(self.seed + i) if self.seed is not None else None,
                 )
-                fid = _circuit_fidelity(c, self)
-                fidelity_by_depth[d].append(fid)
+                circuits.append(c)
+                circuit_depths.append(d)
 
-        avg_fidelities = [np.mean(fidelity_by_depth[d]) for d in depths]
+        fidelities = _circuit_fidelities(circuits, self)
+        for d, fid in zip(circuit_depths, fidelities, strict=True):
+            fidelity_by_depth[d].append(fid)
+
+        avg_fidelities = [_finite_mean(fidelity_by_depth[d], depth=d) for d in depths]
         fit = fit_exponential(depths, avg_fidelities)
 
         result = XEBResult(
@@ -151,7 +162,7 @@ class XEBenchmarker:
             n_circuits=n_circuits,
             shots=self.shots,
         )
-        save_calibration_result(result, type_prefix="xeb_2q")
+        save_calibration_result(result, type_prefix="xeb_2q", cache_dir=self.cache_dir)
         return result
 
     def run_parallel_2q(
@@ -188,11 +199,10 @@ class XEBenchmarker:
             seed=self.seed,
         )
 
-        for c in circuits:
-            fid = _circuit_fidelity(c, self)
+        for fid in _circuit_fidelities(circuits, self):
             fidelity_by_depth[depth].append(fid)
 
-        avg_fid = float(np.mean(fidelity_by_depth[depth]))
+        avg_fid = _finite_mean(fidelity_by_depth[depth], depth=depth)
         # For single-depth parallel XEB, just report mean fidelity
         fit = {"r": avg_fid, "A": 0.0, "B": 0.0, "r_stderr": 0.0, "method": "parallel_single_depth"}
 
@@ -211,7 +221,7 @@ class XEBenchmarker:
             n_circuits=n_circuits,
             shots=self.shots,
         )
-        save_calibration_result(result, type_prefix="xeb_2q_parallel")
+        save_calibration_result(result, type_prefix="xeb_2q_parallel", cache_dir=self.cache_dir)
         return result
 
     # -------------------------------------------------------------------------
@@ -256,20 +266,17 @@ class XEBenchmarker:
                     arr = _apply_readout_em_to_probs(arr, self.readout_em, measured_qubits)
                 return arr
 
-            # Path 2: Real cloud backends — use shot sampling via submit/query
-            task_id = self.adapter.submit(originir, shots=self.shots)
-            result = self.adapter.query(task_id)
-            raw = result.get("result", {})
-            if hasattr(raw, "counts"):
-                counts = raw.counts
-            elif isinstance(raw, dict):
-                counts = raw
-            else:
-                counts = {}
+            # Path 2: Real cloud backends — use shot sampling via submit/query.
+            # Cloud jobs are asynchronous; wait for terminal status before reading counts.
+            counts = self._submit_and_wait_counts(originir)
             probs = _counts_to_probs(counts, measured_qubits)
 
             if self.readout_em is not None:
-                mitigated = self.readout_em.mitigate_counts(counts, measured_qubits)
+                int_counts: dict[int, int] = {}
+                for k, v in counts.items():
+                    idx = _outcome_to_int(k, len(measured_qubits))
+                    int_counts[idx] = int_counts.get(idx, 0) + int(v)
+                mitigated = self.readout_em.mitigate_counts(int_counts, measured_qubits)
                 total = sum(mitigated.values())
                 if total > 0:
                     probs = {int(k): v / total for k, v in mitigated.items()}
@@ -278,10 +285,59 @@ class XEBenchmarker:
             n = len(p_ideal) if p_ideal is not None else (2 ** len(measured_qubits))
             arr = np.zeros(n)
             for k, v in probs.items():
-                arr[int(k)] = v
+                idx = int(k)
+                if 0 <= idx < n:
+                    arr[idx] = v
             return arr
         except Exception:
             return None
+
+    def _submit_and_wait_counts(self, originir: str) -> dict[Any, int]:
+        """Submit a circuit and wait until a cloud backend returns shot counts."""
+        task_id = self.adapter.submit(originir, shots=self.shots)
+        deadline = time.time() + self.query_timeout
+
+        while True:
+            result = self.adapter.query(task_id)
+            status = result.get("status", "")
+            if status == "success":
+                raw = result.get("result", {})
+                if hasattr(raw, "counts"):
+                    return raw.counts
+                if isinstance(raw, dict):
+                    return raw
+                return {}
+            if status == "failed":
+                raise RuntimeError(f"XEB circuit failed on backend: {result.get('result') or result.get('error')}")
+            if time.time() >= deadline:
+                raise TimeoutError(f"Timed out waiting for XEB task {task_id}")
+            time.sleep(self.query_interval)
+
+    def _submit_batch_and_wait_counts(self, originirs: list[str]) -> list[dict[Any, int]]:
+        """Submit circuits as a backend batch and wait for per-circuit counts."""
+        if not hasattr(self.adapter, "submit_batch") or not hasattr(self.adapter, "query_batch"):
+            return [self._submit_and_wait_counts(originir) for originir in originirs]
+
+        task_ids = self.adapter.submit_batch(originirs, shots=self.shots)
+        deadline = time.time() + max(self.query_timeout, self.query_timeout * len(originirs) / 20)
+
+        while True:
+            result = self.adapter.query_batch(task_ids)
+            status = result.get("status", "")
+            if status == "success":
+                payload = result.get("result", [])
+                if isinstance(payload, dict):
+                    return [payload]
+                if isinstance(payload, list):
+                    if all(isinstance(item, dict) for item in payload):
+                        return payload
+                    raise RuntimeError(f"Unexpected batch result payload: {payload!r}")
+                raise RuntimeError(f"Unexpected batch result payload: {payload!r}")
+            if status == "failed":
+                raise RuntimeError(f"XEB batch failed on backend: {result.get('result') or result.get('error')}")
+            if time.time() >= deadline:
+                raise TimeoutError(f"Timed out waiting for XEB batch task(s) {task_ids}")
+            time.sleep(self.query_interval)
 
 
 # ---------------------------------------------------------------------------
@@ -293,29 +349,105 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _finite_mean(values: list[float], *, depth: int) -> float:
+    arr = np.asarray(values, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    if len(arr) == 0:
+        raise RuntimeError(f"No valid XEB values for depth={depth}")
+    return float(np.mean(arr))
+
+
 def _counts_to_probs(counts: dict, measured_qubits: list[int]) -> dict[int, float]:
-    """Normalize counts dict to probabilities."""
+    """Normalize counts dict to integer-indexed probabilities."""
     total = sum(counts.values())
     if total == 0:
         return {}
-    return {int(k): v / total for k, v in counts.items()}
+    width = len(measured_qubits)
+    probs: dict[int, float] = {}
+    for key, value in counts.items():
+        idx = _outcome_to_int(key, width)
+        probs[idx] = probs.get(idx, 0.0) + (value / total)
+    return probs
+
+
+def _outcome_to_int(outcome: Any, width: int) -> int:
+    """Convert backend outcome keys to the local probability-vector index."""
+    if isinstance(outcome, int):
+        return outcome
+    text = str(outcome).strip()
+    if text.startswith("0b"):
+        return int(text, 2)
+    if set(text) <= {"0", "1"} and len(text) > 1:
+        return int(text[-width:] if width > 0 else text, 2)
+    return int(text)
 
 
 def _mean_fidelities_by_depth(
     circuits: list, depths: list[int], n_circuits: int, benchmarker: XEBenchmarker
 ) -> list[float]:
-    """Compute mean Hellinger fidelity for each depth from a flat circuit list."""
+    """Compute mean normalized XEB value for each depth from a flat circuit list."""
     fidelity_by_depth: dict[int, list[float]] = {d: [] for d in depths}
+    fidelities = _circuit_fidelities(circuits, benchmarker)
     idx = 0
     for d in depths:
         for _ in range(n_circuits):
-            if idx >= len(circuits):
+            if idx >= len(fidelities):
                 break
-            c = circuits[idx]
+            fid = fidelities[idx]
             idx += 1
-            fid = _circuit_fidelity(c, benchmarker)
             fidelity_by_depth[d].append(fid)
-    return [float(np.mean(fidelity_by_depth[d])) for d in depths]
+    means = []
+    for d in depths:
+        vals = np.asarray(fidelity_by_depth[d], dtype=float)
+        vals = vals[np.isfinite(vals)]
+        if len(vals) == 0:
+            raise RuntimeError(f"No valid XEB values for depth={d}")
+        means.append(float(np.mean(vals)))
+    return means
+
+
+def _circuit_fidelities(circuits: list, benchmarker: XEBenchmarker) -> list[float]:
+    """Compute circuit fidelities, using backend batch submission when available."""
+    if not circuits:
+        return []
+
+    if hasattr(benchmarker.adapter, "simulate_pmeasure"):
+        return [_circuit_fidelity(c, benchmarker) for c in circuits]
+
+    originirs = [c.originir for c in circuits]
+    measured_qubits_list = [
+        list(getattr(c, "measure_list", None) or range(c.qubit_num))
+        for c in circuits
+    ]
+    counts_list = benchmarker._submit_batch_and_wait_counts(originirs)
+    if len(counts_list) != len(circuits):
+        raise RuntimeError(
+            f"Batch returned {len(counts_list)} result(s) for {len(circuits)} circuit(s)"
+        )
+
+    fidelities = []
+    for originir, counts, measured_qubits in zip(originirs, counts_list, measured_qubits_list, strict=True):
+        p_ideal = benchmarker._get_ideal_probs(originir)
+        if p_ideal is None:
+            raise RuntimeError("Failed to compute ideal probability distribution for XEB circuit")
+        probs = _counts_to_probs(counts, measured_qubits)
+        if benchmarker.readout_em is not None:
+            int_counts: dict[int, int] = {}
+            for k, v in counts.items():
+                idx = _outcome_to_int(k, len(measured_qubits))
+                int_counts[idx] = int_counts.get(idx, 0) + int(v)
+            mitigated = benchmarker.readout_em.mitigate_counts(int_counts, measured_qubits)
+            total = sum(mitigated.values())
+            if total > 0:
+                probs = {int(k): v / total for k, v in mitigated.items()}
+
+        p_noisy = np.zeros(len(p_ideal))
+        for k, v in probs.items():
+            idx = int(k)
+            if 0 <= idx < len(p_noisy):
+                p_noisy[idx] = v
+        fidelities.append(compute_linear_xeb(p_ideal, p_noisy, normalized=True))
+    return fidelities
 
 
 def _apply_readout_em_to_probs(
@@ -323,67 +455,39 @@ def _apply_readout_em_to_probs(
 ) -> np.ndarray:
     """Apply readout EM confusion matrix to a probability vector.
 
-    Works in probability space (exact pmeasure output) rather than counts.
-    The confusion matrix P(measured | prepared) is inverted via M3 to get
-    P(prepared | measured), then applied to the observed probability vector.
+    Works in probability space (exact pmeasure output) rather than counts,
+    using the public ReadoutEM probability interface.
     """
     from uniqc.qem import ReadoutEM
 
     if not isinstance(readout_em, ReadoutEM):
         return probs_arr
-
-    n = len(measured_qubits)
-    if n == 1:
-        try:
-            cm = readout_em._get_confusion_matrix(measured_qubits[0])
-        except Exception:
-            return probs_arr
-        if cm is None or len(cm) != 2:
-            return probs_arr
-        # Invert 2x2 confusion matrix: P(prepared|measured) = inv(P(measured|prepared))
-        C = np.array([[cm[0][0], cm[0][1]], [cm[1][0], cm[1][1]]], dtype=float)
-        det = C[0, 0] * C[1, 1] - C[0, 1] * C[1, 0]
-        if abs(det) < 1e-10:
-            return probs_arr
-        inv = np.array([[C[1, 1], -C[0, 1]], [-C[1, 0], C[0, 0]]], dtype=float) / det
-        mitigated = inv @ probs_arr[:2]
-        result = probs_arr.copy()
-        result[:2] = mitigated
-        return result
-    elif n == 2:
-        try:
-            cm = readout_em._get_confusion_matrix((measured_qubits[0], measured_qubits[1]))
-        except Exception:
-            return probs_arr
-        if cm is None or len(cm) != 4:
-            return probs_arr
-        C = np.array(cm, dtype=float)
-        det = (C[0,0]*C[1,1] - C[0,1]*C[1,0]) * (C[2,2]*C[3,3] - C[2,3]*C[3,2]) - \
-              (C[0,0]*C[2,1] - C[0,1]*C[2,0]) * (C[1,2]*C[3,3] - C[1,3]*C[3,2])
-        if abs(det) < 1e-10:
-            return probs_arr
-        try:
-            inv = np.linalg.inv(C)
-        except Exception:
-            return probs_arr
-        result = probs_arr.copy()
-        result[:4] = inv @ probs_arr[:4]
-        return result
-    return probs_arr
+    try:
+        probs = {i: float(p) for i, p in enumerate(probs_arr)}
+        mitigated = readout_em.mitigate_probabilities(probs, measured_qubits)
+    except Exception:
+        return probs_arr
+    result = np.zeros_like(probs_arr, dtype=float)
+    for k, v in mitigated.items():
+        idx = int(k)
+        if 0 <= idx < len(result):
+            result[idx] = float(v)
+    return result
 
 
 def _circuit_fidelity(circuit, benchmarker: XEBenchmarker) -> float:
-    """Compute Hellinger fidelity for one circuit against its ideal distribution."""
+    """Compute normalized linear XEB for one circuit against its ideal distribution."""
     originir = circuit.originir
-    # Determine measured qubits from the circuit
-    measured_qubits = list(range(circuit.qubit_num))
+    measured_qubits = list(getattr(circuit, "measure_list", None) or range(circuit.qubit_num))
 
     # Get ideal probabilities
     p_ideal = benchmarker._get_ideal_probs(originir)
     # Get noisy probabilities
     p_noisy = benchmarker._get_noisy_probs(originir, measured_qubits)
 
-    if p_ideal is None or p_noisy is None:
-        return 1.0  # Fallback to perfect if simulation fails
+    if p_ideal is None:
+        raise RuntimeError("Failed to compute ideal probability distribution for XEB circuit")
+    if p_noisy is None:
+        raise RuntimeError("Failed to compute measured probability distribution for XEB circuit")
 
-    return compute_hellinger_fidelity(p_ideal, p_noisy)
+    return compute_linear_xeb(p_ideal, p_noisy, normalized=True)

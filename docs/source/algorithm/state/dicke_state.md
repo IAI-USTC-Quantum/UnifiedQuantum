@@ -32,7 +32,7 @@ Dicke 态在量子信息中有广泛应用：
 ### `dicke_state_circuit`
 
 ```python
-from uniqc.algorithmics.circuits import dicke_state_circuit
+from uniqc import dicke_state_circuit
 ```
 
 函数签名：

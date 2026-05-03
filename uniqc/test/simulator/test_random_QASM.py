@@ -1,7 +1,7 @@
 import numpy as np
 from uniqc.simulator.qasm_simulator import QASM_Simulator
 from uniqc.test._utils import uniq_test, NotMatchError
-from uniqc.qasm import NotSupportedGateError
+from uniqc.compile.qasm import NotSupportedGateError
 from uniqc.circuit_builder.random_qasm import random_qasm
 from uniqc.circuit_builder.qasm_spec import available_qasm_gates, generate_sub_gateset_qasm
 

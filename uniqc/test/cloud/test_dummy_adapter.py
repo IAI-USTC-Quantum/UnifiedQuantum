@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from uniqc.task.optional_deps import SIMULATION_AVAILABLE
+from uniqc.backend_adapter.task.optional_deps import SIMULATION_AVAILABLE
 
 
 @pytest.mark.skipif(
@@ -21,7 +21,7 @@ class TestDummyAdapter:
     @pytest.fixture
     def adapter(self):
         """Create a DummyAdapter instance."""
-        from uniqc.task.adapters.dummy_adapter import DummyAdapter
+        from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
         return DummyAdapter()
 
     def test_name(self, adapter):
@@ -118,7 +118,7 @@ class TestUniqcDummyEnv:
         """Test UNIQC_DUMMY=true is recognized."""
         monkeypatch.setenv("UNIQC_DUMMY", "true")
         # Re-import to pick up new env var
-        import uniqc.task.adapters.dummy_adapter as dummy_mod
+        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
         assert dummy_mod.UNIQC_DUMMY is True
@@ -126,7 +126,7 @@ class TestUniqcDummyEnv:
     def test_env_variable_false(self, monkeypatch):
         """Test UNIQC_DUMMY=false is recognized as false."""
         monkeypatch.setenv("UNIQC_DUMMY", "false")
-        import uniqc.task.adapters.dummy_adapter as dummy_mod
+        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
         assert dummy_mod.UNIQC_DUMMY is False
@@ -134,7 +134,7 @@ class TestUniqcDummyEnv:
     def test_env_variable_1(self, monkeypatch):
         """Test UNIQC_DUMMY=1 is recognized as true."""
         monkeypatch.setenv("UNIQC_DUMMY", "1")
-        import uniqc.task.adapters.dummy_adapter as dummy_mod
+        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
         importlib.reload(dummy_mod)
 
         assert dummy_mod.UNIQC_DUMMY is True

@@ -21,9 +21,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.originir_simulator import OriginIR_Simulator
-from uniqc.algorithmics.ansatz import qaoa_ansatz
+from uniqc import qaoa_ansatz
 
 
 # ── Example graph: triangle (3-node ring) ──────────────────────────────

@@ -6,7 +6,7 @@ from .circuits import (
     generate_2q_xeb_circuits,
     generate_parallel_2q_xeb_circuits,
 )
-from .fitter import compute_hellinger_fidelity, fit_exponential
+from .fitter import compute_hellinger_fidelity, compute_linear_xeb, fit_exponential
 from .patterns import ParallelPatternGenerator, ParallelPatternResult
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "generate_2q_xeb_circuits",
     "generate_parallel_2q_xeb_circuits",
     "compute_hellinger_fidelity",
+    "compute_linear_xeb",
     "fit_exponential",
     "ParallelPatternGenerator",
     "ParallelPatternResult",

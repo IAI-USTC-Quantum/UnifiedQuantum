@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import ghz_state, w_state, cluster_state
+from uniqc.algorithms.core.circuits import ghz_state, w_state, cluster_state
 
 
 def _simulate_probs(circuit, n_qubits):

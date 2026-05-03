@@ -7,7 +7,7 @@ class TestReadoutCalibrator1Q:
     def test_perfect_readout_identity_matrix(self, tmp_path):
         """With a noiseless DummyAdapter, confusion matrix should be identity."""
         from uniqc.calibration.readout import ReadoutCalibrator
-        from uniqc.task.adapters import DummyAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         adapter = DummyAdapter()  # noiseless
         cal = ReadoutCalibrator(adapter=adapter, shots=1000, cache_dir=tmp_path)
@@ -25,7 +25,7 @@ class TestReadoutCalibrator1Q:
     def test_cache_file_created(self, tmp_path):
         """Calibration should create a file in the cache directory."""
         from uniqc.calibration.readout import ReadoutCalibrator
-        from uniqc.task.adapters import DummyAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         adapter = DummyAdapter()
         cal = ReadoutCalibrator(adapter=adapter, shots=100, cache_dir=tmp_path)
@@ -38,7 +38,7 @@ class TestReadoutCalibrator1Q:
     def test_calibrate_multiple_qubits(self, tmp_path):
         """calibrate_qubits should calibrate each qubit."""
         from uniqc.calibration.readout import ReadoutCalibrator
-        from uniqc.task.adapters import DummyAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         adapter = DummyAdapter()
         cal = ReadoutCalibrator(adapter=adapter, shots=100, cache_dir=tmp_path)
@@ -52,7 +52,7 @@ class TestReadoutCalibrator1Q:
     def test_confusion_matrix_shape(self, tmp_path):
         """Confusion matrix should be 2x2 for single-qubit."""
         from uniqc.calibration.readout import ReadoutCalibrator
-        from uniqc.task.adapters import DummyAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         adapter = DummyAdapter()
         cal = ReadoutCalibrator(adapter=adapter, shots=100, cache_dir=tmp_path)
@@ -65,7 +65,7 @@ class TestReadoutCalibrator1Q:
     def test_calibrate_2q_identity(self, tmp_path):
         """Noiseless 2q adapter should give near-identity confusion matrix."""
         from uniqc.calibration.readout import ReadoutCalibrator
-        from uniqc.task.adapters import DummyAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         adapter = DummyAdapter()
         cal = ReadoutCalibrator(adapter=adapter, shots=200, cache_dir=tmp_path)

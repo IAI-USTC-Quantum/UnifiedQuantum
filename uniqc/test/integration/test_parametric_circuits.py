@@ -125,7 +125,7 @@ def test_def_roundtrip():
     def_str = bell.to_originir_def()
 
     # Parse DEF header
-    from uniqc.originir.originir_line_parser import OriginIR_LineParser
+    from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 
     for line in def_str.split("\n"):
         if line.startswith("DEF "):

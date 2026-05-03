@@ -5,6 +5,7 @@ import pytest
 
 from uniqc.calibration.xeb.fitter import (
     compute_hellinger_fidelity,
+    compute_linear_xeb,
     fit_exponential,
 )
 
@@ -34,6 +35,26 @@ class TestHellingerFidelity:
         p = np.array([0.25, 0.25, 0.25, 0.25])
         q = np.array([0.25, 0.25, 0.25, 0.25])
         assert compute_hellinger_fidelity(p, q) == pytest.approx(1.0)
+
+
+class TestLinearXEB:
+    def test_normalized_ideal_distribution_is_one(self):
+        p = np.array([0.8, 0.2])
+        assert compute_linear_xeb(p, p) == pytest.approx(1.0)
+
+    def test_normalized_uniform_distribution_is_zero(self):
+        p_ideal = np.array([0.8, 0.2])
+        p_uniform = np.array([0.5, 0.5])
+        assert compute_linear_xeb(p_ideal, p_uniform) == pytest.approx(0.0)
+
+    def test_unnormalized_linear_xeb_formula(self):
+        p_ideal = np.array([0.8, 0.2])
+        p_observed = np.array([0.5, 0.5])
+        assert compute_linear_xeb(p_ideal, p_observed, normalized=False) == pytest.approx(0.0)
+
+    def test_normalized_uniform_ideal_is_undefined(self):
+        p = np.array([0.5, 0.5])
+        assert np.isnan(compute_linear_xeb(p, p))
 
 
 class TestExponentialFit:

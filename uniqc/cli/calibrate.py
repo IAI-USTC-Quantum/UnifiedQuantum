@@ -94,7 +94,7 @@ def xeb_cmd(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Run XEB benchmarking on specified qubits."""
-    from uniqc.algorithm import xeb_workflow
+    from uniqc.algorithms.workflows import xeb_workflow
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
 
     if depths is None:
@@ -124,7 +124,7 @@ def xeb_cmd(
 
     # Run XEB
     try:
-        from uniqc.task.adapters import DummyAdapter, OriginQAdapter
+        from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
         adapter_kwargs: dict[str, Any] = {}
         chip_char = None
@@ -134,6 +134,13 @@ def xeb_cmd(
             # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
             chip = backend.split(":", 1)[1] if ":" in backend else backend
             adapter = OriginQAdapter(backend_name=chip)
+            try:
+                chip_char = adapter.get_chip_characterization(chip)
+            except Exception as e:
+                print_warning(f"Could not load chip characterization for backend={backend}: {e}")
+                chip_char = None
+            if chip_char is None:
+                print_warning(f"No chip characterization available for backend={backend}")
         else:
             adapter = DummyAdapter()
 
@@ -144,6 +151,8 @@ def xeb_cmd(
             if qubits:
                 target = set(qubits)
                 edges = [(u, v) for u, v in edges if u in target and v in target]
+        elif len(qubits) >= 2:
+            edges = [(qubits[i], qubits[i + 1]) for i in range(len(qubits) - 1)]
 
         results: dict[str, Any] = {}
 
@@ -228,7 +237,7 @@ def readout_cmd(
 ) -> None:
     """Run readout calibration and save confusion matrices."""
     from uniqc.calibration.readout import ReadoutCalibrator
-    from uniqc.task.adapters import DummyAdapter, OriginQAdapter
+    from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
     if qubits is None:
         qubits = [0, 1, 2, 3]
@@ -254,7 +263,7 @@ def readout_cmd(
             console.print(f"  Qubit {q}: assignment fidelity = {r['assignment_fidelity']:.5f}")
 
     if readout_type in ("2q", "both"):
-        from uniqc.task.adapters.dummy_adapter import DummyAdapter as DA
+        from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter as DA
         if isinstance(adapter, DA):
             # Use connectivity from dummy adapter if available
             topology = adapter.available_topology or [(i, i + 1) for i in range(len(qubits) - 1)]

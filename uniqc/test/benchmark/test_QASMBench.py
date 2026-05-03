@@ -1,10 +1,10 @@
 import numpy as np
-from uniqc.qasm import OpenQASM2_BaseParser, OpenQASM2_LineParser
+from uniqc.compile.qasm import OpenQASM2_BaseParser, OpenQASM2_LineParser
 from pathlib import Path
 import pickle
 from uniqc.simulator.qasm_simulator import QASM_Simulator
 from uniqc.test._utils import uniq_test, NotMatchError
-from uniqc.qasm import NotSupportedGateError
+from uniqc.compile.qasm import NotSupportedGateError
 
 import qiskit
 import qiskit.qasm2 as qasm

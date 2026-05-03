@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from uniqc.task.adapters.base import QuantumAdapter
+    from uniqc.backend_adapter.task.adapters.base import QuantumAdapter
 
 __all__ = ["ReadoutEM"]
 
@@ -48,6 +48,7 @@ class ReadoutEM:
 
         self.adapter = adapter
         self.max_age_hours = max_age_hours
+        self.cache_dir = cache_dir
         self.shots = shots
         self._calibrator = ReadoutCalibrator(
             adapter=adapter, shots=shots, cache_dir=cache_dir
@@ -136,6 +137,7 @@ class ReadoutEM:
                 max_age_hours=self.max_age_hours,
                 backend=getattr(self.adapter, "name", "unknown"),
                 qubit=qubit,
+                cache_dir=self.cache_dir,
             )
         return self._mitigators[key]
 
@@ -167,6 +169,7 @@ class ReadoutEM:
                 max_age_hours=self.max_age_hours,
                 backend=getattr(self.adapter, "name", "unknown"),
                 qubit=(q0, q1),
+                cache_dir=self.cache_dir,
             )
         return self._mitigators[key]
 
@@ -183,8 +186,8 @@ class ReadoutEM:
         using its 1-qubit confusion matrix, applied in order.
         """
         result = {int(k): float(v) for k, v in counts.items()}
-        for q in qubits:
-            result = self._apply_1q_matrix(result, q)
+        for bit_position, q in enumerate(qubits):
+            result = self._apply_1q_matrix(result, q, bit_position, len(qubits))
         return result
 
     def _mitigate_probs_nq(
@@ -192,12 +195,16 @@ class ReadoutEM:
     ) -> dict[int, float]:
         """Apply per-qubit readout EM sequentially to probabilities."""
         result = {int(k): float(v) for k, v in probs.items()}
-        for q in qubits:
-            result = self._apply_1q_matrix_probs(result, q)
+        for bit_position, q in enumerate(qubits):
+            result = self._apply_1q_matrix_probs(result, q, bit_position, len(qubits))
         return result
 
     def _apply_1q_matrix(
-        self, counts: dict[int, float], qubit: int
+        self,
+        counts: dict[int, float],
+        qubit: int,
+        bit_position: int | None = None,
+        n_total: int | None = None,
     ) -> dict[int, float]:
         """Apply 1-qubit confusion matrix to an N-qubit counts vector.
 
@@ -208,11 +215,14 @@ class ReadoutEM:
         cal = mit.calibration_result
         C = np.array(cal["confusion_matrix"])  # 2x2: [p(meas|prep)]
 
-        n_qubits = int(np.log2(max(counts.keys()) + 1))
-        # _mitigate_nq uses tensor-product approximation: handled by _tensor_apply below
+        if n_total is None:
+            max_outcome = max(counts.keys()) if counts else 0
+            n_total = max(1, int(np.ceil(np.log2(max_outcome + 1))))
+        if bit_position is None:
+            bit_position = qubit
 
         # Proper implementation: apply 1q matrix via tensor product with identity
-        return self._tensor_apply(counts, C, n_qubits, qubit)
+        return self._tensor_apply(counts, C, n_total, bit_position)
 
     def _tensor_apply(
         self, counts: dict[int, float], C: np.ndarray, n_total: int, target_qubit: int
@@ -222,24 +232,15 @@ class ReadoutEM:
         Uses the tensor product structure: full_matrix = I⊗...⊗C⊗...⊗I.
         """
         n = 2 ** n_total
-        full_C = np.eye(n)
-        # Build full matrix via iterative Kronecker product
-        # Start from rightmost qubit (LSB)
-        mat = C.copy()
-        for _ in range(n_total - 1):
-            mat = np.kron(mat, np.eye(2))
+        try:
+            C_inv = np.linalg.inv(C)
+        except np.linalg.LinAlgError:
+            C_inv = np.eye(2)
 
-        # Shift the matrix to the correct position (target_qubit from LSB)
-        # Already in correct order since we iterate from target to MSB
-        # Actually, Kronecker order: result[i] = Σ_j mat[i,j] * counts[j]
-        # For target_qubit=0 (LSB): full = C ⊗ I ⊗ I ⊗ ...
-        # For target_qubit=1: full = I ⊗ C ⊗ I ⊗ ...
-        if target_qubit != 0:
-            # Build with correct ordering
-            mats = [np.eye(2) if i != target_qubit else C for i in range(n_total - 1, -1, -1)]
-            full_C = mats[0]
-            for m in mats[1:]:
-                full_C = np.kron(full_C, m)
+        mats = [np.eye(2) if i != target_qubit else C_inv for i in range(n_total - 1, -1, -1)]
+        full_C = mats[0]
+        for m in mats[1:]:
+            full_C = np.kron(full_C, m)
 
         n_obs = np.zeros(n)
         for outcome, cnt in counts.items():
@@ -254,13 +255,16 @@ class ReadoutEM:
         return {int(i): float(v) for i, v in enumerate(n_corr)}
 
     def _apply_1q_matrix_probs(
-        self, probs: dict[int, float], qubit: int
+        self,
+        probs: dict[int, float],
+        qubit: int,
+        bit_position: int | None = None,
+        n_total: int | None = None,
     ) -> dict[int, float]:
         """Apply 1-qubit confusion matrix to an N-qubit probability vector."""
-        counts = {k: int(v * 1000) for k, v in probs.items()}  # scale to counts
-        corrected = self._apply_1q_matrix(counts, qubit)
-        total_counts = sum(counts.values())
-        if total_counts > 0:
-            factor = total_counts / sum(corrected.values())
-            return {k: v * factor for k, v in corrected.items()}
+        counts = {k: float(v) for k, v in probs.items()}
+        corrected = self._apply_1q_matrix(counts, qubit, bit_position, n_total)
+        total = sum(corrected.values())
+        if total > 0:
+            return {k: v / total for k, v in corrected.items()}
         return corrected

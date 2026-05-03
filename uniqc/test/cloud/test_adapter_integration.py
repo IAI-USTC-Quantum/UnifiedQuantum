@@ -54,7 +54,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_translate_bell_pair(self):
         """Translate Bell pair circuit and verify Quafu circuit is valid."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -68,7 +68,7 @@ class RunTestQuafuAdapterReal:
         This validates that QuafuAdapter._reconstruct_qasm supports the
         full gate set (Y, Z, S, SX, T, SWAP, ISWAP, BARRIER).
         """
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         # Should not raise RuntimeError
@@ -86,7 +86,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_submit_sync(self):
         """Submit with wait=True and verify immediate completion."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -100,7 +100,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_submit_async_then_query_sync(self):
         """Submit async, poll with query_sync, verify result shape."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -118,7 +118,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_submit_batch_sync(self):
         """Batch submit 3 circuits with wait=True."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -129,7 +129,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_result_shape(self):
         """Verify result has {"status": "success", "result": {bitstring: shots}}."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -148,7 +148,7 @@ class RunTestQuafuAdapterReal:
 
     def run_test_list_backends(self):
         """Call list_backends and verify expected chip names appear."""
-        from uniqc.task.adapters import QuafuAdapter
+        from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         adapter = QuafuAdapter()
         backends = adapter.list_backends()
@@ -172,7 +172,7 @@ class RunTestQiskitAdapterReal:
 
     def run_test_translate_circuit(self):
         """Translate Bell pair to Qiskit QuantumCircuit."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -182,7 +182,7 @@ class RunTestQiskitAdapterReal:
 
     def run_test_submit_single(self):
         """Submit single circuit to a real IBM chip (ibm_fez)."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -198,7 +198,7 @@ class RunTestQiskitAdapterReal:
         This validates the fix for the B3 bug: submit_batch previously returned
         str, causing isinstance(result, list) checks in task_manager to fail.
         """
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -210,7 +210,7 @@ class RunTestQiskitAdapterReal:
 
     def run_test_query_sync(self):
         """Use query_sync to poll until result available."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -223,7 +223,7 @@ class RunTestQiskitAdapterReal:
 
     def run_test_result_shape_batch(self):
         """Verify batch result: {"status": "success", "result": [counts_dict, ...], ...}."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         qc = adapter.translate_circuit(ORIGINIR_BELL)
@@ -241,7 +241,7 @@ class RunTestQiskitAdapterReal:
 
     def run_test_list_backends(self):
         """List IBM backends; verify real chips appear."""
-        from uniqc.task.adapters import QiskitAdapter
+        from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()
         backends = adapter._service.backends()

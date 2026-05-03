@@ -6,7 +6,7 @@ using TorchQuantum's differentiable simulation (no parameter-shift rule).
 
 try:
     import torch
-    from uniqc.algorithmics.training.vqe_torch import VQESolver, build_h2_hamiltonian
+    from uniqc import VQESolver, build_h2_hamiltonian
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch]")

@@ -1,7 +1,7 @@
 """Tests for transpiler converter module."""
 from uniqc.test._utils import uniq_test, NotMatchError
-from uniqc.transpiler.converter import convert_oir_to_qasm, convert_qasm_to_oir
-from uniqc.transpiler._utils import IRConversionFailedException
+from uniqc.compile.converter import convert_oir_to_qasm, convert_qasm_to_oir
+from uniqc.compile._utils import IRConversionFailedException
 from uniqc.circuit_builder import Circuit
 
 
@@ -86,7 +86,7 @@ def run_test_error_handling():
 @uniq_test('Test Transpiler: draw lazy import')
 def test_draw_lazy_import():
     """Test that draw function can be imported without pyqpanda3."""
-    from uniqc.transpiler import draw
+    from uniqc.compile import draw
 
     # Verify it's a callable (the lazy import wrapper)
     assert callable(draw)

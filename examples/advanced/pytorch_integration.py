@@ -44,9 +44,9 @@ def demo_gradient_computation():
         print("\n[SKIPPED] PyTorch required for gradient computation")
         return
 
-    from uniqc.pytorch import parameter_shift_gradient
-    from uniqc.circuit_builder import Circuit
-    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc.torch_adapter import parameter_shift_gradient
+    from uniqc import Circuit
+    from uniqc import Parameter
     from uniqc.simulator import OriginIR_Simulator
 
     # Build a simple circuit
@@ -120,9 +120,9 @@ def demo_quantum_layer():
         print("\n[SKIPPED] PyTorch required for QuantumLayer")
         return
 
-    from uniqc.pytorch import QuantumLayer
-    from uniqc.circuit_builder import Circuit
-    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc.torch_adapter import QuantumLayer
+    from uniqc import Circuit
+    from uniqc import Parameter
     from uniqc.simulator import OriginIR_Simulator
 
     # Define a simple variational circuit
@@ -185,8 +185,8 @@ def demo_batch_execution():
     print("Batch Execution Utilities")
     print("=" * 60)
 
-    from uniqc.pytorch import batch_execute
-    from uniqc.circuit_builder import Circuit
+    from uniqc.torch_adapter import batch_execute
+    from uniqc import Circuit
     from uniqc.simulator import OriginIR_Simulator
 
     # Create multiple circuits
@@ -228,8 +228,8 @@ def demo_vqe_with_pytorch():
         print("\n[SKIPPED] PyTorch required for VQE demo")
         return
 
-    from uniqc.circuit_builder import Circuit
-    from uniqc.circuit_builder.parameter import Parameter
+    from uniqc import Circuit
+    from uniqc import Parameter
     from uniqc.simulator import OriginIR_Simulator
 
     print("\nSimple 2-qubit VQE for demonstration:")

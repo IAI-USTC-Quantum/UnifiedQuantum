@@ -29,7 +29,7 @@ python examples/measurement/state_tomography.py --n-shots 2000
 ## 代码讲解
 
 ```python
-from uniqc.algorithmics.measurement import state_tomography, tomography_summary
+from uniqc import state_tomography, tomography_summary
 
 # 执行层析
 results = state_tomography(circuit, qubits=[0, 1], shots=2000)

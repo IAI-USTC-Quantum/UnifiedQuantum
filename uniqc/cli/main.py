@@ -6,7 +6,7 @@ import os
 
 import typer
 
-from uniqc.version import __version__
+from uniqc import __version__
 
 app = typer.Typer(
     name="uniqc",

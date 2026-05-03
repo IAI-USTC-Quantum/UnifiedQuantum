@@ -21,9 +21,9 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from uniqc.circuit_builder import Circuit
-from uniqc.circuit_builder.parameter import Parameter, Parameters
-from uniqc.circuit_builder.named_circuit import circuit_def
+from uniqc import Circuit
+from uniqc import Parameter, Parameters
+from uniqc import circuit_def
 
 
 def demo_named_registers():

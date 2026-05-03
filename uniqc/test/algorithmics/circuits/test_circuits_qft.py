@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithmics.circuits import qft_circuit
+from uniqc.algorithms.core.circuits import qft_circuit
 
 
 class TestQFTCircuit:

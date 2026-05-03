@@ -7,7 +7,7 @@ from pathlib import Path
 
 import typer
 
-from uniqc.task.result_types import DryRunResult
+from uniqc.backend_adapter.task.result_types import DryRunResult
 
 from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error, print_json, print_success, print_table
 
@@ -36,7 +36,7 @@ def _handle_dry_run(
     format: str,
 ) -> None:
     """Run dry-run validation on circuits and print results."""
-    from uniqc.task_manager import dry_run_task
+    from uniqc.backend_adapter.task_manager import dry_run_task
 
     parsed = [_parse_to_circuit(c) for c in circuits]
 
@@ -193,7 +193,7 @@ def submit(
 
 def _parse_to_circuit(circuit_text: str):
     """Parse OriginIR or OpenQASM 2.0 text into a ``Circuit`` object."""
-    from uniqc.originir import OriginIR_BaseParser
+    from uniqc.compile.originir import OriginIR_BaseParser
 
     parser = OriginIR_BaseParser()
     try:
@@ -201,7 +201,7 @@ def _parse_to_circuit(circuit_text: str):
         return parser.to_circuit()
     except Exception:
         # Fall back to QASM
-        from uniqc.qasm import OpenQASM2_BaseParser
+        from uniqc.compile.qasm import OpenQASM2_BaseParser
 
         qasm_parser = OpenQASM2_BaseParser()
         qasm_parser.parse(circuit_text)
@@ -210,7 +210,7 @@ def _parse_to_circuit(circuit_text: str):
 
 def _submit_single(circuit: str, platform: str, backend_name: str | None, shots: int, name: str | None) -> str:
     """Submit a single circuit using the unified task_manager API."""
-    from uniqc.task_manager import submit_task
+    from uniqc.backend_adapter.task_manager import submit_task
 
     parsed_circuit = _parse_to_circuit(circuit)
 
@@ -232,7 +232,7 @@ def _submit_batch(
     circuits: list[str], platform: str, backend_name: str | None, shots: int, name: str | None
 ) -> list[str]:
     """Submit multiple circuits using the unified task_manager API."""
-    from uniqc.task_manager import submit_batch
+    from uniqc.backend_adapter.task_manager import submit_batch
 
     from .output import print_warning
 

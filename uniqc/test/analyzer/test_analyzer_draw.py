@@ -2,7 +2,7 @@
 
 import pytest
 
-from uniqc.analyzer.draw import (
+from uniqc.visualization.result import (
     _parse_measured_result,
     plot_histogram,
     plot_distribution,

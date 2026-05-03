@@ -8,9 +8,9 @@ import sys
 import rich.box
 import typer
 
-from uniqc.backend_cache import cache_info, invalidate_all
-from uniqc.backend_info import BackendInfo, Platform
-from uniqc.backend_registry import fetch_all_backends, fetch_platform_backends, find_backend
+from uniqc.backend_adapter.backend_cache import cache_info, invalidate_all
+from uniqc.backend_adapter.backend_info import BackendInfo, Platform
+from uniqc.backend_adapter.backend_registry import fetch_all_backends, fetch_platform_backends, find_backend
 from uniqc.cli.output import (
     AI_HINTS_OPTION,
     build_ref_str,

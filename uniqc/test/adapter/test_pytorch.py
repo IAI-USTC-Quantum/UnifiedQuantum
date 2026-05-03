@@ -1,4 +1,4 @@
-"""Tests for uniqc.pytorch module.
+"""Tests for uniqc.torch_adapter module.
 
 This module tests:
 - parameter_shift_gradient function
@@ -25,25 +25,25 @@ class TestPytorchImports:
 
     def test_import_gradient_module(self):
         """Test importing gradient module."""
-        from uniqc.pytorch.gradient import compute_all_gradients, parameter_shift_gradient
+        from uniqc.torch_adapter.gradient import compute_all_gradients, parameter_shift_gradient
 
         assert callable(parameter_shift_gradient)
         assert callable(compute_all_gradients)
 
     def test_import_batch_executor_module(self):
         """Test importing batch_executor module."""
-        from uniqc.pytorch.batch_executor import batch_execute, batch_execute_with_params
+        from uniqc.torch_adapter.batch_executor import batch_execute, batch_execute_with_params
         assert callable(batch_execute)
         assert callable(batch_execute_with_params)
 
     def test_import_quantum_layer_module(self):
         """Test importing quantum_layer module."""
-        from uniqc.pytorch.quantum_layer import QuantumLayer
+        from uniqc.torch_adapter.quantum_layer import QuantumLayer
         assert QuantumLayer is not None
 
     def test_import_main_module(self):
         """Test importing from main pytorch module."""
-        import uniqc.pytorch as uniqc_pytorch
+        import uniqc.torch_adapter as uniqc_pytorch
 
         assert callable(uniqc_pytorch.parameter_shift_gradient)
         assert callable(uniqc_pytorch.compute_all_gradients)
@@ -60,7 +60,7 @@ class TestBatchExecute:
 
     def test_batch_execute_empty_list(self):
         """Test batch_execute with empty circuit list."""
-        from uniqc.pytorch.batch_executor import batch_execute
+        from uniqc.torch_adapter.batch_executor import batch_execute
 
         executor = Mock()
         results = batch_execute([], executor, n_workers=1)
@@ -68,7 +68,7 @@ class TestBatchExecute:
 
     def test_batch_execute_single_circuit(self):
         """Test batch_execute with single circuit."""
-        from uniqc.pytorch.batch_executor import batch_execute
+        from uniqc.torch_adapter.batch_executor import batch_execute
 
         mock_circuit = MagicMock()
         mock_result = np.array([0.5, 0.5])
@@ -80,7 +80,7 @@ class TestBatchExecute:
 
     def test_batch_execute_multiple_circuits(self):
         """Test batch_execute with multiple circuits."""
-        from uniqc.pytorch.batch_executor import batch_execute
+        from uniqc.torch_adapter.batch_executor import batch_execute
 
         circuits = [MagicMock(), MagicMock(), MagicMock()]
         executor = Mock(side_effect=[
@@ -94,7 +94,7 @@ class TestBatchExecute:
 
     def test_batch_execute_with_executor_call(self):
         """Test that executor is called for each circuit."""
-        from uniqc.pytorch.batch_executor import batch_execute
+        from uniqc.torch_adapter.batch_executor import batch_execute
 
         circuits = [MagicMock(name=f"circuit_{i}") for i in range(3)]
         executor = Mock(return_value=np.array([0.0]))
@@ -112,7 +112,7 @@ class TestBatchExecuteWithParams:
 
     def test_batch_execute_with_params_empty(self):
         """Test with empty parameter list."""
-        from uniqc.pytorch.batch_executor import batch_execute_with_params
+        from uniqc.torch_adapter.batch_executor import batch_execute_with_params
 
         mock_circuit = MagicMock()
         mock_circuit.copy = Mock(return_value=mock_circuit)
@@ -123,7 +123,7 @@ class TestBatchExecuteWithParams:
 
     def test_batch_execute_with_params_single(self):
         """Test with single parameter set."""
-        from uniqc.pytorch.batch_executor import batch_execute_with_params
+        from uniqc.torch_adapter.batch_executor import batch_execute_with_params
 
         # Create mock circuit with _parameters
         mock_circuit = MagicMock()
@@ -137,7 +137,7 @@ class TestBatchExecuteWithParams:
 
     def test_batch_execute_with_params_multiple(self):
         """Test with multiple parameter sets."""
-        from uniqc.pytorch.batch_executor import batch_execute_with_params
+        from uniqc.torch_adapter.batch_executor import batch_execute_with_params
 
         mock_circuit = MagicMock()
         mock_circuit._parameters = {
@@ -165,7 +165,7 @@ class TestParameterShiftGradient:
 
     def test_gradient_raises_on_missing_parameter(self):
         """Test that gradient raises ValueError for missing parameter."""
-        from uniqc.pytorch.gradient import parameter_shift_gradient
+        from uniqc.torch_adapter.gradient import parameter_shift_gradient
 
         mock_circuit = MagicMock()
         mock_circuit._parameters = {"theta": MagicMock()}
@@ -178,7 +178,7 @@ class TestParameterShiftGradient:
 
     def test_gradient_computation(self):
         """Test basic gradient computation."""
-        from uniqc.pytorch.gradient import parameter_shift_gradient
+        from uniqc.torch_adapter.gradient import parameter_shift_gradient
 
         # Create mock circuit with parameter
         mock_param = MagicMock()
@@ -205,7 +205,7 @@ class TestParameterShiftGradient:
 
     def test_gradient_with_custom_shift(self):
         """Test gradient with custom shift value."""
-        from uniqc.pytorch.gradient import parameter_shift_gradient
+        from uniqc.torch_adapter.gradient import parameter_shift_gradient
 
         mock_param = MagicMock()
         mock_param._bound_value = 0.0
@@ -234,7 +234,7 @@ class TestComputeAllGradients:
 
     def test_empty_circuit_no_parameters(self):
         """Test with circuit that has no _parameters attribute."""
-        from uniqc.pytorch.gradient import compute_all_gradients
+        from uniqc.torch_adapter.gradient import compute_all_gradients
 
         mock_circuit = MagicMock(spec=[])  # No _parameters attribute
         expectation_fn = Mock()
@@ -244,7 +244,7 @@ class TestComputeAllGradients:
 
     def test_multiple_parameters(self):
         """Test with multiple parameters."""
-        from uniqc.pytorch.gradient import compute_all_gradients
+        from uniqc.torch_adapter.gradient import compute_all_gradients
 
         mock_param1 = MagicMock()
         mock_param1._bound_value = 0.0
@@ -285,7 +285,7 @@ class TestQuantumLayerWithPytorch:
     def test_quantum_layer_initialization(self):
         """Test QuantumLayer initialization."""
         torch = pytest.importorskip("torch")
-        from uniqc.pytorch.quantum_layer import QuantumLayer
+        from uniqc.torch_adapter.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()
         mock_circuit._parameters = {"theta": MagicMock()}
@@ -300,7 +300,7 @@ class TestQuantumLayerWithPytorch:
     def test_quantum_layer_extra_repr(self):
         """Test QuantumLayer.extra_repr."""
         pytest.importorskip("torch")
-        from uniqc.pytorch.quantum_layer import QuantumLayer
+        from uniqc.torch_adapter.quantum_layer import QuantumLayer
 
         mock_circuit = MagicMock()
         mock_circuit._parameters = {"theta": MagicMock(), "phi": MagicMock()}
@@ -322,23 +322,23 @@ class TestModuleExports:
 
     def test_gradient_exports(self):
         """Test gradient module exports."""
-        from uniqc.pytorch.gradient import __all__
+        from uniqc.torch_adapter.gradient import __all__
         assert "parameter_shift_gradient" in __all__
         assert "compute_all_gradients" in __all__
 
     def test_batch_executor_exports(self):
         """Test batch_executor module exports."""
-        from uniqc.pytorch.batch_executor import __all__
+        from uniqc.torch_adapter.batch_executor import __all__
         assert "batch_execute" in __all__
 
     def test_quantum_layer_exports(self):
         """Test quantum_layer module exports."""
-        from uniqc.pytorch.quantum_layer import __all__
+        from uniqc.torch_adapter.quantum_layer import __all__
         assert "QuantumLayer" in __all__
 
     def test_main_module_exports(self):
         """Test main pytorch module exports."""
-        from uniqc.pytorch import __all__
+        from uniqc.torch_adapter import __all__
         assert "QuantumLayer" in __all__
         assert "batch_execute" in __all__
         assert "parameter_shift_gradient" in __all__

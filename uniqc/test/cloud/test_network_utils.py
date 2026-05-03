@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from uniqc.network_utils import (
+from uniqc.backend_adapter.network_utils import (
     check_proxy_connectivity,
     detect_system_proxy,
     get_ibm_proxy_from_config,

@@ -68,7 +68,7 @@ def generate_1q_xeb_circuits(
     Each circuit consists of ``depth`` random single-qubit layers,
     followed by measurement. The circuits are designed to measure
     the per-layer depolarizing fidelity by fitting the exponential
-    decay of the Hellinger fidelity as depth increases.
+    decay of the normalized linear XEB estimator as depth increases.
 
     Args:
         qubit: Qubit index to operate on.

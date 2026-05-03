@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "UnifiedQuantum"))
 
 def _get_wk180_adapter(dummy: bool, backend_name: str | None):
     """Get adapter and chip characterization for WK180."""
-    from uniqc.task.adapters import DummyAdapter, OriginQAdapter
+    from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
     if dummy:
         originq = OriginQAdapter()
@@ -60,7 +60,7 @@ def run_wk180_readout_em(
     Returns:
         Dict with calibration results.
     """
-    from uniqc.algorithm import readout_em_workflow
+    from uniqc import readout_em_workflow
 
     if qubits is None:
         qubits = [0, 1, 2, 3]

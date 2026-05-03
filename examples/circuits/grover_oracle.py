@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-"""Grover's search using the circuits module.
+"""Grover's search using the public uniqc API.
 
-Demonstrates the full Grover search pipeline using
-:func:`~uniqc.algorithmics.circuits.grover_oracle` and
-:func:`~uniqc.algorithmics.circuits.grover_diffusion`.
+Demonstrates the full Grover search pipeline using root-level imports.
 
 Usage:
     python examples/circuits/grover_oracle.py [--n-qubits N] [--marked-state STATE] [--shots N]
@@ -15,9 +13,9 @@ import sys
 
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.circuits.grover_oracle import grover_oracle, grover_diffusion
+from uniqc import grover_diffusion, grover_oracle
 
 
 def run_grover(n_qubits: int, marked_state: int, shots: int = 4096):

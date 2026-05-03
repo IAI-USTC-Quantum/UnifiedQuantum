@@ -20,9 +20,9 @@ import numpy as np
 
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
-from uniqc.algorithmics.measurement import classical_shadow, shadow_expectation
+from uniqc import classical_shadow, shadow_expectation
 
 
 def run_shadow_demo(n_shots=1000, n_shadow=100):
