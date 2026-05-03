@@ -146,14 +146,14 @@ uv pip install unified-quantum
 git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
-# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖
-uv sync --all-extras --group dev
+# Maintainer / 全量开发环境：安装 dev 依赖和全部可选后端依赖，并按当前包索引升级解析
+uv sync --all-extras --group dev --upgrade
 
 # 运行完整测试套件
 uv run pytest uniqc/test
 ```
 
-维护者环境不应把 qiskit、QuTiP、pyquafu 等可选模块缺失视为正常跳过条件；全量开发和全量测试应通过仓库的 `uv.lock` 解析完整依赖。`pyproject.toml` 不钉住第三方依赖版本，依赖版本由当前包索引和锁文件共同解析。
+维护者环境不应把 qiskit、QuTiP、pyquafu 等可选模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
 
 **Requirements:**
 - CMake >= 3.26

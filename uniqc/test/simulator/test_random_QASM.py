@@ -101,9 +101,8 @@ def _test_random_qasm_batch(
     instruction_set = available_qasm_gates, 
     backend_type = 'statevector'):
 
-    err_list = []    
-    good_circuit_list = []
-    bad_circuit_list = []
+    err_list = []
+    passed_count = 0
 
     for i in range(random_batchsize):
 
@@ -114,26 +113,13 @@ def _test_random_qasm_batch(
         if err:
             print(f'Test failed! Error: {err}')
             err_list.append(err)
-            bad_circuit_list.append((qasm_code, err))
         else:
             print('Test passed!')
-            good_circuit_list.append((qasm_code, None))
+            passed_count += 1
 
 
     print(len(err_list), 'circuits failed')
-    print(random_batchsize - len(err_list), 'circuits passed')
-
-    # # log good and bad circuits
-    # with open('good_circuits.txt', 'w') as f:
-    #     for circuit, result in good_circuit_list:
-    #         f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    # with open('bad_circuits.txt', 'w') as f:
-    #     # for circuit, result in bad_circuit_list:
-    #     #     f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    #     for e in err_list:
-    #         f.write(str(e) + '\n')
+    print(passed_count, 'circuits passed')
 
     if len(err_list) > 0:
         raise ValueError('Some circuits failed!')
@@ -222,9 +208,8 @@ def test_random_qasm_compare_density_operator(
         n_gates = 20,
         instruction_set = available_qasm_gates):
     
-    err_list = []    
-    good_circuit_list = []
-    bad_circuit_list = []
+    err_list = []
+    passed_count = 0
     for i in range(random_batchsize):
         qasm_code = random_qasm(n_qubits=n_qubit,
                                 n_gates=n_gates,
@@ -235,23 +220,13 @@ def test_random_qasm_compare_density_operator(
         if err:
             print(f'Test failed! Error: {err}')
             err_list.append(err)
-            bad_circuit_list.append((qasm_code, err))
         else:
             print('Test passed!')
-            good_circuit_list.append((qasm_code, None))
+            passed_count += 1
 
 
     print(len(err_list), 'circuits failed')
-    print(random_batchsize - len(err_list), 'circuits passed')
-
-    # # log good and bad circuits
-    # with open('good_circuits.txt', 'w') as f:
-    #     for circuit, result in good_circuit_list:
-    #         f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    # with open('bad_circuits.txt', 'w') as f:
-    #     for e in err_list:
-    #         f.write(str(e) + '\n')
+    print(passed_count, 'circuits passed')
 
     if len(err_list) > 0:
         raise ValueError('Some circuits failed!')

@@ -131,18 +131,14 @@ def test_qasm(path = './uniqc/test'):
     # print(not_supported_list)
 
     err_list = []
-    bad_circuit_list = []
-    good_circuit_list = []
     for circuit in passed_list:
         try:
             transpiled_circuit = _transpile_circuit(circuit)
             _check_result(transpiled_circuit, dataset[circuit], 'statevector')
             _check_result(transpiled_circuit, dataset[circuit], 'density_operator')
-            good_circuit_list.append((transpiled_circuit, dataset[circuit]))
         except NotMatchError as e:
             print('Test Failed!')
             err_list.append(e)
-            bad_circuit_list.append((transpiled_circuit, dataset[circuit]))
     
     if not err_list:
         print('All circuits passed!')
@@ -153,18 +149,6 @@ def test_qasm(path = './uniqc/test'):
 
     print(len(err_list), 'circuits failed')
     print(len(passed_list) - len(err_list), 'circuits passed')
-
-    # # log good and bad circuits
-    # with open('good_circuits.txt', 'w') as f:
-    #     for circuit, result in good_circuit_list:
-    #         f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    # with open('bad_circuits.txt', 'w') as f:
-    #     for circuit, result in bad_circuit_list:
-    #         f.write(circuit + '\n----Result----\n' + str(result) + '\n-----------------\n\n')
-
-    #     for e in err_list:
-    #         f.write(str(e) + '\n')
 
     raise ValueError('Some circuits failed!')
 

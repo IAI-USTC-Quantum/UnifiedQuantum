@@ -68,11 +68,6 @@ all = [
 [tool.setuptools]
 zip-safe = false
 
-[tool.uv]
-required-environments = [
-    "implementation_name == 'cpython' and sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.12'",
-]
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["uniqc*"]
