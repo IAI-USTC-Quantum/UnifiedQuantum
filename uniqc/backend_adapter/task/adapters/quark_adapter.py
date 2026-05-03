@@ -13,9 +13,13 @@ from __future__ import annotations
 
 __all__ = ["QuarkAdapter"]
 
+import contextlib
+import io
 import os
+import re
 from typing import Any
 
+from uniqc.backend_adapter.backend_info import QubitTopology
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -26,9 +30,9 @@ from uniqc.backend_adapter.task.adapters.base import (
     _dry_run_success,
 )
 from uniqc.backend_adapter.task.config import load_quark_config
-from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quark
+from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quark, check_quarkcircuit
+from uniqc.cli.chip_info import ChipGlobalInfo, SingleQubitData, TwoQubitData, TwoQubitGateData
 from uniqc.compile.converter import convert_oir_to_qasm
-
 
 _DEFAULT_CHIP = "Baihua"
 _DEFAULT_TASK_NAME = "UniqcQuantumTask"
@@ -79,10 +83,151 @@ def _task_id(value: Any) -> str:
 
 
 def _qasm_qubit_count(qasm: str) -> int | None:
-    import re
-
     match = re.search(r"\bqreg\s+\w+\[(\d+)\]\s*;", qasm)
     return int(match.group(1)) if match else None
+
+
+def _number(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result
+
+
+def _avg(values: list[float]) -> float | None:
+    return sum(values) / len(values) if values else None
+
+
+def _seconds_to_nanoseconds(value: Any) -> float | None:
+    result = _number(value)
+    if result is None:
+        return None
+    return result * 1_000_000_000 if abs(result) < 1 else result
+
+
+def _parse_quark_qubit_id(value: Any) -> int | None:
+    if isinstance(value, int):
+        return value
+    text = str(value).strip()
+    if text.isdigit():
+        return int(text)
+    match = re.search(r"\d+", text)
+    return int(match.group(0)) if match else None
+
+
+def _quark_gate_basis(chip_info: dict[str, Any]) -> tuple[list[str], str]:
+    basis = [str(g).strip().lower() for g in chip_info.get("basis_gates") or [] if str(g).strip()]
+    two_qubit_basis = str((chip_info.get("global_info") or {}).get("two_qubit_gate_basis") or "").strip().lower()
+    if two_qubit_basis and two_qubit_basis not in basis:
+        basis.append(two_qubit_basis)
+    return basis, two_qubit_basis or "cz"
+
+
+def _extract_quark_backend_details(chip_info: dict[str, Any]) -> dict[str, Any]:
+    """Normalize QuarkStudio ``quarkcircuit`` chip metadata."""
+    global_info = chip_info.get("global_info") if isinstance(chip_info.get("global_info"), dict) else {}
+    qubits_info = chip_info.get("qubits_info") if isinstance(chip_info.get("qubits_info"), dict) else {}
+    couplers_info = chip_info.get("couplers_info") if isinstance(chip_info.get("couplers_info"), dict) else {}
+    basis_gates, two_qubit_basis = _quark_gate_basis(chip_info)
+
+    single_qubit_data: list[SingleQubitData] = []
+    available_qubits: set[int] = set()
+    readout_fidelities: list[float] = []
+    for key, qdata in qubits_info.items():
+        qid = _parse_quark_qubit_id((qdata or {}).get("index") if isinstance(qdata, dict) else key)
+        if qid is None:
+            qid = _parse_quark_qubit_id(key)
+        if qid is None:
+            continue
+        available_qubits.add(qid)
+        qdata = qdata if isinstance(qdata, dict) else {}
+        readout_0 = _number(qdata.get("readout g_fidelity"))
+        readout_1 = _number(qdata.get("readout e_fidelity"))
+        readout_values = [v for v in (readout_0, readout_1) if v is not None]
+        avg_readout = _avg(readout_values)
+        if avg_readout is not None:
+            readout_fidelities.append(avg_readout)
+        single_qubit_data.append(
+            SingleQubitData(
+                qubit_id=qid,
+                t1=_number(qdata.get("T1")),
+                t2=_number(qdata.get("T2")),
+                single_gate_fidelity=_number(qdata.get("fidelity")),
+                readout_fidelity_0=readout_0,
+                readout_fidelity_1=readout_1,
+                avg_readout_fidelity=avg_readout,
+            )
+        )
+
+    topology: list[QubitTopology] = []
+    two_qubit_data: list[TwoQubitData] = []
+    two_qubit_fidelities: list[float] = []
+    seen_edges: set[tuple[int, int]] = set()
+    for cdata in couplers_info.values():
+        if not isinstance(cdata, dict):
+            continue
+        qubits = cdata.get("qubits_index") or cdata.get("qubits") or cdata.get("qubit")
+        if not isinstance(qubits, (list, tuple)) or len(qubits) != 2:
+            continue
+        u = _parse_quark_qubit_id(qubits[0])
+        v = _parse_quark_qubit_id(qubits[1])
+        if u is None or v is None or u == v:
+            continue
+        available_qubits.update((u, v))
+        key = tuple(sorted((u, v)))
+        if key in seen_edges:
+            continue
+        seen_edges.add(key)
+        topology.append(QubitTopology(u=key[0], v=key[1]))
+        fidelity = _number(cdata.get("fidelity"))
+        if fidelity is not None and fidelity <= 0:
+            fidelity = None
+        if fidelity is not None:
+            two_qubit_fidelities.append(fidelity)
+        two_qubit_data.append(
+            TwoQubitData(
+                qubit_u=key[0],
+                qubit_v=key[1],
+                gates=(TwoQubitGateData(gate=two_qubit_basis, fidelity=fidelity),),
+            )
+        )
+
+    if not available_qubits:
+        nqubits = global_info.get("nqubits_available")
+        if isinstance(nqubits, int) and nqubits > 0:
+            available_qubits.update(range(nqubits))
+
+    single_qubit_gates = tuple(g for g in basis_gates if g != two_qubit_basis)
+    two_qubit_gates = (two_qubit_basis,) if two_qubit_basis else ()
+    avg_1q = _number(global_info.get("single_qubit_gate_fidelity_average"))
+    avg_2q = _number(global_info.get("two_qubit_gate_fidelity_average"))
+    return {
+        "num_qubits": int(global_info.get("nqubits_available") or len(available_qubits) or 0),
+        "topology": [[edge.u, edge.v] for edge in sorted(topology, key=lambda edge: (edge.u, edge.v))],
+        "available_qubits": sorted(available_qubits),
+        "valid_gates": basis_gates,
+        "per_qubit_calibration": [
+            item.to_dict() for item in sorted(single_qubit_data, key=lambda item: item.qubit_id)
+        ],
+        "per_pair_calibration": [
+            item.to_dict() for item in sorted(two_qubit_data, key=lambda item: (item.qubit_u, item.qubit_v))
+        ],
+        "global_info": ChipGlobalInfo(
+            single_qubit_gates=single_qubit_gates,
+            two_qubit_gates=two_qubit_gates,
+            single_qubit_gate_time=_seconds_to_nanoseconds(global_info.get("one_qubit_gate_length")),
+            two_qubit_gate_time=_seconds_to_nanoseconds(global_info.get("two_qubit_gate_length")),
+        ).to_dict(),
+        "calibrated_at": chip_info.get("calibration_time"),
+        "avg_1q_fidelity": avg_1q,
+        "avg_2q_fidelity": avg_2q if avg_2q is not None else _avg(two_qubit_fidelities),
+        "avg_readout_fidelity": _avg(readout_fidelities),
+        "coherence_t1": _number(global_info.get("T1_average")),
+        "coherence_t2": _number(global_info.get("T2_average")),
+    }
 
 
 def _normalise_backend_status(value: Any) -> str:
@@ -207,22 +352,52 @@ class QuarkAdapter(QuantumAdapter):
         """Return backend status entries from ``Task.status()``."""
         raw = self._get_task_client().status()
         if isinstance(raw, dict):
-            return [
-                {
-                    "name": str(name),
-                    "status": _normalise_backend_status(queue),
-                    "task_in_queue": queue,
-                }
-                for name, queue in raw.items()
-            ]
+            return [self._backend_entry(str(name), queue) for name, queue in raw.items()]
         if isinstance(raw, list):
-            return raw
+            return [
+                self._backend_entry(
+                    str(entry.get("name", "")),
+                    entry.get("task_in_queue", entry.get("queue", 0)),
+                    entry,
+                )
+                if isinstance(entry, dict) else entry
+                for entry in raw
+            ]
         return []
 
     def get_backend_info(self, chip: str = _DEFAULT_CHIP) -> dict[str, Any]:
         """Fetch detailed backend information when quarkcircuit is installed."""
-        info = self._get_task_client().backend(chip)
+        info = self._load_chip_basic_info(chip)
         return info if isinstance(info, dict) else {}
+
+    def _backend_entry(self, name: str, queue: Any, base: dict[str, Any] | None = None) -> dict[str, Any]:
+        entry = dict(base or {})
+        entry.update(
+            {
+                "name": name,
+                "status": _normalise_backend_status(entry.get("status", queue)),
+                "task_in_queue": queue,
+            }
+        )
+        chip_info = self._load_chip_basic_info(name)
+        if isinstance(chip_info, dict) and chip_info.get("qubits_info"):
+            entry.update(_extract_quark_backend_details(chip_info))
+            entry["backend_info_available"] = True
+        elif isinstance(chip_info, dict):
+            entry["backend_info_available"] = False
+        return entry
+
+    def _load_chip_basic_info(self, chip: str) -> dict[str, Any] | None:
+        if not check_quarkcircuit():
+            return None
+        try:
+            from quark.circuit.backend import load_chip_basic_info
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                info = load_chip_basic_info(chip)
+            return info if isinstance(info, dict) else None
+        except Exception:
+            return None
 
     def dry_run(self, originir: str, *, shots: int = 1024, **kwargs: Any) -> DryRunResult:
         """Validate OriginIR -> OpenQASM 2.0 locally without network calls."""

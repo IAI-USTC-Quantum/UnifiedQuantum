@@ -253,7 +253,7 @@ def _edge_payload(
     return {
         "u": u,
         "v": v,
-        "fidelity": fidelity if fidelity is not None else avg_2q,
+        "fidelity": fidelity if fidelity is not None or item is not None else avg_2q,
         "gates": gates,
     }
 
@@ -385,7 +385,7 @@ def refresh_backends(platform: str | None = None) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}") from None
         targets = [target]
     else:
-        targets = [Platform.ORIGINQ, Platform.QUAFU, Platform.IBM, Platform.DUMMY]
+        targets = [Platform.ORIGINQ, Platform.QUAFU, Platform.QUARK, Platform.IBM, Platform.DUMMY]
 
     for target in targets:
         try:

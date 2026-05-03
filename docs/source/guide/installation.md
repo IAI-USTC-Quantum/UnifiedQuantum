@@ -123,6 +123,16 @@ uv pip install unified-quantum[originq]
 pip install unified-quantum[originq]
 ```
 
+### QuarkStudio / Quark 平台
+
+```bash
+uv pip install unified-quantum[quark]
+# 或 pip
+pip install unified-quantum[quark]
+```
+
+> **注意**：`[quark]` extra 包含 `quarkstudio` 和 `quarkcircuit`。前者负责 `Task.status/run/result`，后者用于读取芯片拓扑、耦合器保真度、可用门和校准信息。QuarkStudio 当前仅面向 Python 3.12 及以上版本解析安装。
+
 ### Quafu 平台
 
 > **Deprecated / 依赖风险**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，会把环境解析回 NumPy 1.x。`unified-quantum[all]` 不包含 Quafu；只有明确安装 `[quafu]` 时才会引入该风险。Quafu 平台侧 SDK 已 deprecated，UnifiedQuantum 后续不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。新项目建议优先使用 QuarkStudio/Quark 后端。

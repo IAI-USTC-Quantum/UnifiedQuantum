@@ -56,9 +56,10 @@ originq = ["pyqpanda3"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
 pytorch = ["torch"]
-quark = ["quarkstudio; python_version >= '3.12'"]
+quark = ["quarkstudio; python_version >= '3.12'", "quarkcircuit; python_version >= '3.12'"]
 all = [
     "quarkstudio; python_version >= '3.12'",
+    "quarkcircuit; python_version >= '3.12'",
     "qiskit", "qiskit-aer",
     "qiskit-ibm-runtime",
     "pyqpanda3",
