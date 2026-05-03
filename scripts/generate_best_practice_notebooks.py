@@ -357,7 +357,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             """
             # 04. Python API 提交、取回与可视化
 
-            使用 `submit_task(backend="dummy")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。
+            使用 `submit_task(backend="dummy")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。`backend="dummy"` 表示无约束、无噪声；需要虚拟拓扑时使用 `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`，需要真实芯片噪声时使用 `dummy:<platform>:<backend>`。
             """
         ),
         code(COMMON_IMPORTS),
@@ -389,7 +389,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             # 05. CLI 提交完整链路
 
             Notebook 里通过 `subprocess.run` 执行 CLI：写出 OriginIR 文件，`uniqc submit --platform dummy --wait`，
-            并展示返回结果。真实发布检查时也可以把平台切换成云后端。
+            并展示返回结果。`--platform dummy` 默认对应无约束、无噪声的 `dummy`；可通过 `--backend virtual-line-3` 指定虚拟拓扑，或通过 `--backend originq:WK_C180` 走真实 backend compile/transpile + 本地含噪执行。真实发布检查时也可以把平台切换成云后端。
             """
         ),
         code(
@@ -618,6 +618,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             # 10. XEB workflow
 
             使用很小的参数运行 1q XEB，覆盖校准、ReadoutEM、随机线路生成、fidelity 拟合和结果图示。
+            本 notebook 使用 `backend="dummy"` 做无约束、无噪声的发布检查；如果要检查真实芯片标定噪声路径，应改用 `backend="dummy:originq:WK_C180"` 这类规则型 backend id，它会先按真实 backend compile/transpile，再本地含噪执行。
             发布前可以提高 `n_circuits` 和 `shots` 做更严格的人工检查。
             """
         ),
@@ -662,6 +663,8 @@ NOTEBOOKS: dict[str, list[Cell]] = {
 INDEX = """# 最佳实践
 
 最佳实践章节由一组已经执行过的 notebooks 组成。它们不是 CI，而是发布前的“可验证路径检查”：维护者通过重跑这些案例，确认用户从配置、构建线路、选择后端、提交任务、获取结果、可视化，到变分线路、Torch 集成、Calibration + QEM 的主路径仍然有效。
+
+当前 dummy backend 的推荐写法是显式 backend id：`dummy` 表示无约束、无噪声；`dummy:virtual-line-N` / `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声；`dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行。最后一种是规则型写法，不会作为独立 backend 列表项展示。
 
 ## 覆盖矩阵
 

@@ -80,6 +80,17 @@ def test_submit_accepts_options_after_input_files(tmp_path: Path, monkeypatch):
     assert isinstance(seen["circuit"], str)
 
 
+def test_submit_dry_run_failure_exits_nonzero(tmp_path: Path, monkeypatch):
+    input_file = tmp_path / "bell.ir"
+    _write_originir(input_file)
+
+    monkeypatch.setattr(submit_module, "_handle_dry_run", lambda *args, **kwargs: False)
+
+    result = runner.invoke(app, ["submit", str(input_file), "--platform", "dummy", "--dry-run"])
+
+    assert result.exit_code == 1
+
+
 def test_submit_parse_originir_preserves_measurements(tmp_path: Path):
     input_file = tmp_path / "bell.ir"
     _write_originir(input_file)

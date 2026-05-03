@@ -13,7 +13,7 @@ from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error,
 
 HELP = f"Submit circuits to quantum cloud platforms\n  {build_ref_str('submit')}"
 INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
-PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/ibm/dummy")
+PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/quark/ibm/dummy")
 BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'WK_C180' for OriginQ)")
 SHOTS_OPTION = typer.Option(1000, "--shots", "-s", help="Number of measurement shots")
 NAME_OPTION = typer.Option(None, "--name", help="Task name")
@@ -34,23 +34,21 @@ def _handle_dry_run(
     backend_name: str | None,
     shots: int,
     format: str,
-) -> None:
+) -> bool:
     """Run dry-run validation on circuits and print results."""
     from uniqc.backend_adapter.task_manager import dry_run_task
 
     parsed = [_parse_to_circuit(c) for c in circuits]
 
-    # Build kwargs for backend-specific options
-    # --backend maps to backend_name for OriginQ, chip_id for IBM/Quafu
+    # Build kwargs for backend-specific options.
     kwargs: dict = {}
-    if backend_name:
+    if backend_name and platform != "dummy":
         if platform == "originq":
             kwargs["backend_name"] = backend_name
-        elif platform in ("ibm", "quafu"):
+        elif platform in ("ibm", "quafu", "quark"):
             kwargs["chip_id"] = backend_name
 
-    # Use 'originq' as the backend key for dummy platform
-    backend_key = "originq" if platform == "dummy" else platform
+    backend_key = _dummy_backend_id(backend_name) if platform == "dummy" else platform
 
     results: list[DryRunResult] = []
     for circuit in parsed:
@@ -58,7 +56,6 @@ def _handle_dry_run(
             circuit,
             backend=backend_key,
             shots=shots,
-            dummy=(platform == "dummy"),
             **kwargs,
         )
         results.append(result)
@@ -88,6 +85,8 @@ def _handle_dry_run(
             _print_dry_run_result(results[0], platform)
         else:
             _print_dry_run_results(results, platform)
+
+    return all(result.success for result in results)
 
 
 def _print_dry_run_result(result: DryRunResult, platform: str) -> None:
@@ -153,8 +152,8 @@ def submit(
     if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
         print_ai_hints("submit")
 
-    if platform not in ("originq", "quafu", "ibm", "dummy"):
-        print_error(f"Unknown platform: {platform}. Use originq/quafu/ibm/dummy.")
+    if platform not in ("originq", "quafu", "quark", "ibm", "dummy"):
+        print_error(f"Unknown platform: {platform}. Use originq/quafu/quark/ibm/dummy.")
         raise typer.Exit(1)
 
     circuits = []
@@ -163,8 +162,8 @@ def submit(
 
     # Dry-run: validate without submitting
     if dry_run:
-        _handle_dry_run(circuits, platform, backend, shots, format)
-        raise typer.Exit(0)
+        success = _handle_dry_run(circuits, platform, backend, shots, format)
+        raise typer.Exit(0 if success else 1)
 
     try:
         if len(circuits) == 1:
@@ -208,6 +207,14 @@ def _parse_to_circuit(circuit_text: str):
         return qasm_parser.to_circuit()
 
 
+def _dummy_backend_id(backend_name: str | None) -> str:
+    if not backend_name:
+        return "dummy"
+    if backend_name == "dummy" or backend_name.startswith("dummy:"):
+        return backend_name
+    return f"dummy:{backend_name}"
+
+
 def _submit_single(circuit: str, platform: str, backend_name: str | None, shots: int, name: str | None) -> str:
     """Submit a single circuit using the unified task_manager API."""
     from uniqc.backend_adapter.task_manager import submit_task
@@ -216,16 +223,13 @@ def _submit_single(circuit: str, platform: str, backend_name: str | None, shots:
 
     # Build kwargs for backend-specific options
     kwargs: dict = {"shots": shots}
-    if backend_name:
+    if backend_name and platform != "dummy":
         kwargs["backend_name"] = backend_name
     if name:
         kwargs["metadata"] = {"task_name": name}
 
-    # Use dummy mode if platform is 'dummy'
-    dummy = platform == "dummy"
-    backend = "originq" if dummy else platform
-
-    return submit_task(parsed_circuit, backend=backend, dummy=dummy, **kwargs)
+    backend = _dummy_backend_id(backend_name) if platform == "dummy" else platform
+    return submit_task(parsed_circuit, backend=backend, **kwargs)
 
 
 def _submit_batch(
@@ -243,14 +247,12 @@ def _submit_batch(
 
     # Build kwargs for backend-specific options
     kwargs: dict = {"shots": shots}
-    if backend_name:
+    if backend_name and platform != "dummy":
         kwargs["backend_name"] = backend_name
 
-    # Use dummy mode if platform is 'dummy'
-    dummy = platform == "dummy"
-    backend = "dummy" if dummy else platform
+    backend = _dummy_backend_id(backend_name) if platform == "dummy" else platform
 
-    return submit_batch(parsed_circuits, backend=backend, dummy=dummy, **kwargs)
+    return submit_batch(parsed_circuits, backend=backend, **kwargs)
 
 
 def _wait_and_show(task_id: str, platform: str, timeout: float, format: str) -> None:

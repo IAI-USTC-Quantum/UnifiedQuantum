@@ -4,11 +4,12 @@ This module provides adapter classes for converting UnifiedQuantum Circuit objec
 to native circuit formats used by different quantum computing platforms:
 - OriginQ (pyqpanda)
 - Quafu (pyquafu)
+- QuarkStudio / Quafu-SQC (OpenQASM 2.0)
 - IBM (qiskit)
 
 Usage::
 
-    from uniqc.backend_adapter.circuit_adapter import OriginQCircuitAdapter, QuafuCircuitAdapter, IBMCircuitAdapter
+    from uniqc.backend_adapter.circuit_adapter import OriginQCircuitAdapter, QuafuCircuitAdapter, QuarkCircuitAdapter, IBMCircuitAdapter
     from uniqc.circuit_builder import Circuit
 
     # Create a UnifiedQuantum circuit
@@ -24,6 +25,9 @@ Usage::
     quafu_adapter = QuafuCircuitAdapter()
     quafu_circuit = quafu_adapter.adapt(circuit)
 
+    quark_adapter = QuarkCircuitAdapter()
+    qasm2 = quark_adapter.adapt(circuit)
+
     ibm_adapter = IBMCircuitAdapter()
     qiskit_circuit = ibm_adapter.adapt(circuit)
 """
@@ -34,6 +38,7 @@ __all__ = [
     "CircuitAdapter",
     "OriginQCircuitAdapter",
     "QuafuCircuitAdapter",
+    "QuarkCircuitAdapter",
     "IBMCircuitAdapter",
 ]
 
@@ -429,6 +434,33 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
             )
 
         return qc
+
+    def get_supported_gates(self) -> list[str]:
+        """Return the list of gate names supported by this adapter."""
+        return self.SUPPORTED_GATES.copy()
+
+
+class QuarkCircuitAdapter(CircuitAdapter[str]):
+    """Adapter for converting UnifiedQuantum Circuit to OpenQASM 2.0 for QuarkStudio.
+
+    QuarkStudio's Quafu-SQC interface accepts an OpenQASM 2.0 string in the
+    task dictionary, so this adapter intentionally returns text rather than a
+    provider-specific circuit object.
+    """
+
+    SUPPORTED_GATES = [
+        "H", "X", "Y", "Z", "S", "T", "SX",
+        "RX", "RY", "RZ",
+        "U1", "U2", "U3",
+        "CNOT", "CX", "CZ", "SWAP", "ISWAP",
+        "TOFFOLI", "CCX", "CSWAP",
+        "MEASURE", "BARRIER",
+        "I", "ID",
+    ]
+
+    def adapt(self, circuit: Circuit) -> str:
+        """Convert UnifiedQuantum Circuit to OpenQASM 2.0 text."""
+        return circuit.qasm
 
     def get_supported_gates(self) -> list[str]:
         """Return the list of gate names supported by this adapter."""

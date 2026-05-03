@@ -102,5 +102,14 @@ uniqc config profile use account1
 `dummy` 是一个本地模拟器后端，用于测试工作流而无需连接真实云平台。提交到 dummy 的任务会立即返回模拟结果。
 
 ```bash
+# 无约束、无噪声
 uniqc submit bell.ir --platform dummy --wait
+
+# 指定虚拟拓扑，仍然无噪声
+uniqc submit bell.ir --platform dummy --backend virtual-line-3 --wait
+
+# 复用真实 backend 拓扑和标定数据：先 compile/transpile，再本地含噪执行
+uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --wait
 ```
+
+`dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 `uniqc backend list` 的后端列表中。

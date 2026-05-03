@@ -21,6 +21,7 @@ __all__ = [
     "OriginQAdapter",
     "BackendUnavailableError",
     "QuafuAdapter",
+    "QuarkAdapter",
     "QiskitAdapter",
     "IBMAdapter",
     "DummyAdapter",
@@ -41,6 +42,7 @@ from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
 from uniqc.backend_adapter.task.adapters.originq_adapter import BackendUnavailableError, OriginQAdapter
 from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
 # DummyAdapter requires simulation dependencies
 # Import lazily to avoid errors when simulation deps not installed

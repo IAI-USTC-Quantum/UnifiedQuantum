@@ -15,6 +15,8 @@
 
 所有子命令支持 `--ai-hints` 标志（也可通过环境变量 `UNIQC_AI_HINTS=1` 启用），用于显示 AI 工作流提示。
 
+Dummy backend 的可枚举列表只包含通用本地 backend 和虚拟拓扑 fixture，例如 `dummy`、`dummy:virtual-line-3`、`dummy:virtual-grid-2x2`。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
+
 ## 列出后端 (`uniqc backend list`)
 
 ### 基本用法

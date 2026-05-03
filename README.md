@@ -20,7 +20,7 @@ UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟
 
 - **XEB 交叉熵基准测试**：`uniqc calibrate xeb` 测量每层门保真度，支持单比特、双比特和并行 2q 模式
 - **读出误差校准 + M3 缓解**：混淆矩阵标定与线性求逆修正
-- **本地含噪模拟**：将真实芯片的校准数据（门保真度、T1/T2、读出混淆矩阵）注入 `DummyAdapter`，在本地重现硬件噪声特性
+- **本地含噪模拟**：通过 `dummy:<platform>:<backend>` 复用真实芯片的拓扑和校准数据，先 compile/transpile，再在本地重现硬件噪声特性
 - **DSatur 并行调度**：自动将 2q 门分配到最小并行轮次
 
 所有校准结果写入 `~/.uniqc/calibration_cache/`，QEM 模块读取并强制 TTL 新鲜度策略。
@@ -67,9 +67,16 @@ uniqc simulate circuit.ir --shots 1000
 # 提交到云端
 uniqc submit circuit.ir --platform originq --shots 1000
 
+# dummy backend 编号规则
+uniqc submit circuit.ir --platform dummy --shots 1000
+uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000
+uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
+
 # 查询任务结果
 uniqc result <task_id>
 ```
+
+`dummy` 表示无约束、无噪声本地虚拟机；`dummy:virtual-line-N` / `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束的无噪声本地 backend；`dummy:<platform>:<backend>` 表示先按真实 backend compile/transpile，再用真实芯片标定数据在本地含噪执行。
 
 ---
 
@@ -151,9 +158,14 @@ uv sync --all-extras --group dev --group docs --upgrade
 
 # 运行完整测试套件
 uv run pytest uniqc/test
+
+# 包含真实云平台量子线路执行测试
+uv run pytest uniqc/test --real-cloud-test
 ```
 
-维护者环境不应把 qiskit、QuTiP、pyquafu、Sphinx 等可选或文档模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
+维护者环境不应把 qiskit、QuTiP、Sphinx 等当前维护的可选或文档模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。Quafu/`pyquafu` 是例外：该平台 SDK 已 deprecated，且 `pyquafu` 依赖 `numpy<2`，因此不再包含在 `[all]` 中。
+
+真实云平台测试中，读取后端、验证 token、查询平台 status/API 的测试默认执行；只有会实际提交量子线路的测试默认跳过，需要显式传 `--real-cloud-test`。
 
 **Requirements:**
 - CMake >= 3.26
@@ -186,12 +198,14 @@ pip install -e . --no-build-isolation
 | 功能 | 安装命令（uv） | pip 备选 |
 |------|----------------|---------|
 | OriginQ 云平台 | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| Quafu 执行后端 | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
+| Quafu 执行后端（deprecated，单独安装） | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
 | Qiskit 执行后端 | `uv pip install unified-quantum[qiskit]` | `pip install unified-quantum[qiskit]` |
 | 高级模拟 (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | 可视化 | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch 集成 | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | 安装所有可选依赖 | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
+
+`[all]` 不包含 Quafu/`pyquafu`。如需使用旧 Quafu 后端，需要单独安装 `[quafu]`，并接受 `pyquafu` 可能把环境降到 `numpy<2` 的风险；该平台已 deprecated，后续不保证相关代码一致性和完整性，支持可能随时停止。
 
 TorchQuantum 后端当前不包含在 PyPI extras 中，需要手动安装：
 

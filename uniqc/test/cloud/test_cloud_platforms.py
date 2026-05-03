@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from uniqc.test.cloud._config_helpers import platform_has_token, write_uniqc_config
+from uniqc.test.cloud._config_helpers import write_uniqc_config
 
 # ---------------------------------------------------------------------------
 # Test Data
@@ -66,6 +66,7 @@ class TestConfigLoading:
             "default": {
                 "originq": {"token": "test_token_123"},
                 "quafu": {"token": "quafu_token_456"},
+                "quark": {"QUARK_API_KEY": "quark_token_012"},
                 "ibm": {"token": "ibm_token_789", "proxy": {"http": "", "https": ""}},
             }
         }
@@ -73,6 +74,7 @@ class TestConfigLoading:
         result = load_config(config_file)
         assert result["default"]["originq"]["token"] == "test_token_123"
         assert result["default"]["quafu"]["token"] == "quafu_token_456"
+        assert result["default"]["quark"]["QUARK_API_KEY"] == "quark_token_012"
         assert result["default"]["ibm"]["token"] == "ibm_token_789"
 
     def test_load_config_all_platforms(self, tmp_path: Path) -> None:
@@ -91,6 +93,9 @@ class TestConfigLoading:
                 "quafu": {
                     "token": "quafu_test_token",
                 },
+                "quark": {
+                    "QUARK_API_KEY": "quark_test_token",
+                },
                 "ibm": {
                     "token": "ibm_test_token",
                     "proxy": {"http": "http://proxy.example.com:8080", "https": "https://proxy.example.com:8080"},
@@ -102,8 +107,12 @@ class TestConfigLoading:
         # Test each platform
         for platform in SUPPORTED_PLATFORMS:
             config = get_platform_config(platform, config_path=config_file)
-            assert "token" in config
-            assert config["token"] == f"{platform}_test_token"
+            if platform == "quark":
+                assert "QUARK_API_KEY" in config
+                assert config["QUARK_API_KEY"] == "quark_test_token"
+            else:
+                assert "token" in config
+                assert config["token"] == f"{platform}_test_token"
 
     def test_load_config_different_profiles(self, tmp_path: Path) -> None:
         """Test loading configuration with different profiles."""
@@ -140,6 +149,7 @@ class TestConfigLoading:
             "default": {
                 "originq": {"token": "t"},
                 "quafu": {"token": "t"},
+                "quark": {"QUARK_API_KEY": "t"},
                 "ibm": {"token": "t", "proxy": {"http": "", "https": ""}},
             }
         }
@@ -190,6 +200,17 @@ class TestBackendFactory:
         assert isinstance(backend, QuafuBackend)
         assert backend.platform == "quafu"
 
+    def test_get_backend_quark(self, monkeypatch, tmp_path) -> None:
+        """Test getting Quark backend returns correct type."""
+        write_uniqc_config(tmp_path, {"quark": {"token": "test_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+
+        from uniqc.backend_adapter.backend import QuarkBackend, get_backend
+
+        backend = get_backend("quark", use_cache=False)
+        assert isinstance(backend, QuarkBackend)
+        assert backend.platform == "quark"
+
     def test_get_backend_ibm(self, monkeypatch, tmp_path) -> None:
         """Test getting IBM backend returns correct type."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
@@ -215,6 +236,7 @@ class TestBackendFactory:
         backends = list_backends()
         assert "originq" in backends
         assert "quafu" in backends
+        assert "quark" in backends
         assert "ibm" in backends
 
         for name, info in backends.items():
@@ -277,10 +299,6 @@ class TestCircuitAdapters:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not platform_has_token("originq"),
-    reason="originq.token not set in ~/.uniqc/config.yaml"
-)
 @pytest.mark.requires_pyqpanda3
 class TestOriginQIntegration:
     """Integration tests for OriginQ (requires real credentials)."""
@@ -292,6 +310,7 @@ class TestOriginQIntegration:
         backend = get_backend("originq", use_cache=False)
         assert backend.is_available()
 
+    @pytest.mark.real_cloud_execution
     def test_originq_submit_and_query(self) -> None:
         """Test real OriginQ submit and query workflow."""
         from uniqc.backend_adapter.backend import get_backend
@@ -308,10 +327,6 @@ class TestOriginQIntegration:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not platform_has_token("quafu"),
-    reason="quafu.token not set in ~/.uniqc/config.yaml"
-)
 @pytest.mark.requires_quafu
 class TestQuafuIntegration:
     """Integration tests for Quafu (requires real credentials)."""
@@ -334,10 +349,6 @@ class TestQuafuIntegration:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(
-    not platform_has_token("ibm"),
-    reason="ibm.token not set in ~/.uniqc/config.yaml"
-)
 @pytest.mark.requires_qiskit
 class TestIBMIntegration:
     """Integration tests for IBM Quantum (requires real credentials)."""
@@ -446,6 +457,9 @@ class TestCompatibilityWithExistingTests:
         from uniqc import (
             QuafuCircuitAdapter as PublicQuafuCircuitAdapter,
         )
+        from uniqc import (
+            QuarkCircuitAdapter as PublicQuarkCircuitAdapter,
+        )
         from uniqc.backend_adapter.circuit_adapter import (
             CircuitAdapter as BackendCircuitAdapter,
         )
@@ -458,13 +472,18 @@ class TestCompatibilityWithExistingTests:
         from uniqc.backend_adapter.circuit_adapter import (
             QuafuCircuitAdapter as BackendQuafuCircuitAdapter,
         )
+        from uniqc.backend_adapter.circuit_adapter import (
+            QuarkCircuitAdapter as BackendQuarkCircuitAdapter,
+        )
 
         assert CircuitAdapter is BackendCircuitAdapter
         assert PublicOriginQCircuitAdapter is BackendOriginQCircuitAdapter
         assert PublicQuafuCircuitAdapter is BackendQuafuCircuitAdapter
+        assert PublicQuarkCircuitAdapter is BackendQuarkCircuitAdapter
         assert PublicIBMCircuitAdapter is BackendIBMCircuitAdapter
         assert issubclass(BackendOriginQCircuitAdapter, BackendCircuitAdapter)
         assert issubclass(BackendQuafuCircuitAdapter, BackendCircuitAdapter)
+        assert issubclass(BackendQuarkCircuitAdapter, BackendCircuitAdapter)
         assert issubclass(BackendIBMCircuitAdapter, BackendCircuitAdapter)
 
     def test_backend_imports(self) -> None:
@@ -480,6 +499,7 @@ class TestCompatibilityWithExistingTests:
         assert isinstance(BACKENDS, dict)
         assert "originq" in BACKENDS
         assert "quafu" in BACKENDS
+        assert "quark" in BACKENDS
         assert "ibm" in BACKENDS
 
     def test_task_adapters_imports(self) -> None:

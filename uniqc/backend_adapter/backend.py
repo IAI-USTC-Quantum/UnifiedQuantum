@@ -27,6 +27,7 @@ __all__ = [
     "QuantumBackend",
     "OriginQBackend",
     "QuafuBackend",
+    "QuarkBackend",
     "IBMBackend",
     "DummyBackend",
     "get_backend",
@@ -47,6 +48,7 @@ from uniqc.backend_adapter.task.adapters import (
     OriginQAdapter,
     QiskitAdapter,
     QuafuAdapter,
+    QuarkAdapter,
     QuantumAdapter,
 )
 
@@ -421,6 +423,20 @@ class QuafuBackend(QuantumBackend):
         return chip_id in self.VALID_CHIP_IDS
 
 
+class QuarkBackend(QuantumBackend):
+    """Backend for QuarkStudio / Quafu-SQC.
+
+    This backend uses the ``quarkstudio`` package and submits OpenQASM 2.0
+    task dictionaries through ``quark.Task``.
+    """
+
+    platform = "quark"
+    _adapter_class = QuarkAdapter
+
+    def _create_adapter(self) -> QuarkAdapter:
+        return QuarkAdapter()
+
+
 class IBMBackend(QuantumBackend):
     """Backend for IBM Quantum via Qiskit.
 
@@ -641,6 +657,31 @@ class DummyBackend(QuantumBackend):
     def _resolve_config(self) -> None:
         """Resolve chip_characterization from config: chip_id or chip_characterization."""
         cfg = self.config or {}
+        identifier = str(cfg.get("backend_id") or self.name or "dummy")
+
+        if identifier == "dummy" or identifier.startswith("dummy:"):
+            from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
+
+            spec = resolve_dummy_backend(
+                identifier,
+                chip_characterization=cfg.get("chip_characterization"),
+                noise_model=cfg.get("noise_model"),
+                available_qubits=cfg.get("available_qubits"),
+                available_topology=cfg.get("available_topology"),
+            )
+            self.name = spec.identifier
+            self._chip_characterization = spec.chip_characterization
+            self._resolved_config.update(
+                {
+                    "backend_id": spec.identifier,
+                    "chip_characterization": spec.chip_characterization,
+                    "available_qubits": spec.available_qubits,
+                    "available_topology": spec.available_topology,
+                }
+            )
+            if "noise_model" in cfg:
+                self._resolved_config["noise_model"] = cfg["noise_model"]
+            return
 
         # Direct chip characterization object
         chip = cfg.get("chip_characterization")
@@ -675,6 +716,7 @@ class DummyBackend(QuantumBackend):
 
     def _create_adapter(self) -> DummyAdapter:
         return DummyAdapter(
+            backend_id=self._resolved_config.get("backend_id", self.name or "dummy"),
             chip_characterization=self._chip_characterization,
             noise_model=self._resolved_config.get("noise_model"),
             available_qubits=self._resolved_config.get("available_qubits"),
@@ -693,6 +735,7 @@ class DummyBackend(QuantumBackend):
 BACKENDS: dict[str, type[QuantumBackend]] = {
     "originq": OriginQBackend,
     "quafu": QuafuBackend,
+    "quark": QuarkBackend,
     "ibm": IBMBackend,
     "dummy": DummyBackend,
 }
@@ -716,7 +759,7 @@ def get_backend(
     and returns a configured instance.
     
     Args:
-        name: The platform name ('originq', 'quafu', or 'ibm').
+        name: The platform name ('originq', 'quafu', 'quark', 'ibm', or 'dummy').
         config: Optional configuration dictionary for the backend.
         use_cache: Whether to use cache. Defaults to True.
         cache_dir: Optional custom cache directory path.
@@ -732,13 +775,24 @@ def get_backend(
         >>> backend = get_backend('originq')
         >>> task_id = backend.submit(circuit, shots=1000)
     """
-    if name not in BACKENDS:
+    lookup_name = name.split(":", 1)[0]
+    if lookup_name not in BACKENDS:
         available = ", ".join(BACKENDS.keys())
         raise ValueError(
             f"Unknown backend '{name}'. Available backends: {available}"
         )
 
-    backend_class = BACKENDS[name]
+    backend_class = BACKENDS[lookup_name]
+    if lookup_name == "dummy":
+        config = dict(config or {})
+        config.setdefault("backend_id", name)
+        return backend_class.get_instance(
+            name=name,
+            config=config,
+            use_cache=False,
+            cache_dir=cache_dir,
+        )
+
     return backend_class.get_instance(
         name=None,
         config=config,

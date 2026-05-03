@@ -11,6 +11,7 @@ from .backend import (
     OriginQBackend,
     QuantumBackend,
     QuafuBackend,
+    QuarkBackend,
     get_backend,
     list_backends,
 )
@@ -28,6 +29,7 @@ from .circuit_adapter import (
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
     QuafuCircuitAdapter,
+    QuarkCircuitAdapter,
 )
 from .region_selector import ChainSearchResult, RegionSearchResult, RegionSelector
 from .task_manager import (
@@ -60,6 +62,8 @@ __all__ = [
     "QubitTopology",
     "QuafuBackend",
     "QuafuCircuitAdapter",
+    "QuarkBackend",
+    "QuarkCircuitAdapter",
     "RegionSearchResult",
     "RegionSelector",
     "TaskInfo",

@@ -36,6 +36,8 @@
 
 ### 2.2 Quafu
 
+> **Deprecated / 依赖风险**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，因此 Quafu 不包含在 `unified-quantum[all]` 中。只有明确安装 `unified-quantum[quafu]` 时才会启用旧 Quafu 路径。该平台 SDK 已 deprecated，后续不保证相关代码一致性和完整性，支持可能随时停止。
+
 ```python
 {
     "status": "success",
@@ -280,33 +282,38 @@ export ORIGINQ_AVAILABLE_TOPOLOGY='[[0,1],[1,2],[2,3]]'
 
 ---
 
-## 8. DummyBackend：芯片标定与本地噪声模拟 {#platform-dummy-backend}
+## 8. DummyBackend：编号规则、虚拟拓扑与本地噪声模拟 {#platform-dummy-backend}
 
-DummyAdapter 是本地模拟器适配器，在不需要真实量子硬件的情况下执行电路。它完整支持 `ChipCharacterization` 标定数据，可实现真实的噪声模拟。
+DummyBackend 是本地模拟器后端，在不需要真实量子硬件的情况下执行电路。推荐通过 backend id 使用，而不是在业务代码里手动拼装 adapter。
+
+| backend id | 语义 |
+|------------|------|
+| `dummy` | 无约束、无噪声虚拟机 |
+| `dummy:virtual-line-N` | `N` 比特线性拓扑，无噪声 |
+| `dummy:virtual-grid-RxC` | `R*C` 比特网格拓扑，无噪声 |
+| `dummy:<platform>:<backend>` | 复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行 |
+
+`dummy:<platform>:<backend>` 是规则型写法，不是需要提前注册的 backend；它不会作为独立后端出现在 `uniqc backend list` 或 Gateway WebUI 的 backend 卡片中。运行时会解析真实 backend 的 topology / chip characterization，并把编译后的线路写入 task metadata。
 
 ### 基本用法
 
 ```python
-from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+from uniqc import submit_task, wait_for_result
 
-# 纯净模拟（无噪声）
-adapter = DummyAdapter()
+# 无约束、无噪声
+task_id = submit_task(circuit, backend="dummy", shots=1000)
+result = wait_for_result(task_id)
 
-# 从芯片标定获取真实噪声参数
-from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
+# 有拓扑约束但无噪声
+line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
 
-originq = OriginQAdapter()
-chip = originq.get_chip_characterization("WK_C180")
-adapter = DummyAdapter(chip_characterization=chip)
-
-# 提交（结果立即可用，无需等待）
-task_id = adapter.submit(circuit, shots=1000)
-result = adapter.query(task_id)
+# 针对真实 OriginQ backend 的本地含噪仿真
+noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 ```
 
 ### `chip_characterization` 如何转换为噪声参数
 
-当传入 `ChipCharacterization` 对象时，`DummyAdapter` 自动提取以下数据：
+使用 `dummy:<platform>:<backend>` 时，UnifiedQuantum 会从缓存或对应云平台 adapter 取得 `ChipCharacterization`，再自动提取以下数据：
 
 | 标定数据 | 转换方式 | 用法 |
 |----------|----------|------|
@@ -315,6 +322,8 @@ result = adapter.query(task_id)
 | `avg_readout_fidelity`（逐量子比特） | 对称读出误差模型 | 注入读出误差 |
 
 若某量子比特或量子比特对缺少标定数据，使用默认值（1Q 误差 0.01，2Q 误差 0.05）。
+
+直接使用 `DummyAdapter(chip_characterization=...)` 仍可作为底层测试或自定义 adapter 路径，但文档、示例和新业务代码应优先使用 `dummy:<platform>:<backend>`，这样 compile/transpile、task metadata 和 Gateway 展示都能走统一链路。
 
 ### `DummyOptions`（Python API）
 
@@ -331,13 +340,19 @@ opts = DummyOptions(
 
 ### CLI 中的 Dummy 平台
 
-在 CLI 中使用 `--platform dummy` 等效于使用 `DummyAdapter`：
+在 CLI 中使用 `--platform dummy` 等效于选择 dummy backend id：
 
 ```bash
-# CLI：本地模拟（纯净）
+# 无约束、无噪声
 uniqc submit circuit.ir --platform dummy --shots 1000 --wait
 
-# CLI：试运行验证
+# 虚拟线性拓扑
+uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
+
+# 真实 backend 的本地含噪仿真
+uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
+
+# 试运行验证
 uniqc submit circuit.ir --platform dummy --dry-run
 ```
 
@@ -350,12 +365,15 @@ uniqc submit circuit.ir --platform dummy --dry-run
 ```python
 from uniqc import get_backend
 
-# 获取 DummyBackend（含芯片标定噪声模拟）
-from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
-
-chip = OriginQAdapter().get_chip_characterization("WK_C180")
-backend = get_backend("dummy", config={"chip_characterization": chip})
+# 获取 DummyBackend（纯净模拟）
+backend = get_backend("dummy")
 task_id = backend.submit(circuit, shots=1000)
+
+# 获取带虚拟拓扑的 DummyBackend
+backend = get_backend("dummy:virtual-line-3")
+
+# 获取真实 backend 规则对应的 DummyBackend（提交时仍会先 compile/transpile）
+backend = get_backend("dummy:originq:WK_C180")
 
 # 获取 OriginQ 后端
 backend = get_backend("originq")
@@ -366,8 +384,6 @@ backend = get_backend("quafu")
 # 获取 IBM 后端
 backend = get_backend("ibm")
 
-# 获取 DummyBackend（纯净模拟）
-backend = get_backend("dummy")
 ```
 
 `get_backend()` 返回 `QuantumBackend` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../guide/compiler_options_region.md)。

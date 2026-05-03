@@ -1,7 +1,7 @@
 """UnifiedQuantum configuration management module.
 
 This module provides centralized configuration management for quantum cloud platforms
-including OriginQ (本源量子), Quafu (夸父), and IBM Quantum.
+including OriginQ (本源量子), Quafu/Quark (夸父), and IBM Quantum.
 
 Configuration file location: ~/.uniqc/config.yaml
 
@@ -12,6 +12,8 @@ Example configuration structure::
         token: xxx
       quafu:
         token: xxx
+      quark:
+        QUARK_API_KEY: xxx
       ibm:
         token: xxx
         proxy:
@@ -43,6 +45,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "quafu": {
             "token": "",
         },
+        "quark": {
+            "QUARK_API_KEY": "",
+        },
         "ibm": {
             "token": "",
             "proxy": {
@@ -54,7 +59,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 # Supported platforms
-SUPPORTED_PLATFORMS = ["originq", "quafu", "ibm"]
+SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm"]
 
 # Top-level configuration keys that are *not* profiles (metadata fields).
 # Kept as a single source of truth so CLI and loader logic stay in sync.
@@ -64,6 +69,7 @@ META_KEYS = frozenset({"active_profile"})
 PLATFORM_REQUIRED_FIELDS = {
     "originq": ["token"],
     "quafu": ["token"],
+    "quark": ["QUARK_API_KEY"],
     "ibm": ["token"],
 }
 
@@ -241,6 +247,14 @@ def validate_config(
                 continue
 
             # Check required fields
+            if platform_name == "quark":
+                if "QUARK_API_KEY" not in platform_config and "token" not in platform_config:
+                    errors.append(
+                        "Missing required field 'QUARK_API_KEY' for platform "
+                        f"'{platform_name}' in profile '{profile_name}'"
+                    )
+                continue
+
             required_fields = PLATFORM_REQUIRED_FIELDS.get(platform_name, [])
             for field in required_fields:
                 if field not in platform_config:
@@ -391,6 +405,20 @@ def get_quafu_config(profile: str | None = None) -> dict[str, Any]:
     if profile is None:
         profile = get_active_profile()
     return get_platform_config("quafu", profile)
+
+
+def get_quark_config(profile: str | None = None) -> dict[str, Any]:
+    """Get QuarkStudio / Quafu-SQC configuration.
+
+    Args:
+        profile: Configuration profile name. If None, uses the active profile.
+
+    Returns:
+        QuarkStudio configuration dictionary.
+    """
+    if profile is None:
+        profile = get_active_profile()
+    return get_platform_config("quark", profile)
 
 
 def get_ibm_config(profile: str | None = None) -> dict[str, Any]:

@@ -13,6 +13,8 @@ def platform_has_token(platform: str) -> bool:
 
         profile = get_active_profile()
         config = get_platform_config(platform, profile)
+        if platform == "quark":
+            return bool(config.get("QUARK_API_KEY") or config.get("token"))
         return bool(config.get("token"))
     except Exception:
         return False

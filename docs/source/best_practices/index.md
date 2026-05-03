@@ -2,6 +2,8 @@
 
 最佳实践章节由一组已经执行过的 notebooks 组成。它们不是 CI，而是发布前的“可验证路径检查”：维护者通过重跑这些案例，确认用户从配置、构建线路、选择后端、提交任务、获取结果、可视化，到变分线路、Torch 集成、Calibration + QEM 的主路径仍然有效。
 
+当前 dummy backend 的推荐写法是显式 backend id：`dummy` 表示无约束、无噪声；`dummy:virtual-line-N` / `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声；`dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行。最后一种是规则型写法，不会作为独立 backend 列表项展示。
+
 ## 覆盖矩阵
 
 | 案例 | 配置 Key | 后端缓存 | 裸 Circuit | Named Circuit | 虚拟/本地后端 | API 提交 | CLI 提交 | 可视化 | 变分 | Torch | Calibration/QEM |

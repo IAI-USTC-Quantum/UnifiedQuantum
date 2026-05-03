@@ -87,6 +87,7 @@ from uniqc.backend_adapter.circuit_adapter import (
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
     QuafuCircuitAdapter,
+    QuarkCircuitAdapter,
 )
 from uniqc.exceptions import (
     AuthenticationError,
@@ -138,6 +139,7 @@ def is_dummy_mode() -> bool:
 ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
     "originq": OriginQCircuitAdapter,
     "quafu": QuafuCircuitAdapter,
+    "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
 }
 
@@ -184,7 +186,7 @@ def dry_run_task(
 
     Args:
         circuit: The UnifiedQuantum Circuit to validate.
-        backend: The backend name (e.g., 'originq', 'quafu', 'ibm').
+        backend: The backend name (e.g., 'originq', 'quafu', 'quark', 'ibm').
         shots: Number of measurement shots for validation.
         dummy: Override dummy mode. If None, uses UNIQC_DUMMY env var.
         **kwargs: Additional backend-specific parameters.
@@ -214,22 +216,33 @@ def dry_run_task(
     from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
     from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
     from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+    from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
     use_dummy = dummy if dummy is not None else UNIQC_DUMMY
+    if backend == "dummy" or backend.startswith("dummy:"):
+        use_dummy = True
 
     adapter_map: dict[str, type[QuantumAdapter]] = {
         "originq": OriginQAdapter,
         "quafu": QuafuAdapter,
+        "quark": QuarkAdapter,
         "ibm": QiskitAdapter,
         "dummy": DummyAdapter,
     }
 
     if use_dummy:
         try:
+            from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
+
+            dummy_backend = backend if backend == "dummy" or backend.startswith("dummy:") else "dummy"
             adapter: QuantumAdapter = DummyAdapter(
-                noise_model=kwargs.get("noise_model"),
-                available_qubits=kwargs.get("available_qubits"),
-                available_topology=kwargs.get("available_topology"),
+                **dummy_adapter_kwargs(
+                    dummy_backend,
+                    chip_characterization=kwargs.get("chip_characterization"),
+                    noise_model=kwargs.get("noise_model"),
+                    available_qubits=kwargs.get("available_qubits"),
+                    available_topology=kwargs.get("available_topology"),
+                )
             )
         except Exception as e:
             return DryRunResult(
@@ -244,7 +257,7 @@ def dry_run_task(
                 success=False,
                 details=f"No adapter registered for backend '{backend}'.",
                 error=f"Unknown backend: {backend}",
-                warnings=("Known backends: originq, quafu, ibm",),
+                warnings=("Known backends: originq, quafu, quark, ibm",),
             )
 
         try:
@@ -428,6 +441,74 @@ def _map_adapter_error(error: Exception, backend_name: str) -> Exception:
 # -----------------------------------------------------------------------------
 
 
+def _metadata_with_circuit(circuit: Circuit, metadata: dict | None) -> dict:
+    """Return task metadata enriched with the submitted circuit IR."""
+    enriched = dict(metadata or {})
+    enriched.setdefault("circuit_ir", circuit.originir)
+    enriched.setdefault("circuit_language", "OriginIR")
+    return enriched
+
+
+def _backend_platform_key(backend: str) -> str:
+    return backend.split(":", 1)[0]
+
+
+def _dummy_identifier_from_deprecated_flag(backend: str, kwargs: dict[str, Any]) -> str:
+    if backend == "dummy" or backend.startswith("dummy:"):
+        return backend
+    if backend == "originq":
+        target = kwargs.get("backend_name") or kwargs.get("chip_id")
+    elif backend in {"quafu", "quark", "ibm"}:
+        target = kwargs.get("chip_id") or kwargs.get("backend_name")
+    else:
+        target = None
+    if target:
+        return f"dummy:{backend}:{target}"
+    return "dummy"
+
+
+def _backend_info_from_chip(spec: Any):
+    """Build BackendInfo for compiling a chip-backed dummy target."""
+    from uniqc.backend_adapter.backend_info import BackendInfo, QubitTopology
+
+    chip = spec.chip_characterization
+    if chip is None or spec.source_platform is None or spec.source_name is None:
+        return None
+    return BackendInfo(
+        platform=spec.source_platform,
+        name=spec.source_name,
+        description=f"Compile target for {spec.identifier}",
+        num_qubits=len(getattr(chip, "available_qubits", ())),
+        topology=tuple(QubitTopology(u=int(e.u), v=int(e.v)) for e in getattr(chip, "connectivity", ())),
+        status="available",
+        is_simulator=False,
+        is_hardware=True,
+    )
+
+
+def _compile_for_chip_backed_dummy(circuit: Circuit, spec: Any, metadata: dict | None) -> tuple[str, dict]:
+    """Compile source circuit when a dummy target mirrors a real chip."""
+    enriched = dict(metadata or {})
+    if spec.source_platform is None or spec.chip_characterization is None:
+        return circuit.originir, enriched
+
+    from uniqc.compile import compile as compile_circuit
+
+    backend_info = _backend_info_from_chip(spec)
+    compiled_originir = compile_circuit(
+        circuit,
+        backend_info=backend_info,
+        chip_characterization=spec.chip_characterization,
+        output_format="originir",
+    )
+    enriched.setdefault("compiled_circuit_ir", compiled_originir)
+    enriched.setdefault("compiled_circuit_language", "OriginIR")
+    enriched.setdefault("executed_circuit_ir", compiled_originir)
+    enriched.setdefault("executed_circuit_language", "OriginIR")
+    enriched.setdefault("compile_target_backend", f"{spec.source_platform.value}:{spec.source_name}")
+    return compiled_originir, enriched
+
+
 def submit_task(
     circuit: Circuit,
     backend: str,
@@ -491,7 +572,7 @@ def submit_task(
 
     # Normalise options
     if options is not None:
-        opts = BackendOptionsFactory.normalize_options(options, backend)
+        opts = BackendOptionsFactory.normalize_options(options, _backend_platform_key(backend))
         merged_kwargs = opts.to_kwargs()
         merged_kwargs.update(kwargs)
         kwargs = merged_kwargs
@@ -499,20 +580,22 @@ def submit_task(
 
     # Handle dummy= parameter (deprecated)
     use_dummy = dummy if dummy is not None else UNIQC_DUMMY
-    if use_dummy and backend != "dummy":
+    if use_dummy and not (backend == "dummy" or backend.startswith("dummy:")):
         warnings.warn(
             "submit_task(..., dummy=True) is deprecated. "
-            "Use submit_task(circuit, 'dummy', ...) instead.",
+            "Use a dummy backend id such as 'dummy' or 'dummy:originq:WK_C180' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        backend = "dummy"
+        backend = _dummy_identifier_from_deprecated_flag(backend, kwargs)
+
+    metadata = _metadata_with_circuit(circuit, metadata)
 
     # Route dummy backend through _submit_dummy which pre-populates the result.
     # This ensures 'uniqc result <task_id>' returns data immediately without
     # needing a subsequent query against a cloud backend.
-    if backend == "dummy":
-        return _submit_dummy(circuit, "dummy", shots=shots, metadata=metadata, **kwargs)
+    if backend == "dummy" or backend.startswith("dummy:"):
+        return _submit_dummy(circuit, backend, shots=shots, metadata=metadata, **kwargs)
 
     # Resolve backend instance
     try:
@@ -572,17 +655,26 @@ def _submit_dummy(
     Returns:
         Task ID from the dummy adapter.
     """
+    from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs, resolve_dummy_backend
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 
-    # Create dummy adapter
-    dummy_adapter = DummyAdapter(
+    spec = resolve_dummy_backend(
+        backend,
+        chip_characterization=kwargs.get("chip_characterization"),
         noise_model=kwargs.get("noise_model"),
         available_qubits=kwargs.get("available_qubits"),
         available_topology=kwargs.get("available_topology"),
     )
+    adapter_kwargs = dummy_adapter_kwargs(
+        spec.identifier,
+        chip_characterization=spec.chip_characterization,
+        noise_model=kwargs.get("noise_model"),
+        available_qubits=spec.available_qubits,
+        available_topology=spec.available_topology,
+    )
+    dummy_adapter = DummyAdapter(**adapter_kwargs)
 
-    # Submit to dummy adapter
-    originir = circuit.originir
+    originir, metadata = _compile_for_chip_backed_dummy(circuit, spec, metadata)
     task_id = dummy_adapter.submit(originir, shots=shots)
 
     # Get result from dummy adapter
@@ -602,10 +694,19 @@ def _submit_dummy(
     # Create and save task info
     task_info = TaskInfo(
         task_id=task_id,
-        backend=f"dummy:{backend}",
+        backend=spec.identifier,
         status=task_status,
         shots=shots,
-        metadata=metadata or {},
+        metadata={
+            **(metadata or {}),
+            "dummy_backend_id": spec.identifier,
+            "dummy_noise_source": spec.noise_source,
+            "dummy_source_backend": (
+                f"{spec.source_platform.value}:{spec.source_name}"
+                if spec.source_platform is not None and spec.source_name
+                else None
+            ),
+        },
     )
 
     # Store result if successful
@@ -657,7 +758,7 @@ def submit_batch(
 
     # Normalise options
     if options is not None:
-        opts = BackendOptionsFactory.normalize_options(options, backend)
+        opts = BackendOptionsFactory.normalize_options(options, _backend_platform_key(backend))
         merged_kwargs = opts.to_kwargs()
         merged_kwargs.update(kwargs)
         kwargs = merged_kwargs
@@ -665,19 +766,19 @@ def submit_batch(
 
     # Handle dummy= parameter (deprecated)
     use_dummy = dummy if dummy is not None else UNIQC_DUMMY
-    if use_dummy and backend != "dummy":
+    if use_dummy and not (backend == "dummy" or backend.startswith("dummy:")):
         warnings.warn(
             "submit_batch(..., dummy=True) is deprecated. "
-            "Use submit_batch(circuits, 'dummy', ...) instead.",
+            "Use a dummy backend id such as 'dummy' or 'dummy:originq:WK_C180' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        backend = "dummy"
+        backend = _dummy_identifier_from_deprecated_flag(backend, kwargs)
 
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
     # Use backend=="dummy" directly (consistent with submit_task() fix) so that
     # submit_batch(..., backend="dummy", dummy=None) also works.
-    if backend == "dummy":
+    if backend == "dummy" or backend.startswith("dummy:"):
         return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
 
     # Resolve backend instance
@@ -709,13 +810,22 @@ def submit_batch(
         raise mapped_error from e
 
     # Create and save task info for each task
-    for task_id in task_ids:
+    for index, task_id in enumerate(task_ids):
+        metadata = {"batch": True, "batch_size": len(circuits)}
+        if index < len(circuits):
+            metadata = _metadata_with_circuit(circuits[index], metadata)
+        else:
+            metadata["circuits"] = [
+                _metadata_with_circuit(circuit, {})["circuit_ir"]
+                for circuit in circuits
+            ]
+            metadata["circuit_language"] = "OriginIR"
         task_info = TaskInfo(
             task_id=task_id,
             backend=backend,
             status=TaskStatus.RUNNING,
             shots=shots,
-            metadata={"batch": True, "batch_size": len(circuits)},
+            metadata=metadata,
         )
         save_task(task_info)
 
@@ -739,21 +849,35 @@ def _submit_batch_dummy(
     Returns:
         List of task IDs from the dummy adapter.
     """
+    from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs, resolve_dummy_backend
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 
-    # Create dummy adapter
-    dummy_adapter = DummyAdapter(
+    spec = resolve_dummy_backend(
+        backend,
+        chip_characterization=kwargs.get("chip_characterization"),
         noise_model=kwargs.get("noise_model"),
         available_qubits=kwargs.get("available_qubits"),
         available_topology=kwargs.get("available_topology"),
     )
+    adapter_kwargs = dummy_adapter_kwargs(
+        spec.identifier,
+        chip_characterization=spec.chip_characterization,
+        noise_model=kwargs.get("noise_model"),
+        available_qubits=spec.available_qubits,
+        available_topology=spec.available_topology,
+    )
+    dummy_adapter = DummyAdapter(**adapter_kwargs)
 
-    # Submit all circuits
-    originir_circuits = [c.originir for c in circuits]
+    originir_circuits: list[str] = []
+    compiled_metadata: list[dict] = []
+    for circuit in circuits:
+        originir, item_metadata = _compile_for_chip_backed_dummy(circuit, spec, {})
+        originir_circuits.append(originir)
+        compiled_metadata.append(item_metadata)
     task_ids = dummy_adapter.submit_batch(originir_circuits, shots=shots)
 
     # Create and save task info for each
-    for task_id in task_ids:
+    for index, task_id in enumerate(task_ids):
         result = dummy_adapter.query(task_id)
         adapter_status = result.get("status", TASK_STATUS_RUNNING)
 
@@ -765,12 +889,25 @@ def _submit_batch_dummy(
         }
         task_status = status_map.get(adapter_status, TaskStatus.FAILED)
 
+        metadata = {"batch": True, "batch_size": len(circuits)}
+        if index < len(circuits):
+            metadata = _metadata_with_circuit(circuits[index], metadata)
+            metadata.update(compiled_metadata[index])
         task_info = TaskInfo(
             task_id=task_id,
-            backend=f"dummy:{backend}",
+            backend=spec.identifier,
             status=task_status,
             shots=shots,
-            metadata={"batch": True, "batch_size": len(circuits)},
+            metadata={
+                **metadata,
+                "dummy_backend_id": spec.identifier,
+                "dummy_noise_source": spec.noise_source,
+                "dummy_source_backend": (
+                    f"{spec.source_platform.value}:{spec.source_name}"
+                    if spec.source_platform is not None and spec.source_name
+                    else None
+                ),
+            },
         )
         if adapter_status == TASK_STATUS_SUCCESS:
             task_info.result = result.get("result")
@@ -814,14 +951,14 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
         # Use cached backend (e.g., 'dummy:originq' for dummy mode)
         backend = cached_task.backend
         # For dummy tasks, results are already stored - return cached info directly
-        if backend.startswith("dummy:"):
+        if backend == "dummy" or backend.startswith("dummy:"):
             return cached_task
 
     if backend is None:
         raise TaskNotFoundError(f"Task '{task_id}' not found in local cache. Please provide the backend parameter.")
 
     # Get backend instance (strip 'dummy:' prefix if present)
-    actual_backend = backend.split(":", 1)[-1] if backend.startswith("dummy:") else backend
+    actual_backend = backend
     try:
         backend_instance = backend_module.get_backend(actual_backend)
     except ValueError as e:

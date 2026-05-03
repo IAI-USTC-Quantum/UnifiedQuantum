@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_ROOT = PROJECT_ROOT / "uniqc"
 
@@ -19,6 +18,7 @@ ALLOWED_TOP_LEVEL_PACKAGES = {
     "circuit_builder",
     "cli",
     "compile",
+    "gateway",
     "qem",
     "simulator",
     "test",

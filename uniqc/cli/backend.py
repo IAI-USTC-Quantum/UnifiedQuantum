@@ -90,7 +90,7 @@ def list_backends(
         None,
         "--platform",
         "-p",
-        help="Only show backends for this platform (originq/quafu/ibm)",
+        help="Only show backends for this platform (originq/quafu/quark/ibm)",
     ),
     status_filter: str | None = typer.Option(
         None,
