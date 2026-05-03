@@ -153,6 +153,7 @@ extensions = [
     'sphinx.ext.mathjax',
     # 'recommonmark',
     'myst_parser',
+    'nbsphinx',
     'sphinx.ext.viewcode'
 ]
 
@@ -206,6 +207,8 @@ language = 'zh-CN'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniqc.test.rst', 'source/releases/_generated/*']
 autodoc_typehints = "description"
 source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
+nbsphinx_execute = "never"
+nbsphinx_allow_errors = False
 
 # -- Options for HTML output -------------------------------------------------
 
