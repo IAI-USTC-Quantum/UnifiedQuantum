@@ -7,13 +7,12 @@ Run locally:
     uniqc config set quafu.token xxx
     uniqc config set ibm.token xxx
     pytest uniqc/test/cloud/test_adapter_integration.py -v -m cloud
+    pytest uniqc/test/cloud/test_adapter_integration.py -v --real-cloud-test
 """
 
 from __future__ import annotations
 
 import pytest
-
-from uniqc.test.cloud._config_helpers import platform_has_token
 
 ORIGINIR_BELL = """
 QINIT 2
@@ -49,7 +48,6 @@ MEASURE q[2], c[2]
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not platform_has_token("quafu"), reason="quafu.token not set in ~/.uniqc/config.yaml")
 class RunTestQuafuAdapterReal:
     """End-to-end tests for QuafuAdapter with real credentials."""
 
@@ -85,6 +83,7 @@ class RunTestQuafuAdapterReal:
         assert hasattr(qc, "cz")
         assert hasattr(qc, "cnot")
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_sync(self):
         """Submit with wait=True and verify immediate completion."""
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
@@ -99,6 +98,7 @@ class RunTestQuafuAdapterReal:
         assert "status" in result
         assert result["status"] in ("success", "failed", "running")
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_async_then_query_sync(self):
         """Submit async, poll with query_sync, verify result shape."""
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
@@ -117,6 +117,7 @@ class RunTestQuafuAdapterReal:
         assert isinstance(results[0], dict), f"Expected flat dict, got {type(results[0])}"
         assert all(isinstance(v, int) for v in results[0].values()), f"Count values must be int, got {results[0]}"
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_batch_sync(self):
         """Batch submit 3 circuits with wait=True."""
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
@@ -128,6 +129,7 @@ class RunTestQuafuAdapterReal:
         assert len(task_ids) == 3
         assert all(isinstance(tid, str) for tid in task_ids)
 
+    @pytest.mark.real_cloud_execution
     def run_test_result_shape(self):
         """Verify result has {"status": "success", "result": {bitstring: shots}}."""
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
@@ -167,7 +169,6 @@ class RunTestQuafuAdapterReal:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not platform_has_token("ibm"), reason="ibm.token not set in ~/.uniqc/config.yaml")
 class RunTestQiskitAdapterReal:
     """End-to-end tests for QiskitAdapter with real credentials."""
 
@@ -181,6 +182,7 @@ class RunTestQiskitAdapterReal:
         assert hasattr(qc, "num_qubits")
         assert qc.num_qubits >= 2
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_single(self):
         """Submit single circuit to a real IBM chip (ibm_fez)."""
         from uniqc.backend_adapter.task.adapters import QiskitAdapter
@@ -193,6 +195,7 @@ class RunTestQiskitAdapterReal:
         result = adapter.query(job_id)
         assert "status" in result
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_batch_returns_list(self):
         """Submit 3 circuits; verify submit_batch returns list[str] (not str).
 
@@ -209,6 +212,7 @@ class RunTestQiskitAdapterReal:
         assert len(result) >= 1, f"Expected at least 1 job ID, got {result}"
         assert all(isinstance(tid, str) for tid in result), f"All IDs must be str, got {result}"
 
+    @pytest.mark.real_cloud_execution
     def run_test_query_sync(self):
         """Use query_sync to poll until result available."""
         from uniqc.backend_adapter.task.adapters import QiskitAdapter
@@ -222,6 +226,7 @@ class RunTestQiskitAdapterReal:
         assert isinstance(results, list)
         assert len(results) >= 1
 
+    @pytest.mark.real_cloud_execution
     def run_test_result_shape_batch(self):
         """Verify batch result: {"status": "success", "result": [counts_dict, ...], ...}."""
         from uniqc.backend_adapter.task.adapters import QiskitAdapter

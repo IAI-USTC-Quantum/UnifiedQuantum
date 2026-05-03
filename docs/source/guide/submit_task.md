@@ -112,6 +112,8 @@ task_id = submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P10')
 task_id = submit_task(circuit, backend='ibm', shots=1000)
 ```
 
+> **Quafu deprecated 说明**：`unified-quantum[all]` 不包含 Quafu/`pyquafu`。旧 `pyquafu` SDK 依赖 `numpy<2`，单独安装 `[quafu]` 可能导致环境降级。该平台路径后续不保证代码一致性和完整性，支持可能随时停止。
+
 ### 任务管理
 
 ```python
@@ -150,7 +152,7 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 
 ## Dummy 模式（本地模拟） {#guide-submit-task-dummy}
 
-Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。
+Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。新代码推荐直接使用显式 backend id。
 
 ### 启用方式
 
@@ -166,23 +168,27 @@ os.environ['UNIQC_DUMMY'] = 'true'
 
 from uniqc import submit_task, wait_for_result
 
-# 现在所有提交都会使用本地模拟
+# 现在所有提交都会使用本地 dummy 模拟
 task_id = submit_task(circuit, backend='originq', shots=1000)
 result = wait_for_result(task_id)
 ```
 
 ```python
 # 方式三：使用本地 dummy 后端（推荐）
-task_id = submit_task(circuit, backend='dummy')
+task_id = submit_task(circuit, backend='dummy')  # 无约束、无噪声
+line_task = submit_task(circuit, backend='dummy:virtual-line-3')  # 线性 3q 拓扑、无噪声
+grid_task = submit_task(circuit, backend='dummy:virtual-grid-2x2')  # 2x2 网格、无噪声
+noisy_task = submit_task(circuit, backend='dummy:originq:WK_C180')  # 真实 backend compile/transpile + 本地含噪执行
 ```
 
-> **弃用警告**：`dummy=True` 参数已弃用，请改用 `backend='dummy'`。
+> **弃用警告**：`dummy=True` 参数已弃用，请改用 `backend='dummy'`。如果你想模拟某个真实芯片，请使用 `backend='dummy:<platform>:<backend>'`，例如 `backend='dummy:originq:WK_C180'`。这一类 chip-backed dummy 是规则型写法，不会出现在 backend 列表中。
 
 ### Dummy 模式适用场景
 
 - 开发阶段验证提交/查询调用链路
 - 本地测试任务提交流程
 - 在不具备真实平台访问条件时完成联调
+- 在提交到真实硬件前，用 `dummy:virtual-*` 或 `dummy:<platform>:<backend>` 验证拓扑、compile/transpile 与任务展示链路
 
 ## 批量提交
 
@@ -240,7 +246,7 @@ task_id = submit_task(circuit, backend='originq', chip_id='...', circuit_optimiz
 | 平台 | 定位 | 适用场景 | 额外依赖 |
 |------|------|---------|---------|
 | OriginQ Cloud | 主生产路径 | 生产环境、真实量子计算 | 无额外依赖 |
-| Quafu | 第三方云平台 | BAQIS ScQ 系列 | `pip install unified-quantum[quafu]` |
+| Quafu | 第三方云平台（deprecated） | BAQIS ScQ 系列 | `pip install unified-quantum[quafu]`，不包含在 `[all]` 中 |
 | IBM Quantum | 第三方云平台 | IBM Quantum 生态 | `pip install unified-quantum[qiskit]` |
 | Dummy | 本地模拟 | 开发测试、联调 | `pip install unified-quantum[simulation]` |
 
@@ -251,7 +257,7 @@ task_id = submit_task(circuit, backend='originq', chip_id='...', circuit_optimiz
 - **本地模拟 != 远端提交**：本地模拟解决的是线路验证问题；远端提交解决的是平台接入与任务执行问题。
 - **配置是前置条件**：不同平台需要配置相应的环境变量。
 - **网络与账号会影响可用性**：远端平台可能受网络环境、认证状态、平台可用性和排队情况影响。
-- **额外依赖**：Quafu 和 IBM 需要安装额外的依赖包。
+- **额外依赖**：IBM 需要安装额外的依赖包；Quafu 需要单独安装 `[quafu]`，但该路径已 deprecated 且有 `numpy<2` 风险。
 
 如果你还在反复修改线路结构、量子门或输出解释，说明你仍处于本地验证阶段，建议先回到 [本地模拟](simulation.md)。
 

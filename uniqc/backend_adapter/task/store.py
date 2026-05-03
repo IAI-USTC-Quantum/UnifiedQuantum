@@ -53,7 +53,7 @@ import tempfile
 import threading
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Iterator
@@ -70,7 +70,7 @@ DB_FILENAME: str = "tasks.sqlite"
 # from "this is somebody else's random tasks.sqlite".
 APPLICATION_ID: int = 0x554E4943  # b"UNIC"
 
-CURRENT_SCHEMA_VERSION: int = 1
+CURRENT_SCHEMA_VERSION: int = 2
 
 TERMINAL_STATUSES: tuple[str, ...] = ("success", "failed", "cancelled")
 
@@ -109,9 +109,10 @@ class TaskInfo:
     status: str = TaskStatus.PENDING
     result: dict | None = None
     shots: int = 1000
-    submit_time: str = field(default_factory=lambda: datetime.now().isoformat())
-    update_time: str = field(default_factory=lambda: datetime.now().isoformat())
+    submit_time: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    update_time: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     metadata: dict = field(default_factory=dict)
+    archived_at: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -154,12 +155,42 @@ def _apply_v1(conn: sqlite3.Connection) -> None:
         conn.execute(ddl)
 
 
+_ARCHIVED_TASKS_DDL = """
+CREATE TABLE IF NOT EXISTS archived_tasks (
+    task_id       TEXT PRIMARY KEY,
+    backend       TEXT NOT NULL,
+    status        TEXT NOT NULL,
+    shots         INTEGER NOT NULL DEFAULT 0,
+    submit_time   TEXT NOT NULL,
+    update_time   TEXT NOT NULL,
+    result_json   TEXT,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    archived_at   TEXT NOT NULL
+)
+"""
+
+
+def _apply_v2(conn: sqlite3.Connection) -> None:
+    """v2: add ``archived_tasks`` table for task archiving."""
+    conn.execute(_ARCHIVED_TASKS_DDL)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS archived_backend_idx ON archived_tasks(backend)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS archived_status_idx  ON archived_tasks(status)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS archived_submit_time_idx ON archived_tasks(submit_time)"
+    )
+
+
 MigrateFn = Callable[[sqlite3.Connection], None]
 
 # Ordered list of ``(target_version, migrate_fn)``. Append future migrations
 # here; never reorder or delete past entries.
 MIGRATIONS: list[tuple[int, MigrateFn]] = [
     (1, _apply_v1),
+    (2, _apply_v2),
 ]
 
 
@@ -204,6 +235,8 @@ def _set_application_id(conn: sqlite3.Connection, app_id: int) -> None:
 def _row_to_info(row: sqlite3.Row) -> TaskInfo:
     result = json.loads(row["result_json"]) if row["result_json"] else None
     metadata = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
+    # archived_at only exists in archived_tasks, not in tasks
+    archived_at = row["archived_at"] if "archived_at" in row.keys() else None
     return TaskInfo(
         task_id=row["task_id"],
         backend=row["backend"],
@@ -213,6 +246,7 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
         update_time=row["update_time"],
         result=result,
         metadata=metadata,
+        archived_at=archived_at,
     )
 
 
@@ -309,7 +343,7 @@ class TaskStore:
         Also stamps ``task_info.update_time`` with the current timestamp so
         callers see the same value that was persisted.
         """
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         task_info.update_time = now
         result_json = json.dumps(task_info.result) if task_info.result is not None else None
         metadata_json = json.dumps(task_info.metadata or {}, ensure_ascii=False)
@@ -358,6 +392,7 @@ class TaskStore:
         status: str | None = None,
         backend: str | None = None,
         limit: int | None = None,
+        offset: int | None = None,
     ) -> list[TaskInfo]:
         """List tasks, newest first (by ``submit_time``)."""
         conditions: list[str] = []
@@ -375,6 +410,11 @@ class TaskStore:
         if limit is not None:
             sql += " LIMIT ?"
             params.append(int(limit))
+        if offset is not None:
+            if limit is None:
+                sql += " LIMIT -1"
+            sql += " OFFSET ?"
+            params.append(int(offset))
         with self._tx() as conn:
             rows = conn.execute(sql, params).fetchall()
         return [_row_to_info(row) for row in rows]

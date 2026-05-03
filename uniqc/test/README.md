@@ -88,30 +88,35 @@ addopts = -v
 
 ## CI 配置说明
 
-- **Build-and-test workflow**：使用 `pytest uniqc/test/ -v -m "not cloud"`
-- **Pytest Coverage workflow**：使用 `pytest uniqc/test/ -v -m "not cloud"`
+- **Build-and-test workflow**：使用 `pytest uniqc/test/ -v`
+- **Pytest Coverage workflow**：使用 `pytest uniqc/test/ --cov=uniqc -v`
 
-两个 workflow 现已统一使用 pytest。
+两个 workflow 现已统一使用 pytest。真实提交量子线路的测试由 `--real-cloud-test` 显式打开；未传该参数时只跳过这类会产生真实任务的测试。
 
 ## 当前测试口径
 
-默认开发环境应通过 `uv sync --all-extras --group dev --group docs` 安装完整依赖。因此，除明确的 `cloud` 集成测试和当前已知的 `torchquantum` 缺失问题外，测试不应因为 `qiskit`、`qutip`、`pyqpanda3`、`quafu`、`torch` 或本地 simulator 缺失而被跳过。此类依赖缺失应暴露为环境问题，而不是被静默 skip。
+默认开发环境应通过 `uv sync --all-extras --group dev --group docs` 安装完整依赖。因此，除明确的 `cloud` 集成测试、Quafu/`pyquafu` 和当前已知的 `torchquantum` 缺失问题外，测试不应因为 `qiskit`、`qutip`、`pyqpanda3`、`torch` 或本地 simulator 缺失而被跳过。Quafu 是例外，因为 `pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，不再包含在 `[all]` 中。
 
 推荐的本地/CI 默认口径：
 
 ```bash
-uv run pytest uniqc/test -m "not cloud"
+uv run pytest uniqc/test
 ```
 
 当前默认口径下只允许以下 skip：
 
 - `torchquantum not installed`：known issue，覆盖 TorchQuantum 相关测试。
+- `@pytest.mark.real_cloud_execution`：会向真实云平台提交量子线路，默认跳过，传 `--real-cloud-test` 后执行。
+- `@pytest.mark.requires_quafu` 且未安装 `pyquafu`：Quafu 是 deprecated legacy 路径，不在 `[all]` 中。
 
 `@pytest.mark.cloud` 只用于真实云平台或真实网络依赖场景，包括：
 
-- 需要真实 `~/.uniqc/config.yaml` token 的 OriginQ、Quafu、IBM submit/query 或 backend connectivity。
+- 需要真实 `~/.uniqc/config.yaml` token 的 OriginQ、Quark、IBM backend/status/connectivity。
+- 真实云平台 submit/query，其中会产生真实量子任务的测试必须额外标记 `@pytest.mark.real_cloud_execution`。
 - 真实 IBM endpoint 连通性检查。
 - 真实 proxy 行为检查，包括配置 proxy 可用性和不可达 proxy 的失败路径。
+
+不允许只因为需要 API key 或读取后端列表就跳过测试。Core developer 环境必须配置可用 token，并让 backend discovery / status / connectivity 测试默认通过。
 
 不应标记为 `cloud` 的测试：
 
@@ -121,7 +126,7 @@ uv run pytest uniqc/test -m "not cloud"
 
 ## Cloud Tests
 
-Tests marked with `@pytest.mark.cloud` require real cloud credentials and network access.
+Tests marked with `@pytest.mark.cloud` require real cloud credentials and network access. Tests that actually submit quantum circuits are additionally marked with `@pytest.mark.real_cloud_execution`.
 
 ### Running Cloud Tests Locally
 
@@ -133,6 +138,9 @@ uniqc config set ibm.token "your-token"
 
 # Run cloud tests
 pytest uniqc/test/ -v -m cloud
+
+# Run the full suite including real circuit execution on cloud backends
+pytest uniqc/test/ -v --real-cloud-test
 
 # Run specific platform tests
 pytest uniqc/test/ -v -m "cloud and requires_pyqpanda3"

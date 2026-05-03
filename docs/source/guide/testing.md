@@ -24,6 +24,9 @@
 # 运行全部测试
 pytest uniqc/test/ -v
 
+# 运行全部测试，并包含会向真实云平台提交量子线路的测试
+pytest uniqc/test/ -v --real-cloud-test
+
 # 运行指定模块测试
 pytest uniqc/test/test_simulator.py -v
 
@@ -32,6 +35,29 @@ pytest uniqc/test/ --cov=uniqc --cov-report=term-missing -v
 ```
 
 > **注意**：部分随机回归测试（`test_random_*`）依赖 `qiskit`、`qiskit-aer`、`qutip` 等外部包，需额外安装。
+
+## 真实云平台测试
+
+真实云平台测试分两层：
+
+- `@pytest.mark.cloud`：需要真实 token、真实网络或平台 API。只读取后端列表、查询平台状态、验证 API key / proxy / connectivity 的测试属于这一类，默认必须执行。
+- `@pytest.mark.real_cloud_execution`：会向真实云平台提交量子线路并可能产生排队、额度或费用消耗。只有这类测试在默认运行时跳过，传入 `--real-cloud-test` 后执行。
+
+默认运行：
+
+```bash
+pytest uniqc/test/ -v
+```
+
+这会执行 backend discovery、status、token/connectivity 等真实 API 测试，但跳过真实量子线路执行测试。
+
+需要周期性验证真实执行路径时运行：
+
+```bash
+pytest uniqc/test/ -v --real-cloud-test
+```
+
+不要因为测试需要 API key、需要读取 backend list 或需要访问平台 status API 就标记为 `real_cloud_execution`。只有实际提交线路、轮询真实任务或读取该真实任务结果的测试才使用该 marker。Core developer 环境应配置可用的 `~/.uniqc/config.yaml` token，让非执行类云测试默认通过。
 
 ## 逐模块测试覆盖
 

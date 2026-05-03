@@ -249,7 +249,7 @@ from uniqc import xeb_workflow
 
 # 1q XEB（自动调用 ReadoutEM）
 results_1q = xeb_workflow.run_1q_xeb_workflow(
-    backend="dummy",
+    backend="dummy:originq:WK_C180",
     qubits=[0, 1, 2],
     depths=[5, 10, 20, 50],
     n_circuits=50,
@@ -260,7 +260,7 @@ results_1q = xeb_workflow.run_1q_xeb_workflow(
 
 # 2q XEB（使用拓扑找 qubit pairs）
 results_2q = xeb_workflow.run_2q_xeb_workflow(
-    backend="dummy",
+    backend="dummy:originq:WK_C180",
     pairs=[(0, 1), (1, 2)],
     depths=[5, 10, 20],
     n_circuits=50,
@@ -268,8 +268,7 @@ results_2q = xeb_workflow.run_2q_xeb_workflow(
 
 # 并行 XEB（全芯片）
 results_parallel = xeb_workflow.run_parallel_xeb_workflow(
-    backend="dummy",
-    chip_characterization=chip_char,
+    backend="dummy:originq:WK_C180",
     depths=[5, 10],
     n_circuits=50,
 )
@@ -283,7 +282,7 @@ results_parallel = xeb_workflow.run_parallel_xeb_workflow(
 from uniqc import readout_em_workflow
 
 readout_em = readout_em_workflow.run_readout_em_workflow(
-    backend="dummy",
+    backend="dummy:originq:WK_C180",
     qubits=[0, 1, 2],
     pairs=[(0, 1), (1, 2)],
     shots=1000,
@@ -298,27 +297,28 @@ corrected = readout_em.mitigate_counts({"0": 90, "1": 10}, measured_qubits=[0])
 
 ## 7. WK180 (OriginQ) 示例
 
-```python
-from examples.wk180 import xeb, readout_em
+WK180 的本地含噪仿真推荐直接使用规则型 backend id：
 
-# 读出误差校准
-readout_em.run_wk180_readout_em(
+```python
+from uniqc import xeb_workflow, readout_em_workflow
+
+readout_em = readout_em_workflow.run_readout_em_workflow(
+    backend="dummy:originq:WK_C180",
     qubits=[0, 1, 2, 3],
     pairs=[(0, 1), (1, 2)],
-    dummy=True,          # 本地模拟
     max_age_hours=24.0,
 )
 
-# XEB 基准测试
-xeb.run_wk180_xeb(
+results = xeb_workflow.run_1q_xeb_workflow(
+    backend="dummy:originq:WK_C180",
     qubits=[0, 1],
-    xeb_type="both",
     depths=[5, 10, 20, 50],
     n_circuits=50,
-    dummy=True,
     use_readout_em=True,
 )
 ```
+
+`dummy:originq:WK_C180` 会先按真实 WK_C180 backend 执行 compile/transpile，再用 WK_C180 的 chip characterization 在本地含噪执行。`examples/wk180/` 中保留的 `dummy=True` 参数只用于旧示例兼容，新文档和新代码不再推荐。
 
 ---
 
@@ -380,9 +380,21 @@ c.measure(1)
 
 > **历史兼容性**：某些旧代码可能使用 `c.measure(qubit, cbit)` 格式（将第二个参数当作经典比特索引）。此写法在新版 API 中已被移除。如遇此问题，请将 `c.measure(q, b)` 改为 `c.measure(q)`。
 
-### DummyAdapter 含噪模拟与 ChipCharacterization
+### Dummy 含噪模拟与 ChipCharacterization
 
-`DummyAdapter` 支持从真实芯片的校准数据中注入噪声，实现高保真度本地模拟：
+新代码推荐通过 `dummy:<platform>:<backend>` 从真实芯片的校准数据中注入噪声，并保留真实 backend 的 compile/transpile 链路：
+
+```python
+from uniqc import submit_task
+
+task_id = submit_task(
+    circuit,
+    backend="dummy:originq:WK_C180",
+    shots=1000,
+)
+```
+
+底层测试或自定义噪声模型仍可直接使用 `DummyAdapter`：
 
 ```python
 from uniqc.backend_adapter.task.adapters import DummyAdapter
@@ -428,20 +440,7 @@ adapter = DummyAdapter(chip_characterization=chip_char)
 - **双比特门**：由 `TwoQubitGateData.fidelity` 推导的去极化噪声
 - **读出误差**：由 `readout_fidelity_0/1` 构建的混淆矩阵
 
-使用 `OriginQAdapter` 时，可直接从云端获取芯片特性：
-
-```python
-from uniqc.backend_adapter.task.adapters import OriginQAdapter, DummyAdapter
-
-# 从云端获取 WK180 芯片特性
-orig_adapter = OriginQAdapter()
-chip_char = orig_adapter.get_chip_characterization("WK_C180")
-
-# 用真实数据做本地含噪模拟
-local_adapter = DummyAdapter(chip_characterization=chip_char)
-```
-
-> **注意**：`chip_characterization` 为 `None` 时，DummyAdapter 执行理想（无噪声）模拟。
+> **注意**：`backend="dummy"` 表示理想（无噪声、无约束）模拟；`dummy:<platform>:<backend>` 才表示复用真实 backend 的拓扑和标定数据。后者是规则型写法，不会作为独立 backend 列表项展示。
 
 ### XEB 电路的可复现性
 

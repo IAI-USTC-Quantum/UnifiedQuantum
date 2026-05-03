@@ -7,6 +7,7 @@ from uniqc.backend_adapter.circuit_adapter import (
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
     QuafuCircuitAdapter,
+    QuarkCircuitAdapter,
 )
 from uniqc.circuit_builder import Circuit
 
@@ -307,3 +308,11 @@ class TestGateCoverage:
 
         basic_gates = {"H", "X", "Y", "Z", "RX", "RY", "RZ", "CNOT"}
         assert basic_gates.issubset(gates)
+
+    def test_quark_covers_qasm_gates(self):
+        """Test that Quark adapter covers standard QASM gates."""
+        adapter = QuarkCircuitAdapter()
+        gates = set(adapter.get_supported_gates())
+
+        qasm_gates = {"H", "X", "Y", "Z", "RX", "RY", "RZ", "CNOT", "CX", "MEASURE"}
+        assert qasm_gates.issubset(gates)

@@ -278,10 +278,6 @@ class TestTestIbmConnectivity:
 class TestRealIbmConnectivity:
     """Real IBM connectivity and proxy behavior tests."""
 
-    @pytest.mark.skipif(
-        not platform_has_token("ibm"),
-        reason="ibm.token not set in ~/.uniqc/config.yaml",
-    )
     def test_real_ibm_connectivity_without_proxy(self):
         """Test real IBM endpoint connectivity without an explicit proxy."""
         result = check_ibm_connectivity(proxy={})

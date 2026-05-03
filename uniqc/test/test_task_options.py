@@ -12,6 +12,7 @@ from uniqc.backend_adapter.task.options import (
     IBMOptions,
     OriginQOptions,
     QuafuOptions,
+    QuarkOptions,
 )
 
 
@@ -109,6 +110,37 @@ class TestIBMOptions:
         assert kwargs["task_name"] == "ibm-task"
 
 
+class TestQuarkOptions:
+    """Tests for QuarkOptions."""
+
+    def test_defaults(self):
+        opts = QuarkOptions()
+        assert opts.platform == Platform.QUARK
+        assert opts.chip_id == "Baihua"
+        assert opts.task_name is None
+        assert opts.compile is True
+        assert opts.compiler is None
+
+    def test_to_kwargs(self):
+        opts = QuarkOptions(
+            chip_id="Dongling",
+            task_name="quark-task",
+            compile=False,
+            compiler="qiskit",
+            correct=True,
+            open_dd="XY4",
+            target_qubits=[0, 1],
+        )
+        kwargs = opts.to_kwargs()
+        assert kwargs["chip_id"] == "Dongling"
+        assert kwargs["task_name"] == "quark-task"
+        assert kwargs["compile"] is False
+        assert kwargs["compiler"] == "qiskit"
+        assert kwargs["correct"] is True
+        assert kwargs["open_dd"] == "XY4"
+        assert kwargs["target_qubits"] == [0, 1]
+
+
 class TestDummyOptions:
     """Tests for DummyOptions."""
 
@@ -144,6 +176,12 @@ class TestBackendOptionsFactory:
         assert isinstance(opts, IBMOptions)
         assert opts.chip_id is None
 
+    def test_from_kwargs_quark(self):
+        opts = BackendOptionsFactory.from_kwargs("quark", {"backend_name": "Baihua", "compiler": "qiskit"})
+        assert isinstance(opts, QuarkOptions)
+        assert opts.chip_id == "Baihua"
+        assert opts.compiler == "qiskit"
+
     def test_from_kwargs_dummy(self):
         opts = BackendOptionsFactory.from_kwargs("dummy", {"available_qubits": 8})
         assert isinstance(opts, DummyOptions)
@@ -162,6 +200,11 @@ class TestBackendOptionsFactory:
         opts = BackendOptionsFactory.create_default("originq")
         assert isinstance(opts, OriginQOptions)
         assert opts.backend_name == "origin:wuyuan:d5"
+
+    def test_create_default_quark(self):
+        opts = BackendOptionsFactory.create_default("quark")
+        assert isinstance(opts, QuarkOptions)
+        assert opts.chip_id == "Baihua"
 
     def test_normalize_options_with_none(self):
         opts = BackendOptionsFactory.normalize_options(None, "quafu")

@@ -127,6 +127,12 @@ env.bak/
 venv.bak/
 uv.lock
 
+# Node / frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Spyder project settings
 .spyderproject
 .spyproject

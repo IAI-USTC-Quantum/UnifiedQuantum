@@ -20,7 +20,7 @@ Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and
 
 - **XEB cross-entropy benchmarking**: `uniqc calibrate xeb` measures per-layer gate fidelity in 1q, 2q, and parallel-2q modes
 - **Readout calibration + M3 mitigation**: confusion matrix characterisation and linear-inversion correction
-- **Local noisy simulation**: `DummyAdapter` accepts `ChipCharacterization` data (gate fidelity, T1/T2, readout confusion) to inject realistic hardware noise locally
+- **Local noisy simulation**: `dummy:<platform>:<backend>` reuses real-chip topology and calibration data, compiles/transpiles first, then injects realistic hardware noise locally
 - **DSatur parallel scheduling**: automatically partitions 2q gates into minimum parallel rounds
 
 All calibration results are written to `~/.uniqc/calibration_cache/`; the QEM layer reads them back and enforces TTL freshness.
@@ -67,9 +67,16 @@ uniqc simulate circuit.ir --shots 1000
 # Submit to cloud
 uniqc submit circuit.ir --platform originq --shots 1000
 
+# Dummy backend id conventions
+uniqc submit circuit.ir --platform dummy --shots 1000
+uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000
+uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
+
 # Query result
 uniqc result <task_id>
 ```
+
+`dummy` is an unconstrained noiseless local simulator; `dummy:virtual-line-N` / `dummy:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise.
 
 ---
 
@@ -141,9 +148,14 @@ uv sync --all-extras --group dev --group docs --upgrade
 
 # Run the full test suite
 uv run pytest uniqc/test
+
+# Include tests that submit real quantum circuits to cloud backends
+uv run pytest uniqc/test --real-cloud-test
 ```
 
-Maintainer environments should not treat missing optional backend packages or documentation packages such as qiskit, QuTiP, pyquafu, or Sphinx as normal skip conditions. `pyproject.toml` does not pin third-party dependency versions and `uv.lock` is not tracked on `main`; full development and CI should resolve the latest available dependencies and expose upstream compatibility issues early.
+Maintainer environments should not treat missing currently maintained optional backend packages or documentation packages such as qiskit, QuTiP, or Sphinx as normal skip conditions. `pyproject.toml` does not pin third-party dependency versions and `uv.lock` is not tracked on `main`; full development and CI should resolve the latest available dependencies and expose upstream compatibility issues early. Quafu/`pyquafu` is the exception: the platform SDK is deprecated, and `pyquafu` requires `numpy<2`, so it is no longer included in `[all]`.
+
+Real-cloud tests that only fetch backends, validate tokens, or query platform status/API run by default. Only tests that actually submit quantum circuits are skipped by default, and they run when `--real-cloud-test` is passed.
 
 **Requirements:**
 - CMake >= 3.26
@@ -174,12 +186,14 @@ Core dependencies (including `scipy`) are included by default.
 | Feature | Install command (uv) | pip fallback |
 |---------|---------------------|-------------|
 | OriginQ cloud | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| Quafu backend | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
+| Quafu backend (deprecated, separate install) | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
 | Qiskit backend | `uv pip install unified-quantum[qiskit]` | `pip install unified-quantum[qiskit]` |
 | Advanced simulation (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | Visualization | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | All optional deps | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
+
+`[all]` does not include Quafu/`pyquafu`. Install `[quafu]` explicitly only if you accept the risk that `pyquafu` may downgrade the environment to `numpy<2`. The Quafu platform path is deprecated; future releases do not guarantee consistency or completeness of Quafu-related code, and support may stop at any time.
 
 TorchQuantum backend is not in PyPI extras yet — install it manually:
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from uniqc.test.cloud._config_helpers import platform_has_token, write_uniqc_config
+from uniqc.test.cloud._config_helpers import write_uniqc_config
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -72,6 +72,16 @@ class RunTestConfigYaml:
 
         config = load_quafu_config()
         assert config["api_token"] == "quafu_secret_token"
+
+    def run_test_quark_config_from_yaml(self, monkeypatch, tmp_path):
+        """QuarkStudio config is read from ~/.uniqc/config.yaml."""
+        write_uniqc_config(tmp_path, {"quark": {"token": "quark_secret_token"}})
+        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+
+        from uniqc.backend_adapter.task.config import load_quark_config
+
+        config = load_quark_config()
+        assert config["api_token"] == "quark_secret_token"
 
     def run_test_ibm_config_from_yaml(self, monkeypatch, tmp_path):
         """IBM config is read from ~/.uniqc/config.yaml."""
@@ -142,7 +152,6 @@ class RunTestConfigYaml:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not platform_has_token("originq"), reason="originq.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_pyqpanda3
 class RunTestOriginQAdapterIntegration:
     """Integration tests for OriginQ adapter with real pyqpanda3 and credentials."""
@@ -155,6 +164,7 @@ class RunTestOriginQAdapterIntegration:
         result = adapter.translate_circuit(ORIGINIR_BELL)
         assert result is not None
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_and_query(self):
         """Test submit and query with real service."""
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
@@ -166,6 +176,7 @@ class RunTestOriginQAdapterIntegration:
         result = adapter.query(task_id)
         assert "status" in result
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_batch(self):
         """Test submit_batch with real service."""
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
@@ -182,7 +193,6 @@ class RunTestOriginQAdapterIntegration:
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not platform_has_token("quafu"), reason="quafu.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_quafu
 class RunTestQuafuAdapterIntegration:
     """Integration tests for Quafu adapter with real quafu and credentials."""
@@ -202,6 +212,7 @@ MEASURE q[0], c[0]
         result = adapter.translate_circuit(originir)
         assert result is not None
 
+    @pytest.mark.real_cloud_execution
     def run_test_submit_and_query(self):
         """Test submit and query with real service."""
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
@@ -223,7 +234,6 @@ MEASURE q[0], c[0]
 
 
 @pytest.mark.cloud
-@pytest.mark.skipif(not platform_has_token("ibm"), reason="ibm.token not set in ~/.uniqc/config.yaml")
 @pytest.mark.requires_qiskit
 class RunTestIBMAdapterIntegration:
     """Integration tests for IBM adapter with real qiskit and credentials."""
@@ -237,8 +247,8 @@ class RunTestIBMAdapterIntegration:
         assert result is not None
         assert hasattr(result, "num_qubits")
 
-    def run_test_submit_and_query(self):
-        """Test submit and query with real service."""
+    def run_test_service_init_and_translate(self):
+        """Test real IBM service initialisation and circuit translation."""
         from uniqc.backend_adapter.task.adapters import QiskitAdapter
 
         adapter = QiskitAdapter()

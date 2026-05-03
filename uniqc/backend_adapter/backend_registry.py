@@ -46,6 +46,23 @@ def _clean_quafu_gates(gates: list[str]) -> list[str]:
     return cleaned
 
 
+def _topology_from_raw(raw_edges: Any) -> tuple[QubitTopology, ...]:
+    """Convert serialised ``[[u, v], ...]`` topology into BackendInfo edges."""
+    topology: list[QubitTopology] = []
+    if not isinstance(raw_edges, list):
+        return ()
+    for edge in raw_edges:
+        try:
+            u = int(edge[0])
+            v = int(edge[1])
+        except (IndexError, KeyError, TypeError, ValueError):
+            continue
+        if u == v:
+            continue
+        topology.append(QubitTopology(u=u, v=v))
+    return tuple(topology)
+
+
 # ---------------------------------------------------------------------------
 # Normalisers
 # ---------------------------------------------------------------------------
@@ -125,13 +142,14 @@ def _normalise_quafu(raw: list[dict[str, Any]]) -> list[BackendInfo]:
             "Obsolete": "deprecated",
         }
         mapped_status = status_map.get(status_str, status_str)
+        topology = _topology_from_raw(entry.get("topology", []))
         results.append(
             BackendInfo(
                 platform=Platform.QUAFU,
                 name=name,
                 description=f"BAQIS Quafu {num_qubits}-qubit chip",
                 num_qubits=num_qubits,
-                topology=(),
+                topology=topology,
                 status=mapped_status,
                 is_simulator=is_sim,
                 is_hardware=not is_sim,
@@ -139,6 +157,59 @@ def _normalise_quafu(raw: list[dict[str, Any]]) -> list[BackendInfo]:
                     "task_in_queue": entry.get("task_in_queue", 0),
                     "qv": entry.get("qv", 0),
                     "valid_gates": _clean_quafu_gates(entry.get("valid_gates", [])),
+                    "available_qubits": entry.get("available_qubits", []),
+                    "per_qubit_calibration": entry.get("per_qubit_calibration", []),
+                    "per_pair_calibration": entry.get("per_pair_calibration", []),
+                    "global_info": entry.get("global_info", {}),
+                    "calibrated_at": entry.get("calibrated_at"),
+                },
+                avg_1q_fidelity=entry.get("avg_1q_fidelity"),
+                avg_2q_fidelity=entry.get("avg_2q_fidelity"),
+                avg_readout_fidelity=entry.get("avg_readout_fidelity"),
+                coherence_t1=entry.get("coherence_t1"),
+                coherence_t2=entry.get("coherence_t2"),
+            )
+        )
+    return results
+
+
+def _normalise_quark_status(value: Any) -> str:
+    if isinstance(value, int):
+        return "available"
+    text = str(value or "").strip().lower()
+    status_map = {
+        "online": "available",
+        "available": "available",
+        "offline": "unavailable",
+        "unavailable": "unavailable",
+        "maintenance": "maintenance",
+        "maintaining": "maintenance",
+        "calibrating": "maintenance",
+        "calibration": "maintenance",
+    }
+    return status_map.get(text, "unknown" if text else "unknown")
+
+
+def _normalise_quark(raw: list[dict[str, Any]]) -> list[BackendInfo]:
+    """Convert QuarkStudio ``Task.status()`` output to ``BackendInfo`` objects."""
+    results: list[BackendInfo] = []
+    for entry in raw:
+        name = str(entry.get("name", ""))
+        queue = entry.get("task_in_queue", 0)
+        status = _normalise_quark_status(entry.get("status", queue))
+        results.append(
+            BackendInfo(
+                platform=Platform.QUARK,
+                name=name,
+                description="BAQIS QuarkStudio / Quafu-SQC backend",
+                num_qubits=int(entry.get("num_qubits", 0) or 0),
+                topology=_topology_from_raw(entry.get("topology", [])),
+                status=status,
+                is_simulator="sim" in name.lower(),
+                is_hardware="sim" not in name.lower(),
+                extra={
+                    "task_in_queue": queue,
+                    "raw": entry,
                 },
                 avg_1q_fidelity=entry.get("avg_1q_fidelity"),
                 avg_2q_fidelity=entry.get("avg_2q_fidelity"),
@@ -186,6 +257,10 @@ def _normalise_ibm(raw: list[dict[str, Any]]) -> list[BackendInfo]:
                     "memory": cfg.get("memory", False),
                     "qobd": cfg.get("qobd", False),
                     "supported_instructions": cfg.get("supported_instructions", []),
+                    "per_qubit_calibration": entry.get("per_qubit_calibration", []),
+                    "per_pair_calibration": entry.get("per_pair_calibration", []),
+                    "global_info": entry.get("global_info", {}),
+                    "calibrated_at": entry.get("calibrated_at"),
                 },
                 avg_1q_fidelity=entry.get("avg_1q_fidelity"),
                 avg_2q_fidelity=entry.get("avg_2q_fidelity"),
@@ -200,6 +275,7 @@ def _normalise_ibm(raw: list[dict[str, Any]]) -> list[BackendInfo]:
 _NORMALISERS = {
     Platform.ORIGINQ: _normalise_originq,
     Platform.QUAFU: _normalise_quafu,
+    Platform.QUARK: _normalise_quark,
     Platform.IBM: _normalise_ibm,
 }
 
@@ -219,10 +295,18 @@ def _build_adapter(platform: Platform):
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
         return QuafuAdapter()
+    elif platform == Platform.QUARK:
+        from uniqc.backend_adapter.task.adapters import QuarkAdapter
+
+        return QuarkAdapter()
     elif platform == Platform.IBM:
         from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
 
         return IBMAdapter()
+    elif platform == Platform.DUMMY:
+        from uniqc.backend_adapter.task.adapters import DummyAdapter
+
+        return DummyAdapter()
     raise ValueError(f"No adapter for platform {platform}")
 
 
@@ -243,6 +327,12 @@ def fetch_platform_backends(
     from uniqc.backend_adapter.backend_cache import is_stale  # noqa: PLC0415
 
     fetched_newly = False
+
+    if platform == Platform.DUMMY:
+        from uniqc.backend_adapter.dummy_backend import list_dummy_backend_infos
+
+        backends = list_dummy_backend_infos()
+        return backends, True
 
     if not force_refresh and not is_stale(platform.value):
         backends = get_cached_backends(platform)

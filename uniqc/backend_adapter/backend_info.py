@@ -15,6 +15,7 @@ from typing import Any
 class Platform(Enum):
     ORIGINQ = "originq"
     QUAFU = "quafu"
+    QUARK = "quark"
     IBM = "ibm"
     DUMMY = "dummy"
 
@@ -75,6 +76,8 @@ class BackendInfo:
 
     def full_id(self) -> str:
         """Return the globally-unique identifier: ``platform:name``."""
+        if self.platform == Platform.DUMMY and self.name == "dummy":
+            return "dummy"
         return f"{self.platform.value}:{self.name}"
 
     def to_dict(self) -> dict[str, Any]:
@@ -134,6 +137,8 @@ def parse_backend_id(identifier: str) -> tuple[Platform, str]:
         ValueError: If the format is invalid or the platform is unknown.
     """
     identifier = identifier.strip()
+    if identifier == Platform.DUMMY.value:
+        return Platform.DUMMY, "dummy"
     if ":" in identifier:
         platform_str, name = identifier.split(":", 1)
         try:

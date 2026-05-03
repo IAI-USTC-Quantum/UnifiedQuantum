@@ -59,6 +59,7 @@ from . import submit
 from . import result
 from . import config_cmd as config
 from . import task
+from uniqc import gateway
 
 # Register single-action entrypoints as direct commands instead of sub-groups.
 # This avoids Click/Typer group parsing quirks where options after positionals
@@ -71,3 +72,4 @@ app.add_typer(config.app, name="config")
 app.add_typer(task.app, name="task")
 app.add_typer(backend.app, name="backend")
 app.add_typer(calibrate.app, name="calibrate")
+app.add_typer(gateway.app, name="gateway")

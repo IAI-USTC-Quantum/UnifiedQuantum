@@ -8,7 +8,13 @@ profile selector.
 
 from __future__ import annotations
 
-__all__ = ["load_originq_config", "load_quafu_config", "load_ibm_config", "load_dummy_config"]
+__all__ = [
+    "load_originq_config",
+    "load_quafu_config",
+    "load_quark_config",
+    "load_ibm_config",
+    "load_dummy_config",
+]
 
 from typing import Any
 
@@ -17,7 +23,7 @@ def _load_platform_config(platform: str) -> dict[str, Any]:
     """Load ``platform`` config from the active YAML profile.
 
     Args:
-        platform: One of ``originq``, ``quafu``, ``ibm``.
+        platform: One of ``originq``, ``quafu``, ``quark``, ``ibm``.
 
     Returns:
         Platform configuration dictionary.
@@ -85,6 +91,31 @@ def load_quafu_config() -> dict[str, Any]:
     raise ImportError(
         "Quafu config not found. "
         "Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml."
+    )
+
+
+# ---------------------------------------------------------------------------
+# QuarkStudio / Quafu-SQC
+# ---------------------------------------------------------------------------
+
+def load_quark_config() -> dict[str, Any]:
+    """Load QuarkStudio configuration from the active YAML profile.
+
+    Returns:
+        dict with key: api_token
+
+    Raises:
+        ImportError: If the configuration is not found.
+    """
+    config = _load_platform_config("quark")
+    api_token = config.get("QUARK_API_KEY", "") or config.get("token", "") or None
+
+    if api_token:
+        return {"api_token": api_token}
+
+    raise ImportError(
+        "QuarkStudio config not found. "
+        "Run `uniqc config set quark.QUARK_API_KEY <TOKEN>` or edit ~/.uniqc/config.yaml."
     )
 
 

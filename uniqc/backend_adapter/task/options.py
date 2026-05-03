@@ -27,6 +27,7 @@ __all__ = [
     "BackendOptions",
     "OriginQOptions",
     "QuafuOptions",
+    "QuarkOptions",
     "IBMOptions",
     "DummyOptions",
     "BackendOptionsFactory",
@@ -150,6 +151,55 @@ class QuafuOptions(BackendOptions):
 
 
 @dataclasses.dataclass
+class QuarkOptions(BackendOptions):
+    """Options for QuarkStudio / Quafu-SQC backends.
+
+    Parameters
+    ----------
+    chip_id : str
+        QuarkStudio chip name, e.g. ``"Baihua"`` or ``"Dongling"``.
+    task_name : str | None
+        Optional server-side task name.
+    compile : bool
+        Whether QuarkStudio should compile the OpenQASM2 circuit. Default: True.
+    compiler : str | None
+        Optional compiler backend: ``"quarkcircuit"``, ``"qsteed"``, ``"qiskit"``, or None.
+    correct : bool | None
+        Optional readout correction flag.
+    open_dd : str | None
+        Optional dynamical decoupling mode such as ``"XY4"`` or ``"CPMG"``.
+    target_qubits : list[int] | None
+        Optional target qubits passed in the QuarkStudio task options.
+    """
+
+    platform: dataclasses.InitVar[Platform] = dataclasses.field(default=Platform.QUARK, repr=False)
+    chip_id: str = "Baihua"
+    task_name: str | None = None
+    compile: bool = True
+    compiler: str | None = None
+    correct: bool | None = None
+    open_dd: str | None = None
+    target_qubits: list[int] | None = None
+
+    def to_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            "chip_id": self.chip_id,
+            "compile": self.compile,
+        }
+        if self.task_name is not None:
+            kwargs["task_name"] = self.task_name
+        if self.compiler is not None:
+            kwargs["compiler"] = self.compiler
+        if self.correct is not None:
+            kwargs["correct"] = self.correct
+        if self.open_dd is not None:
+            kwargs["open_dd"] = self.open_dd
+        if self.target_qubits is not None:
+            kwargs["target_qubits"] = self.target_qubits
+        return kwargs
+
+
+@dataclasses.dataclass
 class IBMOptions(BackendOptions):
     """Options for IBM Quantum backends.
 
@@ -245,6 +295,7 @@ class BackendOptionsFactory:
     _PLATFORM_MAP: dict[str, type[BackendOptions]] = {
         "originq": OriginQOptions,
         "quafu": QuafuOptions,
+        "quark": QuarkOptions,
         "ibm": IBMOptions,
         "dummy": DummyOptions,
     }
@@ -297,6 +348,17 @@ class BackendOptionsFactory:
                 task_name=kwargs.pop("task_name", None),
                 group_name=kwargs.pop("group_name", None),
                 wait=kwargs.pop("wait", False),
+            )
+        elif platform_lower == "quark":
+            return QuarkOptions(
+                shots=shots,
+                chip_id=kwargs.pop("chip_id", kwargs.pop("backend_name", kwargs.pop("chip", "Baihua"))),
+                task_name=kwargs.pop("task_name", kwargs.pop("name", None)),
+                compile=kwargs.pop("compile", True),
+                compiler=kwargs.pop("compiler", None),
+                correct=kwargs.pop("correct", None),
+                open_dd=kwargs.pop("open_dd", None),
+                target_qubits=kwargs.pop("target_qubits", None),
             )
         elif platform_lower == "ibm":
             return IBMOptions(

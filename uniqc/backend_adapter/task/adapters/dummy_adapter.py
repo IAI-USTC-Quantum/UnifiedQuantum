@@ -88,9 +88,10 @@ class DummyAdapter(QuantumAdapter):
     def __init__(
         self,
         noise_model: dict[str, Any] | None = None,
-        available_qubits: list[int] | None = None,
+        available_qubits: list[int] | int | None = None,
         available_topology: list[list[int]] | None = None,
         chip_characterization: ChipCharacterization | None = None,
+        backend_id: str = "dummy",
     ) -> None:
         """Initialize the DummyAdapter.
 
@@ -108,6 +109,9 @@ class DummyAdapter(QuantumAdapter):
                 adapter automatically derives realistic noise parameters from the
                 per-qubit and per-pair calibration data (T1/T2, gate fidelities,
                 readout errors). This is the recommended way to configure noise.
+            backend_id: Canonical dummy backend identifier. Included in task IDs
+                so the same circuit submitted to different dummy targets does not
+                collide in the local task cache.
 
         Raises:
             MissingDependencyError: If the C++ simulator extension (`uniqc_cpp`)
@@ -126,7 +130,11 @@ class DummyAdapter(QuantumAdapter):
 
         self.chip_characterization = chip_characterization
         self.noise_model = noise_model
-        self.available_qubits = available_qubits or []
+        self.backend_id = backend_id or "dummy"
+        if isinstance(available_qubits, int):
+            self.available_qubits = list(range(available_qubits))
+        else:
+            self.available_qubits = [int(q) for q in (available_qubits or [])]
         self.available_topology = available_topology or []
         self._cache: dict[str, dict[str, Any]] = {}
         self._simulator_cls: type | None = None
@@ -172,11 +180,7 @@ class DummyAdapter(QuantumAdapter):
         Returns:
             ErrorLoader_GateSpecificError instance, or None if chip has no gate data.
         """
-        from uniqc.simulator.error_model import (
-            ErrorLoader_GateSpecificError,
-            Depolarizing,
-            TwoQubitDepolarizing,
-        )
+        from uniqc.simulator.error_model import Depolarizing, ErrorLoader_GateSpecificError
 
         # Collect single-qubit gate errors
         sq_errors: dict[int, float] = {}
@@ -213,7 +217,7 @@ class DummyAdapter(QuantumAdapter):
         # gate arity here.
         generic_error: list[Depolarizing] = [Depolarizing(generic_1q)]
         # gatetype_error: same reasoning — Depolarizing handles any qubit count.
-        # Only use TwoQubitDepolarizing in gate_specific_error (exact edge match).
+        # Exact edge matches use the edge-specific depolarizing rate.
         gatetype_error: dict[str, list[Depolarizing]] = {
             "CNOT": [Depolarizing(generic_2q)],
             "CZ": [Depolarizing(generic_2q)],
@@ -244,11 +248,7 @@ class DummyAdapter(QuantumAdapter):
         Returns:
             ErrorLoader_GateSpecificError instance.
         """
-        from uniqc.simulator.error_model import (
-            ErrorLoader_GateSpecificError,
-            Depolarizing,
-            TwoQubitDepolarizing,
-        )
+        from uniqc.simulator.error_model import Depolarizing, ErrorLoader_GateSpecificError
 
         depol_1q = noise_model.get("depol_1q", noise_model.get("depol", 0.0))
         depol_2q = noise_model.get("depol_2q", noise_model.get("depol", 0.0))
@@ -277,7 +277,8 @@ class DummyAdapter(QuantumAdapter):
         Returns:
             16-character hex task ID.
         """
-        return hashlib.sha256(circuit.encode()).hexdigest()[:16]
+        payload = f"{self.backend_id}\0{circuit}"
+        return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
     # -------------------------------------------------------------------------
     # Circuit translation
@@ -438,7 +439,7 @@ class DummyAdapter(QuantumAdapter):
             Any dry-run success followed by actual submission failure is a
             critical bug. Please report it at the UnifiedQuantum issue tracker.
         """
-        from .base import _dry_run_success
+        from .base import _dry_run_failed, _dry_run_success
 
         # Extract qubit count from OriginIR QINIT line
         circuit_qubits: int | None = None
@@ -453,9 +454,25 @@ class DummyAdapter(QuantumAdapter):
         except Exception:
             pass
 
+        try:
+            sim = self._get_simulator_cls()(
+                available_qubits=self.available_qubits,
+                available_topology=self.available_topology,
+            )
+            sim.simulate_preprocess(originir)
+        except Exception as exc:  # noqa: BLE001
+            return _dry_run_failed(
+                str(exc),
+                details=(
+                    f"Dry-run failed for {self.backend_id}: OriginIR cannot run "
+                    "under this dummy backend's qubit/topology constraints."
+                ),
+                backend_name=self.backend_id,
+            )
+
         return _dry_run_success(
             (f"Dry-run passed for dummy simulator: OriginIR is valid. Qubits={circuit_qubits}, shots={shots}"),
-            backend_name="dummy",
+            backend_name=self.backend_id,
             circuit_qubits=circuit_qubits,
             supported_gates=(
                 "H",

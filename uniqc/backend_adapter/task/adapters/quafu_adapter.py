@@ -11,8 +11,12 @@ from __future__ import annotations
 
 __all__ = ["QuafuAdapter"]
 
+import re
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
+from uniqc.backend_adapter.backend_info import Platform, QubitTopology
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -22,6 +26,13 @@ from uniqc.backend_adapter.task.adapters.base import (
 )
 from uniqc.backend_adapter.task.config import load_quafu_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quafu
+from uniqc.cli.chip_info import (
+    ChipCharacterization,
+    ChipGlobalInfo,
+    SingleQubitData,
+    TwoQubitData,
+    TwoQubitGateData,
+)
 
 if TYPE_CHECKING:
     pass  # type hints use string annotations via `from __future__ import annotations`
@@ -56,6 +67,190 @@ def _avg(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
+@dataclass(frozen=True, slots=True)
+class _QuafuCalibration:
+    """Normalized calibration payload extracted from Quafu chip_info."""
+
+    available_qubits: tuple[int, ...]
+    connectivity: tuple[QubitTopology, ...]
+    single_qubit_data: tuple[SingleQubitData, ...]
+    two_qubit_data: tuple[TwoQubitData, ...]
+    global_info: ChipGlobalInfo
+
+
+def _clean_quafu_gate_name(gate: Any) -> str:
+    return str(gate).strip().lstrip('[ "').rstrip('" ]')
+
+
+def _parse_quafu_qubit_id(value: Any) -> int | None:
+    """Parse Quafu qubit labels such as ``Q0``, ``q12`` or ``12``."""
+    if isinstance(value, int):
+        return value
+    text = str(value).strip()
+    if text.isdigit():
+        return int(text)
+    match = re.search(r"\d+", text)
+    return int(match.group(0)) if match else None
+
+
+def _parse_quafu_edge_key(edge_key: Any) -> tuple[int, int] | None:
+    """Parse Quafu topology edge keys, normally ``Q0_Q1``."""
+    if isinstance(edge_key, (list, tuple)) and len(edge_key) == 2:
+        u = _parse_quafu_qubit_id(edge_key[0])
+        v = _parse_quafu_qubit_id(edge_key[1])
+        return (u, v) if u is not None and v is not None else None
+
+    parts = [part for part in re.split(r"[_\-,\s]+", str(edge_key).strip()) if part]
+    if len(parts) != 2:
+        return None
+    u = _parse_quafu_qubit_id(parts[0])
+    v = _parse_quafu_qubit_id(parts[1])
+    return (u, v) if u is not None and v is not None else None
+
+
+def _number(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _quafu_full_info(chip_info: dict[str, Any]) -> dict[str, Any]:
+    full_info = chip_info.get("full_info")
+    return full_info if isinstance(full_info, dict) else chip_info
+
+
+def _quafu_topological_structure(chip_info: dict[str, Any]) -> dict[Any, Any]:
+    full_info = _quafu_full_info(chip_info)
+    topo = full_info.get("topological_structure") or chip_info.get("topological_structure")
+    return topo if isinstance(topo, dict) else {}
+
+
+def _extract_quafu_gate_fidelities(gate_data: Any) -> list[TwoQubitGateData]:
+    """Extract per-gate fidelities from one Quafu edge payload."""
+    if not isinstance(gate_data, dict):
+        return []
+
+    if "fidelity" in gate_data:
+        return [TwoQubitGateData(gate="unknown", fidelity=_number(gate_data.get("fidelity")))]
+
+    gates: list[TwoQubitGateData] = []
+    for gate_name, gate_attrs in gate_data.items():
+        gate = _clean_quafu_gate_name(gate_name)
+        if not gate:
+            continue
+        fidelity = _number(gate_attrs.get("fidelity")) if isinstance(gate_attrs, dict) else _number(gate_attrs)
+        gates.append(TwoQubitGateData(gate=gate, fidelity=fidelity))
+    return gates
+
+
+def _merge_gate_fidelity(existing: float | None, incoming: float | None) -> float | None:
+    """Merge directed Quafu edge records into one undirected edge value.
+
+    Quafu's own topology drawing logic collapses reverse directions by keeping
+    the lower fidelity. Use the same conservative rule when both directions
+    expose the same gate.
+    """
+    if existing is None:
+        return incoming
+    if incoming is None:
+        return existing
+    return min(existing, incoming)
+
+
+def _extract_quafu_calibration(
+    chip_info: dict[str, Any],
+    *,
+    num_qubits: int | None = None,
+    valid_gates: list[str] | tuple[str, ...] | None = None,
+) -> _QuafuCalibration:
+    """Normalize Quafu SDK ``get_chip_info()`` output."""
+    full_info = _quafu_full_info(chip_info)
+    qubits_info = full_info.get("qubits_info") or {}
+
+    single_qubit_data: list[SingleQubitData] = []
+    available_qubits: set[int] = set()
+    if isinstance(qubits_info, dict):
+        for key, qdata in qubits_info.items():
+            qid = _parse_quafu_qubit_id(key)
+            if qid is None:
+                continue
+            available_qubits.add(qid)
+            qdata = qdata if isinstance(qdata, dict) else {}
+            single_qubit_data.append(
+                SingleQubitData(
+                    qubit_id=qid,
+                    t1=_number(qdata.get("T1")),
+                    t2=_number(qdata.get("T2")),
+                    single_gate_fidelity=None,
+                    readout_fidelity_0=None,
+                    readout_fidelity_1=None,
+                    avg_readout_fidelity=None,
+                )
+            )
+
+    pair_gates: dict[tuple[int, int], dict[str, float | None]] = {}
+    for edge_key, gate_data in _quafu_topological_structure(chip_info).items():
+        edge = _parse_quafu_edge_key(edge_key)
+        if edge is None:
+            continue
+        u, v = edge
+        if u == v:
+            continue
+        available_qubits.update((u, v))
+        key = tuple(sorted((u, v)))
+        gates = pair_gates.setdefault(key, {})
+        for gate in _extract_quafu_gate_fidelities(gate_data):
+            gate_name = gate.gate.lower()
+            gates[gate_name] = _merge_gate_fidelity(gates.get(gate_name), gate.fidelity)
+
+    if not available_qubits and num_qubits:
+        available_qubits.update(range(num_qubits))
+
+    connectivity = tuple(QubitTopology(u=u, v=v) for u, v in sorted(pair_gates))
+    two_qubit_data = tuple(
+        TwoQubitData(
+            qubit_u=u,
+            qubit_v=v,
+            gates=tuple(
+                TwoQubitGateData(gate=gate, fidelity=fidelity)
+                for gate, fidelity in sorted(gates.items())
+            ),
+        )
+        for (u, v), gates in sorted(pair_gates.items())
+    )
+
+    sq_gates: list[str] = []
+    tq_gates: list[str] = []
+    for gate in valid_gates or []:
+        cleaned = _clean_quafu_gate_name(gate)
+        if not cleaned:
+            continue
+        lowered = cleaned.lower()
+        if lowered in {"h", "x", "y", "z", "s", "sx", "t", "rx", "ry", "rz", "u1", "u2", "u3"}:
+            if cleaned not in sq_gates:
+                sq_gates.append(cleaned)
+        elif lowered in {"cx", "cnot", "cz", "iswap", "swap", "rxx", "ryy", "rzz", "xy"} and cleaned not in tq_gates:
+            tq_gates.append(cleaned)
+    for pair in two_qubit_data:
+        for gate in pair.gates:
+            if gate.gate not in tq_gates:
+                tq_gates.append(gate.gate)
+
+    return _QuafuCalibration(
+        available_qubits=tuple(sorted(available_qubits)),
+        connectivity=connectivity,
+        single_qubit_data=tuple(sorted(single_qubit_data, key=lambda item: item.qubit_id)),
+        two_qubit_data=two_qubit_data,
+        global_info=ChipGlobalInfo(
+            single_qubit_gates=tuple(sq_gates),
+            two_qubit_gates=tuple(tq_gates),
+        ),
+    )
+
+
 def _compute_quafu_fidelity(chip_info: dict[str, Any]) -> dict[str, Any]:
     """Extract fidelity and coherence metrics from a Quafu get_chip_info() result.
 
@@ -71,33 +266,15 @@ def _compute_quafu_fidelity(chip_info: dict[str, Any]) -> dict[str, Any]:
         dict with keys: avg_1q_fidelity (None), avg_2q_fidelity, avg_readout_fidelity (None),
         coherence_t1, coherence_t2.
     """
-    full_info: dict[str, Any] = chip_info.get("full_info") or {}
-
-    # T1/T2 from qubits_info (values are in microseconds already)
-    t1s, t2s = [], []
-    qubits_info: dict[str, dict[str, Any]] = full_info.get("qubits_info") or {}
-    for qdata in qubits_info.values():
-        if (t1 := qdata.get("T1")) is not None:
-            t1s.append(float(t1))
-        if (t2 := qdata.get("T2")) is not None:
-            t2s.append(float(t2))
-
-    # 2Q fidelity from topological_structure (directed edges, take each once)
-    seen: set[tuple[int, int]] = set()
-    tq_fids: list[float] = []
-    topo: dict[str, dict[str, Any]] = full_info.get("topological_structure") or {}
-    for edge_key, gate_data in topo.items():
-        parts = edge_key.split("_")
-        if len(parts) == 2:
-            u, v = (
-                int(parts[0][1:]) if parts[0].startswith("Q") else int(parts[0]),
-                int(parts[1][1:]) if parts[1].startswith("Q") else int(parts[1]),
-            )
-            key = (u, v)
-            if key not in seen:
-                seen.add(key)
-                if (f := gate_data.get("cz", {}).get("fidelity")) is not None:
-                    tq_fids.append(float(f))
+    calibration = _extract_quafu_calibration(chip_info)
+    t1s = [float(item.t1) for item in calibration.single_qubit_data if item.t1 is not None]
+    t2s = [float(item.t2) for item in calibration.single_qubit_data if item.t2 is not None]
+    tq_fids = [
+        float(gate.fidelity)
+        for item in calibration.two_qubit_data
+        for gate in item.gates
+        if gate.fidelity is not None
+    ]
 
     return {
         "avg_1q_fidelity": None,  # not available from Quafu API
@@ -213,8 +390,23 @@ class QuafuAdapter(QuantumAdapter):
             # Attempt to fetch chip info for fidelity / coherence
             try:
                 chip_info = backend.get_chip_info()
-                if isinstance(chip_info, dict) and chip_info.get("full_info"):
+                if isinstance(chip_info, dict) and _quafu_topological_structure(chip_info):
                     entry.update(_compute_quafu_fidelity(chip_info))
+                    calibration = _extract_quafu_calibration(
+                        chip_info,
+                        num_qubits=backend.qubit_num,
+                        valid_gates=entry["valid_gates"],
+                    )
+                    entry["available_qubits"] = list(calibration.available_qubits)
+                    entry["topology"] = [[edge.u, edge.v] for edge in calibration.connectivity]
+                    entry["per_qubit_calibration"] = [
+                        item.to_dict() for item in calibration.single_qubit_data
+                    ]
+                    entry["per_pair_calibration"] = [
+                        item.to_dict() for item in calibration.two_qubit_data
+                    ]
+                    entry["global_info"] = calibration.global_info.to_dict()
+                    entry["calibrated_at"] = datetime.now(timezone.utc).isoformat()
             except Exception:  # noqa: BLE001
                 pass
             result.append(entry)
@@ -567,17 +759,6 @@ class QuafuAdapter(QuantumAdapter):
         -------
         ChipCharacterization or None
         """
-        from datetime import datetime, timezone
-
-        from uniqc.backend_adapter.backend_info import Platform, QubitTopology
-        from uniqc.cli.chip_info import (
-            ChipCharacterization,
-            ChipGlobalInfo,
-            SingleQubitData,
-            TwoQubitData,
-            TwoQubitGateData,
-        )
-
         user = self._User(api_token=self._api_token)
         user.save_apitoken()
         raw_backends = user.get_available_backends()
@@ -591,70 +772,12 @@ class QuafuAdapter(QuantumAdapter):
         except Exception:
             return None
 
-        full_info: dict[str, Any] = chip_info.get("full_info") or {}
-
-        # Available qubits: Quafu doesn't expose an explicit list, so use
-        # all qubits that appear in qubits_info, or range(0, qubit_num)
-        num_qubits = backend.qubit_num
-        qubits_info: dict[str, dict[str, Any]] = full_info.get("qubits_info") or {}
-        available_qubits: list[int] = []
-        if qubits_info:
-            # keys are either "Q0", "Q1", ... or "0", "1", ...
-            for key in qubits_info:
-                qid = int(key[1:]) if key.startswith("Q") else int(key)
-                available_qubits.append(qid)
-            available_qubits = sorted(set(available_qubits))
-        else:
-            available_qubits = list(range(num_qubits))
-
-        # Per-qubit data
-        single_qubit_data: list[SingleQubitData] = []
-        for key, qdata in qubits_info.items():
-            qid = int(key[1:]) if key.startswith("Q") else int(key)
-            single_qubit_data.append(
-                SingleQubitData(
-                    qubit_id=qid,
-                    t1=float(qdata["T1"]) if qdata.get("T1") is not None else None,
-                    t2=float(qdata["T2"]) if qdata.get("T2") is not None else None,
-                    single_gate_fidelity=None,  # not available from Quafu API
-                    readout_fidelity_0=None,
-                    readout_fidelity_1=None,
-                    avg_readout_fidelity=None,
-                )
-            )
-
-        # Per-pair data from topological_structure
-        two_qubit_data: list[TwoQubitData] = []
-        seen: set[tuple[int, int]] = set()
-        topo: dict[str, dict[str, Any]] = full_info.get("topological_structure") or {}
-        for edge_key, gate_data in topo.items():
-            parts = edge_key.split("_")
-            if len(parts) != 2:
-                continue
-            u = int(parts[0][1:]) if parts[0].startswith("Q") else int(parts[0])
-            v = int(parts[1][1:]) if parts[1].startswith("Q") else int(parts[1])
-            key = tuple(sorted([u, v]))
-            if key in seen:
-                continue
-            seen.add(key)
-            gates: list[TwoQubitGateData] = []
-            for gate_name, gate_attrs in gate_data.items():
-                if isinstance(gate_attrs, dict):
-                    fid = float(gate_attrs["fidelity"]) if gate_attrs.get("fidelity") is not None else None
-                else:
-                    fid = None
-                gates.append(TwoQubitGateData(gate=gate_name, fidelity=fid))
-            two_qubit_data.append(TwoQubitData(qubit_u=u, qubit_v=v, gates=tuple(gates)))
-
-        # Global info
         valid_gates = backend.get_valid_gates() if hasattr(backend, "get_valid_gates") else []
-        sq_gates, tq_gates = [], []
-        for g in valid_gates:
-            g_lower = g.lower()
-            if g_lower in {"h", "x", "y", "z", "s", "sx", "t", "rx", "ry", "rz", "u1", "u3"} and g not in sq_gates:
-                sq_gates.append(g)
-            elif g_lower in {"cx", "cnot", "cz", "iswap", "swap"} and g not in tq_gates:
-                tq_gates.append(g)
+        calibration = _extract_quafu_calibration(
+            chip_info,
+            num_qubits=backend.qubit_num,
+            valid_gates=valid_gates,
+        )
 
         # Gate times — quafu backend may expose them via gate_time attribute
         sq_time: float | None = None
@@ -672,13 +795,13 @@ class QuafuAdapter(QuantumAdapter):
             platform=Platform.QUAFU,
             chip_name=chip_name,
             full_id=f"quafu:{chip_name}",
-            available_qubits=tuple(available_qubits),
-            connectivity=tuple(QubitTopology(u=u, v=v) for u, v in seen),
-            single_qubit_data=tuple(single_qubit_data),
-            two_qubit_data=tuple(two_qubit_data),
+            available_qubits=calibration.available_qubits,
+            connectivity=calibration.connectivity,
+            single_qubit_data=calibration.single_qubit_data,
+            two_qubit_data=calibration.two_qubit_data,
             global_info=ChipGlobalInfo(
-                single_qubit_gates=tuple(sq_gates),
-                two_qubit_gates=tuple(tq_gates),
+                single_qubit_gates=calibration.global_info.single_qubit_gates,
+                two_qubit_gates=calibration.global_info.two_qubit_gates,
                 single_qubit_gate_time=sq_time,
                 two_qubit_gate_time=tq_time,
             ),

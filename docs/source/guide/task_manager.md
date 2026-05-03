@@ -42,6 +42,8 @@ pip install unified-quantum[simulation]
 pip install unified-quantum[all]
 ```
 
+`[all]` 不包含 Quafu/`pyquafu`。Quafu 的旧 SDK 已 deprecated，且会引入 `numpy<2` 约束；只有明确需要旧 Quafu 后端并接受环境降级风险时，才单独安装 `[quafu]`。后续版本不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。
+
 ### 配置云平台凭据
 
 ```bash
@@ -213,9 +215,28 @@ if is_dummy_mode():
     print("Running in dummy mode - tasks will be simulated locally")
 ```
 
-### 使用 DummyAdapter
+### 使用 DummyBackend
 
-直接使用 `DummyAdapter` 进行本地模拟：
+新代码推荐通过 `submit_task(..., backend=...)` 选择 dummy backend id：
+
+```python
+from uniqc import submit_task, wait_for_result
+
+# 无约束、无噪声
+task_id = submit_task(circuit, backend="dummy", shots=1000)
+
+# 指定虚拟拓扑，仍然无噪声
+line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
+
+# 复用真实 backend 拓扑和标定数据，先 compile/transpile，再本地含噪执行
+noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
+
+result = wait_for_result(task_id)
+```
+
+`dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 出现在后端列表或 Gateway WebUI 中。
+
+底层测试仍可直接使用 `DummyAdapter` 进行本地模拟：
 
 ```python
 from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter

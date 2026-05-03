@@ -11,12 +11,14 @@ from uniqc.backend_adapter.task.optional_deps import (
     MissingDependencyError,
     require,
     check_quafu,
+    check_quark,
     check_qiskit,
     check_pyqpanda3,
     check_uniqc_cpp,
     check_qutip,
     check_simulation,
     QUAFU_AVAILABLE,
+    QUARK_AVAILABLE,
     QISKIT_AVAILABLE,
     PYQPANDA3_AVAILABLE,
     UNIQC_CPP_AVAILABLE,
@@ -70,6 +72,11 @@ class TestCheckFunctions:
         result = check_quafu()
         assert isinstance(result, bool)
 
+    def test_check_quark_returns_bool(self):
+        """Test check_quark returns boolean."""
+        result = check_quark()
+        assert isinstance(result, bool)
+
     def test_check_qiskit_returns_bool(self):
         """Test check_qiskit returns boolean."""
         result = check_qiskit()
@@ -112,6 +119,10 @@ class TestAvailabilityFlags:
     def test_quafu_available_is_bool(self):
         """Test QUAFU_AVAILABLE is boolean."""
         assert isinstance(QUAFU_AVAILABLE, bool)
+
+    def test_quark_available_is_bool(self):
+        """Test QUARK_AVAILABLE is boolean."""
+        assert isinstance(QUARK_AVAILABLE, bool)
 
     def test_qiskit_available_is_bool(self):
         """Test QISKIT_AVAILABLE is boolean."""

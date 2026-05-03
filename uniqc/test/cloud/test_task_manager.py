@@ -246,8 +246,9 @@ class TestAdapterMapping:
 
     def test_get_adapter_valid_backend(self):
         """Test getting adapter for valid backend."""
-        adapter = _get_adapter("quafu")
-        assert adapter is not None
+        for backend in ("originq", "quafu", "quark", "ibm"):
+            adapter = _get_adapter(backend)
+            assert adapter is not None
 
     def test_get_adapter_invalid_backend(self):
         """Test getting adapter for invalid backend."""

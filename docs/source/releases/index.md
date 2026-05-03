@@ -6,14 +6,15 @@
 
 ### 当前建议先看哪个版本
 
-如果你是从较早版本直接升级，先看 `v0.0.7`。
+如果你在跟随当前开发版，先看 `Unreleased`；如果你是从较早的正式版本直接升级，先看 `v0.0.7`。
 
-这是目前最新的正式发布。它一次性带来大量新功能（矩阵提取、chip-display、AI 友好帮助、chip 数据层、增强转码器、dry-run 验证），同时也是目前功能最完整的版本。
+`v0.0.7` 是目前最新的正式发布。它一次性带来大量新功能（矩阵提取、chip-display、AI 友好帮助、chip 数据层、增强转码器、dry-run 验证），同时也是目前功能最完整的正式版本。
 
 升级时最值得先确认的是：
 
 - 你是否在使用 `uniqc backend chip-display` 查看芯片表征数据（新命令，已整合到 `uniqc backend` 下）
-- 你是否在用 `submit_task(backend="dummy")` 而非已废弃的 `submit_task(dummy=True)`（后者仍可用但会触发警告）
+- 你是否在用显式 dummy backend id，而非已废弃的 `submit_task(dummy=True)`。推荐写法是 `backend="dummy"`、`backend="dummy:virtual-line-3"`、`backend="dummy:virtual-grid-2x2"`、`backend="dummy:originq:WK_C180"`。
+- 你是否理解 `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上做含噪执行。
 - 你是否在 Python API 中手动拼接 OriginIR 并提交——`uniqc submit --dry-run` 可以先做一次离线校验
 - Qiskit 用户是否需要单独安装 `qiskit-ibm-runtime`（`qiskit-ibm-provider` 已从 extras 中移除，因与 qiskit ≥ 1.0 不兼容）
 
@@ -47,6 +48,15 @@
 6. 如果真实云平台没有完成验证，明确记录 dummy/dry-run 已验证的范围和真实平台验证缺口。
 
 ## 版本解读
+
+### `Unreleased`
+
+当前开发版统一了 dummy backend 的编号语义：
+
+- `dummy` 表示无约束、无噪声本地虚拟机。
+- `dummy:virtual-line-N` 和 `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声的本地 backend。
+- `dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和 chip characterization 做本地含噪仿真；它是提交规则，不是可枚举 backend，因此不会出现在 `uniqc backend list` 或 Gateway WebUI backend 卡片中。
+- chip-backed dummy 提交会忠实执行真实 backend 的 compile/transpile，并把编译后线路和实际执行线路写入 task metadata，便于 Gateway 查看。
 
 ### `v0.0.7`
 

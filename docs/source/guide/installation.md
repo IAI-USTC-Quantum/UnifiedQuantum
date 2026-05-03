@@ -125,6 +125,8 @@ pip install unified-quantum[originq]
 
 ### Quafu 平台
 
+> **Deprecated / 依赖风险**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，会把环境解析回 NumPy 1.x。`unified-quantum[all]` 不包含 Quafu；只有明确安装 `[quafu]` 时才会引入该风险。Quafu 平台侧 SDK 已 deprecated，UnifiedQuantum 后续不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。新项目建议优先使用 QuarkStudio/Quark 后端。
+
 ```bash
 uv pip install unified-quantum[quafu]
 # 或 pip
@@ -167,6 +169,8 @@ pip install unified-quantum[pytorch]
 
 ### 安装所有可选依赖
 
+`[all]` 会安装当前维护的可选功能依赖，但**不包含** Quafu/`pyquafu`，以避免 `numpy<2` 约束污染普通开发环境。确需使用 Quafu 时请单独安装 `[quafu]`，并接受上面的 deprecated 与 NumPy 降级风险。
+
 ```bash
 uv pip install unified-quantum[all]
 # 或 pip
@@ -175,7 +179,7 @@ pip install unified-quantum[all]
 
 ## 开发者补充
 
-维护者应使用 `uv sync --all-extras --group dev --group docs --upgrade` 建立全量环境；缺少任意可选后端依赖或文档构建依赖都应视为开发环境不完整，而不是测试阻断的正常原因。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
+维护者应使用 `uv sync --all-extras --group dev --group docs --upgrade` 建立全量环境；缺少当前维护的可选后端依赖或文档构建依赖都应视为开发环境不完整，而不是测试阻断的正常原因。Quafu/`pyquafu` 是例外：它因 `numpy<2` 约束和平台 deprecated 状态不再包含在 `[all]` 中。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
 
 如需本地构建文档，使用上述全量环境后进入 `docs/` 目录执行 `make html`。这一步仅在维护文档时需要，普通安装可跳过。
 

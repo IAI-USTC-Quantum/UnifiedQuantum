@@ -47,7 +47,7 @@ def init(
 
 @app.command()
 def set(
-    key: str = typer.Argument(..., help="Configuration key (e.g., originq.token)"),
+    key: str = typer.Argument(..., help="Configuration key (e.g., originq.token, quark.QUARK_API_KEY)"),
     value: str = typer.Argument(..., help="Configuration value"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
@@ -70,8 +70,8 @@ def set(
     platform_name, field = parts
     platform_name = platform_name.lower()
 
-    if platform_name not in ("originq", "quafu", "ibm"):
-        print_error(f"Unknown platform: {platform_name}. Use originq/quafu/ibm.")
+    if platform_name not in ("originq", "quafu", "quark", "ibm"):
+        print_error(f"Unknown platform: {platform_name}. Use originq/quafu/quark/ibm.")
         raise typer.Exit(1)
 
     from uniqc.backend_adapter.config import update_platform_config
@@ -82,7 +82,7 @@ def set(
 
 @app.command()
 def get(
-    platform: str = typer.Argument(..., help="Platform name: originq/quafu/ibm"),
+    platform: str = typer.Argument(..., help="Platform name: originq/quafu/quark/ibm"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
 ):
@@ -135,14 +135,19 @@ def list_config(
     profile_config = config[profile]
     results = []
 
-    for platform in ("originq", "quafu", "ibm"):
+    for platform in ("originq", "quafu", "quark", "ibm"):
         platform_config = profile_config.get(platform, {})
-        token = platform_config.get("token", "")
+        token = platform_config.get("QUARK_API_KEY", "") if platform == "quark" else platform_config.get("token", "")
+        if platform == "quark" and not token:
+            token = platform_config.get("token", "")
         required = PLATFORM_REQUIRED_FIELDS.get(platform, [])
 
         status = "[green]Configured[/green]" if token else "[red]Missing token[/red]"
 
-        missing = [f for f in required if not platform_config.get(f)]
+        if platform == "quark":
+            missing = [] if token else ["QUARK_API_KEY"]
+        else:
+            missing = [f for f in required if not platform_config.get(f)]
         if missing and token:
             status = f"[yellow]Missing: {', '.join(missing)}[/yellow]"
 
@@ -234,6 +239,7 @@ def profile(
         config[name] = {
             "originq": {"token": ""},
             "quafu": {"token": ""},
+            "quark": {"QUARK_API_KEY": ""},
             "ibm": {"token": "", "proxy": {"http": "", "https": ""}},
         }
         save_config(config)

@@ -24,12 +24,14 @@ __all__ = [
     "MissingDependencyError",
     "require",
     "check_quafu",
+    "check_quark",
     "check_qiskit",
     "check_pyqpanda3",
     "check_uniqc_cpp",
     "check_qutip",
     "check_simulation",
     "QUAFU_AVAILABLE",
+    "QUARK_AVAILABLE",
     "QISKIT_AVAILABLE",
     "PYQPANDA3_AVAILABLE",
     "UNIQC_CPP_AVAILABLE",
@@ -118,6 +120,20 @@ def check_quafu() -> bool:
     return _can_import("quafu")
 
 
+def check_quark() -> bool:
+    """Check if the QuarkStudio package is available.
+
+    Returns:
+        True if ``from quark import Task`` succeeds, False otherwise.
+    """
+    try:
+        module = importlib.import_module("quark")
+        getattr(module, "Task")
+        return True
+    except Exception:
+        return False
+
+
 def check_qiskit() -> bool:
     """Check if the qiskit and qiskit_ibm_runtime packages are available.
 
@@ -180,6 +196,7 @@ def check_simulation(target: str = "cpp") -> bool:
 
 # Pre-computed availability flags (evaluated at module load time)
 QUAFU_AVAILABLE = check_quafu()
+QUARK_AVAILABLE = check_quark()
 QISKIT_AVAILABLE = check_qiskit()
 PYQPANDA3_AVAILABLE = check_pyqpanda3()
 UNIQC_CPP_AVAILABLE = check_uniqc_cpp()

@@ -22,6 +22,7 @@ from uniqc.backend_adapter.config import (
     get_originq_config,
     get_platform_config,
     get_quafu_config,
+    get_quark_config,
     load_config,
     save_config,
     set_active_profile,
@@ -90,6 +91,7 @@ class TestSaveConfig:
             "default": {
                 "originq": {"token": "originq_token"},
                 "quafu": {"token": "quafu_token"},
+                "quark": {"QUARK_API_KEY": "quark_token"},
                 "ibm": {"token": "ibm_token", "proxy": {"http": "http://proxy"}},
             },
             "prod": {
@@ -185,6 +187,7 @@ class TestValidateConfig:
             "default": {
                 "originq": {"token": "t"},
                 "quafu": {"token": "t"},
+                "quark": {"QUARK_API_KEY": "t"},
                 "ibm": {"token": "t"},
             }
         }
@@ -213,6 +216,12 @@ class TestValidateConfig:
         errors = validate_config(invalid_config)
         assert len(errors) == 1
         assert any("token" in e for e in errors)
+
+    def test_validate_quark_legacy_token_field(self) -> None:
+        """Quark config still accepts the pre-existing token field."""
+        valid_config = {"default": {"quark": {"token": "legacy_token"}}}
+        errors = validate_config(valid_config)
+        assert errors == []
 
     def test_validate_invalid_proxy_config(self) -> None:
         """Test validating IBM configuration with invalid proxy."""
@@ -362,6 +371,16 @@ class TestConvenienceFunctions:
             result = get_quafu_config()
             assert result["token"] == "test_token"
 
+    def test_get_quark_config(self, tmp_path: Path) -> None:
+        """Test get_quark_config convenience function."""
+        config_file = tmp_path / "config.yml"
+        test_config = {"default": {"quark": {"QUARK_API_KEY": "test_token"}}}
+        save_config(test_config, config_file)
+
+        with mock.patch.object(config, "CONFIG_FILE", config_file):
+            result = get_quark_config()
+            assert result["QUARK_API_KEY"] == "test_token"
+
     def test_get_ibm_config(self, tmp_path: Path) -> None:
         """Test get_ibm_config convenience function."""
         config_file = tmp_path / "config.yml"
@@ -381,6 +400,7 @@ class TestDefaultConfig:
         assert "default" in DEFAULT_CONFIG
         assert "originq" in DEFAULT_CONFIG["default"]
         assert "quafu" in DEFAULT_CONFIG["default"]
+        assert "quark" in DEFAULT_CONFIG["default"]
         assert "ibm" in DEFAULT_CONFIG["default"]
 
     def test_originq_default_fields(self) -> None:
@@ -396,6 +416,11 @@ class TestDefaultConfig:
         """Test Quafu default configuration fields."""
         quafu = DEFAULT_CONFIG["default"]["quafu"]
         assert "token" in quafu
+
+    def test_quark_default_fields(self) -> None:
+        """Test QuarkStudio default configuration fields."""
+        quark = DEFAULT_CONFIG["default"]["quark"]
+        assert "QUARK_API_KEY" in quark
 
     def test_ibm_default_fields(self) -> None:
         """Test IBM default configuration fields."""

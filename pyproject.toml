@@ -39,6 +39,8 @@ dependencies = [
     "typer",
     "rich",
     "scipy",
+    "fastapi",
+    "uvicorn[standard]",
 ]
 
 [project.urls]
@@ -54,8 +56,9 @@ originq = ["pyqpanda3"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
 pytorch = ["torch"]
+quark = ["quarkstudio; python_version >= '3.12'"]
 all = [
-    "pyquafu",
+    "quarkstudio; python_version >= '3.12'",
     "qiskit", "qiskit-aer",
     "qiskit-ibm-runtime",
     "pyqpanda3",

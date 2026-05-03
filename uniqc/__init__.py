@@ -13,6 +13,7 @@ from .backend_adapter.backend import (
     OriginQBackend,
     QuantumBackend,
     QuafuBackend,
+    QuarkBackend,
     get_backend,
     list_backends,
 )
@@ -30,6 +31,7 @@ from .backend_adapter.circuit_adapter import (
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
     QuafuCircuitAdapter,
+    QuarkCircuitAdapter,
 )
 from .backend_adapter.network_utils import (
     check_proxy_connectivity,
@@ -47,6 +49,7 @@ from .backend_adapter.task.options import (
     IBMOptions,
     OriginQOptions,
     QuafuOptions,
+    QuarkOptions,
 )
 from .backend_adapter.task.result_types import UnifiedResult
 from .backend_adapter.task.store import TaskStatus
@@ -237,6 +240,9 @@ __all__ = [
     "QuafuBackend",
     "QuafuCircuitAdapter",
     "QuafuOptions",
+    "QuarkBackend",
+    "QuarkCircuitAdapter",
+    "QuarkOptions",
     "ReadoutCalibrationResult",
     "ReadoutEM",
     "RegionSearchResult",
