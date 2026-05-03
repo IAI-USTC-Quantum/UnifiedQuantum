@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from uniqc.gateway import api
 from uniqc.gateway.ws import broadcaster
@@ -85,34 +86,41 @@ def create_app() -> FastAPI:
 # Frontend static mount
 # ---------------------------------------------------------------------------
 
+def _frontend_dist_dir() -> Path:
+    """Return the built frontend distribution directory."""
+    return Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+class _SPAStaticFiles(StaticFiles):
+    """Serve Vite static files with React Router history fallback."""
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code != 404 or _looks_like_static_asset(path):
+                raise
+            return await super().get_response("index.html", scope)
+
+
+def _looks_like_static_asset(path: str) -> bool:
+    """Return True for paths that should keep normal 404 semantics."""
+    normalized = path.strip("/")
+    if not normalized:
+        return False
+    if normalized.startswith("assets/"):
+        return True
+    return Path(normalized).suffix != ""
+
+
 def _mount_frontend(app: FastAPI) -> None:
     """Mount the built React SPA from frontend/dist/ if it exists."""
-    # The frontend lives at the repo root: frontend/dist
-    # server.py is at uniqc/gateway/server.py
-    frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    frontend_dist = _frontend_dist_dir()
 
     if not frontend_dist.exists():
         return  # Dev mode: no built frontend yet
 
-    async def _spa_fallback(request):
-        """Serve index.html for any unknown non-asset path (SPA routing)."""
-        from starlette.responses import FileResponse, JSONResponse
-
-        # Let StaticFiles handle assets — only serve index.html for app routes
-        path = request.path_params.get("path", "")
-        if path.startswith("assets/"):
-            return JSONResponse({"detail": "Not found"}, status_code=404)
-
-        index = frontend_dist / "index.html"
-        if index.exists():
-            return FileResponse(str(index))
-        return JSONResponse(
-            {"detail": "Frontend not built. Run: cd frontend && npm install && npm run build"},
-            status_code=503,
-        )
-
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
-    app.add_route("/{path:path}", _spa_fallback)
+    app.mount("/", _SPAStaticFiles(directory=str(frontend_dist), html=True), name="static")
 
 
 # ---------------------------------------------------------------------------
