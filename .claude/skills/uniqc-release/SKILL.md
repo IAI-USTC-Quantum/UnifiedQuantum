@@ -1,13 +1,13 @@
 ---
 name: uniqc-release
-description: "Create a new UnifiedQuantum release: generates release notes, updates CHANGELOG.md, creates a release branch, and opens a PR to main. After merge, creates and pushes a git tag — PyPI publishing is automatic via GitHub Actions."
+description: "Create a new UnifiedQuantum release: generates release notes, updates CHANGELOG.md, creates a release branch, and opens a PR to main. After merge, creates and pushes a git tag, creates a GitHub Release, and deletes the release branch."
 ---
 
 # UnifiedQuantum Release Skill
 
-Use this skill when a maintainer wants to create a new release. The release workflow has two phases: PR creation and post-merge tag push.
+Use this skill when a maintainer wants to create a new release. The release workflow has two phases: PR creation and post-merge publication.
 
-**Note**: PyPI publishing is automatic via GitHub Actions when a `v*` tag is pushed. No manual publish step needed.
+**Note**: PyPI publishing is automatic via GitHub Actions when a `v*` tag is pushed. GitHub Release is created as part of the post-merge workflow.
 
 ## Version Number
 
@@ -139,13 +139,13 @@ EOF
 )"
 ```
 
-## Phase 2: Post-Merge (Tag Push)
+## Phase 2: Post-Merge (Publication)
 
-**IMPORTANT**: After the PR is merged, ask the user to confirm before proceeding with tag creation.
+**IMPORTANT**: After the PR is merged, ask the user to confirm before proceeding.
 
 ### Step 1: Confirm User Intent
 
-Ask the user: "The PR has been merged. Do you want me to create and push the git tag? (PyPI publishing is automatic via GitHub Actions)"
+Ask the user: "The PR has been merged. Do you want me to proceed with creating the tag, GitHub Release, and cleaning up?"
 
 ### Step 2: Fetch and Checkout Main
 
@@ -167,7 +167,35 @@ GitHub Actions will automatically:
 2. Validate wheel ABI
 3. Publish to PyPI
 
-### Step 4: Verify
+### Step 4: Create GitHub Release
+
+```bash
+gh release create v{x.y.z} \
+  --title "v{x.y.z}" \
+  --notes-file <(cat <<'EOF'
+## Changes
+
+See CHANGELOG.md for details.
+
+## What's Changed
+
+[Summary from release notes]
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)
+```
+
+Or use the GitHub web UI to create the release after the tag is pushed.
+
+### Step 5: Delete Release Branch
+
+```bash
+git branch -D release/v{x.y.z}
+git push origin --delete release/v{x.y.z}
+```
+
+### Step 6: Verify
 
 ```bash
 # Check the tag exists
@@ -175,13 +203,17 @@ git fetch --tags
 git tag -l "v{x.y.z}*"
 ```
 
-Monitor the release at: https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions
+Monitor the release at:
+- GitHub Actions: https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions
+- GitHub Releases: https://github.com/IAI-USTC-Quantum/UnifiedQuantum/releases
+- PyPI: https://pypi.org/project/unified-quantum/
 
 ## Error Handling
 
 - If CHANGELOG.md is missing or malformed, create a minimal release note
 - If the branch already exists, offer to delete and recreate or use existing
 - If tag push fails, retry or inform the user
+- If GitHub Release creation fails, inform user to create it manually at the releases page
 
 ## Example Conversation Flow
 
@@ -190,6 +222,6 @@ Monitor the release at: https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actio
 3. User: "0.0.10"
 4. Assistant: Creates release PR...
 5. User merges PR
-6. Assistant: "PR merged! Shall I create and push the git tag? (PyPI publishing is automatic)"
+6. Assistant: "PR merged! Shall I create the tag, GitHub Release, and clean up?"
 7. User: "Yes"
-8. Assistant: Creates tag and pushes — GitHub Actions handles PyPI publish
+8. Assistant: Creates tag → GitHub Actions publishes to PyPI → Creates GitHub Release → Deletes release branch
