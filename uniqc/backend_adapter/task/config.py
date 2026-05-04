@@ -29,7 +29,7 @@ def _load_platform_config(platform: str) -> dict[str, Any]:
         Platform configuration dictionary.
     """
     try:
-        from uniqc.backend_adapter.config import get_active_profile, get_platform_config
+        from uniqc.config import get_active_profile, get_platform_config
 
         profile = get_active_profile()
         return get_platform_config(platform, profile)

@@ -1,6 +1,6 @@
 # 配置管理 (`uniqc config`)
 
-管理云平台的 API 密钥和配置。
+管理 UnifiedQuantum 的项目级配置，包括云平台 API 密钥、代理、profile、AI workflow hints 等。
 
 ## 初始化配置
 
@@ -49,7 +49,7 @@ uniqc config list --format json
 uniqc config validate
 ```
 
-> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/config.yaml` 中的 token 配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python 云的 `OriginQAdapter`、`QuafuAdapter` 等适配器直接读取（通过 `uniqc config` 模块 fallback）。使用 Python API 时无需额外设置环境变量。
+> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/config.yaml` 中的配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python API 读取。新代码优先使用顶级 `uniqc.config` 模块；旧路径 `uniqc.backend_adapter.config` 仍保留兼容。
 
 ## AI 工作流提示
 

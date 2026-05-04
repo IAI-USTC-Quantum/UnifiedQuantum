@@ -203,7 +203,7 @@ def test_ibm_connectivity(
     # Get token if not provided
     if token is None:
         try:
-            from uniqc.backend_adapter.config import get_ibm_config
+            from uniqc.config import get_ibm_config
 
             token = get_ibm_config().get("token") or None
         except Exception:
@@ -283,12 +283,12 @@ def get_ibm_proxy_from_config(config: dict[str, Any] | None = None) -> dict[str,
         Dict with 'http' and/or 'https' proxy URLs, or None if no proxy configured.
 
     Example:
-        >>> from uniqc.backend_adapter.config import get_ibm_config
+        >>> from uniqc.config import get_ibm_config
         >>> config = get_ibm_config()
         >>> proxy = get_ibm_proxy_from_config(config)
     """
     if config is None:
-        from uniqc.backend_adapter.config import get_ibm_config
+        from uniqc.config import get_ibm_config
         config = get_ibm_config()
 
     proxy_config = config.get("proxy")

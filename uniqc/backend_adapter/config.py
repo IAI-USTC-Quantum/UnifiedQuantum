@@ -1,7 +1,12 @@
-"""UnifiedQuantum configuration management module.
+"""Backward-compatible import path for UnifiedQuantum configuration.
 
-This module provides centralized configuration management for quantum cloud platforms
-including OriginQ (本源量子), Quafu/Quark (夸父), and IBM Quantum.
+Configuration is now a project-level concern exposed as ``uniqc.config``.
+This module remains the implementation and legacy import path during the
+compatibility window because older code imports ``uniqc.backend_adapter.config``.
+
+It provides centralized configuration management for project settings and
+quantum cloud platforms including OriginQ (本源量子), Quafu/Quark (夸父), and
+IBM Quantum.
 
 Configuration file location: ~/.uniqc/config.yaml
 

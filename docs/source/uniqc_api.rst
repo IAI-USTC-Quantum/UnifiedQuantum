@@ -16,6 +16,7 @@ UnifiedQuantum 公开 API 的完整参考文档。
    uniqc.compile.qasm
    uniqc.compile.compiler
    uniqc.compile
+   uniqc.config
    uniqc.utils
    uniqc.visualization
    uniqc.algorithms.core

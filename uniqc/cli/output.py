@@ -41,7 +41,7 @@ def _truthy(value: str | None) -> bool:
 def config_ai_hints_enabled() -> bool:
     """Return True when ~/.uniqc/config.yaml enables AI hints globally."""
     try:
-        from uniqc.backend_adapter.config import get_always_ai_hints
+        from uniqc.config import get_always_ai_hints
 
         return get_always_ai_hints()
     except Exception:

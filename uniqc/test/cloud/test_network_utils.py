@@ -26,7 +26,7 @@ from uniqc.test.cloud._config_helpers import platform_has_token, write_uniqc_con
 def ibm_config_has_proxy() -> bool:
     """Return True when the active IBM config has a non-empty proxy."""
     try:
-        from uniqc.backend_adapter.config import get_ibm_config
+        from uniqc.config import get_ibm_config
 
         return bool(get_ibm_proxy_from_config(get_ibm_config()))
     except Exception:
@@ -36,7 +36,7 @@ def ibm_config_has_proxy() -> bool:
 def ibm_config_proxy_reachable() -> bool:
     """Return True when the configured IBM proxy exists and accepts TCP."""
     try:
-        from uniqc.backend_adapter.config import get_ibm_config
+        from uniqc.config import get_ibm_config
 
         proxy = get_ibm_proxy_from_config(get_ibm_config())
         if not proxy:
@@ -218,7 +218,7 @@ class TestTestIbmConnectivity:
     def test_no_token_provided_and_no_yaml_token(self, monkeypatch, tmp_path):
         """Test when no token is provided and the YAML config has no IBM token."""
         write_uniqc_config(tmp_path, {"ibm": {"token": ""}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         result = check_ibm_connectivity()
 
@@ -229,7 +229,7 @@ class TestTestIbmConnectivity:
     def test_uses_yaml_token(self, monkeypatch, tmp_path):
         """Test that the active YAML IBM token is used when token is not provided."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "yaml_token_123"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         # Mock the actual HTTP request to avoid network calls
         with patch("urllib.request.OpenerDirector.open") as mock_open:
@@ -312,7 +312,7 @@ class TestRealIbmConnectivity:
     )
     def test_real_ibm_connectivity_with_config_proxy(self):
         """Test real IBM endpoint connectivity through configured proxy."""
-        from uniqc.backend_adapter.config import get_ibm_config
+        from uniqc.config import get_ibm_config
 
         proxy = get_ibm_proxy_from_config(get_ibm_config())
         assert proxy
@@ -346,7 +346,7 @@ class TestIntegration:
     def test_system_proxy_to_ibm_connectivity(self, monkeypatch, tmp_path):
         """Test full flow from system proxy detection to IBM connectivity."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
         with patch.dict(os.environ, {
             "HTTPS_PROXY": "http://proxy.example.com:8080",
         }):

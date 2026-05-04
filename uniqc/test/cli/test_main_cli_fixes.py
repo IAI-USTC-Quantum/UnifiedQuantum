@@ -212,9 +212,9 @@ def test_uniqc_result_tolerates_nested_result(monkeypatch):
 
 def test_profile_list_hides_meta_keys(tmp_path: Path, monkeypatch):
     config_file = tmp_path / "config.yaml"
-    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
 
-    from uniqc.backend_adapter.config import save_config
+    from uniqc.config import save_config
 
     save_config(
         {
@@ -237,9 +237,9 @@ def test_profile_list_hides_meta_keys(tmp_path: Path, monkeypatch):
 
 def test_config_set_preserves_existing_platform_fields(tmp_path: Path, monkeypatch):
     config_file = tmp_path / "config.yaml"
-    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
 
-    from uniqc.backend_adapter.config import get_platform_config, save_config
+    from uniqc.config import get_platform_config, save_config
 
     save_config(
         {
@@ -263,9 +263,9 @@ def test_config_set_preserves_existing_platform_fields(tmp_path: Path, monkeypat
 
 def test_config_set_supports_nested_ibm_proxy(tmp_path: Path, monkeypatch):
     config_file = tmp_path / "config.yaml"
-    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
 
-    from uniqc.backend_adapter.config import get_platform_config, save_config
+    from uniqc.config import get_platform_config, save_config
 
     save_config({"default": {"ibm": {"token": "token"}}}, config_path=config_file)
 
@@ -279,7 +279,7 @@ def test_config_set_supports_nested_ibm_proxy(tmp_path: Path, monkeypatch):
 
 def test_config_always_ai_hint_enables_hints_by_default(tmp_path: Path, monkeypatch):
     config_file = tmp_path / "config.yaml"
-    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
 
     result = runner.invoke(app, ["config", "always-ai-hint", "on"])
     assert result.exit_code == 0, result.stdout

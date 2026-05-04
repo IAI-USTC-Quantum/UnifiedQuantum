@@ -110,6 +110,7 @@ issues = audit_backends(backends)
 
 - `uniqc.circuit_builder`：线路构建。
 - `uniqc.compile`：compile/transpile、OriginIR/OpenQASM 解析与互转。
+- `uniqc.config`：项目级配置，包括 profile、云平台 token、IBM proxy、AI workflow hints 等；`uniqc.backend_adapter.config` 仅作为兼容入口保留。
 - `uniqc.simulator`：本地 C++ 模拟器，无噪声和含噪声模拟。
 - `uniqc.backend_adapter`：后端 adapter、配置、网络、区域选择、任务管理、dummy 后端。
 - `uniqc.visualization`：线路可视化、结果可视化、timeline。

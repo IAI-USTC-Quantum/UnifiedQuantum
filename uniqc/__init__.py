@@ -6,7 +6,7 @@ functions can be imported directly from ``uniqc``.
 
 import warnings
 
-from .backend_adapter import config
+from . import config
 from .backend_adapter.backend import (
     DummyBackend,
     IBMBackend,

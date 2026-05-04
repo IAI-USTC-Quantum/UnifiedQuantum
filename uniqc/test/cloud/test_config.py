@@ -1,4 +1,4 @@
-"""Tests for uniqc.backend_adapter.config module."""
+"""Tests for the project-level ``uniqc.config`` module."""
 
 from __future__ import annotations
 
@@ -10,7 +10,9 @@ from unittest import mock
 import pytest
 
 from uniqc import config
-from uniqc.backend_adapter.config import (
+from uniqc import config as top_level_config
+from uniqc.backend_adapter import config as legacy_config
+from uniqc.config import (
     DEFAULT_CONFIG,
     ConfigError,
     ConfigValidationError,
@@ -29,6 +31,11 @@ from uniqc.backend_adapter.config import (
     update_platform_config,
     validate_config,
 )
+
+
+def test_top_level_config_aliases_legacy_backend_path() -> None:
+    """Both import paths must share state during the compatibility window."""
+    assert top_level_config is legacy_config
 
 
 class TestLoadConfig:

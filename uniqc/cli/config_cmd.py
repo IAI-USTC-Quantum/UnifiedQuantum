@@ -38,7 +38,7 @@ def init(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import create_default_config
+    from uniqc.config import create_default_config
 
     create_default_config()
     print_success("Configuration file created at ~/.uniqc/config.yaml")
@@ -73,7 +73,7 @@ def set(
         print_error(f"Unknown platform: {platform_name}. Use originq/quafu/quark/ibm.")
         raise typer.Exit(1)
 
-    from uniqc.backend_adapter.config import load_config, save_config
+    from uniqc.config import load_config, save_config
 
     config = load_config()
     if profile not in config:
@@ -101,7 +101,7 @@ def get(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import get_platform_config
+    from uniqc.config import get_platform_config
 
     platform = platform.lower()
     config = get_platform_config(platform, profile=profile)
@@ -135,7 +135,7 @@ def list_config(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import PLATFORM_REQUIRED_FIELDS, load_config
+    from uniqc.config import PLATFORM_REQUIRED_FIELDS, load_config
 
     config = load_config()
 
@@ -186,7 +186,7 @@ def validate(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import validate_config
+    from uniqc.config import validate_config
 
     errors = validate_config()
 
@@ -215,10 +215,10 @@ def profile(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import get_active_profile, load_config, set_active_profile
+    from uniqc.config import get_active_profile, load_config, set_active_profile
 
     if action == "list":
-        from uniqc.backend_adapter.config import META_KEYS
+        from uniqc.config import META_KEYS
 
         config = load_config()
         active = get_active_profile()
@@ -241,7 +241,7 @@ def profile(
         if not name:
             print_error("Profile name required")
             raise typer.Exit(1)
-        from uniqc.backend_adapter.config import load_config, save_config
+        from uniqc.config import load_config, save_config
 
         config = load_config()
         if name in config:
@@ -271,7 +271,7 @@ def always_ai_hint(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
-    from uniqc.backend_adapter.config import get_always_ai_hints, set_always_ai_hints
+    from uniqc.config import get_always_ai_hints, set_always_ai_hints
 
     action = action.lower()
     if action in {"on", "enable", "enabled", "true", "1"}:
