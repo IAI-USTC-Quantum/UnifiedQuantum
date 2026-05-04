@@ -140,7 +140,7 @@ Run gateway checks:
 
 ```bash
 uv run uniqc gateway status
-uv run uniqc gateway start --host 127.0.0.1 --port 8765
+uv run uniqc gateway start --host 127.0.0.1 --port 18765
 ```
 
 Then verify:
