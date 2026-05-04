@@ -87,7 +87,7 @@ cd UnifiedQuantum
 pip install .
 
 # 开发模式
-pip install -e . --no-build-isolation
+pip install -e .
 ```
 
 ## 安装验证
@@ -106,7 +106,7 @@ python -c "import uniqc; print(uniqc.__version__)"
 > 确保 CMake 已安装并加入 PATH。Windows 上可使用 [CMake 官方安装包](https://cmake.org/download/)。
 
 **Q：编译时报 `fatal error: pybind11/pybind11.h: No such file`**
-> 确保已执行 `git clone --recurse-submodules`，pybind11 子模块未初始化会导致此错误。运行 `git submodule update --init --recursive` 后重新安装。
+> 默认隔离构建会按 `pyproject.toml` 自动安装 PyPI 上的 `pybind11`。如果你显式使用了 `--no-build-isolation`，请先在当前环境安装 `pybind11` 后重新构建。
 
 **Q：如何确认 C++ 模拟器已正确安装？**
 > 安装后运行 `python -c "from uniqc_cpp import *; print('C++ 模拟器正常')"`。若无声出输出说明 C++ 扩展未安装成功。

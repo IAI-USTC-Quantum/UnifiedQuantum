@@ -50,12 +50,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pandoc
           python -m pip install --upgrade pip
-          pip install cmake setuptools wheel
           pip install -r docs/requirements.txt
 
       - name: Install package
         run: |
-          pip install -e . --no-build-isolation
+          pip install -e .
 
       - name: Build docs
         run: |

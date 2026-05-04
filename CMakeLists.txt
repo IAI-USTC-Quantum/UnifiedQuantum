@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.22)
 project(UnifiedQuantum)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/UniqcCpp/src
                     ${CMAKE_CURRENT_SOURCE_DIR}/UniqcCpp/Thirdparty
-                    ${CMAKE_CURRENT_SOURCE_DIR}/UniqcCpp/Thirdparty/pybind11
                     ${CMAKE_CURRENT_SOURCE_DIR}/UniqcCpp/Thirdparty/fmt/include
                     )
 
@@ -19,7 +18,7 @@ if (UNIX)
     add_definitions("-fPIC")
 endif()
 
-# Python detection is handled by pybind11 in Thirdparty/pybind11
-# pybind11_add_module will automatically find the correct Python version
+set(PYBIND11_FINDPYTHON ON)
+find_package(pybind11 CONFIG REQUIRED)
 
 add_subdirectory(UniqcCpp)

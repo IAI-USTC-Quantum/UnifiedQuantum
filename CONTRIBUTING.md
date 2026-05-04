@@ -17,6 +17,7 @@ uv cannot be used.
 - Git
 - CMake >= 3.22 (C++ backend build — see [CMake Requirement](#cmake-requirement) below)
 - C++ compiler with C++17 support (e.g. `g++` >= 8, `clang++` >= 10)
+- pybind11 is installed from PyPI as a build dependency declared in `pyproject.toml`
 
 ### Clone & Install
 
