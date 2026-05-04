@@ -21,7 +21,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.config import load_ibm_config
+from uniqc.config import load_ibm_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_qiskit
 
 if TYPE_CHECKING:

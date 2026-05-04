@@ -285,7 +285,7 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 ### 配置加载
 
 ```python
-from uniqc.backend_adapter.task.config import (
+from uniqc.config import (
     load_originq_config,
     load_quafu_config,
     load_ibm_config

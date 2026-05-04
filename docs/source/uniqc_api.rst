@@ -23,7 +23,6 @@ UnifiedQuantum 公开 API 的完整参考文档。
    uniqc.algorithms.workflows
    uniqc.backend_adapter.task
    uniqc.backend_adapter.task.adapters
-   uniqc.backend_adapter.task.config
    uniqc.backend_adapter.task.normalizers
    uniqc.backend_adapter.task.result_types
    uniqc.algorithms.core.ansatz

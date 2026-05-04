@@ -57,7 +57,7 @@ class RunTestConfigYaml:
         )
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_originq_config
+        from uniqc.config import load_originq_config
 
         config = load_originq_config()
         assert config["api_key"] == "test_key_123"
@@ -68,7 +68,7 @@ class RunTestConfigYaml:
         write_uniqc_config(tmp_path, {"quafu": {"token": "quafu_secret_token"}})
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_quafu_config
+        from uniqc.config import load_quafu_config
 
         config = load_quafu_config()
         assert config["api_token"] == "quafu_secret_token"
@@ -78,7 +78,7 @@ class RunTestConfigYaml:
         write_uniqc_config(tmp_path, {"quark": {"token": "quark_secret_token"}})
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_quark_config
+        from uniqc.config import load_quark_config
 
         config = load_quark_config()
         assert config["api_token"] == "quark_secret_token"
@@ -88,7 +88,7 @@ class RunTestConfigYaml:
         write_uniqc_config(tmp_path, {"ibm": {"token": "ibm_secret_token"}})
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_ibm_config
+        from uniqc.config import load_ibm_config
 
         config = load_ibm_config()
         assert config["api_token"] == "ibm_secret_token"
@@ -108,7 +108,7 @@ class RunTestConfigYaml:
         )
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_dummy_config
+        from uniqc.config import load_dummy_config
 
         config = load_dummy_config()
         assert config["available_qubits"] == [0, 1, 2, 3]
@@ -120,7 +120,7 @@ class RunTestConfigYaml:
         write_uniqc_config(tmp_path, {"originq": {"token": ""}})
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
-        from uniqc.backend_adapter.task.config import load_originq_config
+        from uniqc.config import load_originq_config
 
         with pytest.raises(ImportError, match="originq.token"):
             load_originq_config()
@@ -140,7 +140,7 @@ class RunTestConfigYaml:
         )
         monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
 
-        from uniqc.backend_adapter.task.config import load_originq_config
+        from uniqc.config import load_originq_config
 
         cfg = load_originq_config()
         assert cfg["api_key"] == "prod-token"

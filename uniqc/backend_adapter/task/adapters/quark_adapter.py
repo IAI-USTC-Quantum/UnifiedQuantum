@@ -29,7 +29,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     _dry_run_failed,
     _dry_run_success,
 )
-from uniqc.backend_adapter.task.config import load_quark_config
+from uniqc.config import load_quark_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quark, check_quarkcircuit
 from uniqc.cli.chip_info import ChipGlobalInfo, SingleQubitData, TwoQubitData, TwoQubitGateData
 from uniqc.compile.converter import convert_oir_to_qasm
