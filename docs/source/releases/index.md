@@ -6,13 +6,13 @@
 
 ### 当前建议先看哪个版本
 
-如果你在跟随当前开发版，先看 `Unreleased`；如果你是从较早的正式版本直接升级，先看 `v0.0.7`。
+如果你在跟随当前开发版，先看 `Unreleased`；如果你是从较早的正式版本直接升级，先看 `v0.0.9`。
 
-`v0.0.7` 是目前最新的正式发布。它一次性带来大量新功能（矩阵提取、chip-display、AI 友好帮助、chip 数据层、增强转码器、dry-run 验证），同时也是目前功能最完整的正式版本。
+`v0.0.9` 是目前最新的正式发布。它带来芯片标定（Calibration）、量子纠错（QEM/XEB）、`uniqc calibrate` CLI、dummy backend 语义统一，以及 30+ bug 修复。
 
 升级时最值得先确认的是：
 
-- 你是否在使用 `uniqc backend chip-display` 查看芯片表征数据（新命令，已整合到 `uniqc backend` 下）
+- 你是否在用 `uniqc calibrate` 进行芯片标定实验（`xeb` / `readout` / `pattern` 三个子命令）
 - 你是否在用显式 dummy backend id，而非已废弃的 `submit_task(dummy=True)`。推荐写法是 `backend="dummy"`、`backend="dummy:virtual-line-3"`、`backend="dummy:virtual-grid-2x2"`、`backend="dummy:originq:WK_C180"`。
 - 你是否理解 `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上做含噪执行。
 - 你是否在 Python API 中手动拼接 OriginIR 并提交——`uniqc submit --dry-run` 可以先做一次离线校验
@@ -49,14 +49,38 @@
 
 ## 版本解读
 
+### `v0.0.9`
+
+这是一个功能大幅增强的版本，核心主题是**芯片标定与量子纠错全链路**，以及 dummy backend 语义的彻底统一。
+
+本版最明显的用户侧收益有五类：
+
+- **Calibration 模块**（`uniqc.calibration`）：新增 XEB 交叉熵标定（1q/2q/parallel）和读取误差标定，所有结果自动缓存到 `~/.uniqc/calibration_cache/`，带 ISO-8601 时间戳和 TTL 新鲜度检查。
+- **QEM 模块**（`uniqc.qem`）：新增 `M3Mitigator`（混淆矩阵线性反演）和 `ReadoutEM`（统一读取纠错接口），自动从 calibration cache 加载数据并强制 TTL 检查。
+- **`uniqc calibrate` CLI**：三个子命令——`uniqc calibrate xeb`、`uniqc calibrate readout`、`uniqc calibrate pattern`，与 calibration cache 完整集成。
+- **Dummy backend 语义统一**：`dummy`（无约束无噪声）、`dummy:virtual-line-N` / `dummy:virtual-grid-RxC`（虚拟拓扑无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。chip-backed dummy 不会出现在 backend 列表或 Gateway 卡片中，提交时会忠实记录编译后线路和执行线路到 task metadata。
+- **30+ bug 修复**：涵盖 XEB 保真度计算、OriginQ adapter 健壮性、IBM/Quafu topology 渲染、numpy 兼容性、CLI 错误处理等多个方面。
+
+如果你正在从 `v0.0.7.post1` 或更早版本迁移，建议优先复核：
+
+- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy")`（会收到警告，但向后兼容）
+- 你是否在用 `dummy:originq:WK_C180` 做本地含噪仿真——现在会先按真实 backend compile/transpile，再用 chip characterization 注入噪声
+- `Circuit.measure()` API 已统一为 `measure(*qubits)`，旧的 `measure(qubit, cbit)` 签名已不再支持
+- Package layout 已重组：backend/config/network/region/task 代码移至 `uniqc.backend_adapter`；compiler/transpiler/QASM/OriginIR 移至 `uniqc.compile`；visualization 移至 `uniqc.visualization`
+- 推荐导入方式：`from uniqc import Circuit, compile, get_backend`，避免深层包导入
+- `python -m uniqc` 已不再支持，请使用 `uniqc ...` 或 `python -m uniqc.cli ...`
+
+已知缺口（不阻塞发布）：
+
+- IBM Quantum token 在测试环境为占位符，IBM 云平台未做真实任务验证（adapter 代码未变动，不影响已知行为）
+- Quafu/`pyquafu` 已 deprecated，不包含在 `[all]` extra 中，后续不保证相关代码一致性
+- 未进行真实量子设备执行验证（OriginQ 发现/dry-run 已确认通过）
+
+**发布验证结果**：1393 测试通过（8 个外部原因失败）、最佳实践文档全部生成并构建成功、CLI 全命令验证通过、Gateway 前端构建和 API 端点全部正常、文档对齐检查 6 项全部通过。详细报告见提交记录。
+
 ### `Unreleased`
 
-当前开发版统一了 dummy backend 的编号语义：
-
-- `dummy` 表示无约束、无噪声本地虚拟机。
-- `dummy:virtual-line-N` 和 `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声的本地 backend。
-- `dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和 chip characterization 做本地含噪仿真；它是提交规则，不是可枚举 backend，因此不会出现在 `uniqc backend list` 或 Gateway WebUI backend 卡片中。
-- chip-backed dummy 提交会忠实执行真实 backend 的 compile/transpile，并把编译后线路和实际执行线路写入 task metadata，便于 Gateway 查看。
+当前开发版无待发布内容。
 
 ### `v0.0.7`
 

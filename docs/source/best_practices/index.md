@@ -43,12 +43,10 @@
 维护者发布前应在完整开发环境中重新生成这些 notebooks：
 
 ```bash
-uv sync --extra all --group dev --group docs --upgrade
+uv sync --all-extras --group dev --group docs --upgrade
 uv run python scripts/generate_best_practice_notebooks.py
 cd docs
 uv run make html
 ```
 
 如果某个案例因为真实云平台不可用而无法执行，应保持 dummy/dry-run 路径可执行，并在 Release note 中说明真实平台验证的缺口。
-
-如果由 AI agent 执行发布前检查，建议先运行 `uniqc config always-ai-hint on`，或在单条 CLI 命令中加 `--ai-hints` / `--ai-hint`。`docs/source/cli/workflow.md` 是工作流说明页，不对应 `uniqc workflow` 子命令。
