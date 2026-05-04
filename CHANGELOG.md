@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-05-05
+
+### Added
+
+- **Release automation skills** (`.claude/skills/`): New `uniqc-release` skill for automated release workflow (CHANGELOG update, release branch, PR, post-merge tag + PyPI publish), and updated `uniqc-test-before-release` skill with C++ stubgen step.
+
+### Changed
+
+- **QiskitAdapter proxy detection** (`uniqc/backend_adapter/task/adapters/qiskit_adapter.py`): Now automatically detects and uses system proxy settings when no proxy is explicitly configured in the IBM config section, enabling IBM Quantum access through corporate proxies without manual configuration.
+- **Quark IPython dependency** (`pyproject.toml`): Added `ipython` dependency to quark extras.
+- **Wheel CI pybind11** (`.github/workflows/python_build_wheel.yml`): Updated to use PyPI pybind11 instead of git submodule.
+
 ## [0.0.9] - 2026-05-04
 
 ### Added
