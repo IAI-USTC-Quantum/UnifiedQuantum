@@ -13,7 +13,6 @@ import io
 import json
 import os
 import pathlib
-import subprocess
 import sys
 import textwrap
 import traceback
@@ -571,7 +570,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             """
             # 09. Calibration + QEM
 
-            在 dummy adapter 上运行读出校准，将校准结果写入临时缓存，再用 `ReadoutEM` 对观测 counts 做修正。
+            在带显式读出噪声的 dummy adapter 上运行读出校准，将校准结果写入临时缓存，再用 `ReadoutEM` 对同一个 noisy backend 产生的观测 counts 做修正。
             """
         ),
         code(
@@ -579,16 +578,22 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             import tempfile
             import matplotlib.pyplot as plt
 
+            from uniqc import Circuit
             from uniqc.backend_adapter.task.adapters import DummyAdapter
             from uniqc.calibration.readout import ReadoutCalibrator
             from uniqc.qem import ReadoutEM
 
             cache_dir = tempfile.mkdtemp(prefix="uniqc-bp-calibration-")
-            adapter = DummyAdapter(noise_model={"depol": 0.02})
+            adapter = DummyAdapter(noise_model={"readout": [0.08, 0.12]})
             calibrator = ReadoutCalibrator(adapter=adapter, shots=200, cache_dir=cache_dir)
             calibration = calibrator.calibrate_1q(0)
 
-            observed = {0: 82, 1: 118}
+            observed_circuit = Circuit(1)
+            observed_circuit.x(0)
+            observed_circuit.measure(0)
+            task_id = adapter.submit(observed_circuit.originir, shots=200)
+            raw_counts = adapter.query(task_id)["result"]
+            observed = {int(k, 2): v for k, v in raw_counts.items()}
             mitigator = ReadoutEM(adapter=adapter, shots=200, cache_dir=cache_dir)
             corrected = mitigator.mitigate_counts(observed, measured_qubits=[0])
 
@@ -618,7 +623,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             # 10. XEB workflow
 
             使用很小的参数运行 1q XEB，覆盖校准、ReadoutEM、随机线路生成、fidelity 拟合和结果图示。
-            本 notebook 使用 `backend="dummy"` 做无约束、无噪声的发布检查；如果要检查真实芯片标定噪声路径，应改用 `backend="dummy:originq:WK_C180"` 这类规则型 backend id，它会先按真实 backend compile/transpile，再本地含噪执行。
+            本 notebook 使用 `backend="dummy"` 搭配显式 `noise_model` 做本地含噪发布检查；如果要检查真实芯片标定噪声路径，应改用 `backend="dummy:originq:WK_C180"` 这类规则型 backend id，它会先按真实 backend compile/transpile，再本地含噪执行。
             发布前可以提高 `n_circuits` 和 `shots` 做更严格的人工检查。
             """
         ),
@@ -637,6 +642,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
                 n_circuits=3,
                 shots=128,
                 use_readout_em=True,
+                noise_model={"depol": 0.01, "readout": 0.04},
                 seed=11,
                 cache_dir=cache_dir,
             )

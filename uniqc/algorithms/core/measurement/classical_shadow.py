@@ -12,9 +12,9 @@ each followed by computational-basis measurement.
 
 __all__ = ["classical_shadow", "shadow_expectation"]
 
-from typing import Optional, List, Tuple, Dict
-from dataclasses import dataclass, field
 import itertools
+from dataclasses import dataclass, field
+
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
@@ -44,11 +44,17 @@ class ShadowSnapshot:
             all simulated shots; enables probability-scoring / exact-Born
             estimators in :func:`shadow_expectation` with much lower
             variance than the single-outcome HKP estimator.
+
+        _expectation_cache: Internal cache keyed by the non-identity Pauli
+            support bitmask. It reuses the counts-derived Born expectation
+            across repeated :func:`shadow_expectation` calls on the same
+            snapshots.
     """
 
-    unitary_indices: Tuple[int, ...]
-    outcomes: Tuple[int, ...]
-    counts: Dict[int, int] = field(default_factory=dict)
+    unitary_indices: tuple[int, ...]
+    outcomes: tuple[int, ...]
+    counts: dict[int, int] = field(default_factory=dict)
+    _expectation_cache: dict[int, float] = field(default_factory=dict, repr=False)
 
     def __repr__(self) -> str:
         return (
@@ -64,7 +70,7 @@ class ShadowSnapshot:
 _UNITARY_TO_BASIS = {0: "Z", 1: "X", 2: "Y"}
 
 
-def _inject_random_basis(circuit: Circuit, unitary_indices: List[int]) -> str:
+def _inject_random_basis(circuit: Circuit, unitary_indices: list[int]) -> str:
     """Return a QASM string with basis-rotation gates injected before each MEASURE.
 
     Args:
@@ -95,10 +101,10 @@ def _inject_random_basis(circuit: Circuit, unitary_indices: List[int]) -> str:
 
 def classical_shadow(
     circuit: Circuit,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     shots: int = 4096,
-    n_shadow: Optional[int] = None,
-) -> List[ShadowSnapshot]:
+    n_shadow: int | None = None,
+) -> list[ShadowSnapshot]:
     """Generate classical-shadow snapshots of a quantum state.
 
     Each snapshot is obtained by:
@@ -180,7 +186,7 @@ def classical_shadow(
         all_combos = list(itertools.product(range(3), repeat=n))
         full_cycles = n_shadow // n_bases
         remainder = n_shadow % n_bases
-        basis_sequence: List[Tuple[int, ...]] = list(all_combos) * full_cycles
+        basis_sequence: list[tuple[int, ...]] = list(all_combos) * full_cycles
         if remainder > 0:
             extra_idx = rng.choice(n_bases, size=remainder, replace=False)
             basis_sequence.extend(all_combos[i] for i in extra_idx)
@@ -190,7 +196,7 @@ def classical_shadow(
             tuple(rng.integers(0, 3, size=n).tolist()) for _ in range(n_shadow)
         ]
 
-    snapshots: List[ShadowSnapshot] = []
+    snapshots: list[ShadowSnapshot] = []
 
     for unitary_indices in basis_sequence:
         unitary_indices = tuple(unitary_indices)
@@ -217,7 +223,7 @@ def classical_shadow(
 
 
 def shadow_expectation(
-    shadows: List[ShadowSnapshot],
+    shadows: list[ShadowSnapshot],
     pauli_string: str,
 ) -> float:
     """Estimate the expectation value of a Pauli string from classical-shadow snapshots.
@@ -272,12 +278,20 @@ def shadow_expectation(
     m = sum(1 for p in pauli_string if p != "I")
     prefactor = 3.0**m
 
-    estimates: List[float] = []
+    # Build a bitmask of the non-I Pauli positions (LSB-first). The same
+    # support mask can be reused by different Pauli strings in multi-term
+    # Hamiltonians, so cache the counts-derived Born value per snapshot.
+    non_i_mask = 0
+    for i, p_i in enumerate(pauli_string):
+        if p_i != "I":
+            non_i_mask |= 1 << i
+
+    estimates: list[float] = []
     for snap in shadows:
         # Check alignment: every non-I Pauli must equal the measured basis.
         aligned = all(
             p_i == "I" or _UNITARY_TO_BASIS[ui] == p_i
-            for p_i, ui in zip(pauli_string, snap.unitary_indices)
+            for p_i, ui in zip(pauli_string, snap.unitary_indices, strict=False)
         )
         if not aligned:
             estimates.append(0.0)
@@ -296,11 +310,10 @@ def shadow_expectation(
             estimates.append(prefactor * pauli_eigenvalue)
             continue
 
-        # Build a bitmask of the non-I Pauli positions (LSB-first).
-        non_i_mask = 0
-        for i, p_i in enumerate(pauli_string):
-            if p_i != "I":
-                non_i_mask |= 1 << i
+        cached_born_ev = snap._expectation_cache.get(non_i_mask)
+        if cached_born_ev is not None:
+            estimates.append(prefactor * cached_born_ev)
+            continue
 
         # Vectorised Born-rule expectation over all shots.
         keys = np.fromiter(counts.keys(), dtype=np.int64, count=len(counts))
@@ -319,6 +332,7 @@ def shadow_expectation(
                 tmp >>= 1
         signs = np.where(parity.astype(bool), -1, 1)
         born_ev = float(np.sum(vals * signs) / vals.sum())
+        snap._expectation_cache[non_i_mask] = born_ev
         estimates.append(prefactor * born_ev)
 
     return float(np.mean(estimates))

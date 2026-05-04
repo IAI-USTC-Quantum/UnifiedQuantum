@@ -53,6 +53,7 @@ def run_1q_xeb_workflow(
     use_readout_em: bool = True,
     max_age_hours: float = 24.0,
     chip_characterization: Any = None,
+    noise_model: dict[str, Any] | None = None,
     seed: int | None = None,
     cache_dir: str | None = None,
 ) -> dict[int, Any]:
@@ -67,13 +68,14 @@ def run_1q_xeb_workflow(
         use_readout_em: Whether to apply readout EM before fidelity computation.
         max_age_hours: Maximum age of cached calibration data (hours).
         chip_characterization: Optional ChipCharacterization for noise-aware simulation.
+        noise_model: Optional explicit DummyAdapter noise model.
         seed: Random seed for circuit generation.
 
     Returns:
         Dict mapping qubit index → XEBResult.
     """
-    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.calibration.readout import ReadoutCalibrator
+    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.qem import ReadoutEM
 
     if depths is None:
@@ -84,6 +86,8 @@ def run_1q_xeb_workflow(
     adapter_kwargs: dict[str, Any] = {}
     if chip_characterization is not None:
         adapter_kwargs["chip_characterization"] = chip_characterization
+    if noise_model is not None:
+        adapter_kwargs["noise_model"] = noise_model
 
     adapter = _get_adapter(backend, **adapter_kwargs)
 
@@ -121,6 +125,7 @@ def run_2q_xeb_workflow(
     use_readout_em: bool = True,
     max_age_hours: float = 24.0,
     chip_characterization: Any = None,
+    noise_model: dict[str, Any] | None = None,
     seed: int | None = None,
     entangler_gates: dict[tuple[int, int], str] | None = None,
     cache_dir: str | None = None,
@@ -136,14 +141,15 @@ def run_2q_xeb_workflow(
         use_readout_em: Whether to apply readout EM before fidelity computation.
         max_age_hours: Maximum age of cached calibration data.
         chip_characterization: Optional ChipCharacterization.
+        noise_model: Optional explicit DummyAdapter noise model.
         seed: Random seed.
         entangler_gates: Per-pair 2-qubit gate name override.
 
     Returns:
         Dict mapping (u, v) → XEBResult.
     """
-    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.calibration.readout import ReadoutCalibrator
+    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.qem import ReadoutEM
 
     if depths is None:
@@ -154,6 +160,8 @@ def run_2q_xeb_workflow(
     adapter_kwargs: dict[str, Any] = {}
     if chip_characterization is not None:
         adapter_kwargs["chip_characterization"] = chip_characterization
+    if noise_model is not None:
+        adapter_kwargs["noise_model"] = noise_model
 
     adapter = _get_adapter(backend, **adapter_kwargs)
 
@@ -192,6 +200,7 @@ def run_parallel_xeb_workflow(
     shots: int = 1000,
     use_readout_em: bool = True,
     max_age_hours: float = 24.0,
+    noise_model: dict[str, Any] | None = None,
     seed: int | None = None,
     target_qubits: list[int] | None = None,
     cache_dir: str | None = None,
@@ -210,6 +219,7 @@ def run_parallel_xeb_workflow(
         shots: Shots per circuit.
         use_readout_em: Apply readout EM.
         max_age_hours: Maximum calibration data age.
+        noise_model: Optional explicit DummyAdapter noise model.
         seed: Random seed.
         target_qubits: Optional subset of qubits to include (uses full topology if None).
 
@@ -217,8 +227,8 @@ def run_parallel_xeb_workflow(
         Dict with keys: ``patterns`` (ParallelPatternResult),
         ``results`` (per-pair XEBResult), ``pairs``.
     """
-    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.calibration.readout import ReadoutCalibrator
+    from uniqc.calibration.xeb.benchmarker import XEBenchmarker
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
     from uniqc.qem import ReadoutEM
 
@@ -258,6 +268,8 @@ def run_parallel_xeb_workflow(
                 entangler_gates[pair] = best_gate
 
     adapter_kwargs: dict[str, Any] = {"chip_characterization": chip_characterization}
+    if noise_model is not None:
+        adapter_kwargs["noise_model"] = noise_model
     adapter = _get_adapter(backend, **adapter_kwargs)
 
     readout_em = None

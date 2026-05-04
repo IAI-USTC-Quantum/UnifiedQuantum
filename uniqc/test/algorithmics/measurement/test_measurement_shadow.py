@@ -4,8 +4,9 @@ single-qubit, Y expectation, high precision, all-I, 3-qubit, and edge cases."""
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.measurement import classical_shadow, shadow_expectation
+from uniqc.algorithms.core.measurement.classical_shadow import ShadowSnapshot
+from uniqc.circuit_builder import Circuit
 
 
 class TestSingleQubitShadow:
@@ -210,3 +211,25 @@ class TestShadowVectorizedLargeN:
         shadows = classical_shadow(c, shots=256, n_shadow=16)
         est = shadow_expectation(shadows, "IIIIII")
         assert np.isclose(est, 1.0)
+
+
+class TestShadowExpectationCache:
+    """Regression tests for per-snapshot counts-derived expectation caching."""
+
+    def test_counts_expectation_reuses_non_i_mask_cache(self, monkeypatch):
+        snap = ShadowSnapshot(
+            unitary_indices=(0, 1),
+            outcomes=(0, 0),
+            counts={0: 3, 1: 1, 2: 1, 3: 3},
+        )
+
+        first = shadow_expectation([snap], "ZX")
+        assert 0b11 in snap._expectation_cache
+
+        def fail_fromiter(*args, **kwargs):
+            raise AssertionError("cached expectation should skip np.fromiter")
+
+        monkeypatch.setattr(np, "fromiter", fail_fromiter)
+        second = shadow_expectation([snap], "ZX")
+
+        assert second == first

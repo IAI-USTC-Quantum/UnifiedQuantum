@@ -295,6 +295,7 @@ class ErrorLoader:
 
     def process_opcodes(self, opcodes: list[OpCode]) -> None:
         """Process a list of opcodes, inserting errors for each."""
+        self.opcodes = []
         for opcode in opcodes:
             self.insert_opcode(opcode)
 
