@@ -24,7 +24,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.config import load_quafu_config
+from uniqc.config import load_quafu_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quafu
 from uniqc.cli.chip_info import (
     ChipCharacterization,

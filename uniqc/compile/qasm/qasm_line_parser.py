@@ -71,7 +71,7 @@ class OpenQASM2_LineParser:  # noqa: N801
         + qreg_str
         + "$"
     )
-    regexp_measure_str: str = "^" + "measure" + blank + qreg_str + "->" + blank + qreg_str + "$"
+    regexp_measure_str: str = "^" + "measure" + blank + qreg_str + "(?:->|,)" + blank + qreg_str + "$"
     regexp_barrier_str: str = "^" + "barrier" + blank + f"({qreg_str}{comma}{blank})*{qreg_str}" + "$"
 
     # Compiled regex objects

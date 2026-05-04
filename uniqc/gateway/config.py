@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from uniqc.backend_adapter import config as _base_config
+from uniqc import config as _base_config
 
 # Gateway-specific default values
 DEFAULT_GATEWAY_PORT = 18765

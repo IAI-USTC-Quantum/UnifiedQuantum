@@ -8,6 +8,7 @@ PACKAGE_ROOT = PROJECT_ROOT / "uniqc"
 ALLOWED_TOP_LEVEL_FILES = {
     "__init__.py",
     "_version.py",
+    "config.py",
     "exceptions.py",
 }
 
@@ -49,6 +50,7 @@ def test_uniqc_top_level_packages_match_architecture() -> None:
 
 
 def test_common_user_imports_are_flat() -> None:
+    import uniqc.backend_adapter.config as backend_adapter_config
     from uniqc import (
         BackendInfo,
         Circuit,
@@ -57,6 +59,7 @@ def test_common_user_imports_are_flat() -> None:
         RegionSelector,
         calculate_expectation,
         compile,
+        config,
         qft_circuit,
         submit_task,
     )
@@ -70,3 +73,6 @@ def test_common_user_imports_are_flat() -> None:
     assert calculate_expectation is not None
     assert qft_circuit is not None
     assert QuantumLayer is not None
+    assert config is not None
+    assert hasattr(config, "load_originq_config")
+    assert hasattr(backend_adapter_config, "get_platform_config")

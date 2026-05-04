@@ -70,7 +70,7 @@ CMD_REFS: dict[str, list[tuple[str, str]]] = {
 # ----------------------------------------------------------------------
 # AI workflow hints — "next steps" and "what to do if X" guidance.
 # Each entry is a list of (label, text) tuples.
-# Shown via --ai-hints flag or UNIQC_AI_HINTS=1 env var.
+# Shown via --ai-hints/--ai-hint, UNIQC_AI_HINTS=1, or config always-ai-hint.
 # ----------------------------------------------------------------------
 AI_HINTS: dict[str, list[tuple[str, str]]] = {
     "circuit": [
@@ -127,8 +127,14 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Wrong platform?",
-            "Re-run with --platform originq|quafu|ibm. "
+            "Re-run with --platform originq|quafu|quark|ibm|dummy. "
             "Use uniqc backend list --platform <PLATFORM> to see available backends first.",
+        ),
+        (
+            "Need step-by-step guidance?",
+            "Add --ai-hint/--ai-hints to the command, or enable it by default with "
+            "uniqc config always-ai-hint on. There is no `uniqc workflow` command; "
+            "workflow guidance lives in these hints and in the CLI docs.",
         ),
         (
             "Picking the right backend",
@@ -243,8 +249,21 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "1. uniqc config init — create ~/.uniqc/config.yaml with default settings\n"
             "2. uniqc config set originq.token <YOUR_TOKEN> — set your API token\n"
             "   (Token URLs: OriginQ: q.本源量子.com | Quafu: quafu.baike.scut.cn | IBM: quantum.ibm.com)\n"
-            "3. uniqc config validate — verify the configuration is valid\n"
-            "4. uniqc backend update — fetch available backends",
+            "3. uniqc config always-ai-hint on — keep AI workflow hints visible by default\n"
+            "4. uniqc config validate — verify the configuration is valid\n"
+            "5. uniqc backend update — fetch available backends",
+        ),
+        (
+            "IBM proxy setup",
+            "If IBM Quantum needs a proxy, configure it explicitly:\n"
+            "uniqc config set ibm.proxy.https http://127.0.0.1:7890\n"
+            "uniqc config set ibm.proxy.http http://127.0.0.1:7890\n"
+            "Then run uniqc config validate and uniqc backend update --platform ibm.",
+        ),
+        (
+            "Always show hints for agents",
+            "Run uniqc config always-ai-hint on. Disable with uniqc config always-ai-hint off, "
+            "or check with uniqc config always-ai-hint status.",
         ),
         (
             "Get your API token",

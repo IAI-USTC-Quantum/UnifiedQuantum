@@ -22,7 +22,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.config import load_originq_config
+from uniqc.config import load_originq_config
 from uniqc.backend_adapter.task.optional_deps import require
 
 

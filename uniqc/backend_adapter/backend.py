@@ -492,7 +492,7 @@ class IBMBackend(QuantumBackend):
         2. Environment variables (HTTP_PROXY, HTTPS_PROXY)
         3. config.yaml configuration file
         """
-        from uniqc.backend_adapter.config import get_ibm_config
+        from uniqc.config import get_ibm_config
         from uniqc.backend_adapter.network_utils import (
             detect_system_proxy,
             get_ibm_proxy_from_config,

@@ -6,7 +6,6 @@ functions can be imported directly from ``uniqc``.
 
 import warnings
 
-from .backend_adapter import config
 from .backend_adapter.backend import (
     DummyBackend,
     IBMBackend,
@@ -164,6 +163,7 @@ except ImportError:
     __version__ = "0.0.0+unknown"
 
 from . import algorithms, calibration, qem  # noqa: E402,F401
+from . import config
 
 _LAZY_EXPORTS = {
     "QuantumLayer": ("uniqc.torch_adapter", "QuantumLayer"),

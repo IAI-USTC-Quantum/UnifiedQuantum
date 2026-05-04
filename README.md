@@ -224,6 +224,10 @@ uv pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git
 # 查看帮助
 uniqc --help
 
+# 安装 AI 技能（AI Agent）
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'
+
 # 本地模拟
 uniqc simulate circuit.ir --shots 1000
 

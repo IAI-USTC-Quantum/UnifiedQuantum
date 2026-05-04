@@ -1,4 +1,4 @@
-"""Tests for uniqc.backend_adapter.config module."""
+"""Tests for the project-level ``uniqc.config`` module."""
 
 from __future__ import annotations
 
@@ -10,7 +10,9 @@ from unittest import mock
 import pytest
 
 from uniqc import config
-from uniqc.backend_adapter.config import (
+from uniqc import config as top_level_config
+from uniqc.backend_adapter import config as legacy_config
+from uniqc.config import (
     DEFAULT_CONFIG,
     ConfigError,
     ConfigValidationError,
@@ -29,6 +31,20 @@ from uniqc.backend_adapter.config import (
     update_platform_config,
     validate_config,
 )
+
+
+def test_top_level_config_aliases_legacy_backend_path() -> None:
+    """Both import paths should expose the same config public API."""
+    for symbol in (
+        "DEFAULT_CONFIG",
+        "load_config",
+        "save_config",
+        "get_platform_config",
+        "set_active_profile",
+        "validate_config",
+    ):
+        assert hasattr(top_level_config, symbol)
+        assert hasattr(legacy_config, symbol)
 
 
 class TestLoadConfig:
@@ -357,7 +373,10 @@ class TestConvenienceFunctions:
         test_config = {"default": {"originq": {"token": "test_token"}}}
         save_config(test_config, config_file)
 
-        with mock.patch.object(config, "CONFIG_FILE", config_file):
+        with (
+            mock.patch.object(config, "CONFIG_FILE", config_file),
+            mock.patch.object(legacy_config, "CONFIG_FILE", config_file),
+        ):
             result = get_originq_config()
             assert result["token"] == "test_token"
 
@@ -367,7 +386,10 @@ class TestConvenienceFunctions:
         test_config = {"default": {"quafu": {"token": "test_token"}}}
         save_config(test_config, config_file)
 
-        with mock.patch.object(config, "CONFIG_FILE", config_file):
+        with (
+            mock.patch.object(config, "CONFIG_FILE", config_file),
+            mock.patch.object(legacy_config, "CONFIG_FILE", config_file),
+        ):
             result = get_quafu_config()
             assert result["token"] == "test_token"
 
@@ -377,7 +399,10 @@ class TestConvenienceFunctions:
         test_config = {"default": {"quark": {"QUARK_API_KEY": "test_token"}}}
         save_config(test_config, config_file)
 
-        with mock.patch.object(config, "CONFIG_FILE", config_file):
+        with (
+            mock.patch.object(config, "CONFIG_FILE", config_file),
+            mock.patch.object(legacy_config, "CONFIG_FILE", config_file),
+        ):
             result = get_quark_config()
             assert result["QUARK_API_KEY"] == "test_token"
 
@@ -387,7 +412,10 @@ class TestConvenienceFunctions:
         test_config = {"default": {"ibm": {"token": "test_token"}}}
         save_config(test_config, config_file)
 
-        with mock.patch.object(config, "CONFIG_FILE", config_file):
+        with (
+            mock.patch.object(config, "CONFIG_FILE", config_file),
+            mock.patch.object(legacy_config, "CONFIG_FILE", config_file),
+        ):
             result = get_ibm_config()
             assert result["token"] == "test_token"
 
