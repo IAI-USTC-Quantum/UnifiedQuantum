@@ -1,11 +1,13 @@
 ---
 name: uniqc-release
-description: "Create a new UnifiedQuantum release: generates release notes, updates CHANGELOG.md, creates a release branch, and opens a PR to main. After merge, handles git tag creation and PyPI publication."
+description: "Create a new UnifiedQuantum release: generates release notes, updates CHANGELOG.md, creates a release branch, and opens a PR to main. After merge, creates and pushes a git tag — PyPI publishing is automatic via GitHub Actions."
 ---
 
 # UnifiedQuantum Release Skill
 
-Use this skill when a maintainer wants to create a new release. The release workflow has two phases: PR creation and post-merge publication.
+Use this skill when a maintainer wants to create a new release. The release workflow has two phases: PR creation and post-merge tag push.
+
+**Note**: PyPI publishing is automatic via GitHub Actions when a `v*` tag is pushed. No manual publish step needed.
 
 ## Version Number
 
@@ -137,13 +139,13 @@ EOF
 )"
 ```
 
-## Phase 2: Post-Merge (Publication)
+## Phase 2: Post-Merge (Tag Push)
 
-**IMPORTANT**: After the PR is merged, ask the user to confirm before proceeding with publication.
+**IMPORTANT**: After the PR is merged, ask the user to confirm before proceeding with tag creation.
 
 ### Step 1: Confirm User Intent
 
-Ask the user: "The PR has been merged. Do you want me to proceed with creating the git tag and publishing to PyPI?"
+Ask the user: "The PR has been merged. Do you want me to create and push the git tag? (PyPI publishing is automatic via GitHub Actions)"
 
 ### Step 2: Fetch and Checkout Main
 
@@ -160,32 +162,26 @@ git tag -a v{x.y.z} -m "Release v{x.y.z}"
 git push origin v{x.y.z}
 ```
 
-### Step 4: Publish to PyPI
+GitHub Actions will automatically:
+1. Build wheels for Ubuntu and Windows
+2. Validate wheel ABI
+3. Publish to PyPI
 
-```bash
-# Build the package
-uv build
-
-# Publish to PyPI (requires API token)
-uv publish --token $PYPI_TOKEN
-```
-
-### Step 5: Verify
+### Step 4: Verify
 
 ```bash
 # Check the tag exists
 git fetch --tags
 git tag -l "v{x.y.z}*"
-
-# Check PyPI (optional - requires network)
-curl -s https://pypi.org/pypi/unified-quantum/json | grep '"version"' | head -1
 ```
+
+Monitor the release at: https://github.com/IAI-USTC-Quantum/UnifiedQuantum/actions
 
 ## Error Handling
 
 - If CHANGELOG.md is missing or malformed, create a minimal release note
 - If the branch already exists, offer to delete and recreate or use existing
-- If PyPI publish fails, provide manual instructions for the user
+- If tag push fails, retry or inform the user
 
 ## Example Conversation Flow
 
@@ -194,6 +190,6 @@ curl -s https://pypi.org/pypi/unified-quantum/json | grep '"version"' | head -1
 3. User: "0.0.10"
 4. Assistant: Creates release PR...
 5. User merges PR
-6. Assistant: "PR merged! Would you like me to create the git tag and publish to PyPI?"
+6. Assistant: "PR merged! Shall I create and push the git tag? (PyPI publishing is automatic)"
 7. User: "Yes"
-8. Assistant: Proceeds with tag creation and PyPI publication
+8. Assistant: Creates tag and pushes — GitHub Actions handles PyPI publish
