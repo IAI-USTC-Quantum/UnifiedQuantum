@@ -36,6 +36,13 @@ class QiskitAdapter(QuantumAdapter):
         - Dict with 'http' and/or 'https' keys
         - Or a single proxy URL string for both protocols
 
+        If no proxy is configured:
+        - Automatically detects and uses system proxy settings
+        - If no system proxy, uses direct connection
+
+        If proxy is configured:
+        - Uses configured proxy in addition to any system proxy
+
     Raises:
         MissingDependencyError: If qiskit or qiskit_ibm_runtime is not installed.
 
@@ -55,6 +62,7 @@ class QiskitAdapter(QuantumAdapter):
             proxy: Optional proxy configuration.
                 - Dict with 'http' and/or 'https' keys
                 - Or a single proxy URL string
+                - If None, uses system proxy if available, otherwise direct
 
         Raises:
             MissingDependencyError: If qiskit is not installed.
@@ -68,34 +76,53 @@ class QiskitAdapter(QuantumAdapter):
 
         from qiskit_ibm_runtime import QiskitRuntimeService
 
-        if proxy:
-            self._setup_proxy(proxy)
+        # Setup proxy: merge configured proxy with system proxy
+        self._setup_proxy(proxy)
 
         self._service = QiskitRuntimeService(
             channel="ibm_quantum_platform",
             token=self._api_token,
         )
 
-    def _setup_proxy(self, proxy: dict[str, str] | str) -> None:
+    def _setup_proxy(self, proxy: dict[str, str] | str | None) -> None:
         """Configure proxy settings for Qiskit/IBM provider.
 
+        Proxy behavior:
+        - If proxy is configured: use it as the proxy (replacing system proxy)
+        - If no proxy configured but system has proxy: use system proxy
+        - If no proxy configured and no system proxy: direct connection
+
         Args:
-            proxy: Proxy configuration dict or URL string.
+            proxy: Proxy configuration dict, URL string, or None.
         """
         import os
 
-        if isinstance(proxy, dict):
-            https_proxy = proxy.get("https")
-            http_proxy = proxy.get("http")
-            proxy_url = https_proxy or http_proxy
-        else:
-            proxy_url = proxy
+        from uniqc.backend_adapter.network_utils import detect_system_proxy
 
-        if proxy_url:
-            os.environ["HTTP_PROXY"] = proxy_url
-            os.environ["HTTPS_PROXY"] = proxy_url
-            os.environ["http_proxy"] = proxy_url
-            os.environ["https_proxy"] = proxy_url
+        # Determine which proxies to use
+        if proxy is not None:
+            # Configured proxy takes priority
+            configured_proxies: dict[str, str] = {}
+            if isinstance(proxy, dict):
+                if proxy.get("http"):
+                    configured_proxies["http"] = proxy["http"]
+                if proxy.get("https"):
+                    configured_proxies["https"] = proxy["https"]
+            else:
+                configured_proxies["http"] = proxy
+                configured_proxies["https"] = proxy
+            proxies_to_use = configured_proxies
+        else:
+            # No configured proxy, use system proxy
+            system_proxies = detect_system_proxy()
+            proxies_to_use = {k: v for k, v in system_proxies.items() if v}
+
+        # Set environment variables if we have any proxies
+        for proto in ("http", "https"):
+            if proto in proxies_to_use:
+                proxy_url = proxies_to_use[proto]
+                os.environ[f"{proto.upper()}_PROXY"] = proxy_url
+                os.environ[f"{proto}_proxy"] = proxy_url
 
     def is_available(self) -> bool:
         """Check if the Qiskit adapter is available (IBM service initialized)."""
