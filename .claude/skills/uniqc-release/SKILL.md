@@ -56,28 +56,62 @@ If no generator exists, manually draft release notes from:
    ```
 3. Update the `[Unreleased]` section to be empty (or add placeholder)
 
-### Step 4: Create Release Branch
+### Step 4: Update Documentation Release Notes
+
+1. Read current `docs/source/releases/index.md`
+2. Add a new version section under `## 版本解读` with:
+   - **Version heading**: `### v{x.y.z}`
+   - **Summary paragraph**: Brief description of the release theme
+   - **Changes list**: Key additions, changes, and fixes
+   - **Migration notes**: If breaking changes exist, add upgrade guidance
+   - **Known gaps**: Document any unverified features
+   - **Verification results**: Link to test report if available
+3. Update the header section:
+   - Change "当前建议先看哪个版本" to point to the new version
+   - Update the version description to reflect the new release
+
+Example structure:
+```markdown
+### `v{x.y.z}`
+
+这是一个[X类]版本，核心主题是**主题描述**。
+
+本版主要变更：
+- **变更1**：描述
+- **变更2**：描述
+
+如果你正在从 `v{prev}` 迁移，主要变更对用户透明：
+- 变更说明
+
+已知缺口（不阻塞发布）：
+- 缺口描述
+
+**发布验证结果**：验证结果摘要。
+```
+
+### Step 5: Create Release Branch
 
 ```bash
 git checkout -b release/<version>
 ```
 
-### Step 5: Commit Changes
+### Step 6: Commit Changes
 
 ```bash
-git add CHANGELOG.md
+git add CHANGELOG.md docs/source/releases/index.md
 git commit -m "$(cat <<'EOF'
 docs(release): prepare v{x.y.z} release
 
 - Update CHANGELOG.md with release notes
 - Move [Unreleased] changes to [{x.y.z}] section
+- Add release notes to docs/source/releases/index.md
 
 Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
 EOF
 )"
 ```
 
-### Step 6: Push and Create PR
+### Step 7: Push and Create PR
 
 ```bash
 git push -u origin release/<version>
