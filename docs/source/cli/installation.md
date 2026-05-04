@@ -11,3 +11,12 @@ uniqc --help
 # 备选：CLI 模块入口
 python -m uniqc.cli --help
 ```
+
+## AI Agent 技能安装（可选）
+
+如果你需要给 AI Agent（Codex 或 Claude Code）补齐 UnifiedQuantum 最佳使用流程，可直接安装本仓库的 skill 集：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'
+```

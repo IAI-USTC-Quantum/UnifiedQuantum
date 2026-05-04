@@ -17,7 +17,13 @@ app = typer.Typer(
         "[link=https://iai-ustc-quantum.github.io/UnifiedQuantum/]"
         "[cyan]Documentation[/cyan][/link]\n\n"
         "  Pass --ai-hints/--ai-hint, set UNIQC_AI_HINTS=1, or run "
-        "uniqc config always-ai-hint on to show AI workflow guidance."
+        "uniqc config always-ai-hint on to show AI workflow guidance.\n"
+        "  AI Agent 安装建议：\n"
+        "  Codex:  npx skills add IAI-USTC-Quantum/quantum-computing.skill "
+        "--agent codex --skill '*'\n"
+        "  Claude Code: npx skills add IAI-USTC-Quantum/quantum-computing.skill "
+        "--agent claude-code --skill '*'\n\n"
+        "  默认按仓库安装本仓库全部 skill（推荐）。"
     ),
     no_args_is_help=True,
 )
