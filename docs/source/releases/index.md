@@ -6,9 +6,9 @@
 
 ### 当前建议先看哪个版本
 
-如果你在跟随当前开发版，先看 `Unreleased`；如果你是从较早的正式版本直接升级，先看 `v0.0.9`。
+如果你在跟随当前开发版，先看 `Unreleased`；如果你是从较早的正式版本直接升级，先看 `v0.0.10`。
 
-`v0.0.9` 是目前最新的正式发布。它带来芯片标定（Calibration）、量子纠错（QEM/XEB）、`uniqc calibrate` CLI、dummy backend 语义统一，以及 30+ bug 修复。
+`v0.0.10` 是目前最新的正式发布。它带来 QiskitAdapter 系统代理自动检测、发布自动化 Skills，以及多项 bug 修复。
 
 升级时最值得先确认的是：
 
@@ -49,6 +49,25 @@
 
 ## 版本解读
 
+### `v0.0.10`
+
+这是一个维护性版本，核心主题是**代理检测自动化**和**发布流程优化**。
+
+本版主要变更：
+
+- **QiskitAdapter 系统代理检测**：`QiskitAdapter` 现在可以在未显式配置代理时自动检测并使用系统代理设置，无需手动配置即可通过企业代理访问 IBM Quantum。
+- **发布自动化 Skills**：新增 `uniqc-release` skill 用于自动化发布流程（CHANGELOG 更新、release 分支、PR、tag + PyPI 发布），更新 `uniqc-test-before-release` skill 增加 C++ stubgen 步骤。
+- **Bug 修复**：Quark IPython 依赖修复，Wheel CI pybind11 更新（使用 PyPI 而非 git submodule）。
+
+如果你正在从 `v0.0.9` 迁移，主要变更对用户透明：
+- IBM Quantum 用户在有系统代理环境下无需额外配置
+- 使用 Claude Code 或 Codex 时可使用新的发布自动化命令
+
+已知缺口（不阻塞发布）：
+- 真实 IBM Quantum 任务执行未验证（adapter 代码未变动，不影响已知行为）
+
+**发布验证结果**：1408 测试通过（3 个 Quafu 失败为预期行为，因 Quafu 已 deprecated）、最佳实践文档全部生成并构建成功、CLI 全命令验证通过、Gateway 前端构建和 API 端点全部正常、文档对齐检查全部通过。详细报告见 pre-release-test-report.md。
+
 ### `v0.0.9`
 
 这是一个功能大幅增强的版本，核心主题是**芯片标定与量子纠错全链路**，以及 dummy backend 语义的彻底统一。
@@ -80,7 +99,7 @@
 
 ### `Unreleased`
 
-当前开发版无待发布内容。
+当前开发版暂无待发布内容。
 
 ### `v0.0.7`
 
