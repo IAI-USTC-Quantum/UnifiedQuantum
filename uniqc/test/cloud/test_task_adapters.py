@@ -55,7 +55,7 @@ class RunTestConfigYaml:
             tmp_path,
             {"originq": {"token": "test_key_123", "task_group_size": 100}},
         )
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_originq_config
 
@@ -66,7 +66,7 @@ class RunTestConfigYaml:
     def run_test_quafu_config_from_yaml(self, monkeypatch, tmp_path):
         """Quafu config is read from ~/.uniqc/config.yaml."""
         write_uniqc_config(tmp_path, {"quafu": {"token": "quafu_secret_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_quafu_config
 
@@ -76,7 +76,7 @@ class RunTestConfigYaml:
     def run_test_quark_config_from_yaml(self, monkeypatch, tmp_path):
         """QuarkStudio config is read from ~/.uniqc/config.yaml."""
         write_uniqc_config(tmp_path, {"quark": {"token": "quark_secret_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_quark_config
 
@@ -86,7 +86,7 @@ class RunTestConfigYaml:
     def run_test_ibm_config_from_yaml(self, monkeypatch, tmp_path):
         """IBM config is read from ~/.uniqc/config.yaml."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "ibm_secret_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_ibm_config
 
@@ -106,7 +106,7 @@ class RunTestConfigYaml:
                 }
             },
         )
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_dummy_config
 
@@ -118,7 +118,7 @@ class RunTestConfigYaml:
     def run_test_originq_config_import_error_without_token(self, monkeypatch, tmp_path):
         """ImportError is raised when the active YAML config has no OriginQ token."""
         write_uniqc_config(tmp_path, {"originq": {"token": ""}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.config import load_originq_config
 
@@ -138,7 +138,7 @@ class RunTestConfigYaml:
             },
             config_file,
         )
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
 
         from uniqc.config import load_originq_config
 
@@ -269,7 +269,7 @@ class RunTestAdapterAvailability:
     def run_test_originq_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test OriginQ adapter availability with config."""
         write_uniqc_config(tmp_path, {"originq": {"token": "test_key"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
@@ -280,7 +280,7 @@ class RunTestAdapterAvailability:
     def run_test_quafu_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test Quafu adapter availability with config."""
         write_uniqc_config(tmp_path, {"quafu": {"token": "test_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
 
         from uniqc.backend_adapter.task.adapters import QuafuAdapter
 
@@ -290,7 +290,7 @@ class RunTestAdapterAvailability:
     def run_test_ibm_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test IBM adapter availability with config."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
-        monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
         monkeypatch.setattr("qiskit_ibm_runtime.QiskitRuntimeService", lambda **_kwargs: object())
 
         from uniqc.backend_adapter.task.adapters import QiskitAdapter
