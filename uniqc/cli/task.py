@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import os
 from typing import Optional
 
 import typer
 
 from .output import (
     AI_HINTS_OPTION,
+    ai_hints_enabled,
     build_ref_str,
     console,
     extract_counts_and_probs,
@@ -45,7 +45,7 @@ def list_tasks(
       - Wrong platform? Filter: uniqc task list --platform originq
       - Get a result: uniqc result <TASK_ID>
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("task-list")
 
     from uniqc.backend_adapter.task_manager import list_tasks as _list_tasks
@@ -88,7 +88,7 @@ def show(
       - Task still running? Use uniqc result <TASK_ID> --wait to poll.
       - See all tasks: uniqc task list
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("task-show")
 
     from uniqc.backend_adapter.task_manager import get_task, query_task
@@ -154,7 +154,7 @@ def clear(
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Clear completed or failed tasks from cache."""
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("task-list")
 
     from uniqc.backend_adapter.task_manager import clear_completed_tasks, clear_cache, list_tasks

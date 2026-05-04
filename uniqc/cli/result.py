@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Optional
 
 import typer
 
-from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints
+from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints
 from .output import extract_counts_and_probs, format_prob, print_error, print_json, print_table
 
 HELP = (
@@ -32,7 +31,7 @@ def result(
       - To list all tasks: uniqc task list
       - Task is still pending/running? Increase --timeout if needed.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("result")
 
     show_result(task_id, platform=platform, wait=wait, timeout=timeout, format=format)

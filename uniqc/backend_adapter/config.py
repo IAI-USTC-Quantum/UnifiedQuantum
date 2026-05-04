@@ -35,6 +35,7 @@ CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
 # Default configuration template
 DEFAULT_CONFIG: dict[str, Any] = {
+    "always_ai_hints": False,
     "default": {
         "originq": {
             "token": "",
@@ -63,7 +64,7 @@ SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm"]
 
 # Top-level configuration keys that are *not* profiles (metadata fields).
 # Kept as a single source of truth so CLI and loader logic stay in sync.
-META_KEYS = frozenset({"active_profile"})
+META_KEYS = frozenset({"active_profile", "always_ai_hints"})
 
 # Platform-specific required fields
 PLATFORM_REQUIRED_FIELDS = {
@@ -374,6 +375,22 @@ def set_active_profile(
         )
 
     config["active_profile"] = profile
+    save_config(config, config_path)
+
+
+def get_always_ai_hints(config_path: str | Path | None = None) -> bool:
+    """Return whether CLI AI hints are enabled by default."""
+    config = load_config(config_path)
+    return bool(config.get("always_ai_hints", False))
+
+
+def set_always_ai_hints(
+    enabled: bool,
+    config_path: str | Path | None = None,
+) -> None:
+    """Persist whether CLI AI hints should be shown by default."""
+    config = load_config(config_path)
+    config["always_ai_hints"] = bool(enabled)
     save_config(config, config_path)
 
 

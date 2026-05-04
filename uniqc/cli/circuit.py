@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import typer
 
-from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error, print_table, write_output
+from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints, print_error, print_table, write_output
 
 HELP = (
     "Circuit format conversion (OriginIR <-> QASM)\n"
@@ -43,7 +42,7 @@ def convert(
       - Converts originir -> QASM or QASM -> OriginIR automatically.
       - Use --info to show gate count, circuit depth, and qubit count.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("circuit")
 
     content = input_file.read_text(encoding="utf-8")

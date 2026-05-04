@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import sys
 
 import rich.box
@@ -13,6 +12,7 @@ from uniqc.backend_adapter.backend_info import BackendInfo, Platform
 from uniqc.backend_adapter.backend_registry import fetch_all_backends, fetch_platform_backends, find_backend
 from uniqc.cli.output import (
     AI_HINTS_OPTION,
+    ai_hints_enabled,
     build_ref_str,
     console,
     print_ai_hints,
@@ -129,7 +129,7 @@ def list_backends(
       - Hardware vs simulator: 'hw' = real device, 'sim' = simulation backend.
       - Use --status simulator or --status hardware to filter.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("backend-list")
 
     target_platform: Platform | None = None
@@ -282,7 +282,7 @@ def update(
     Always bypasses the cache and fetches fresh data from all configured
     platforms. Use ``uniqc backend list`` to view cached data without refreshing.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("backend-list")
 
     if clear:
@@ -328,7 +328,7 @@ def show(
       - Compare backends: uniqc backend list --info to see fidelity data for all backends.
       - Hardware backends show fidelity data; lower fidelity = higher error rates on real devices.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("backend-show")
 
     try:
@@ -442,7 +442,7 @@ def chip_display(
       - Force refresh if calibration has been updated: uniqc backend chip-display originq/wuyuan:d5 --update
       - Use this data for qubit selection with RegionSelector.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("backend-chip-display")
 
     parts = identifier.split("/", 1)

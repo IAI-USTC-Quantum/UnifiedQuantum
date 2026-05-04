@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Optional
 
 import typer
 
-from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints
+from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints
 from .output import console, format_prob, print_error, print_json, print_table, write_output
 
 HELP = (
@@ -33,7 +32,7 @@ def simulate(
       - Use --shots to set measurement repetitions (default 1024).
       - Use --format json for machine-readable output; --output to write to a file.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("simulate")
 
     content = input_file.read_text(encoding="utf-8")

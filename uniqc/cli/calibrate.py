@@ -6,7 +6,6 @@ Provides calibration experiment commands for XEB benchmarking and readout calibr
 from __future__ import annotations
 
 import json
-import os
 import pathlib
 import sys
 from typing import Any
@@ -15,6 +14,7 @@ import typer
 
 from uniqc.cli.output import (
     AI_HINTS_OPTION,
+    ai_hints_enabled,
     build_ref_str,
     console,
     print_error,
@@ -101,7 +101,7 @@ def xeb_cmd(
     from uniqc.algorithms.workflows import xeb_workflow
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
 
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("calibrate-xeb")
 
     if depths is None:
@@ -246,7 +246,7 @@ def readout_cmd(
     from uniqc.calibration.readout import ReadoutCalibrator
     from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("calibrate-readout")
 
     if qubits is None:
@@ -323,7 +323,7 @@ def pattern_cmd(
     """Analyze parallel execution patterns for 2-qubit gates."""
     from uniqc.calibration.xeb.patterns import ParallelPatternGenerator
 
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("calibrate-pattern")
 
     if pattern_type == "circuit":

@@ -13,7 +13,7 @@
 | `show` | 显示单个后端的详细信息 |
 | `chip-display` | 显示芯片逐量子比特标定数据 |
 
-所有子命令支持 `--ai-hints` 标志（也可通过环境变量 `UNIQC_AI_HINTS=1` 启用），用于显示 AI 工作流提示。
+所有子命令支持 `--ai-hints` / `--ai-hint` 标志（也可通过环境变量 `UNIQC_AI_HINTS=1` 或 `uniqc config always-ai-hint on` 启用），用于显示 AI 工作流提示。`workflow` 是文档中的工作流说明页，不是 `uniqc workflow` 子命令；需要下一步建议时优先使用 AI hints。
 
 Dummy backend 的可枚举列表只包含通用本地 backend 和虚拟拓扑 fixture，例如 `dummy`、`dummy:virtual-line-3`、`dummy:virtual-grid-2x2`。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
 

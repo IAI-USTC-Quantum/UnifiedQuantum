@@ -25,6 +25,7 @@ One-paragraph rationale.
 | Python tests |  |  |  |
 | Best practices |  |  |  |
 | CLI |  |  |  |
+| AI hints |  |  |  |
 | Docs alignment |  |  |  |
 | Gateway frontend |  |  |  |
 | Gateway API |  |  |  |
@@ -66,6 +67,8 @@ End with a statement on whether the best-practices chapter is aligned with softw
 ## CLI Validation
 
 Include captured help commands and behavioral CLI workflows. Explicitly state whether the docs match the help output.
+
+Also include whether `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, and `uniqc config always-ai-hint on` were checked.
 
 ## Gateway Frontend/API Validation
 

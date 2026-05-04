@@ -9,12 +9,20 @@ UnifiedQuantum 现在按功能边界组织模块，日常代码优先从 `uniqc`
 仓库由 `uv` 管理。维护者做全量开发和全量测试时，应使用完整 extras 和 dev 依赖：
 
 ```bash
-uv sync --all-extras --group dev --group docs --upgrade
+uv sync --extra all --group dev --group docs --upgrade
 uv run pytest uniqc/test
 uv run pytest uniqc/test --real-cloud-test  # 周期性执行真实量子线路提交
 ```
 
-`qiskit`、`qutip`、`torch`、`sphinx` 等当前维护的模块缺失表示开发环境不完整，不应作为跳过全量测试或文档构建的常规理由。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。Quafu/`pyquafu` 是例外：`pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，因此不包含在 `[all]` 中，后续不保证相关代码一致性和完整性。
+`qiskit`、`qutip`、`torch`、`sphinx` 等当前维护的模块缺失表示开发环境不完整，不应作为跳过全量测试或文档构建的常规理由。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。Quafu/`pyquafu` 是例外：`pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，因此不包含在 `[all]` 中，后续不保证相关代码一致性和完整性。不要用 `uv sync --all-extras` 作为默认维护者命令；只有明确测试 Quafu 时才单独安装 `[quafu]`。
+
+AI agent 运行 CLI 时推荐先打开渐进式提示：
+
+```bash
+uniqc config always-ai-hint on
+```
+
+也可以在单条命令上使用 `--ai-hints` / `--ai-hint`，或用 `UNIQC_AI_HINTS=1` 临时开启。`workflow` 是文档工作流说明页，不是 `uniqc workflow` 子命令。
 
 真实云平台测试分为两类：读取后端列表、验证 token、查询 status/API 的测试默认执行；会实际提交量子线路的测试标记为 `real_cloud_execution`，默认跳过，只有运行 `uv run pytest uniqc/test --real-cloud-test` 时执行。不要把普通 backend discovery 测试放进 `real_cloud_execution`，core developer 环境必须让这些测试默认通过。
 

@@ -24,17 +24,37 @@ err_console = Console(stderr=True)
 AI_HINTS_OPTION = typer.Option(
     False,
     "--ai-hints",
+    "--ai-hint",
     help="Show AI workflow hints for this command (also enabled via UNIQC_AI_HINTS=1)",
     is_eager=True,
     hidden=True,
 )
 
 
-def _ai_hints_enabled(ctx: typer.Context) -> bool:
+def _truthy(value: str | None) -> bool:
+    """Return True for common opt-in environment/config strings."""
+    if value is None:
+        return False
+    return value.strip().lower() not in {"", "0", "false", "no", "off"}
+
+
+def config_ai_hints_enabled() -> bool:
+    """Return True when ~/.uniqc/config.yaml enables AI hints globally."""
+    try:
+        from uniqc.backend_adapter.config import get_always_ai_hints
+
+        return get_always_ai_hints()
+    except Exception:
+        return False
+
+
+def ai_hints_enabled(ai_hints: bool = False) -> bool:
     """Return True if AI hints should be shown."""
-    if ctx.obj and ctx.obj.get("ai_hints"):
+    if ai_hints:
         return True
-    return bool(os.environ.get("UNIQC_AI_HINTS"))
+    if _truthy(os.environ.get("UNIQC_AI_HINTS")):
+        return True
+    return config_ai_hints_enabled()
 
 
 def build_ref_str(command: str) -> str:
@@ -63,7 +83,7 @@ def print_ai_hints(command: str) -> None:
     console.print(
         Panel(
             "\n".join(lines).rstrip(),
-            title="[bold cyan]AI Workflow Hints[/bold cyan]  (pass --ai-hints or set UNIQC_AI_HINTS=1)",
+            title="[bold cyan]AI Workflow Hints[/bold cyan]  (pass --ai-hints/--ai-hint, set UNIQC_AI_HINTS=1, or run uniqc config always-ai-hint on)",
             border_style="cyan",
             box=rich.box.ROUNDED,
             padding=(1, 2),

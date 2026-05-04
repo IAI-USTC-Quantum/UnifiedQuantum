@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import typer
 
 from uniqc.backend_adapter.task.result_types import DryRunResult
 
-from .output import AI_HINTS_OPTION, build_ref_str, print_ai_hints, print_error, print_json, print_success, print_table
+from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints, print_error, print_json, print_success, print_table
 
 HELP = f"Submit circuits to quantum cloud platforms\n  {build_ref_str('submit')}"
 INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
@@ -149,7 +148,7 @@ def submit(
       - Validate config first: uniqc config validate
       - Pick a backend: uniqc backend list --platform <PLATFORM>
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("submit")
 
     if platform not in ("originq", "quafu", "quark", "ibm", "dummy"):

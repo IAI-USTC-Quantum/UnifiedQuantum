@@ -25,9 +25,9 @@ Use [references/report-template.md](references/report-template.md) for the repor
    - `git status -sb`
    - Do not mix unrelated local changes into the release report. Report them as environment risk if they affect execution.
 3. Build the test environment:
-   - `uv sync --all-extras --group dev --group docs --upgrade`
+   - `uv sync --extra all --group dev --group docs --upgrade`
    - `cd frontend && npm ci`
-   - Install Quafu only when the release scope explicitly includes deprecated Quafu behavior: `uv sync --extra quafu --group dev`.
+   - Install Quafu only when the release scope explicitly includes deprecated Quafu behavior: `uv sync --extra quafu --group dev`. Do not use `--all-extras` as the default release path because deprecated Quafu/`pyquafu` may fail dependency resolution on current Python versions.
 4. Identify real-platform readiness:
    - Config file: `~/.uniqc/config.yaml`
    - Required token sections: `originq`, `ibm`, `quark`, and deprecated `quafu` only if in scope.
@@ -91,13 +91,23 @@ uv run uniqc backend show --help
 uv run uniqc backend update --help
 uv run uniqc backend chip-display --help
 uv run uniqc calibrate --help
-uv run uniqc workflow --help
 uv run uniqc gateway --help
 ```
 
 Then execute representative CLI workflows:
 
-- Build or write a Bell/GHZ OriginIR file.
+- Build or write a Bell/GHZ OriginIR file. Prefer OriginIR in release-plan examples because it is the recommended normalized path:
+
+```originir
+QINIT 2
+CREG 2
+H q[0]
+CNOT q[0], q[1]
+MEASURE q[0], c[0]
+MEASURE q[1], c[1]
+```
+
+- `uv run uniqc circuit <file> --info`
 - `uv run uniqc simulate <file>`
 - `uv run uniqc submit <file> --platform dummy --wait`
 - `uv run uniqc submit <file> --platform dummy --backend virtual-line-3 --wait`
@@ -107,7 +117,15 @@ Then execute representative CLI workflows:
 - `uv run uniqc backend show originq:WK_C180`
 - `uv run uniqc backend chip-display originq/WK_C180 --update`
 
-Confirm the docs match the help output and actual behavior. Do not recommend `python -m uniqc`; the supported module fallback is `python -m uniqc.cli`.
+Confirm the docs match the help output and actual behavior. Do not recommend `python -m uniqc`; the supported module fallback is `python -m uniqc.cli`. There is no `uniqc workflow` CLI subcommand; `docs/source/cli/workflow.md` is a workflow guide page, and interactive next-step guidance is exposed by `--ai-hints` / `--ai-hint`.
+
+Also verify the AI-hint paths:
+
+- `uv run uniqc config list --ai-hint` or an equivalent command-local hint check.
+- `uv run uniqc config always-ai-hint on`
+- A subsequent command without `--ai-hint` prints AI workflow hints.
+- `uv run uniqc config always-ai-hint off`
+- Error-path documentation recommends adding `--ai-hint` or enabling `always-ai-hint` when an agent is uncertain about the next command.
 
 ### 4. Gateway Frontend and API
 
@@ -167,6 +185,8 @@ Check at least:
   - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: virtual topology, noiseless.
   - `dummy:<platform>:<backend>`: rule-based chip-backed local noisy execution, not listed as an enumerable backend.
 - Config path is `~/.uniqc/config.yaml`.
+- AI workflow hints use `--ai-hints` / `--ai-hint`, environment variable `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`.
+- IBM proxy can be configured with nested config keys such as `uniqc config set ibm.proxy.https http://127.0.0.1:7890`.
 - Quafu is documented as deprecated and not part of `[all]`.
 
 When possible, write small one-off scripts for this comparison and include their output in the report. If a comparison is manual, label it manual.

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
-
 import typer
 
 from .output import (
     AI_HINTS_OPTION,
+    ai_hints_enabled,
     build_ref_str,
     console,
     print_ai_hints,
@@ -36,7 +35,7 @@ def init(
       - Then: uniqc config validate
       - Then: uniqc backend update
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     from uniqc.backend_adapter.config import create_default_config
@@ -47,7 +46,7 @@ def init(
 
 @app.command()
 def set(
-    key: str = typer.Argument(..., help="Configuration key (e.g., originq.token, quark.QUARK_API_KEY)"),
+    key: str = typer.Argument(..., help="Configuration key (e.g., originq.token, ibm.proxy.https, quark.QUARK_API_KEY)"),
     value: str = typer.Argument(..., help="Configuration value"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
@@ -59,24 +58,36 @@ def set(
       - Then fetch backends: uniqc backend update
       - Use --profile to set values for a named profile instead of 'default'.
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     parts = key.split(".")
-    if len(parts) != 2:
-        print_error("Key must be in format 'platform.field' (e.g., originq.token)")
+    if len(parts) < 2:
+        print_error("Key must be in format 'platform.field' or 'platform.section.field' (e.g., originq.token, ibm.proxy.https)")
         raise typer.Exit(1)
 
-    platform_name, field = parts
+    platform_name, *fields = parts
     platform_name = platform_name.lower()
 
     if platform_name not in ("originq", "quafu", "quark", "ibm"):
         print_error(f"Unknown platform: {platform_name}. Use originq/quafu/quark/ibm.")
         raise typer.Exit(1)
 
-    from uniqc.backend_adapter.config import update_platform_config
+    from uniqc.backend_adapter.config import load_config, save_config
 
-    update_platform_config(platform_name, {field: value}, profile=profile)
+    config = load_config()
+    if profile not in config:
+        config[profile] = {}
+    platform_config = config[profile].setdefault(platform_name, {})
+    target = platform_config
+    for field in fields[:-1]:
+        current = target.get(field)
+        if not isinstance(current, dict):
+            current = {}
+            target[field] = current
+        target = current
+    target[fields[-1]] = value
+    save_config(config)
     print_success(f"Set {key} = {value[:8]}...")
 
 
@@ -87,7 +98,7 @@ def get(
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Get configuration for a platform."""
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     from uniqc.backend_adapter.config import get_platform_config
@@ -121,7 +132,7 @@ def list_config(
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """List all platform configurations."""
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     from uniqc.backend_adapter.config import PLATFORM_REQUIRED_FIELDS, load_config
@@ -172,7 +183,7 @@ def validate(
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Validate current configuration."""
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     from uniqc.backend_adapter.config import validate_config
@@ -201,7 +212,7 @@ def profile(
       - Switch to a profile: uniqc config profile use <NAME>
       - Create a new profile: uniqc config profile create <NAME>
     """
-    if ai_hints or os.environ.get("UNIQC_AI_HINTS"):
+    if ai_hints_enabled(ai_hints):
         print_ai_hints("config")
 
     from uniqc.backend_adapter.config import get_active_profile, load_config, set_active_profile
@@ -247,4 +258,31 @@ def profile(
 
     else:
         print_error(f"Unknown action: {action}. Use list/use/create.")
+        raise typer.Exit(1)
+
+
+@app.command("always-ai-hints")
+@app.command("always-ai-hint")
+def always_ai_hint(
+    action: str = typer.Argument("status", help="Action: on/off/status"),
+    ai_hints: bool = AI_HINTS_OPTION,
+):
+    """Enable, disable, or inspect default AI workflow hints."""
+    if ai_hints_enabled(ai_hints):
+        print_ai_hints("config")
+
+    from uniqc.backend_adapter.config import get_always_ai_hints, set_always_ai_hints
+
+    action = action.lower()
+    if action in {"on", "enable", "enabled", "true", "1"}:
+        set_always_ai_hints(True)
+        print_success("AI workflow hints enabled by default")
+    elif action in {"off", "disable", "disabled", "false", "0"}:
+        set_always_ai_hints(False)
+        print_success("AI workflow hints disabled by default")
+    elif action == "status":
+        state = "on" if get_always_ai_hints() else "off"
+        console.print(f"always-ai-hint: [bold]{state}[/bold]")
+    else:
+        print_error("Unknown action. Use on/off/status.")
         raise typer.Exit(1)

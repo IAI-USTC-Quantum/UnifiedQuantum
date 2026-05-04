@@ -77,6 +77,26 @@ measure q[1] -> c[1];
     assert "MEASURE q[1], c[1]" in originir
 
 
+def test_qasm_to_originir_accepts_comma_measurements():
+    from uniqc.compile.qasm import OpenQASM2_BaseParser
+
+    qasm_str = """OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+h q[0];
+cx q[0], q[1];
+measure q[0], c[0];
+measure q[1],c[1];
+"""
+    parser = OpenQASM2_BaseParser()
+    parser.parse(qasm_str)
+    originir = parser.to_originir()
+
+    assert "MEASURE q[0], c[0]" in originir
+    assert "MEASURE q[1], c[1]" in originir
+
+
 def test_circuit_cli_qasm_to_originir_preserves_measurements(tmp_path: Path):
     input_file = tmp_path / "bell.qasm"
     _write_qasm(input_file)
@@ -213,3 +233,58 @@ def test_profile_list_hides_meta_keys(tmp_path: Path, monkeypatch):
     assert "prod" in result.stdout
     # ... but the meta key must not show up as a profile.
     assert "active_profile" not in result.stdout
+
+
+def test_config_set_preserves_existing_platform_fields(tmp_path: Path, monkeypatch):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+
+    from uniqc.backend_adapter.config import get_platform_config, save_config
+
+    save_config(
+        {
+            "default": {
+                "ibm": {
+                    "token": "old-token",
+                    "proxy": {"http": "", "https": "http://proxy:8080"},
+                }
+            }
+        },
+        config_path=config_file,
+    )
+
+    result = runner.invoke(app, ["config", "set", "ibm.token", "new-token"])
+
+    assert result.exit_code == 0, result.stdout
+    ibm = get_platform_config("ibm", config_path=config_file)
+    assert ibm["token"] == "new-token"
+    assert ibm["proxy"]["https"] == "http://proxy:8080"
+
+
+def test_config_set_supports_nested_ibm_proxy(tmp_path: Path, monkeypatch):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+
+    from uniqc.backend_adapter.config import get_platform_config, save_config
+
+    save_config({"default": {"ibm": {"token": "token"}}}, config_path=config_file)
+
+    result = runner.invoke(app, ["config", "set", "ibm.proxy.https", "http://127.0.0.1:7890"])
+
+    assert result.exit_code == 0, result.stdout
+    ibm = get_platform_config("ibm", config_path=config_file)
+    assert ibm["token"] == "token"
+    assert ibm["proxy"]["https"] == "http://127.0.0.1:7890"
+
+
+def test_config_always_ai_hint_enables_hints_by_default(tmp_path: Path, monkeypatch):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.backend_adapter.config.CONFIG_FILE", config_file)
+
+    result = runner.invoke(app, ["config", "always-ai-hint", "on"])
+    assert result.exit_code == 0, result.stdout
+
+    result = runner.invoke(app, ["config", "list", "--format", "json"])
+
+    assert result.exit_code == 0, result.stdout
+    assert "AI Workflow Hints" in result.stdout
