@@ -100,7 +100,9 @@ class DummyAdapter(QuantumAdapter):
                 Supported keys:
                 - 'depol_1q': Depolarizing error rate for single-qubit gates (0.0 to 1.0)
                 - 'depol_2q': Depolarizing error rate for two-qubit gates
-                - 'readout': Readout error rate
+                - 'readout': Readout error rate. Accepts a scalar applied to all
+                  measured qubits, a two-item [p(0->1), p(1->0)] list, or a
+                  per-qubit dict such as {0: [0.04, 0.06]}.
                 - 'depol': Fallback depolarizing rate for both 1Q and 2Q (used if
                   depol_1q/depol_2q not set)
             available_qubits: List of available qubit indices.
@@ -167,6 +169,42 @@ class DummyAdapter(QuantumAdapter):
             self._error_loader = None
 
         return self._error_loader
+
+    def _get_readout_error(self, originir: str | None = None) -> dict[int, list[float]]:
+        """Return readout error rates from chip data or explicit noise model."""
+        if self.chip_characterization is not None:
+            readout_error: dict[int, list[float]] = {}
+            for sq_data in self.chip_characterization.single_qubit_data:
+                if sq_data.avg_readout_fidelity is not None:
+                    err = 1.0 - sq_data.avg_readout_fidelity
+                    readout_error[sq_data.qubit_id] = [err / 2.0, err / 2.0]
+            return readout_error
+
+        if not self.noise_model or "readout" not in self.noise_model:
+            return {}
+
+        readout = self.noise_model["readout"]
+        target_qubits = self._readout_target_qubits(originir)
+
+        if isinstance(readout, dict):
+            return {int(q): _normalise_readout_rates(rates) for q, rates in readout.items()}
+
+        rates = _normalise_readout_rates(readout)
+        return {q: list(rates) for q in target_qubits}
+
+    def _readout_target_qubits(self, originir: str | None) -> list[int]:
+        """Infer qubits that should receive scalar readout noise."""
+        if self.available_qubits:
+            return list(self.available_qubits)
+        if originir:
+            for line in originir.splitlines():
+                parts = line.strip().split()
+                if len(parts) >= 2 and parts[0] == "QINIT":
+                    try:
+                        return list(range(int(parts[1])))
+                    except ValueError:
+                        break
+        return [0]
 
     def _build_error_loader_from_chip(self, chip: ChipCharacterization) -> Any:
         """Convert chip characterization data to a gate-specific error loader.
@@ -244,14 +282,17 @@ class DummyAdapter(QuantumAdapter):
 
         Args:
             noise_model: Noise model with optional 'depol_1q', 'depol_2q', 'depol'.
+                The 'readout' key is handled separately by _get_readout_error().
 
         Returns:
             ErrorLoader_GateSpecificError instance.
         """
         from uniqc.simulator.error_model import Depolarizing, ErrorLoader_GateSpecificError
 
-        depol_1q = noise_model.get("depol_1q", noise_model.get("depol", 0.0))
-        depol_2q = noise_model.get("depol_2q", noise_model.get("depol", 0.0))
+        depol_1q = float(noise_model.get("depol_1q", noise_model.get("depol", 0.0)))
+        depol_2q = float(noise_model.get("depol_2q", noise_model.get("depol", 0.0)))
+        if depol_1q == 0.0 and depol_2q == 0.0:
+            return None
 
         generic_error: list[Depolarizing] = [Depolarizing(depol_1q)]
         gatetype_error: dict[str, list[Depolarizing]] = {
@@ -516,8 +557,9 @@ class DummyAdapter(QuantumAdapter):
         """
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
+        readout_error = self._get_readout_error(originir)
 
-        if error_loader is not None:
+        if error_loader is not None or readout_error:
             try:
                 from uniqc.simulator import OriginIR_NoisySimulator
             except ImportError:
@@ -531,7 +573,7 @@ class DummyAdapter(QuantumAdapter):
                     error_loader=error_loader,
                     available_qubits=self.available_qubits,
                     available_topology=self.available_topology,
-                    readout_error={},
+                    readout_error=readout_error,
                 )
         else:
             sim = Simulator(
@@ -556,9 +598,10 @@ class DummyAdapter(QuantumAdapter):
         """
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
+        readout_error = self._get_readout_error(originir)
 
         # Determine which simulator to use
-        if error_loader is not None:
+        if error_loader is not None or readout_error:
             # Noisy simulation
             try:
                 from uniqc.simulator import OriginIR_NoisySimulator
@@ -569,14 +612,6 @@ class DummyAdapter(QuantumAdapter):
                     available_topology=self.available_topology,
                 )
             else:
-                # Collect readout errors from chip characterization
-                readout_error: dict[int, list[float]] = {}
-                if self.chip_characterization is not None:
-                    for sq_data in self.chip_characterization.single_qubit_data:
-                        if sq_data.avg_readout_fidelity is not None:
-                            err = 1.0 - sq_data.avg_readout_fidelity
-                            readout_error[sq_data.qubit_id] = [err / 2.0, err / 2.0]
-
                 sim = OriginIR_NoisySimulator(
                     backend_type="density_operator",
                     error_loader=error_loader,
@@ -609,3 +644,16 @@ class DummyAdapter(QuantumAdapter):
             platform="dummy",
             task_id=self._generate_task_id(originir),
         )
+
+
+def _normalise_readout_rates(value: Any) -> list[float]:
+    """Normalize readout noise config to [p(0->1), p(1->0)]."""
+    if isinstance(value, (int, float)):
+        rate = float(value)
+        return [rate, rate]
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        return [float(value[0]), float(value[1])]
+    raise ValueError(
+        "noise_model['readout'] must be a scalar, a two-item list/tuple, "
+        "or a per-qubit dict of those values."
+    )

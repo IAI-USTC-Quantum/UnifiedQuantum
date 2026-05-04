@@ -93,6 +93,34 @@ class TestDummyAdapter:
         assert result["status"] == "success"
         assert len(result["result"]) == 2
 
+    def test_explicit_readout_noise_affects_submission(self):
+        """Readout-only noise should affect submitted dummy counts."""
+        from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+
+        adapter = DummyAdapter(noise_model={"readout": [0.08, 0.12]})
+        circuit = "QINIT 1\nCREG 1\nX q[0]\nMEASURE q[0], c[0]\n"
+
+        task_id = adapter.submit(circuit, shots=1000)
+        result = adapter.query(task_id)
+
+        assert result["status"] == "success"
+        assert result["result"]["0"] == pytest.approx(120, abs=1)
+        assert result["result"]["1"] == pytest.approx(880, abs=1)
+
+    def test_explicit_readout_noise_is_stable_after_exact_query(self):
+        """Exact probability queries must not pollute later submissions."""
+        from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+
+        adapter = DummyAdapter(noise_model={"readout": [0.08, 0.12]})
+        circuit = "QINIT 1\nCREG 1\nX q[0]\nMEASURE q[0], c[0]\n"
+
+        assert adapter.simulate_pmeasure(circuit) == pytest.approx([0.12, 0.88])
+        task_id = adapter.submit(circuit, shots=1000)
+        result = adapter.query(task_id)
+
+        assert result["result"]["0"] == pytest.approx(120, abs=1)
+        assert result["result"]["1"] == pytest.approx(880, abs=1)
+
     def test_clear_cache(self, adapter):
         """Test clearing the cache."""
         circuit = "QINIT 2\nCREG 2\nH q[0]\nMEASURE q[0], c[0]"
