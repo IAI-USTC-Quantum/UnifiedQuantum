@@ -1,7 +1,3 @@
-[submodule "UniqcCpp/Thirdparty/pybind11"]
-	path = UniqcCpp/Thirdparty/pybind11
-	url = https://github.com/pybind/pybind11.git
-	branch = tags/v2.13.6
 [submodule "UniqcCpp/Thirdparty/fmt"]
 	path = UniqcCpp/Thirdparty/fmt
 	url = https://github.com/fmtlib/fmt.git

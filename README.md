@@ -170,7 +170,8 @@ uv run pytest uniqc/test --real-cloud-test
 **Requirements:**
 - CMake >= 3.26
 - C++ compiler with C++17 support
-- Git submodules (pybind11, fmt)
+- Git submodules (fmt)
+- pybind11 from the Python build environment, declared in `pyproject.toml`
 
 如果系统 CMake 版本过低（< 3.26），先升级：
 
@@ -188,7 +189,7 @@ pip install unified-quantum
 
 # 从源码安装
 pip install .
-pip install -e . --no-build-isolation
+pip install -e .
 ```
 
 ### 可选依赖

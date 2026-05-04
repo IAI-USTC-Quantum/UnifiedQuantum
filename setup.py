@@ -38,6 +38,14 @@ class CMakeBuild(build_ext):
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
         cfg = "Debug" if debug else "Release"
 
+        try:
+            import pybind11
+        except ImportError as exc:
+            raise RuntimeError(
+                "pybind11 must be installed in the build environment. "
+                "It is declared in pyproject.toml build-system.requires."
+            ) from exc
+
         # CMake lets you override the generator - we need to check this.
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
@@ -47,6 +55,7 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
             "-DPYBIND11_FINDPYTHON=ON",
             f"-DPython_EXECUTABLE={sys.executable}",
+            f"-Dpybind11_DIR={pybind11.get_cmake_dir()}",
         ]
         build_args = []
 

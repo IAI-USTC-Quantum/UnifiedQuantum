@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools_scm", "wheel"]
+requires = ["setuptools", "setuptools_scm", "wheel", "cmake", "ninja", "pybind11"]
 build-backend = "setuptools.build_meta"
 # setup.py is retained for custom CMakeExtension / CMakeBuild logic
 
@@ -77,6 +77,14 @@ where = ["."]
 include = ["uniqc*"]
 exclude = ["uniqc.test*"]
 
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-*"
+skip = "*-musllinux_* *-win32"
+test-command = "python -c \"import uniqc_cpp\""
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py310"
@@ -91,6 +99,7 @@ indent-style = "space"
 
 [dependency-groups]
 dev = [
+    "cibuildwheel",
     "pytest",
     "pytest-cov",
     "ruff",

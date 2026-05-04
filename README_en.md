@@ -160,7 +160,8 @@ Real-cloud tests that only fetch backends, validate tokens, or query platform st
 **Requirements:**
 - CMake >= 3.26
 - C++ compiler with C++17 support
-- Git submodules (pybind11, fmt)
+- Git submodules (fmt)
+- pybind11 from the Python build environment, declared in `pyproject.toml`
 
 If your system CMake is too old (< 3.26):
 
@@ -176,7 +177,7 @@ pip install unified-quantum
 
 # From source
 pip install .
-pip install -e . --no-build-isolation
+pip install -e .
 ```
 
 ### Optional Dependencies
