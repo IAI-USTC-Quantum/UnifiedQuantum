@@ -51,7 +51,17 @@ Rules:
 - Dependency failures for maintained extras such as Qiskit, Qutip, Torch, docs, or visualization are release blockers unless the maintainer explicitly scopes them out.
 - Quafu is deprecated; failures there are not blockers unless Quafu is in the release scope.
 
-### 2. Best-Practices Documentation Execution
+### 2. C++ Extension Stubs Update
+
+Generate and verify Python stubs for the C++ simulator extension:
+
+```bash
+uv run python scripts/stubgen.py
+```
+
+Inspect the generated `uniqc/simulator/uniqc_cpp.pyi` and verify it matches the C++ extension API. Commit the updated stubs if they have changed.
+
+### 3. Best-Practices Documentation Execution
 
 The best-practices section is a release gate.
 
@@ -72,7 +82,7 @@ Then inspect:
 
 Best-practices failures are blockers unless the affected feature is explicitly removed from the release.
 
-### 3. CLI Help and CLI Behavior
+### 4. CLI Help and CLI Behavior
 
 Use CLI help as a progressive-disclosure source of truth. Capture help for the root command and every public subcommand:
 
@@ -127,7 +137,7 @@ Also verify the AI-hint paths:
 - `uv run uniqc config always-ai-hint off`
 - Error-path documentation recommends adding `--ai-hint` or enabling `always-ai-hint` when an agent is uncertain about the next command.
 
-### 4. Gateway Frontend and API
+### 5. Gateway Frontend and API
 
 Run frontend checks:
 
@@ -155,7 +165,7 @@ Then verify:
 
 Use Playwright or an available browser automation tool if present. If no browser tool is available, use HTTP responses and built asset inspection, and mark visual coverage as a gap.
 
-### 5. Real-Platform Validation
+### 6. Real-Platform Validation
 
 Separate real-platform tests into three buckets:
 
@@ -170,7 +180,7 @@ Minimum release-candidate evidence:
 - At least one real quantum task if the maintainer has authorized quota use.
 - For every unavailable platform, record the exact missing token, SDK, region, or network reason.
 
-### 6. Programmatic Documentation Alignment
+### 7. Programmatic Documentation Alignment
 
 Compare docs to software, not just by reading prose.
 
