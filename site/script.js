@@ -136,10 +136,11 @@
       skillTabs.forEach(function (t) { t.classList.remove('active'); });
       this.classList.add('active');
       var target = this.getAttribute('data-tab');
-      document.getElementById('tab-claude').style.display = target === 'claude' ? 'flex' : 'none';
-      document.getElementById('tab-codex').style.display = target === 'codex' ? 'flex' : 'none';
+      var claudeTab = document.getElementById('tab-claude');
+      var codexTab = document.getElementById('tab-codex');
+      if (claudeTab) claudeTab.style.display = target === 'claude' ? 'flex' : 'none';
+      if (codexTab) codexTab.style.display = target === 'codex' ? 'flex' : 'none';
     });
-  });
   });
 
   /* ─── Scroll Reveal ─── */
