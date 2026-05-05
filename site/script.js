@@ -129,6 +129,19 @@
     });
   });
 
+  /* ─── Skills Tab Switching ─── */
+  var skillTabs = document.querySelectorAll('.skills-tab');
+  skillTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      skillTabs.forEach(function (t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      var target = this.getAttribute('data-tab');
+      document.getElementById('tab-claude').style.display = target === 'claude' ? 'flex' : 'none';
+      document.getElementById('tab-codex').style.display = target === 'codex' ? 'flex' : 'none';
+    });
+  });
+  });
+
   /* ─── Scroll Reveal ─── */
   const reveals = document.querySelectorAll('.reveal');
 

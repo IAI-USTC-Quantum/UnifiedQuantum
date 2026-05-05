@@ -554,6 +554,232 @@ body {
   color: var(--text-dim);
 }
 
+/* ─── AI Skills Section ─── */
+.skills-section {
+  position: relative;
+  z-index: 1;
+  padding: 120px 0;
+}
+
+.skills-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.skills-install {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.skills-install-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.skills-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  position: relative;
+}
+.skills-tab:hover { color: var(--text-secondary); }
+.skills-tab.active {
+  color: var(--text);
+  background: rgba(124, 58, 237, 0.06);
+}
+.skills-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.skills-install-body {
+  padding: 20px;
+}
+
+.skills-install-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skills-install-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.skills-install-cmd {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--cyan);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.skills-prompts {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.skills-prompts-header {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.skills-prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.skills-prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: border-color 0.2s;
+}
+.skills-prompt:hover {
+  border-color: rgba(124, 58, 237, 0.2);
+}
+.skills-prompt-icon {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.skills-coverage {
+  margin-bottom: 40px;
+}
+
+.skills-coverage-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.skills-coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.skills-coverage-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.skills-coverage-item svg { flex-shrink: 0; }
+
+.skills-links {
+  display: flex;
+  justify-content: center;
+}
+
+.skills-link-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.2s, transform 0.2s;
+  max-width: 480px;
+  width: 100%;
+}
+.skills-link-card:hover {
+  border-color: rgba(124, 58, 237, 0.25);
+  transform: translateY(-2px);
+}
+.skills-link-card svg:first-child {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+.skills-link-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+.skills-link-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.skills-link-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.skills-link-card:hover .skills-link-arrow {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .skills-hero {
+    grid-template-columns: 1fr;
+  }
+  .skills-coverage-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .skills-coverage-grid {
+    grid-template-columns: 1fr;
+  }
+  .skills-install-row {
+    flex-wrap: wrap;
+  }
+  .skills-install-cmd {
+    order: 3;
+    width: 100%;
+  }
+}
+
 /* ─── Docs CTA ─── */
 .docs-cta {
   position: relative;

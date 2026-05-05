@@ -288,6 +288,105 @@ result = c.<span class="hl-fn">simulate</span>(shots=<span class="hl-num">1024</
     </div>
   </section>
 
+  <!-- AI Agent Skills -->
+  <section class="skills-section" id="skills">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-label">AI Agent 集成</span>
+        <h2 class="section-title">让 AI 助手懂量子编程</h2>
+        <p class="section-desc">一行命令，为 Claude Code 或 Codex 注入 UnifiedQuantum 全部能力。</p>
+      </div>
+
+      <div class="skills-hero reveal">
+        <div class="skills-install">
+          <div class="skills-install-tabs">
+            <button class="skills-tab active" data-tab="claude">Claude Code</button>
+            <button class="skills-tab" data-tab="codex">Codex</button>
+          </div>
+          <div class="skills-install-body">
+            <div class="skills-install-row" id="tab-claude">
+              <div class="skills-install-label">全局安装</div>
+              <code class="skills-install-cmd">npx skills add IAI-USTC-Quantum/quantum-computing.skill -g --agent claude-code --skill '*'</code>
+              <button class="copy-btn-sm" data-cmd="npx skills add IAI-USTC-Quantum/quantum-computing.skill -g --agent claude-code --skill '*'" aria-label="复制">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="skills-install-row" id="tab-codex" style="display:none">
+              <div class="skills-install-label">全局安装</div>
+              <code class="skills-install-cmd">npx skills add IAI-USTC-Quantum/quantum-computing.skill -g --agent codex --skill '*'</code>
+              <button class="copy-btn-sm" data-cmd="npx skills add IAI-USTC-Quantum/quantum-computing.skill -g --agent codex --skill '*'" aria-label="复制">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="skills-prompts">
+          <div class="skills-prompts-header">安装后，直接对 AI 说：</div>
+          <div class="skills-prompt-list">
+            <div class="skills-prompt">
+              <span class="skills-prompt-icon">&#x2728;</span>
+              <span>"构建一个 Bell 态线路并导出 OriginIR"</span>
+            </div>
+            <div class="skills-prompt">
+              <span class="skills-prompt-icon">&#x2728;</span>
+              <span>"用 dummy 后端模拟这个线路，1024 shots"</span>
+            </div>
+            <div class="skills-prompt">
+              <span class="skills-prompt-icon">&#x2728;</span>
+              <span>"帮我提交到本源量子的 WK_C180 后端"</span>
+            </div>
+            <div class="skills-prompt">
+              <span class="skills-prompt-icon">&#x2728;</span>
+              <span>"写一个 QAOA MaxCut 示例"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="skills-coverage reveal">
+        <div class="skills-coverage-title">技能覆盖范围</div>
+        <div class="skills-coverage-grid">
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#7c3aed" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>线路构建与格式转换</span>
+          </div>
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#06b6d4" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>本地模拟与云端提交</span>
+          </div>
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#7c3aed" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>CLI 全命令指南</span>
+          </div>
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#06b6d4" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>XEB 校准 & QEM 缓解</span>
+          </div>
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#7c3aed" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>变分算法示例 (VQE/QAOA)</span>
+          </div>
+          <div class="skills-coverage-item">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#06b6d4" stroke-width="1.2"/><path d="M6 10l3 3 5-5" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>PyTorch 量子混合训练</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="skills-links reveal">
+        <a href="https://github.com/IAI-USTC-Quantum/quantum-computing.skill" class="skills-link-card" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <div>
+            <div class="skills-link-title">quantum-computing.skill</div>
+            <div class="skills-link-desc">查看技能源码与文档</div>
+          </div>
+          <svg class="skills-link-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Documentation CTA -->
   <section class="docs-cta reveal">
     <div class="docs-cta-inner">
