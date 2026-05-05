@@ -147,7 +147,7 @@ def _normalise_quafu(raw: list[dict[str, Any]]) -> list[BackendInfo]:
             BackendInfo(
                 platform=Platform.QUAFU,
                 name=name,
-                description=f"BAQIS Quafu {num_qubits}-qubit chip",
+                description=f"BAQIS Quafu simulator" if is_sim else f"BAQIS Quafu chip",
                 num_qubits=num_qubits,
                 topology=topology,
                 status=mapped_status,
@@ -201,7 +201,7 @@ def _normalise_quark(raw: list[dict[str, Any]]) -> list[BackendInfo]:
             BackendInfo(
                 platform=Platform.QUARK,
                 name=name,
-                description="BAQIS QuarkStudio / Quafu-SQC backend",
+                description="QuarkStudio simulator" if "sim" in name.lower() else "QuarkStudio backend",
                 num_qubits=int(entry.get("num_qubits", 0) or 0),
                 topology=_topology_from_raw(entry.get("topology", [])),
                 status=status,
