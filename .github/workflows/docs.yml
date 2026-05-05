@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/**'
       - 'uniqc/**'
+      - 'site/**'
       - 'scripts/generate_best_practice_notebooks.py'
       - '.github/workflows/docs.yml'
     tags:
@@ -15,6 +16,7 @@ on:
     paths:
       - 'docs/**'
       - 'uniqc/**'
+      - 'site/**'
       - 'scripts/generate_best_practice_notebooks.py'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
@@ -61,10 +63,16 @@ jobs:
           cd docs
           make html
 
+      - name: Assemble site
+        run: |
+          mkdir -p _site/docs
+          cp -r site/* _site/
+          cp -r docs/_build/html/* _site/docs/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_build/html
+          path: _site
 
   deploy-docs:
     name: Deploy to GitHub Pages

@@ -141,7 +141,7 @@ yarn-error.log*
 .ropeproject
 
 # mkdocs documentation
-/site
+# (site/ is now the landing page source, tracked in git)
 
 # mypy
 .mypy_cache/

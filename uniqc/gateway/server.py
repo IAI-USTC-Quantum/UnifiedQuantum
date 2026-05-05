@@ -15,7 +15,7 @@ from uniqc.gateway import api
 from uniqc.gateway.ws import broadcaster
 
 GITHUB_URL = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum"
-DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/"
+DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
 
 
 def _uniqc_version() -> str:

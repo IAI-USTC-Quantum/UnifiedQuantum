@@ -14,7 +14,7 @@ app = typer.Typer(
         "  [link=https://github.com/IAI-USTC-Quantum/UnifiedQuantum]"
         "[cyan]GitHub[/cyan][/link]"
         "  |  "
-        "[link=https://iai-ustc-quantum.github.io/UnifiedQuantum/]"
+        "[link=https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/]"
         "[cyan]Documentation[/cyan][/link]\n\n"
         "  Pass --ai-hints/--ai-hint, set UNIQC_AI_HINTS=1, or run "
         "uniqc config always-ai-hint on to show AI workflow guidance.\n"

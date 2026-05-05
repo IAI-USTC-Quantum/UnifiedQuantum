@@ -294,11 +294,11 @@ uniqc backend update
 
 ## Documentation
 
-📖 [GitHub Pages](https://iai-ustc-quantum.github.io/UnifiedQuantum/)
+📖 [GitHub Pages](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/)
 
 ### Release Notes
 
-- 版本变化总览：<https://iai-ustc-quantum.github.io/UnifiedQuantum/source/releases/index.html>
+- 版本变化总览：<https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/releases/index.html>
 
 ---
 

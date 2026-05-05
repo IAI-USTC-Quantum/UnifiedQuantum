@@ -6,7 +6,7 @@ from __future__ import annotations
 # Base URLs
 # ----------------------------------------------------------------------
 GITHUB_URL = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum"
-DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/"
+DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
 
 # ----------------------------------------------------------------------
 # Reference links shown in --help under each command

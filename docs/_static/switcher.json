@@ -2,12 +2,12 @@
     {
         "name": "stable",
         "version": "stable",
-        "url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/",
+        "url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/",
         "preferred": true
     },
     {
         "name": "latest (dev)",
         "version": "latest",
-        "url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/latest/"
+        "url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/latest/"
     }
 ]

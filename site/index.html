@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UnifiedQuantum — 统一的量子计算聚合框架</title>
+  <meta name="description" content="UnifiedQuantum 提供统一的量子线路构建、模拟和云端执行接口，聚合 OriginQ、Quafu、IBM Quantum 等多平台后端。" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="url(#logo-grad)" stroke-width="2" fill="none" />
+          <circle cx="16" cy="16" r="6" fill="url(#logo-grad)" opacity="0.3" />
+          <circle cx="16" cy="8" r="2.5" fill="#7c3aed" />
+          <circle cx="22.9" cy="20" r="2.5" fill="#06b6d4" />
+          <circle cx="9.1" cy="20" r="2.5" fill="#a78bfa" />
+          <line x1="16" y1="8" x2="22.9" y2="20" stroke="#7c3aed" stroke-width="0.8" opacity="0.5" />
+          <line x1="22.9" y1="20" x2="9.1" y2="20" stroke="#06b6d4" stroke-width="0.8" opacity="0.5" />
+          <line x1="9.1" y1="20" x2="16" y2="8" stroke="#a78bfa" stroke-width="0.8" opacity="0.5" />
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#7c3aed" />
+              <stop offset="100%" stop-color="#06b6d4" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav-logo-text">UnifiedQuantum</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="/UnifiedQuantum/docs/" class="nav-link">文档</a>
+        <a href="https://github.com/IAI-USTC-Quantum/UnifiedQuantum" class="nav-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="/UnifiedQuantum/docs/" class="nav-cta">快速开始</a>
+      </div>
+      <button class="nav-hamburger" id="hamburger" aria-label="菜单">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu overlay -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/UnifiedQuantum/docs/" class="mobile-link">文档</a>
+    <a href="https://github.com/IAI-USTC-Quantum/UnifiedQuantum" class="mobile-link" target="_blank" rel="noopener">GitHub</a>
+    <a href="/UnifiedQuantum/docs/" class="mobile-cta">快速开始</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content reveal">
+      <div class="hero-badge">开源 · 非商业 · 轻量级</div>
+      <h1 class="hero-title">
+        Unified<br /><span class="hero-title-accent">Quantum</span>
+      </h1>
+      <p class="hero-tagline">统一的量子计算聚合框架</p>
+      <p class="hero-desc">
+        一套 API，聚合 OriginQ、Quafu、IBM Quantum、QuarkStudio。<br />
+        线路构建 · 本地仿真 · 云端执行 · 芯片校准 · 错误缓解
+      </p>
+
+      <div class="install-block">
+        <div class="install-row">
+          <code class="install-cmd">pip install unified-quantum</code>
+          <button class="copy-btn" data-cmd="pip install unified-quantum" aria-label="复制安装命令">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="install-alt">或 <code>uv tool install unified-quantum</code></div>
+      </div>
+
+      <div class="hero-actions">
+        <a href="/UnifiedQuantum/docs/" class="btn btn-primary">快速开始</a>
+        <a href="https://github.com/IAI-USTC-Quantum/UnifiedQuantum" class="btn btn-ghost" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-label">核心能力</span>
+        <h2 class="section-title">一套框架，覆盖全链路</h2>
+        <p class="section-desc">从线路构建到错误缓解，UnifiedQuantum 提供量子计算所需的完整工具链。</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="6" r="3" stroke="#7c3aed" stroke-width="1.5"/>
+              <circle cx="6" cy="22" r="3" stroke="#06b6d4" stroke-width="1.5"/>
+              <circle cx="22" cy="22" r="3" stroke="#a78bfa" stroke-width="1.5"/>
+              <line x1="14" y1="9" x2="6" y2="19" stroke="#7c3aed" stroke-width="1" opacity="0.4"/>
+              <line x1="14" y1="9" x2="22" y2="19" stroke="#06b6d4" stroke-width="1" opacity="0.4"/>
+              <line x1="9" y1="22" x2="19" y2="22" stroke="#a78bfa" stroke-width="1" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">统一电路构建</h3>
+          <p class="feature-desc">一致的 API 构建量子线路，支持原生构建器及 Qiskit / Cirq 导入，输出 OriginIR 或 OpenQASM 2.0。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="2" y="2" width="24" height="24" rx="4" stroke="#06b6d4" stroke-width="1.5"/>
+              <circle cx="10" cy="14" r="3" stroke="#7c3aed" stroke-width="1.5"/>
+              <circle cx="18" cy="14" r="3" stroke="#06b6d4" stroke-width="1.5"/>
+              <line x1="13" y1="14" x2="15" y2="14" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="1 1"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">多平台后端</h3>
+          <p class="feature-desc">聚合 OriginQ、Quafu、IBM Quantum、QuarkStudio 四大量子云平台，一套代码切换后端。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="4" y="4" width="20" height="20" rx="2" stroke="#7c3aed" stroke-width="1.5"/>
+              <rect x="8" y="8" width="12" height="12" rx="1" stroke="#06b6d4" stroke-width="1" opacity="0.6"/>
+              <rect x="12" y="12" width="4" height="4" fill="#a78bfa" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">本地仿真</h3>
+          <p class="feature-desc">状态向量与密度矩阵模拟，复用真实芯片拓扑数据的含噪模拟，无需云端凭证即可开发调试。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="10" stroke="#06b6d4" stroke-width="1.5"/>
+              <path d="M14 4 L14 24" stroke="#7c3aed" stroke-width="1" opacity="0.4"/>
+              <path d="M4 14 L24 14" stroke="#7c3aed" stroke-width="1" opacity="0.4"/>
+              <path d="M7 7 L21 21" stroke="#06b6d4" stroke-width="1" opacity="0.3"/>
+              <circle cx="14" cy="14" r="3" fill="#7c3aed" opacity="0.5"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">芯片校准</h3>
+          <p class="feature-desc">XEB 交叉熵基准测试，逐层门保真度测量，读出误差矩阵标定，结果自动缓存与 TTL 管理。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <path d="M14 2 L26 8 L26 20 L14 26 L2 20 L2 8 Z" stroke="#7c3aed" stroke-width="1.5" fill="none"/>
+              <circle cx="14" cy="14" r="5" stroke="#06b6d4" stroke-width="1.5"/>
+              <line x1="14" y1="9" x2="14" y2="2" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+              <line x1="18.5" y1="16.5" x2="26" y2="20" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+              <line x1="9.5" y1="16.5" x2="2" y2="20" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">错误缓解 (QEM)</h3>
+          <p class="feature-desc">M3 矩阵无关测量误差缓解，线性求逆修正，结合校准数据自动应用于测量结果。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="2" y="6" width="24" height="16" rx="2" stroke="#06b6d4" stroke-width="1.5"/>
+              <line x1="2" y1="10" x2="26" y2="10" stroke="#7c3aed" stroke-width="1" opacity="0.5"/>
+              <circle cx="5" cy="8" r="1" fill="#7c3aed" opacity="0.7"/>
+              <circle cx="8" cy="8" r="1" fill="#06b6d4" opacity="0.7"/>
+              <text x="6" y="18" font-family="monospace" font-size="5" fill="#a78bfa" opacity="0.6">$ _</text>
+            </svg>
+          </div>
+          <h3 class="feature-title">CLI & Gateway</h3>
+          <p class="feature-desc">功能完整的命令行工具 <code>uniqc</code>，以及 Web Gateway 可视化管理任务、查看结果。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="quickstart" id="quickstart">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-label">快速上手</span>
+        <h2 class="section-title">三分钟，从安装到运行</h2>
+      </div>
+      <div class="code-split reveal">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span class="code-lang">Python API</span>
+            <button class="copy-btn-sm" data-cmd="from uniqc import Circuit
+
+c = Circuit()
+c.h(0).cnot(0, 1)
+c.measure(0).measure(1)
+
+result = c.simulate(shots=1024)
+print(result.counts)" aria-label="复制代码">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <pre class="code-block"><code><span class="hl-kw">from</span> <span class="hl-mod">uniqc</span> <span class="hl-kw">import</span> <span class="hl-fn">Circuit</span>
+
+c = <span class="hl-fn">Circuit</span>()
+c.<span class="hl-fn">h</span>(<span class="hl-num">0</span>).<span class="hl-fn">cnot</span>(<span class="hl-num">0</span>, <span class="hl-num">1</span>)
+c.<span class="hl-fn">measure</span>(<span class="hl-num">0</span>).<span class="hl-fn">measure</span>(<span class="hl-num">1</span>)
+
+result = c.<span class="hl-fn">simulate</span>(shots=<span class="hl-num">1024</span>)
+<span class="hl-fn">print</span>(result.counts)</code></pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span class="code-lang">CLI</span>
+            <button class="copy-btn-sm" data-cmd="uniqc simulate circuit.qasm --shots 1024" aria-label="复制命令">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <pre class="code-block"><code><span class="hl-cmd">uniqc</span> simulate circuit.qasm <span class="hl-flag">--shots</span> <span class="hl-num">1024</span>
+
+<span class="hl-comment"># 提交到真实量子芯片</span>
+<span class="hl-cmd">uniqc</span> submit circuit.ir \
+  <span class="hl-flag">--platform</span> originq \
+  <span class="hl-flag">--backend</span> WK_C180
+
+<span class="hl-comment"># 查看任务结果</span>
+<span class="hl-cmd">uniqc</span> result &lt;TASK_ID&gt; <span class="hl-flag">--wait</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platforms -->
+  <section class="platforms" id="platforms">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-label">支持平台</span>
+        <h2 class="section-title">主流量子云，一站接入</h2>
+        <p class="section-desc">无需为每个平台单独适配——UnifiedQuantum 已为你做好抽象。</p>
+      </div>
+      <div class="platforms-grid reveal">
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="16" stroke="#7c3aed" stroke-width="1.5" fill="none"/>
+              <circle cx="20" cy="20" r="8" stroke="#7c3aed" stroke-width="1" opacity="0.4" fill="none"/>
+              <circle cx="20" cy="20" r="2" fill="#7c3aed"/>
+            </svg>
+          </div>
+          <h3 class="platform-name">OriginQ</h3>
+          <p class="platform-desc">本源量子 · 超导量子计算平台</p>
+        </div>
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path d="M20 4 L36 20 L20 36 L4 20 Z" stroke="#06b6d4" stroke-width="1.5" fill="none"/>
+              <circle cx="20" cy="20" r="4" fill="#06b6d4" opacity="0.5"/>
+              <circle cx="20" cy="10" r="2" fill="#06b6d4" opacity="0.3"/>
+              <circle cx="28" cy="24" r="2" fill="#06b6d4" opacity="0.3"/>
+              <circle cx="12" cy="24" r="2" fill="#06b6d4" opacity="0.3"/>
+            </svg>
+          </div>
+          <h3 class="platform-name">Quafu</h3>
+          <p class="platform-desc">ScutQuantum · 超导量子计算云</p>
+        </div>
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <rect x="8" y="8" width="24" height="24" rx="3" stroke="#a78bfa" stroke-width="1.5" fill="none"/>
+              <line x1="8" y1="16" x2="32" y2="16" stroke="#a78bfa" stroke-width="0.8" opacity="0.4"/>
+              <line x1="8" y1="24" x2="32" y2="24" stroke="#a78bfa" stroke-width="0.8" opacity="0.4"/>
+              <circle cx="16" cy="20" r="3" stroke="#a78bfa" stroke-width="1" opacity="0.6" fill="none"/>
+            </svg>
+          </div>
+          <h3 class="platform-name">IBM Quantum</h3>
+          <p class="platform-desc">IBM 超导量子处理器</p>
+        </div>
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path d="M12 8 L28 8 L32 20 L28 32 L12 32 L8 20 Z" stroke="#7c3aed" stroke-width="1.5" fill="none"/>
+              <circle cx="20" cy="20" r="6" stroke="#06b6d4" stroke-width="1" opacity="0.5" fill="none"/>
+              <circle cx="20" cy="20" r="1.5" fill="#06b6d4"/>
+            </svg>
+          </div>
+          <h3 class="platform-name">QuarkStudio</h3>
+          <p class="platform-desc">QuarkStudio 量子计算平台</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Documentation CTA -->
+  <section class="docs-cta reveal">
+    <div class="docs-cta-inner">
+      <div class="docs-cta-glow"></div>
+      <h2 class="docs-cta-title">准备深入？</h2>
+      <p class="docs-cta-desc">完整的安装指南、API 参考、最佳实践和进阶教程，尽在文档。</p>
+      <a href="/UnifiedQuantum/docs/" class="btn btn-primary btn-lg">
+        阅读文档
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">UnifiedQuantum</span>
+        <p class="footer-tagline">统一的量子计算聚合框架</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4 class="footer-heading">资源</h4>
+          <a href="/UnifiedQuantum/docs/" class="footer-link">文档</a>
+          <a href="https://github.com/IAI-USTC-Quantum/UnifiedQuantum" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://pypi.org/project/unified-quantum/" class="footer-link" target="_blank" rel="noopener">PyPI</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">组织</h4>
+          <a href="https://iai.ustc.edu.cn/" class="footer-link" target="_blank" rel="noopener">USTC IAI</a>
+          <a href="https://iai-ustc-quantum.github.io/" class="footer-link" target="_blank" rel="noopener">IAI Quantum</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024–2025 IAI-USTC-Quantum. 以非商业目的开源发布。</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

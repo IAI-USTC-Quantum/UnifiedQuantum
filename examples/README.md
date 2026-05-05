@@ -1,6 +1,6 @@
 # UnifiedQuantum Examples
 
-> 示例代码已迁移至 [文档中心 → 算法讲解](https://iai-ustc-quantum.github.io/UnifiedQuantum/source/algorithm.html)
+> 示例代码已迁移至 [文档中心 → 算法讲解](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/algorithm.html)
 
 ## 示例代码目录
 

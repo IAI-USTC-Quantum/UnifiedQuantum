@@ -214,6 +214,8 @@ nbsphinx_allow_errors = False
 
 html_theme = "pydata_sphinx_theme"
 
+html_baseurl = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
+
 import pydata_sphinx_theme, os
 _html_theme_path = os.path.dirname(pydata_sphinx_theme.__file__)
 html_theme_path = [_html_theme_path]
@@ -229,7 +231,7 @@ html_theme_options = {
     },
     # Version switcher configuration for GitHub Pages
     "switcher": {
-        "json_url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/_static/switcher.json",
+        "json_url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/_static/switcher.json",
         "version_match": version_match,
     },
     # Add version switcher to navbar
