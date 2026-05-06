@@ -77,6 +77,13 @@ PLATFORM_REQUIRED_FIELDS = {
     "ibm": ["token"],
 }
 
+PLATFORM_KNOWN_FIELDS = {
+    "originq": {"token", "task_group_size", "available_qubits"},
+    "quafu": {"token", "chip_id", "auto_mapping", "task_name", "group_name", "wait", "shots"},
+    "quark": {"QUARK_API_KEY", "token"},
+    "ibm": {"token", "proxy", "chip_id", "auto_mapping", "circuit_optimize", "task_name", "shots"},
+}
+
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -213,15 +220,23 @@ def validate_config(
                         "Missing required field 'QUARK_API_KEY' for platform "
                         f"'{platform_name}' in profile '{profile_name}'"
                     )
-                continue
+            else:
+                required_fields = PLATFORM_REQUIRED_FIELDS.get(platform_name, [])
+                for field in required_fields:
+                    if field not in platform_config:
+                        errors.append(
+                            f"Missing required field '{field}' for platform "
+                            f"'{platform_name}' in profile '{profile_name}'"
+                        )
 
-            required_fields = PLATFORM_REQUIRED_FIELDS.get(platform_name, [])
-            for field in required_fields:
-                if field not in platform_config:
-                    errors.append(
-                        f"Missing required field '{field}' for platform "
-                        f"'{platform_name}' in profile '{profile_name}'"
-                    )
+            # Warn about unknown keys (likely typos)
+            known = PLATFORM_KNOWN_FIELDS.get(platform_name, set())
+            unknown = set(platform_config.keys()) - known
+            for key in sorted(unknown):
+                errors.append(
+                    f"Warning: unknown field '{key}' for platform "
+                    f"'{platform_name}' in profile '{profile_name}'"
+                )
 
             if platform_name == "ibm" and "proxy" in platform_config:
                 proxy = platform_config["proxy"]
