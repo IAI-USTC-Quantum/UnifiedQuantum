@@ -155,15 +155,8 @@
 - 现象：`wait_for_result(task_id, ...)` dummy 与 originq 路径都返回 `dict`（dummy 是 `{bitstring: int}`，无 `counts/probabilities/shots/platform/task_id`）。`UnifiedResult` 在顶层导出却完全不被该入口使用，仅在 `normalize_*` 工具内部返回。
 - 建议：让 `wait_for_result` 返回 `UnifiedResult`（推荐，与公开类一致）；或把 `UnifiedResult` 标记为 internal 并删 re-export；至少把当前 dict shape 写进 docstring/类型 hint。
 
-### D2 [bug · high] `submit_task` 错误提示与实际行为不符
-- 文件：`uniqc/backend_adapter/task_manager.py::_prepare_circuit_for_submission` (~L562)
-- 现象：对 `originq:full_amplitude` 提交 H/CNOT 线路：
-  ```
-  UnsupportedGateError: Circuit uses gates outside the backend basis set: ['CNOT','H'].
-  Allowed: ['CZ','RZ','SX']. Pass auto_compile=False to bypass, or set UNIQC_SKIP_VALIDATION=true.
-  ```
-  传 `auto_compile=False` 抛同样错误；`auto_compile=True` 不会自动编译；唯一可绕过的是 `UNIQC_SKIP_VALIDATION=true` 环境变量（且必须在 import 之前设）。
-- 建议：(a) 让 `auto_compile=True` 真的调用 compiler；(b) `auto_compile=False` 真的跳过 validation；(c) 错误文案别再推荐两个不工作的开关。
+### D2 ~~[bug · high] `submit_task` 错误提示与实际行为不符~~ ✅ 已修复
+- **修复方案**：完全移除 `UNIQC_SKIP_VALIDATION` 环境变量，改用 `skip_validation=True` 运行期参数。错误消息更新为正确指引。
 
 ### D3 ~~[bug · medium] `UNIQC_DUMMY` 在模块导入时一次性读取~~ ✅ 已修复
 - **修复方案**：完全移除 `UNIQC_DUMMY` 环境变量、`is_dummy_mode()` 函数及 `dummy=` 参数。dummy 模式现在只通过 backend 名称前缀（`dummy`、`dummy:...`）激活。

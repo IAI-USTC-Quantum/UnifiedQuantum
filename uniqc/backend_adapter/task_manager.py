@@ -489,10 +489,10 @@ def _prepare_circuit_for_submission(
     and the circuit cannot be auto-compiled (or auto-compilation also fails to
     land in the basis set / topology).
 
-    Set the env var ``UNIQC_SKIP_VALIDATION=true`` or pass
-    ``kwargs['skip_validation']=True`` to bypass entirely.
+    Pass ``kwargs['skip_validation']=True`` to bypass validation entirely
+    (use only when the caller has already verified circuit compatibility).
     """
-    if UNIQC_SKIP_VALIDATION or kwargs.get("skip_validation"):
+    if kwargs.get("skip_validation"):
         return circuit, {}
     if backend == "dummy" or backend.startswith("dummy:"):
         # Dummy backends accept anything; their dedicated path handles compilation.
@@ -534,7 +534,7 @@ def _prepare_circuit_for_submission(
         msg = "; ".join(report.errors) or "validation failed"
         raise UnsupportedGateError(
             f"Circuit is not compatible with backend '{backend}': {msg}. "
-            "Pass auto_compile=False to bypass, or set UNIQC_SKIP_VALIDATION=true."
+            "Use skip_validation=True to bypass."
         )
 
     # Try compiling and re-validate.

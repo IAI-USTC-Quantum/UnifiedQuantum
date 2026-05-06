@@ -10,19 +10,11 @@
 
 ## 高优先级（影响真机使用 / 用户错误引导）
 
-### D2 [bug · high] `submit_task` 错误提示与实际行为不符
-- 文件：`uniqc/backend_adapter/task_manager.py`（错误信息构造处）
-- 现象：当 `auto_compile` 校验失败时，错误信息建议用户 `auto_compile=False` 或设置 `UNIQC_SKIP_VALIDATION=true` 来绕过，但实际：
-  1. `submit_task` 没有 `auto_compile=False` 这一参数
-  2. `UNIQC_SKIP_VALIDATION` 必须在 **import uniqc 之前**设置才生效（D3 同因），运行期 `os.environ[...]=...` 无效
-- 建议：
-  - 删除"`auto_compile=False`"那行建议
-  - 改为推荐 `submit_task(..., skip_validation=True)` 关键字（需新增），或改为提示用户在 shell 里 `export UNIQC_SKIP_VALIDATION=true` 并重启 Python
-- 阻塞：需要决定 skip-validation 是改成运行期参数还是只保留环境变量
+### D2 ~~[bug · high] `submit_task` 错误提示与实际行为不符~~ ✅ 已修复
+- **修复方案**：完全移除 `UNIQC_SKIP_VALIDATION` 环境变量，改用 `skip_validation=True` 参数。错误消息更新为正确指引。
 
 ### D3 ~~[bug · medium] 环境变量在模块导入时一次性读取~~ ✅ 已修复
 - **修复方案**：完全移除 `UNIQC_DUMMY` 环境变量和 `is_dummy_mode()` 函数。dummy 模式现在只通过 backend 名称前缀（`dummy`、`dummy:...`）激活，不再依赖环境变量。
-- `UNIQC_SKIP_VALIDATION` 仍保留（待独立处理）。
 
 ### D4 [bug+doc · medium] `dummy:originq:<chip>` 隐式依赖 qiskit
 - 现象：`find_backend("dummy:originq:WK_C180")` 在没有 qiskit extras 时报 ImportError，但 `dummy` 的卖点本应是"无 extras 即可本地仿真"

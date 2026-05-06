@@ -142,11 +142,10 @@ print(report)
 ok = is_compatible(circuit, backend_info)
 
 # 让 uniqc 自动按 backend 政策编译后再提交
-task_id = submit_task(circuit, backend="originq:WK_C180", auto_compile=True)
+task_id = submit_task(circuit, backend="originq:WK_C180")
 
-# 完全跳过（仅在你确信前端已经做过等价校验时使用）
-import os
-os.environ["UNIQC_SKIP_VALIDATION"] = "1"
+# 完全跳过校验（仅在你确信前端已经做过等价校验时使用）
+task_id = submit_task(circuit, backend="originq:WK_C180", skip_validation=True)
 ```
 
 或者编程式预先编译：
