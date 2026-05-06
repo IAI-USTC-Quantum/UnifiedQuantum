@@ -4,6 +4,36 @@ from .compiler import TranspilerConfig as TranspilerConfig
 from .compiler import compile as compile
 from .converter import convert_oir_to_qasm as convert_oir_to_qasm
 from .converter import convert_qasm_to_oir as convert_qasm_to_oir
+from .policy import (
+    PLATFORM_BASIS_GATES as PLATFORM_BASIS_GATES,
+)
+from .policy import (
+    PLATFORM_SUBMIT_LANGUAGE as PLATFORM_SUBMIT_LANGUAGE,
+)
+from .policy import (
+    compile_for_backend as compile_for_backend,
+)
+from .policy import (
+    resolve_basis_gates as resolve_basis_gates,
+)
+from .policy import (
+    resolve_submit_language as resolve_submit_language,
+)
+from .validation import (
+    VIRTUAL_Z_GATES as VIRTUAL_Z_GATES,
+)
+from .validation import (
+    CompatibilityReport as CompatibilityReport,
+)
+from .validation import (
+    compatibility_report as compatibility_report,
+)
+from .validation import (
+    compute_gate_depth as compute_gate_depth,
+)
+from .validation import (
+    is_compatible as is_compatible,
+)
 
 try:
     from uniqc.visualization.timeline import (

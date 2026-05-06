@@ -106,6 +106,77 @@ issues = audit_backends(backends)
 
 `error` 表示字段不满足内部契约，`warning` 表示数据缺失或不规范但仍可能可用。
 
+## 路径五：提交前格式校验与 gate depth 估计
+
+任何会真正发请求的提交（`submit_task` / `submit_batch`）都先经过一次 **离线** 校验，避免无效线路打到云端再被拒：
+
+```python
+from uniqc import (
+    Circuit,
+    compatibility_report,
+    is_compatible,
+    compile_for_backend,
+    compute_gate_depth,
+    submit_task,
+)
+from uniqc.backend_adapter import find_backend
+
+backend_info = find_backend("originq:WK_C180")  # 走本地缓存（TTL 24h）
+circuit = Circuit()
+circuit.h(0); circuit.cnot(0, 1)
+circuit.measure(0); circuit.measure(1)
+
+# 1) 仅查报告，不发任何请求
+report = compatibility_report(circuit, backend_info)
+print(report)            # CompatibilityReport(FAIL/OK) ...
+report.errors            # list[str]
+report.warnings          # list[str]
+report.gate_depth        # int，按 virtual-Z 折算
+report.used_gates        # set[str]
+report.submit_language   # 'originir' / 'qasm2'
+
+# 2) Boolean 简写
+if not is_compatible(circuit, backend_info):
+    raise SystemExit("circuit 与该 backend 不兼容")
+
+# 3) 按 backend 政策自动编译后再提交
+task_id = submit_task(circuit, backend="originq:WK_C180", auto_compile=True)
+```
+
+**Gate depth** 不要再用 `len(circuit.opcode_list)`：
+
+```python
+# ❌ 旧的实验代码常见错误：把 gate 数当成 depth，且没有 virtual-Z 概念
+depth_wrong = len(circuit.opcode_list)
+
+# ✅ 推荐
+depth = compute_gate_depth(circuit)                  # 默认 virtual_z=True
+depth_no_vz = compute_gate_depth(circuit, virtual_z=False)
+```
+
+`compute_gate_depth` 严格按物理执行 layer 计数：单/双比特门并行折叠；`Z/RZ/S/T/U1` 视为 frame change 不占深度（`virtual_z=True`）；`BARRIER` 同步不计入；`MEASURE` 不计入。详细约定见 [平台约定 §2.8](platform_conventions.md#platform-gate-depth)。
+
+**何时绕过校验**：
+
+- 一次性绕过：`submit_task(..., auto_compile=False)`（仍校验，失败抛 `UnsupportedGateError`）
+- 完全跳过：环境变量 `UNIQC_SKIP_VALIDATION=1`（仅在你确信前端已经做过等价校验时使用，例如自定义 transpiler 已经把电路降到 backend 原生门集，再用 `uniqc` 仅作 IR adapter）
+- 没有 backend 缓存时：`compatibility_report` 会以 warning 形式提示，并继续执行；建议先 `uniqc backend refresh --platform <name>` 把后端拓扑拉到本地缓存
+
+**多平台编译政策**（由 `compile_for_backend` 与 `submit_task(..., auto_compile=True)` 自动处理）：
+
+| 平台 | basis gate set | 提交语言 |
+|------|----------------|----------|
+| `originq` | `cz + sx + rz` | OriginIR |
+| `quafu` | `cz + sx + rz` | QASM 2.0 |
+| `quark` | `cz + sx + rz` | QASM 2.0 |
+| `ibm` | `BackendInfo.extra["basis_gates"]`（来自 IBM backend） | QASM 2.0 |
+
+如果你需要自定义 basis 进行调研：
+
+```python
+report = compatibility_report(circuit, backend_info, basis_gates=("h", "cz", "rx", "rz"))
+```
+
 ## 模块边界
 
 - `uniqc.circuit_builder`：线路构建。

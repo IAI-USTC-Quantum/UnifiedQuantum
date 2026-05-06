@@ -110,6 +110,14 @@ from .algorithms.core.state_preparation import (
 from .algorithms.workflows import readout_em_workflow, xeb_workflow
 from .circuit_builder import Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def
 from .compile import CompilationFailedException, CompilationResult, TranspilerConfig, compile
+from .compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
+from .compile.validation import (
+    VIRTUAL_Z_GATES,
+    CompatibilityReport,
+    compatibility_report,
+    compute_gate_depth,
+    is_compatible,
+)
 from .compile.originir import OriginIR_BaseParser
 from .compile.qasm import OpenQASM2_BaseParser
 from .exceptions import (
@@ -206,6 +214,7 @@ __all__ = [
     "CircuitAdapter",
     "CircuitError",
     "CircuitTranslationError",
+    "CompatibilityReport",
     "CompilationFailedException",
     "CompilationResult",
     "DummyBackend",
@@ -286,6 +295,9 @@ __all__ = [
     "cluster_state",
     "compute_all_gradients",
     "compile",
+    "compile_for_backend",
+    "compatibility_report",
+    "compute_gate_depth",
     "config",
     "deutsch_jozsa_circuit",
     "deutsch_jozsa_oracle",
@@ -307,6 +319,7 @@ __all__ = [
     "hadamard_superposition",
     "hea",
     "is_dummy_mode",
+    "is_compatible",
     "kv2list",
     "list_backends",
     "list2kv",
@@ -339,6 +352,9 @@ __all__ = [
     "thermal_state_circuit",
     "tomography_summary",
     "uccsd_ansatz",
+    "resolve_basis_gates",
+    "resolve_submit_language",
+    "VIRTUAL_Z_GATES",
     "vqd_circuit",
     "vqd_overlap_circuit",
     "wait_for_result",
