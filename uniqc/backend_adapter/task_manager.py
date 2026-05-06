@@ -489,11 +489,17 @@ def _prepare_circuit_for_submission(
     and the circuit cannot be auto-compiled (or auto-compilation also fails to
     land in the basis set / topology).
 
-    Pass ``kwargs['skip_validation']=True`` to bypass validation entirely
-    (use only when the caller has already verified circuit compatibility).
+    Validation is split into two layers:
+
+    1. **Hard block** (never skippable): IR language compatibility — gates that
+       cannot be expressed in the target platform's submission format (e.g.
+       ``RPhi`` → QASM2-only platforms) are always rejected.
+    2. **Soft validation** (skippable): basis gate set, qubit count, topology.
+       Pass ``kwargs['skip_validation']=True`` to bypass these checks and let
+       the cloud platform handle them.
     """
-    if kwargs.get("skip_validation"):
-        return circuit, {}
+    skip_validation = kwargs.pop("skip_validation", False)
+
     if backend == "dummy" or backend.startswith("dummy:"):
         # Dummy backends accept anything; their dedicated path handles compilation.
         return circuit, {}
@@ -501,8 +507,23 @@ def _prepare_circuit_for_submission(
     from uniqc.compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
     from uniqc.compile.validation import compatibility_report
 
-    backend_info = _resolve_backend_info_for_validation(backend, kwargs)
     language = resolve_submit_language(backend)
+
+    # --- Hard block: IR language compatibility (never skippable) ---
+    # Gates like RPhi/RPHI90/PHASE2Q/UU15 cannot be expressed in QASM2;
+    # submitting them to QASM2-only platforms (Quafu/Quark/IBM) will always
+    # fail at the cloud backend.
+    _lang_report = compatibility_report(circuit, backend_info=None, language=language)
+    if _lang_report.errors:
+        from uniqc.exceptions import UnsupportedGateError
+
+        raise UnsupportedGateError("; ".join(_lang_report.errors))
+
+    if skip_validation:
+        return circuit, {}
+
+    # --- Soft validation: basis gates, qubit count, topology ---
+    backend_info = _resolve_backend_info_for_validation(backend, kwargs)
     basis = list(resolve_basis_gates(backend, backend_info)) or None
 
     extras: dict[str, Any] = {}
