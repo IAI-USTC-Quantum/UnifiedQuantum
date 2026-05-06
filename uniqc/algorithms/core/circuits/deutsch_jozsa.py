@@ -106,6 +106,11 @@ def deutsch_jozsa_circuit(
         TypeError: *qubits* is not a list.
         ValueError: *qubits* is empty, or oracle qubit count mismatches.
 
+    Note:
+        This function already appends ``MEASURE`` on all data qubits.
+        Do **not** call ``circuit.measure(...)`` afterwards, or duplicate
+        measurement instructions will cause simulator errors.
+
     Example:
         >>> from uniqc.circuit_builder import Circuit
         >>> from uniqc.algorithms.core.circuits import (
