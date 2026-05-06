@@ -15,6 +15,7 @@ from .backend_adapter.backend import (
     QuarkBackend,
     get_backend,
     list_backends,
+    list_backends_by_platform,
 )
 from .backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
 from .backend_adapter.backend_registry import (
@@ -320,6 +321,7 @@ __all__ = [
     "is_compatible",
     "kv2list",
     "list_backends",
+    "list_backends_by_platform",
     "list2kv",
     "list_tasks",
     "load_calibration_result",

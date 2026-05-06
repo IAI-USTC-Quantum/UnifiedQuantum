@@ -39,14 +39,11 @@
 - 现象：在 180-qubit 芯片上找 1D 链路会陷入指数搜索；测试中观察到 >2 分钟无返回
 - 建议：加 `timeout` 参数（默认 30s），超时回退到贪心解；或改用 BFS + beam search
 
-### D8 [api · medium] `list_backends()` 返回结构与名字直觉不符
-- 现象：返回 `dict[platform, list[chip]]`，名字暗示 `list[backend_name]`
-- 建议：rename 为 `list_backends_by_platform()`，新增真正返回 `list[str]`（如 `["originq:WK_C180", "quafu:ScQ-P18"]`）的 `list_backends()`
-- 阻塞：破坏性 rename，需 deprecation 周期
+### D8 ~~[api · medium] `list_backends()` 返回结构与名字直觉不符~~ ✅ 已修复
+- **修复方案**：原 `list_backends()` 重命名为 `list_backends_by_platform()`（返回 dict）。新增 `list_backends()` 返回 `list[str]`（排序后的后端名称列表）。
 
-### B2 [api · medium] `uniqc.get_backend` vs `uniqc.simulator.get_backend` 命名冲突
-- 现象：两个不同语义的 `get_backend` 共存（一个找云后端，一个查找本地仿真器），import 顺序不同会得到不同函数
-- 建议：simulator 那个改名 `make_simulator` / `get_simulator`，保留 `uniqc.get_backend` 为云后端入口
+### B2 ~~[api · medium] `uniqc.get_backend` vs `uniqc.simulator.get_backend` 命名冲突~~ ✅ 已修复
+- **修复方案**：`uniqc.simulator.get_backend` 重命名为 `get_simulator`（同步添加 `create_simulator`）。旧名保留为 deprecated wrapper（发出 `DeprecationWarning`）。`uniqc.get_backend` 保持不变（云后端入口）。
 
 ### A2 [doc · high] `Circuit.get_matrix()` 不存在
 - 现象：`docs/guide/circuit.md` 整节"提取酉矩阵"承诺 `c.get_matrix()` 与 `NotMatrixableError`，二者均未实现

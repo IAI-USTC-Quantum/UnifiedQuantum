@@ -65,10 +65,8 @@
 - 现象：`OriginIR_NoisySimulator.__init__` 默认 `backend_type='statevector'`，且 `simulation.md` 噪声示例正是用默认值构造，但 `sim.simulate_pmeasure(...)` 立刻抛 `ValueError: simulate_pmeasure is only available for density_operator type OpcodeSimulator backend`。`noise_simulation.md` 反过来要求「必须使用 density_matrix 后端」——两份文档相互打架，且默认值本身跑不通。
 - 建议：把默认 `backend_type` 改成 `'density_matrix'`（或在 statevector + 非空 noise 时直接报错），并修正 `simulation.md` 示例与 `noise_simulation.md` 对齐。
 
-### B2 [api · medium] `uniqc.get_backend` vs `uniqc.simulator.get_backend` 命名冲突
-- 文件：`UnifiedQuantum/uniqc/simulator/get_backend.py:62`、`UnifiedQuantum/uniqc/backend_adapter/backend.py:748`、`UnifiedQuantum/uniqc/__init__.py`
-- 现象：顶级 `uniqc.get_backend` 来自 `backend_adapter.backend`（签名 `(backend_id, *, config=...)` 用于云/dummy 解析）；`uniqc.simulator.get_backend` 是本地模拟器工厂（签名 `(program_type='originir', backend_type='statevector', **kw)`）。两者**不是同一对象**且签名不兼容，但同名、同 namespace 邻近，极易混淆。
-- 建议：把 `simulator/get_backend.py` 的 `get_backend` 重命名为 `get_simulator`（或仅保留 `create_simulator`），不再 re-export 旧名；如保留兼容请在 docstring 明确区别。
+### B2 ~~[api · medium] `uniqc.get_backend` vs `uniqc.simulator.get_backend` 命名冲突~~ ✅ 已修复
+- **修复方案**：`uniqc.simulator.get_backend` 重命名为 `get_simulator`，旧名保留为 deprecated wrapper。`uniqc.get_backend` 保持为云后端入口。
 
 ### B3 [api · low] `create_simulator` 接受的别名比 `OriginIR_Simulator` 多
 - 文件：`UnifiedQuantum/uniqc/simulator/get_backend.py:43`、`UnifiedQuantum/uniqc/simulator/opcode_simulator.py:13`
@@ -178,9 +176,8 @@
 - 现象：`WK_C180.get_edge_rankings()` 第一项是 `((0, 0), 0.9999)` —— 不是合法的两比特边。
 - 建议：构图时跳过 `u==v`。
 
-### D8 [api · medium] `list_backends()` 返回结构与名字直觉不符
-- 现象：返回的不是 `dict[platform, list[BackendInfo]]`，而是 `{platform: {'platform': ..., 'available': ..., 'class': ...}}` 这种 metadata；要拿真实 backend list 必须用 `fetch_all_backends()` / `fetch_platform_backends(...)`。这与 CLI 的 `uniqc backend list` 行为对不上。
-- 建议：要么改名为 `list_platforms`，要么真正返回 backend 列表。
+### D8 ~~[api · medium] `list_backends()` 返回结构与名字直觉不符~~ ✅ 已修复
+- **修复方案**：原 `list_backends()` 重命名为 `list_backends_by_platform()`（返回 dict）。新增 `list_backends()` 返回 `list[str]`（排序后的后端名称列表）。
 
 ### D9 [api · low] `BackendOptionsFactory.from_kwargs` 签名反直觉
 - 现象：`from_kwargs(platform, kwargs)` 接受**位置 dict**，而非 `**kwargs`，调用 `f.from_kwargs('quafu', shots=100)` 直接 `TypeError`。

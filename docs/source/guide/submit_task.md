@@ -140,8 +140,11 @@ clear_cache()
 ```python
 from uniqc import backend
 
-# 列出所有可用后端
-backends = backend.list_backends()
+# 列出所有已注册后端名称
+names = backend.list_backends()  # ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+
+# 获取详细状态信息
+backends = backend.list_backends_by_platform()
 for name, info in backends.items():
     print(f"{name}: available={info['available']}")
 
