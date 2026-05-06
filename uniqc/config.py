@@ -401,6 +401,25 @@ def load_ibm_config() -> dict[str, Any]:
     )
 
 
+def has_platform_credentials(platform: str) -> bool:
+    """Check whether credentials exist for a platform without raising.
+
+    Returns True if the platform section exists in the active profile
+    and contains a non-empty token/key field.  Returns False otherwise
+    (including when the config file does not exist or the platform is
+    not configured at all).
+    """
+    try:
+        config = _load_platform_config(platform)
+    except (ConfigError, ProfileNotFoundError, PlatformNotFoundError):
+        return False
+    if platform == "quark":
+        token = config.get("QUARK_API_KEY", "") or config.get("token", "")
+    else:
+        token = config.get("token", "")
+    return bool(token)
+
+
 def load_dummy_config() -> dict[str, Any]:
     try:
         config = _load_platform_config("originq")

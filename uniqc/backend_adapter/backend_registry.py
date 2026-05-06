@@ -10,6 +10,7 @@ It:
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -29,6 +30,23 @@ class BackendAuditIssue:
     severity: str
     field: str
     message: str
+
+
+@dataclass(frozen=True, slots=True)
+class FetchResult:
+    """Result of fetching backends from all platforms.
+
+    Attributes
+    ----------
+    backends :
+        Per-platform backend descriptors.
+    fetch_failures :
+        Platforms that had credentials but failed to fetch,
+        mapped to the error message.
+    """
+
+    backends: dict[Platform, list[BackendInfo]]
+    fetch_failures: dict[Platform, str] = dataclasses.field(default_factory=dict)
 
 
 def _clean_quafu_gates(gates: list[str]) -> list[str]:
@@ -329,8 +347,14 @@ def fetch_platform_backends(
     Returns:
         A tuple of (backends, fetched_newly) where fetched_newly is True
         if the data was fetched from the network (vs. served from cache).
+
+    Raises:
+        BackendError: If the platform has credentials configured but the
+            fetch fails (network error, API error, etc.) and no stale
+            cache is available as fallback.
     """
     from uniqc.backend_adapter.backend_cache import is_stale  # noqa: PLC0415
+    from uniqc.config import has_platform_credentials
 
     fetched_newly = False
 
@@ -339,6 +363,11 @@ def fetch_platform_backends(
 
         backends = list_dummy_backend_infos()
         return backends, True
+
+    # No credentials → skip silently (not an error)
+    if not has_platform_credentials(platform.value):
+        logger.debug("Platform %s has no credentials configured — skipping", platform.value)
+        return [], False
 
     if not force_refresh and not is_stale(platform.value):
         backends = get_cached_backends(platform)
@@ -354,15 +383,18 @@ def fetch_platform_backends(
         update_cache(platform, backends)
         fetched_newly = True
         logger.debug("Fetched %d %s backends from API", len(backends), platform.value)
-    except BackendError:
-        logger.warning("Platform %s not configured — skipping", platform.value)
+    except (ImportError, ModuleNotFoundError):
+        # SDK not installed — skip with warning
+        logger.warning("Platform %s SDK not installed — skipping", platform.value)
         backends = []
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch %s backends: %s", platform.value, exc)
         # Try to serve stale cache as a fallback
         backends = get_cached_backends(platform)
         if not backends:
-            raise
+            raise BackendError(
+                f"Failed to fetch {platform.value} backends and no cached data available: {exc}"
+            ) from exc
 
     return backends, fetched_newly
 
@@ -377,17 +409,33 @@ def fetch_all_backends(
 
     Returns:
         Dict mapping Platform to its list of BackendInfo objects.
-        Platforms that fail are omitted with a warning.
+        Platforms with no credentials are silently omitted.
+        Platforms with credentials but fetch failures are omitted
+        with a warning.
+    """
+    return fetch_all_backends_with_status(force_refresh).backends
+
+
+def fetch_all_backends_with_status(
+    force_refresh: bool = False,
+) -> FetchResult:
+    """Fetch backends from all platforms, returning fetch failures too.
+
+    Like :func:`fetch_all_backends` but also returns information about
+    platforms that had credentials but failed to fetch, so callers can
+    surface these as audit issues.
     """
     results: dict[Platform, list[BackendInfo]] = {}
+    failures: dict[Platform, str] = {}
     for platform in Platform:
         try:
             backends, _ = fetch_platform_backends(platform, force_refresh=force_refresh)
             if backends:
                 results[platform] = backends
-        except Exception as exc:  # noqa: BLE001
+        except BackendError as exc:
             logger.warning("Skipping %s: %s", platform.value, exc)
-    return results
+            failures[platform] = str(exc)
+    return FetchResult(backends=results, fetch_failures=failures)
 
 
 def audit_backend_info(backend: BackendInfo) -> list[BackendAuditIssue]:
@@ -433,13 +481,43 @@ def audit_backend_info(backend: BackendInfo) -> list[BackendAuditIssue]:
     return issues
 
 
-def audit_backends(backends: list[BackendInfo] | dict[Platform, list[BackendInfo]]) -> list[BackendAuditIssue]:
-    """Validate normalized backend descriptors returned by the registry."""
+def audit_backends(
+    backends: list[BackendInfo] | dict[Platform, list[BackendInfo]],
+    *,
+    fetch_failures: dict[Platform, str] | None = None,
+) -> list[BackendAuditIssue]:
+    """Validate normalized backend descriptors returned by the registry.
+
+    Parameters
+    ----------
+    backends :
+        Backend descriptors (flat list or per-platform dict).
+    fetch_failures :
+        Optional mapping of platforms that had credentials but failed
+        to fetch, with the error message.  Each entry is emitted as a
+        ``BackendAuditIssue(severity="warning")`` so the caller can see
+        which platforms were not audited.
+    """
+    issues: list[BackendAuditIssue] = []
+
+    # Report platforms that had credentials but failed to fetch
+    if fetch_failures:
+        for platform, error_msg in fetch_failures.items():
+            issues.append(
+                BackendAuditIssue(
+                    backend_id=f"{platform.value}:__platform__",
+                    severity="warning",
+                    field="platform_fetch",
+                    message=f"Failed to fetch {platform.value} backends: {error_msg}",
+                )
+            )
+
     if isinstance(backends, dict):
         items = [backend for platform_backends in backends.values() for backend in platform_backends]
     else:
         items = backends
-    return [issue for backend in items for issue in audit_backend_info(backend)]
+    issues.extend(issue for backend in items for issue in audit_backend_info(backend))
+    return issues
 
 
 def find_backend(identifier: str) -> BackendInfo:
