@@ -10,6 +10,7 @@ from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopol
 
 _VIRTUAL_LINE_RE = re.compile(r"^virtual-line-(\d+)$")
 _VIRTUAL_GRID_RE = re.compile(r"^virtual-grid-(\d+)x(\d+)$")
+_MPS_LINEAR_RE = re.compile(r"^mps:linear-(\d+)((?::[a-zA-Z_][a-zA-Z0-9_]*=[^:]+)*)$")
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -25,6 +26,8 @@ class DummyBackendSpec:
     source_platform: Platform | None = None
     source_name: str | None = None
     noise_source: str = "none"
+    simulator_kind: str = "default"
+    simulator_kwargs: dict[str, Any] | None = None
 
 
 def _normalise_available_qubits(value: Any) -> list[int] | None:
@@ -45,6 +48,39 @@ def virtual_line_topology(num_qubits: int) -> list[list[int]]:
     if num_qubits < 1:
         raise ValueError("virtual-line-N requires N >= 1")
     return [[i, i + 1] for i in range(num_qubits - 1)]
+
+
+def _parse_mps_kwargs(suffix: str) -> dict[str, Any]:
+    """Parse the optional ``:key=value:...`` suffix of a ``dummy:mps:linear-N`` id.
+
+    Recognised keys: ``chi`` (alias ``chi_max``, int), ``cutoff`` (alias
+    ``svd_cutoff``, float), ``seed`` (int).
+    """
+    parsed: dict[str, Any] = {}
+    if not suffix:
+        return parsed
+    for chunk in suffix.lstrip(":").split(":"):
+        if not chunk:
+            continue
+        if "=" not in chunk:
+            raise ValueError(
+                f"MPS dummy backend kwargs must be 'key=value', got '{chunk}'"
+            )
+        key, raw = chunk.split("=", 1)
+        key = key.strip().lower()
+        raw = raw.strip()
+        if key in ("chi", "chi_max"):
+            parsed["chi_max"] = int(raw)
+        elif key in ("cutoff", "svd_cutoff"):
+            parsed["svd_cutoff"] = float(raw)
+        elif key == "seed":
+            parsed["seed"] = int(raw)
+        else:
+            raise ValueError(
+                f"Unknown MPS dummy backend kwarg '{key}'. "
+                "Supported: chi (chi_max), cutoff (svd_cutoff), seed."
+            )
+    return parsed
 
 
 def virtual_grid_topology(rows: int, cols: int) -> list[list[int]]:
@@ -141,7 +177,23 @@ def resolve_dummy_backend(
         suffix = identifier.split(":", 1)[1].strip()
         line_match = _VIRTUAL_LINE_RE.match(suffix)
         grid_match = _VIRTUAL_GRID_RE.match(suffix)
-        if line_match:
+        mps_match = _MPS_LINEAR_RE.match(suffix)
+        if mps_match:
+            n = int(mps_match.group(1))
+            mps_kwargs = _parse_mps_kwargs(mps_match.group(2) or "")
+            chi_str = f", chi={mps_kwargs['chi_max']}" if "chi_max" in mps_kwargs else ""
+            spec = DummyBackendSpec(
+                identifier=identifier,
+                name=suffix,
+                description=(
+                    f"Noiseless MPS simulator on a {n}-qubit linear chain{chi_str}"
+                ),
+                available_qubits=list(range(n)),
+                available_topology=virtual_line_topology(n),
+                simulator_kind="mps",
+                simulator_kwargs=mps_kwargs,
+            )
+        elif line_match:
             n = int(line_match.group(1))
             spec = DummyBackendSpec(
                 identifier=identifier,
@@ -234,6 +286,8 @@ def dummy_adapter_kwargs(identifier: str, **overrides: Any) -> dict[str, Any]:
         "noise_model": overrides.get("noise_model"),
         "available_qubits": spec.available_qubits,
         "available_topology": spec.available_topology,
+        "simulator_kind": spec.simulator_kind,
+        "simulator_kwargs": spec.simulator_kwargs,
     }
 
 
@@ -268,6 +322,14 @@ def _info_from_spec(spec: DummyBackendSpec) -> BackendInfo:
     avg_1q = avg_2q = avg_readout = t1 = t2 = None
     if spec.chip_characterization is not None:
         avg_1q, avg_2q, avg_readout, t1, t2 = _chip_averages(spec.chip_characterization)
+    if spec.simulator_kind == "mps":
+        kind_label = "mps-line"
+    elif spec.source_platform:
+        kind_label = "hardware-noisy"
+    elif topology:
+        kind_label = "virtual"
+    else:
+        kind_label = "ideal"
     return BackendInfo(
         platform=Platform.DUMMY,
         name=spec.name,
@@ -280,11 +342,13 @@ def _info_from_spec(spec: DummyBackendSpec) -> BackendInfo:
         extra={
             "available": True,
             "dummy_backend_id": spec.identifier,
-            "dummy_kind": "hardware-noisy" if spec.source_platform else ("virtual" if topology else "ideal"),
+            "dummy_kind": kind_label,
             "noise_source": spec.noise_source,
             "source_platform": spec.source_platform.value if spec.source_platform else None,
             "source_name": spec.source_name,
             "available_qubits": spec.available_qubits or [],
+            "simulator_kind": spec.simulator_kind,
+            "simulator_kwargs": dict(spec.simulator_kwargs or {}),
         },
         avg_1q_fidelity=avg_1q,
         avg_2q_fidelity=avg_2q,
@@ -305,6 +369,7 @@ def list_dummy_backend_infos() -> list[BackendInfo]:
         resolve_dummy_backend("dummy", allow_fetch=False),
         resolve_dummy_backend("dummy:virtual-line-3", allow_fetch=False),
         resolve_dummy_backend("dummy:virtual-grid-2x2", allow_fetch=False),
+        resolve_dummy_backend("dummy:mps:linear-3", allow_fetch=False),
     ]
 
     seen: set[str] = set()

@@ -14,6 +14,8 @@ except ImportError:
 
 from .get_backend import create_simulator as create_simulator
 from .get_backend import get_backend as get_backend
+from .mps_simulator import MPSConfig as MPSConfig
+from .mps_simulator import MPSSimulator as MPSSimulator
 from .originir_simulator import OriginIR_NoisySimulator as OriginIR_NoisySimulator
 from .originir_simulator import OriginIR_Simulator as OriginIR_Simulator
 from .qasm_simulator import QASM_Simulator as QASM_Simulator

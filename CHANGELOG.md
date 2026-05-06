@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MPS simulator** (`uniqc/simulator/mps_simulator.py`): New pure-Python `MPSSimulator` and `MPSConfig` classes implementing an open-boundary, nearest-neighbour matrix-product-state engine with χ-bounded SVD truncation. Supports the OriginIR gate set used by the rest of `uniqc` (`H/X/Y/Z/S/T/SX/RX/RY/RZ/U1/U2/U3/RPhi*` 1q, `CNOT/CZ/SWAP/ISWAP/ECR` 2q, `XX/YY/ZZ/XY/PHASE2Q` parameterised 2q). Public API: `simulate_pmeasure` (≤24 measured qubits), `simulate_shots` (per-site MPS sampling, scales to hundreds of qubits), `simulate_statevector` (≤24 qubits). Exposes `max_bond` and `truncation_errors` for diagnostics. Rejects long-range 2-qubit gates and `CONTROL`/`controlled_by` operations. Does NOT inherit `BaseSimulator` — this keeps the C++ runtime out of its dependency closure.
+- **`dummy:mps:linear-N` backend** (`uniqc/backend_adapter/dummy_backend.py`, `dummy_adapter.py`): The dummy resolver now recognises identifiers of the form `dummy:mps:linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]`, which build a noiseless `MPSSimulator` over an open-chain topology. `DummyBackendSpec` gains `simulator_kind` and `simulator_kwargs` fields; `DummyAdapter` validates that MPS is not combined with `noise_model`/`chip_characterization`, dispatches `simulate_shots` directly (avoiding the 2^N dense vector path), and short-circuits the C++ availability check when `simulator_kind == "mps"`.
+- **Docs** (`docs/source/advanced/mps_simulator.md`): New advanced guide covering MPS use cases, parameters, supported gate set, and the dummy backend identifier syntax.
+- **Example** (`examples/advanced/mps_simulator.py`): 32-qubit GHZ runnable example using both the direct API and `submit_task` via the new dummy backend.
+- **Tests** (`uniqc/test/simulator/test_mps_simulator.py`): 15 tests covering Bell/GHZ correctness, q0=LSB convention, `XX(θ)` rotation against a dense reference, long-range/control rejection, χ-truncation diagnostics, reverse-order 2q gates, large-N shot sampling, and the full `submit_task → wait_for_result` round-trip through `dummy:mps:linear-N`.
+
 ## [0.0.10] - 2026-05-05
 
 ### Added

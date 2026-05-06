@@ -92,6 +92,8 @@ class DummyAdapter(QuantumAdapter):
         available_topology: list[list[int]] | None = None,
         chip_characterization: ChipCharacterization | None = None,
         backend_id: str = "dummy",
+        simulator_kind: str = "default",
+        simulator_kwargs: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the DummyAdapter.
 
@@ -114,14 +116,39 @@ class DummyAdapter(QuantumAdapter):
             backend_id: Canonical dummy backend identifier. Included in task IDs
                 so the same circuit submitted to different dummy targets does not
                 collide in the local task cache.
+            simulator_kind: Which local simulator to dispatch to. ``"default"``
+                (the C++-backed ``OriginIR_Simulator``) or ``"mps"`` (pure-Python
+                NumPy MPS, NN-only, no noise).
+            simulator_kwargs: Extra keyword arguments forwarded to the simulator
+                constructor (e.g. ``{"chi_max": 64, "svd_cutoff": 1e-12}`` for
+                the MPS backend).
 
         Raises:
             MissingDependencyError: If the C++ simulator extension (`uniqc_cpp`)
-                required by the simulation path is not available.
+                required by the default simulation path is not available. The
+                MPS path does not have this requirement.
+            ValueError: If ``simulator_kind="mps"`` is combined with a noise
+                model or chip characterization (the MPS path is noiseless).
         """
         from ..optional_deps import MissingDependencyError, check_simulation
 
-        if not check_simulation("cpp"):
+        self.simulator_kind = simulator_kind or "default"
+        self.simulator_kwargs = dict(simulator_kwargs or {})
+
+        if self.simulator_kind not in ("default", "mps"):
+            raise ValueError(
+                f"DummyAdapter: unsupported simulator_kind={self.simulator_kind!r}. "
+                "Use 'default' or 'mps'."
+            )
+
+        if self.simulator_kind == "mps" and (noise_model or chip_characterization):
+            raise ValueError(
+                "DummyAdapter(simulator_kind='mps') is noiseless; do not combine "
+                "with noise_model or chip_characterization. Use the default "
+                "simulator (and a virtual-line / chip-backed dummy) for noisy MPS-shaped runs."
+            )
+
+        if self.simulator_kind == "default" and not check_simulation("cpp"):
             raise MissingDependencyError(
                 "uniqc_cpp",
                 install_hint=(
@@ -145,10 +172,29 @@ class DummyAdapter(QuantumAdapter):
     def _get_simulator_cls(self) -> type:
         """Lazily load the simulator class."""
         if self._simulator_cls is None:
-            from uniqc.simulator import OriginIR_Simulator
+            if self.simulator_kind == "mps":
+                from uniqc.simulator import MPSSimulator
 
-            self._simulator_cls = OriginIR_Simulator
+                self._simulator_cls = MPSSimulator
+            else:
+                from uniqc.simulator import OriginIR_Simulator
+
+                self._simulator_cls = OriginIR_Simulator
         return self._simulator_cls
+
+    def _build_simulator(self) -> Any:
+        """Construct a fresh simulator instance honouring ``simulator_kind``."""
+        Simulator = self._get_simulator_cls()
+        if self.simulator_kind == "mps":
+            return Simulator(
+                available_qubits=self.available_qubits or None,
+                available_topology=self.available_topology or None,
+                **self.simulator_kwargs,
+            )
+        return Simulator(
+            available_qubits=self.available_qubits,
+            available_topology=self.available_topology,
+        )
 
     def _get_error_loader(self) -> Any | None:
         """Build error loader from chip characterization or explicit noise model.
@@ -456,8 +502,11 @@ class DummyAdapter(QuantumAdapter):
         """Check if the dummy adapter is available.
 
         Returns:
-            True if the C++ simulation backend is available.
+            True if the C++ simulation backend is available (or the MPS path
+            is selected, which has no C++ requirement).
         """
+        if self.simulator_kind == "mps":
+            return True
         from ..optional_deps import check_simulation
 
         return check_simulation("cpp")
@@ -473,8 +522,11 @@ class DummyAdapter(QuantumAdapter):
     def dry_run(self, originir: str, *, shots: int = 1000, **kwargs: Any) -> DryRunResult:
         """Dry-run validation for the dummy local simulator.
 
-        The dummy adapter always succeeds — it accepts any valid OriginIR string
-        and simulates it locally. There are no backend constraints.
+        For ``simulator_kind='default'`` the dummy adapter always succeeds —
+        it accepts any valid OriginIR string and simulates it locally. For
+        ``simulator_kind='mps'`` we additionally enforce nearest-neighbour
+        2-qubit gates, surfaced here rather than at submit time so cloud-
+        style workflows fail fast.
 
         Note:
             Any dry-run success followed by actual submission failure is a
@@ -496,11 +548,30 @@ class DummyAdapter(QuantumAdapter):
             pass
 
         try:
-            sim = self._get_simulator_cls()(
-                available_qubits=self.available_qubits,
-                available_topology=self.available_topology,
-            )
-            sim.simulate_preprocess(originir)
+            sim = self._build_simulator()
+            if self.simulator_kind == "mps":
+                # MPS doesn't share simulate_preprocess; touch _run via simulate_pmeasure
+                # only when the qubit count is small. Otherwise we walk the parsed
+                # opcodes manually for the topology check.
+                from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+
+                parser = OriginIR_BaseParser()
+                parser.parse(originir)
+                for op in parser.program_body:
+                    operation, qubit, _c, _p, _d, controls = op
+                    if controls:
+                        raise ValueError(
+                            f"MPS dummy backend rejects CONTROL blocks (gate {operation})"
+                        )
+                    if isinstance(qubit, list) and len(qubit) == 2:
+                        a, b = int(qubit[0]), int(qubit[1])
+                        if abs(a - b) != 1:
+                            raise ValueError(
+                                f"MPS dummy backend rejects long-range 2q gate "
+                                f"{operation} on ({a},{b})"
+                            )
+            else:
+                sim.simulate_preprocess(originir)
         except Exception as exc:  # noqa: BLE001
             return _dry_run_failed(
                 str(exc),
@@ -549,12 +620,20 @@ class DummyAdapter(QuantumAdapter):
         noise. This is the correct method for fidelity computation where you
         compare two exact distributions.
 
+        For ``simulator_kind='mps'`` this materialises a dense vector and so
+        is bounded to <= 24 measured qubits; route larger circuits through
+        :meth:`submit` (which calls :meth:`_simulate` and uses MPS sampling).
+
         Args:
             originir: Circuit in OriginIR format.
 
         Returns:
-            List of probabilities (length = 2 ** n_qubits).
+            List of probabilities (length = 2 ** measured_qubits).
         """
+        if self.simulator_kind == "mps":
+            sim = self._build_simulator()
+            return sim.simulate_pmeasure(originir)
+
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
         readout_error = self._get_readout_error(originir)
@@ -584,7 +663,7 @@ class DummyAdapter(QuantumAdapter):
         return sim.simulate_pmeasure(originir)
 
     def _simulate(self, originir: str, shots: int) -> UnifiedResult:
-        """Run simulation using the OriginIR simulator (noiseless or noisy).
+        """Run simulation using the configured simulator (noiseless or noisy).
 
         Args:
             originir: Circuit in OriginIR format.
@@ -596,6 +675,9 @@ class DummyAdapter(QuantumAdapter):
         Raises:
             RuntimeError: If simulation fails.
         """
+        if self.simulator_kind == "mps":
+            return self._simulate_mps(originir, shots)
+
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
         readout_error = self._get_readout_error(originir)
@@ -641,6 +723,27 @@ class DummyAdapter(QuantumAdapter):
         return UnifiedResult.from_probabilities(
             probabilities=prob_dict,
             shots=shots,
+            platform="dummy",
+            task_id=self._generate_task_id(originir),
+        )
+
+    def _simulate_mps(self, originir: str, shots: int) -> UnifiedResult:
+        """MPS path: never materialise a 2**N probability vector.
+
+        Always uses per-site MPS sampling and emits counts. This keeps large-N
+        chains tractable (the whole point of MPS).
+        """
+        sim = self._build_simulator()
+        counts = sim.simulate_shots(originir, shots=shots)
+        # Bit-width = number of cbits assigned by MEASURE (or N if no MEASURE).
+        measured_qubits = sim._measure_order()
+        n_bits = max(1, len(measured_qubits))
+        count_dict: dict[str, int] = {}
+        for i, c in counts.items():
+            bin_key = bin(int(i))[2:].zfill(n_bits)
+            count_dict[bin_key] = int(c)
+        return UnifiedResult.from_counts(
+            counts=count_dict,
             platform="dummy",
             task_id=self._generate_task_id(originir),
         )
