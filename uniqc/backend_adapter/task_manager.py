@@ -122,6 +122,10 @@ from uniqc.backend_adapter.task.store import (
 # Environment variable for global dummy mode
 UNIQC_DUMMY = os.environ.get("UNIQC_DUMMY", "").lower() in ("true", "1", "yes")
 
+# Environment variable for skipping pre-submission validation. Set when the
+# user is intentionally pushing experimental gates / topologies.
+UNIQC_SKIP_VALIDATION = os.environ.get("UNIQC_SKIP_VALIDATION", "").lower() in ("true", "1", "yes")
+
 
 def is_dummy_mode() -> bool:
     """Check if dummy mode is enabled via environment variable.
@@ -449,6 +453,148 @@ def _metadata_with_circuit(circuit: Circuit, metadata: dict | None) -> dict:
     return enriched
 
 
+def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
+    """Best-effort lookup of a fresh BackendInfo for ``backend``.
+
+    Returns ``None`` when nothing is known offline (caller will skip the
+    topology / gate-set checks with a warning rather than fail closed).
+    The lookup is cache-only — we never make a live cloud call here, both
+    because submission paths must stay synchronous-fast and because the
+    caller may have authentication issues we should surface elsewhere.
+
+    Honours the per-call hint ``kwargs['backend_info']`` if the caller
+    already resolved it.
+    """
+    explicit = kwargs.get("backend_info")
+    if explicit is not None:
+        return explicit
+    if backend in ("dummy",) or backend.startswith("dummy:"):
+        return None
+    try:
+        from uniqc.backend_adapter.backend_cache import get_cached_backends, is_stale
+        from uniqc.backend_adapter.backend_info import Platform, parse_backend_id
+
+        platform, name = parse_backend_id(backend)
+    except Exception:
+        return None
+    if platform == Platform.DUMMY:
+        return None
+    try:
+        cached = get_cached_backends(platform)
+    except Exception:
+        return None
+    fresh = not is_stale(platform.value)
+    for entry in cached:
+        if entry.name == name:
+            # Annotate freshness in extra so callers / reports can react.
+            if not fresh:
+                # Frozen dataclass; ship a copy with a warning marker.
+                import dataclasses
+
+                extra = dict(entry.extra)
+                extra.setdefault("_uniqc_topology_stale", True)
+                return dataclasses.replace(entry, extra=extra)
+            return entry
+    return None
+
+
+def _prepare_circuit_for_submission(
+    circuit: Circuit,
+    backend: str,
+    kwargs: dict[str, Any],
+    *,
+    auto_compile: bool = True,
+) -> tuple[Circuit, dict[str, Any]]:
+    """Validate a circuit against ``backend`` and optionally compile it.
+
+    Returns ``(circuit, metadata_extras)``. The returned circuit is either the
+    original (when it already satisfies the backend's gate set / topology) or
+    a freshly-compiled circuit produced by
+    :func:`uniqc.compile.compile_for_backend`.
+
+    Raises :class:`uniqc.exceptions.UnsupportedGateError` when validation fails
+    and the circuit cannot be auto-compiled (or auto-compilation also fails to
+    land in the basis set / topology).
+
+    Set the env var ``UNIQC_SKIP_VALIDATION=true`` or pass
+    ``kwargs['skip_validation']=True`` to bypass entirely.
+    """
+    if UNIQC_SKIP_VALIDATION or kwargs.get("skip_validation"):
+        return circuit, {}
+    if backend == "dummy" or backend.startswith("dummy:"):
+        # Dummy backends accept anything; their dedicated path handles compilation.
+        return circuit, {}
+
+    from uniqc.compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
+    from uniqc.compile.validation import compatibility_report
+
+    backend_info = _resolve_backend_info_for_validation(backend, kwargs)
+    language = resolve_submit_language(backend)
+    basis = list(resolve_basis_gates(backend, backend_info)) or None
+
+    extras: dict[str, Any] = {}
+    report = compatibility_report(
+        circuit,
+        backend_info,
+        basis_gates=basis,
+        language=language,
+    )
+    extras["validation_passed"] = bool(report.compatible)
+    extras["validation_warnings"] = list(report.warnings)
+    extras["gate_depth"] = report.gate_depth
+    extras["used_gates"] = sorted(report.used_gates)
+    extras["submit_language"] = language
+
+    if backend_info is not None and backend_info.extra.get("_uniqc_topology_stale"):
+        extras["topology_stale"] = True
+        extras["validation_warnings"].append(
+            f"Backend topology cache for {backend} is stale (older than TTL); "
+            "consider running `uniqc backend update`."
+        )
+
+    if report.compatible:
+        return circuit, extras
+
+    if not auto_compile or backend_info is None:
+        from uniqc.exceptions import UnsupportedGateError
+
+        msg = "; ".join(report.errors) or "validation failed"
+        raise UnsupportedGateError(
+            f"Circuit is not compatible with backend '{backend}': {msg}. "
+            "Pass auto_compile=False to bypass, or set UNIQC_SKIP_VALIDATION=true."
+        )
+
+    # Try compiling and re-validate.
+    try:
+        compiled = compile_for_backend(circuit, backend_info)
+    except Exception as exc:  # pragma: no cover - depends on optional qiskit
+        from uniqc.exceptions import UnsupportedGateError
+
+        raise UnsupportedGateError(
+            f"Circuit failed validation for '{backend}' and auto-compile errored: {exc}"
+        ) from exc
+
+    post = compatibility_report(
+        compiled,
+        backend_info,
+        basis_gates=basis,
+        language=language,
+    )
+    extras["compiled"] = True
+    extras["compiled_gate_depth"] = post.gate_depth
+    extras["compiled_used_gates"] = sorted(post.used_gates)
+    extras["compiled_circuit_ir"] = compiled.originir if hasattr(compiled, "originir") else str(compiled)
+    extras["compiled_circuit_language"] = "OriginIR"
+    if not post.compatible:
+        from uniqc.exceptions import UnsupportedGateError
+
+        msg = "; ".join(post.errors)
+        raise UnsupportedGateError(
+            f"Auto-compile for '{backend}' did not land in the backend basis/topology: {msg}"
+        )
+    return compiled, extras
+
+
 def _backend_platform_key(backend: str) -> str:
     return backend.split(":", 1)[0]
 
@@ -596,6 +742,13 @@ def submit_task(
     # needing a subsequent query against a cloud backend.
     if backend == "dummy" or backend.startswith("dummy:"):
         return _submit_dummy(circuit, backend, shots=shots, metadata=metadata, **kwargs)
+
+    # Pre-submission validation + optional auto-compile.
+    auto_compile = kwargs.pop("auto_compile", True)
+    circuit, prep_extras = _prepare_circuit_for_submission(
+        circuit, backend, kwargs, auto_compile=auto_compile
+    )
+    metadata = {**metadata, **prep_extras}
 
     # Resolve backend instance
     try:
@@ -781,6 +934,18 @@ def submit_batch(
     if backend == "dummy" or backend.startswith("dummy:"):
         return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
 
+    # Pre-submission validation for each circuit; auto-compile any that fail.
+    auto_compile = kwargs.pop("auto_compile", True)
+    prepared: list[Circuit] = []
+    prep_extras_list: list[dict[str, Any]] = []
+    for c in circuits:
+        c2, extras = _prepare_circuit_for_submission(
+            c, backend, kwargs, auto_compile=auto_compile
+        )
+        prepared.append(c2)
+        prep_extras_list.append(extras)
+    circuits = prepared
+
     # Resolve backend instance
     try:
         backend_instance = backend_module.get_backend(backend)
@@ -814,6 +979,8 @@ def submit_batch(
         metadata = {"batch": True, "batch_size": len(circuits)}
         if index < len(circuits):
             metadata = _metadata_with_circuit(circuits[index], metadata)
+            if index < len(prep_extras_list):
+                metadata.update(prep_extras_list[index])
         else:
             metadata["circuits"] = [
                 _metadata_with_circuit(circuit, {})["circuit_ir"]

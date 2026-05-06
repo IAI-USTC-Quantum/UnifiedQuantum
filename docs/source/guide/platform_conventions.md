@@ -86,6 +86,93 @@ result = wait_for_result(task_id, backend="ibm")
 
 `wait_for_result()` 的实际返回值是 `result["result"]`，各 adapter 已统一将其规范化为 `{bitstring: shots}` 扁平字典。
 
+### 2.6 Bit endianness 与测量比特映射 {#platform-bit-endianness}
+
+uniqc 在所有平台都把测量结果归一化到同一个 cbit 框架。除非另行说明，下面这条约定就是规范本身：
+
+* **bitstring 的索引规则**：返回字典的 key 是定长二进制字符串。其 **最右侧字符**（索引 `-1`）对应 **classical bit `c[0]`**；索引 `-2` 对应 `c[1]`；依此类推。MSB 在最左、LSB 在最右——与 `bin(int)[2:].zfill(n)` 的视觉顺序一致。
+* **classical bit 的来源**：`c[i]` 记录的是 **第 i 次** 调用 `circuit.measure(q)` 的结果，**不一定** 是 `q[i]`。也就是说，cbit 索引由测量调用顺序决定，不是由 qubit 索引决定：
+
+  ```python
+  c = Circuit()
+  c.h(0); c.cnot(0, 1)
+  c.measure(1)   # -> c[0]   （bitstring 的最右字符）
+  c.measure(0)   # -> c[1]   （bitstring 的右数第二字符）
+  # bitstring "10" 表示 c[1]=1, c[0]=0
+  ```
+
+* **跨平台一致性**：OriginQ、Quafu、IBM/Qiskit 在底层各有差异（IBM 默认 little-endian，Quafu 在某些 backend 上 big-endian），但 `uniqc` 的 normalizer 已经统一改写为上述 cbit 框架。任何依赖原始平台顺序的下游代码请改用 normalizer 输出。
+
+如果你需要按 qubit 索引读取，请保证 `circuit.measure(q[i])` 的调用顺序与你预期的 `c[i]` 一致。
+
+---
+
+## 2.7 提交前格式校验 {#platform-precheck}
+
+从 0.0.12 起，`submit_task()` / `submit_batch()` 在提交到任何云端之前，会执行一次 **离线校验**（`uniqc.compile.compatibility_report`）：
+
+1. **Submit language**：根据后端确定提交语言 — `originq` → OriginIR；`ibm`、`quafu`、`quark` → QASM 2.0。
+2. **Basis gate set**：根据后端确定基础门集合 — `originq`、`quafu`、`quark` 默认按 `cz + sx + rz` 校验；`ibm` 按 `BackendInfo.extra["basis_gates"]` 校验。
+3. **Topology**：双比特门必须落在 backend 拓扑的边上。`CZ`、`ISWAP`、`SWAP`、`XX`、`YY`、`ZZ`、`XY` 视为无向；`CNOT`/`CX`、`ECR` 视为有向。
+4. **Qubit count**：电路中用到的 qubit 索引必须 `< backend.num_qubits`。
+5. **Topology TTL**：后端拓扑使用 `~/.uniqc/cache/backends.sqlite` 的缓存，TTL 24h；过期但仍可用的拓扑会以 warning 方式提示。
+
+校验**通过** 时，`submit_task()` 会在 `metadata` 中附加：
+
+```python
+{
+    "validation_passed": True,
+    "gate_depth": 13,
+    "used_gates": ["CZ", "RZ", "SX"],
+    "submit_language": "originir",
+    "validation_warnings": [...],   # 仅在有 warning 时出现
+}
+```
+
+校验**失败**且未启用自动编译时会抛出 `UnsupportedGateError`。可以这样跳过校验或自动编译：
+
+```python
+from uniqc import submit_task, compile_for_backend, compatibility_report, is_compatible
+
+# 直接获取报告（不会发请求）
+report = compatibility_report(circuit, backend_info)
+print(report)
+
+# 简单 boolean
+ok = is_compatible(circuit, backend_info)
+
+# 让 uniqc 自动按 backend 政策编译后再提交
+task_id = submit_task(circuit, backend="originq:WK_C180", auto_compile=True)
+
+# 完全跳过（仅在你确信前端已经做过等价校验时使用）
+import os
+os.environ["UNIQC_SKIP_VALIDATION"] = "1"
+```
+
+或者编程式预先编译：
+
+```python
+compiled = compile_for_backend(circuit, backend_info)  # → cz/sx/rz
+```
+
+### 2.8 Gate depth 计算约定 {#platform-gate-depth}
+
+`uniqc.compute_gate_depth(circuit, *, virtual_z=True)` 返回 **并行感知 + virtual-Z 感知** 的 depth：
+
+* 每个 gate 占据其所有 qubit 的 *earliest free layer*；同一层中无冲突的 gate 被并行计入同一深度。**这与“gate 数”不同**——很多旧实验代码错误地把它们等同。
+* `virtual_z=True`（默认）时，`Z`、`RZ`、`S`、`T`、`U1` 视为 **frame change**，深度为 0；它们仍占据该 qubit 的 cursor 以避免与非交换的相邻门折叠。
+* `BARRIER` 同步它涉及的所有 qubit cursor，**但不增加** depth 数。
+* `MEASURE` 不计入 gate depth。
+* `CZ` **不是** virtual-Z（它是双比特门）。
+
+```python
+from uniqc import Circuit, compute_gate_depth
+c = Circuit()
+c.h(0); c.h(1); c.cnot(0, 1); c.rz(0, 0.5); c.h(0)
+compute_gate_depth(c)                # → 3 （H 并行；CNOT；RZ 虚；H 与 CNOT 不并行 → 3）
+compute_gate_depth(c, virtual_z=False)  # → 4
+```
+
 ---
 
 ## 3. 运行模式约定 {#platform-run-modes}
