@@ -1,7 +1,7 @@
 """Tests for transpiler converter module."""
 from uniqc.test._utils import uniq_test, NotMatchError
 from uniqc.compile.converter import convert_oir_to_qasm, convert_qasm_to_oir
-from uniqc.compile._utils import IRConversionFailedException
+from uniqc.exceptions import CircuitTranslationError
 from uniqc.circuit_builder import Circuit
 
 
@@ -73,13 +73,13 @@ def run_test_error_handling():
     # Test invalid OriginIR
     try:
         convert_oir_to_qasm("INVALID ORIGINIR SYNTAX")
-    except IRConversionFailedException as e:
+    except CircuitTranslationError as e:
         print(f"Caught expected error for invalid OriginIR: {e}")
 
     # Test invalid QASM
     try:
         convert_qasm_to_oir("INVALID QASM SYNTAX")
-    except IRConversionFailedException as e:
+    except CircuitTranslationError as e:
         print(f"Caught expected error for invalid QASM: {e}")
 
 

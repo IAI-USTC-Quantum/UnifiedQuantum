@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from uniqc.exceptions import UnifiedQuantumError
+from uniqc.exceptions import StaleCalibrationError  # noqa: F401 — re-export
 
 __all__ = ["M3Mitigator", "StaleCalibrationError"]
 
@@ -24,12 +24,6 @@ def _get_field(cal: Any, name: str) -> Any:
     if hasattr(cal, name):
         return getattr(cal, name)
     return cal[name]
-
-
-class StaleCalibrationError(UnifiedQuantumError):
-    """Raised when the calibration data is older than the requested TTL."""
-
-    pass
 
 
 class M3Mitigator:

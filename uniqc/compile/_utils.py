@@ -1,19 +1,11 @@
 
-"""Compilation exception classes for the transpiler module.
+"""Compilation exception re-exports.
 
-This module defines custom exceptions for quantum circuit compilation
-and IR conversion failures.
+Historical names ``CompilationFailedException`` and ``IRConversionFailedException``
+have been renamed to :class:`~uniqc.exceptions.CompilationFailedError` and
+:class:`~uniqc.exceptions.CircuitTranslationError` respectively.
 """
 
-__all__ = ["CompilationFailedException", "IRConversionFailedException"]
+__all__ = ["CompilationFailedError", "CircuitTranslationError"]
 
-from uniqc.exceptions import UnifiedQuantumError
-
-
-class CompilationFailedException(UnifiedQuantumError, RuntimeError):
-    """Raised when quantum circuit compilation fails."""
-    pass
-
-class IRConversionFailedException(RuntimeError):
-    """Raised when IR conversion between formats fails."""
-    pass
+from uniqc.exceptions import CircuitTranslationError, CompilationFailedError

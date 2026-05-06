@@ -8,13 +8,14 @@ Installation:
 
 from __future__ import annotations
 
-__all__ = ["BackendUnavailableError", "OriginQAdapter"]
+__all__ = ["OriginQAdapter"]
 
 import time
 import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES
+from uniqc.exceptions import BackendNotAvailableError
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -29,25 +30,6 @@ from uniqc.backend_adapter.task.optional_deps import require
 def _avg(values: list[float]) -> float | None:
     """Return the arithmetic mean of a list, or None if the list is empty."""
     return sum(values) / len(values) if values else None
-
-
-class BackendUnavailableError(RuntimeError):
-    """Raised when a hardware backend is currently unavailable.
-
-    Hardware backends may become unavailable due to maintenance, queue
-    congestion, or other operational reasons. Use
-    ``OriginQAdapter.get_available_backends()`` to enumerate backends that
-    can currently accept jobs.
-    """
-
-    def __init__(self, backend_name: str) -> None:
-        self.backend_name = backend_name
-        available = None  # filled by caller
-        msg = (
-            f"Hardware backend '{backend_name}' is currently unavailable. "
-            f"To see available backends, run: uniqc backend list --info"
-        )
-        super().__init__(msg)
 
 
 class OriginQAdapter(QuantumAdapter):
@@ -248,7 +230,7 @@ class OriginQAdapter(QuantumAdapter):
         return [b for b in all_backends if b["available"]]
 
     def _validate_backend(self, backend_name: str) -> None:
-        """Raise BackendUnavailableError if a hardware backend is not available.
+        """Raise BackendNotAvailableError if a hardware backend is not available.
 
         Simulator backends are always considered available.
 
@@ -256,7 +238,7 @@ class OriginQAdapter(QuantumAdapter):
             backend_name: Backend name to validate.
 
         Raises:
-            BackendUnavailableError: If the backend is a hardware backend
+            BackendNotAvailableError: If the backend is a hardware backend
                 but is currently unavailable.
         """
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -265,7 +247,10 @@ class OriginQAdapter(QuantumAdapter):
         cached_available = self._backend_avail_cache.get(backend_name)
         if cached_available is not None:
             if not cached_available:
-                raise BackendUnavailableError(backend_name)
+                raise BackendNotAvailableError(
+                    f"Hardware backend '{backend_name}' is currently unavailable. "
+                    f"To see available backends, run: uniqc backend list --info"
+                )
             return
 
         all_backends = self.list_backends()
@@ -273,7 +258,10 @@ class OriginQAdapter(QuantumAdapter):
             if b["name"] == backend_name:
                 self._backend_avail_cache[backend_name] = bool(b["available"])
                 if not b["available"]:
-                    raise BackendUnavailableError(backend_name)
+                    raise BackendNotAvailableError(
+                        f"Hardware backend '{backend_name}' is currently unavailable. "
+                        f"To see available backends, run: uniqc backend list --info"
+                    )
                 return
 
         # Backend name not found at all — let submit() fail naturally

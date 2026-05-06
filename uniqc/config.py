@@ -86,23 +86,15 @@ PLATFORM_KNOWN_FIELDS = {
 
 
 # ---------------------------------------------------------------------------
-# Exceptions
+# Exceptions (re-exported from the central module)
 # ---------------------------------------------------------------------------
 
-class ConfigError(Exception):
-    pass
-
-
-class ConfigValidationError(ConfigError):
-    pass
-
-
-class PlatformNotFoundError(ConfigError):
-    pass
-
-
-class ProfileNotFoundError(ConfigError):
-    pass
+from uniqc.exceptions import (  # noqa: F401 — re-export for backward compat
+    ConfigError,
+    ConfigValidationError,
+    PlatformNotFoundError,
+    ProfileNotFoundError,
+)
 
 
 # ---------------------------------------------------------------------------

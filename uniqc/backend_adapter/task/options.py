@@ -38,11 +38,7 @@ import dataclasses
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import Platform
-from uniqc.exceptions import UnifiedQuantumError
-
-
-class BackendOptionsError(UnifiedQuantumError, ValueError):
-    """Raised when :class:`BackendOptions` construction, validation, or normalisation fails."""
+from uniqc.exceptions import BackendOptionsError  # noqa: F401 — re-export
 
 
 @dataclasses.dataclass

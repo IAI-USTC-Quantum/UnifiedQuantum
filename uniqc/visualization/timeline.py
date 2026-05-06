@@ -42,6 +42,9 @@ _DEFAULT_BASIS_GATES = ["cz", "sx", "rz"]
 class TimelineDurationError(ValueError):
     """Raised when a logical circuit cannot be scheduled without durations."""
 
+# Re-export from central module (local name kept for backward compat within this file)
+from uniqc.exceptions import TimelineDurationError as TimelineDurationError  # noqa: F401, E501
+
 
 @dataclass(frozen=True, slots=True)
 class TimelineGate:

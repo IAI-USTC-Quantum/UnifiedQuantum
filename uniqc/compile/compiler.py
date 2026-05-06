@@ -8,7 +8,7 @@ typed configuration object.
 
 from __future__ import annotations
 
-__all__ = ["compile", "TranspilerConfig", "CompilationResult", "CompilationFailedException"]
+__all__ = ["compile", "TranspilerConfig", "CompilationResult", "CompilationFailedError"]
 
 import heapq
 import re
@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from ._utils import CompilationFailedException
+from ._utils import CompilationFailedError
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
 
 if TYPE_CHECKING:
@@ -137,7 +137,7 @@ def compile(
 
     Raises
     ------
-    CompilationFailedException
+    CompilationFailedError
         If transpilation fails.
     ValueError
         If the transpiler type is unsupported, the optimization level is out
@@ -321,7 +321,7 @@ def _load_transpile_qasm():
     try:
         from .qiskit_transpiler import transpile_qasm
     except ImportError as exc:
-        raise CompilationFailedException(
+        raise CompilationFailedError(
             "compile() requires the optional qiskit dependencies. "
             "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`."
         ) from exc
