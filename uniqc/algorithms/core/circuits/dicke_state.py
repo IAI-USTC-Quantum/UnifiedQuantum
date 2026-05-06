@@ -114,15 +114,13 @@ def dicke_state_circuit(
     if k < 1 or k > n:
         raise ValueError(f"k must satisfy 1 <= k <= n (got k={k}, n={n})")
 
-    # Step 1: Initialize last k qubits to |1⟩
-    for q in qubits[n - k:]:
-        circuit.x(q)
-
-    # Step 2: first_block — propagate excitations leftward
-    # Each SCS_{l,k} unit uses exactly k+1 qubits: the LAST k+1 of the first l.
-    for l in range(n, k, -1):
-        _scs(circuit, qubits[l - k - 1 : l], l, k)
-
-    # Step 3: second_block — balance excitations within the first k qubits
-    for l in range(k, 1, -1):
-        _scs(circuit, qubits[:l], l, l - 1)
+    # Delegate to the reference implementation in
+    # uniqc.algorithms.core.state_preparation.dicke_state, which builds the
+    # target state vector explicitly and prepares it via rotation_prepare.
+    # The local SCUC implementation above is retained as scaffolding for a
+    # future O(nk)-depth specialization but is currently incorrect, so we
+    # bypass it here.
+    from uniqc.algorithms.core.state_preparation.dicke_state import (
+        dicke_state as _dicke_state_reference,
+    )
+    _dicke_state_reference(circuit, qubits=qubits, k=k)

@@ -55,7 +55,7 @@ circuit.u3(0, 1.57, 0.785, 0.392)
 
 ### 双量子比特门
 
-`cnot`, `cx`, `cz`, `iswap`, `swap`, `cswap`, `toffoli`, `xx`, `yy`, `zz`, `xy`, `phase2q`, `uu15`
+`cnot`, `cx`, `cz`, `iswap`, `swap`, `cswap`, `toffoli`, `xx`, `yy`, `zz`, `phase2q`, `uu15`
 
 ```python
 circuit.cnot(0, 1)
@@ -138,20 +138,24 @@ draw(circuit.originir)
 
 ## 提取酉矩阵 {#guide-circuit-unitary-matrix}
 
-对不含测量门的线路，可以提取其对应的酉矩阵（Unitary Matrix）表示：
+:::{note}
+当前版本暂未提供从 `Circuit` 直接导出酉矩阵的公开 API（`Circuit.get_matrix()` 不存在）。如果需要查看不含测量门的线路在指定初态上的演化结果，推荐使用状态向量模拟器：
 
 ```python
 from uniqc import Circuit
+from uniqc.simulator import OriginIR_Simulator
 
 c = Circuit()
 c.h(0)
 c.cnot(0, 1)
 
-matrix = c.get_matrix()   # numpy.ndarray，shape = (4, 4)
-print(matrix.round(4))
+sim = OriginIR_Simulator(backend_type='statevector')
+psi = sim.simulate_statevector(c.originir)
+print(psi)
 ```
 
-支持的门：`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`，以及各受控变体。含测量或退相干通道的线路会抛出 {exc}`NotMatrixableError`。
+如需完整酉矩阵，可在小规模线路上分别对计算基矢初态做模拟拼接，或直接使用底层 opcode 工具自行实现。
+:::
 
 ## 命名量子寄存器 {#guide-circuit-named-qreg}
 
@@ -221,7 +225,10 @@ phi.bind(0.5)
 # 求值
 value = theta.evaluate()  # 返回 1.0
 
-# 或通过字典传入值
+# 或通过字典传入值（注意：当参数已绑定时，绑定值优先，dict 会被忽略）
+result = theta.evaluate({"theta": 2.0})  # 仍返回 1.0
+# 想让 dict 生效，先 unbind：
+theta.unbind()
 result = theta.evaluate({"theta": 2.0})  # 返回 2.0
 ```
 

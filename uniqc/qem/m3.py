@@ -12,10 +12,21 @@ from typing import Any
 
 import numpy as np
 
+from uniqc.exceptions import UnifiedQuantumError
+
 __all__ = ["M3Mitigator", "StaleCalibrationError"]
 
 
-class StaleCalibrationError(Exception):
+def _get_field(cal: Any, name: str) -> Any:
+    """Read ``name`` from ``cal`` whether it is a dataclass or a dict."""
+    if cal is None:
+        raise ValueError("calibration result is None")
+    if hasattr(cal, name):
+        return getattr(cal, name)
+    return cal[name]
+
+
+class StaleCalibrationError(UnifiedQuantumError):
     """Raised when the calibration data is older than the requested TTL."""
 
     pass
@@ -52,6 +63,13 @@ class M3Mitigator:
     ) -> None:
         if calibration_result is not None:
             self._cal = calibration_result
+            calibrated_at = ""
+            try:
+                calibrated_at = _get_field(calibration_result, "calibrated_at")
+            except (KeyError, AttributeError):
+                calibrated_at = ""
+            if calibrated_at and max_age_hours is not None:
+                self._check_age(calibrated_at, max_age_hours)
         elif cache_path is not None:
             self._cal = self._load_from_path(cache_path, max_age_hours)
         else:
@@ -88,7 +106,7 @@ class M3Mitigator:
             Dict mapping outcome → corrected count (float, preserved total).
         """
         cal = self.calibration_result
-        C = np.array(cal["confusion_matrix"])
+        C = np.array(_get_field(cal, "confusion_matrix"))
         n = len(C)
 
         # Build observed vector
@@ -129,7 +147,7 @@ class M3Mitigator:
             Dict mapping outcome (int) → corrected probability.
         """
         cal = self.calibration_result
-        C = np.array(cal["confusion_matrix"])
+        C = np.array(_get_field(cal, "confusion_matrix"))
         n = len(C)
 
         p_obs = np.zeros(n)

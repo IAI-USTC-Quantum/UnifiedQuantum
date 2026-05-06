@@ -17,6 +17,22 @@ if TYPE_CHECKING:
 __all__ = ["ReadoutEM"]
 
 
+def _outcome_to_int(outcome: Any) -> int:
+    """Normalize a count/prob dict key to an int outcome.
+
+    Accepts ``int``, ``str`` of ``0``/``1`` characters (interpreted in
+    binary), or anything else convertible by ``int()``.
+    """
+    if isinstance(outcome, int):
+        return outcome
+    if isinstance(outcome, str):
+        s = outcome.strip()
+        if s and all(c in "01" for c in s):
+            return int(s, 2)
+        return int(s)
+    return int(outcome)
+
+
 class ReadoutEM:
     """Unified readout error mitigator.
 
@@ -98,9 +114,9 @@ class ReadoutEM:
         Returns:
             Dict mapping outcome (int) → corrected probability.
         """
-        # Normalize string keys to int
+        # Normalize string keys to int (bitstrings interpreted in binary)
         if probs and isinstance(next(iter(probs)), str):
-            probs = {int(k): v for k, v in probs.items()}
+            probs = {_outcome_to_int(k): v for k, v in probs.items()}
         n = len(measured_qubits)
         if n == 1:
             return self._mitigate_probs_1q(probs, measured_qubits[0])
@@ -185,7 +201,7 @@ class ReadoutEM:
         This is an approximation: each qubit is corrected independently
         using its 1-qubit confusion matrix, applied in order.
         """
-        result = {int(k): float(v) for k, v in counts.items()}
+        result = {_outcome_to_int(k): float(v) for k, v in counts.items()}
         for bit_position, q in enumerate(qubits):
             result = self._apply_1q_matrix(result, q, bit_position, len(qubits))
         return result
@@ -194,7 +210,7 @@ class ReadoutEM:
         self, probs: dict[int, float], qubits: list[int]
     ) -> dict[int, float]:
         """Apply per-qubit readout EM sequentially to probabilities."""
-        result = {int(k): float(v) for k, v in probs.items()}
+        result = {_outcome_to_int(k): float(v) for k, v in probs.items()}
         for bit_position, q in enumerate(qubits):
             result = self._apply_1q_matrix_probs(result, q, bit_position, len(qubits))
         return result
@@ -244,7 +260,7 @@ class ReadoutEM:
 
         n_obs = np.zeros(n)
         for outcome, cnt in counts.items():
-            n_obs[int(outcome)] = float(cnt)
+            n_obs[_outcome_to_int(outcome)] = float(cnt)
 
         n_corr = full_C @ n_obs
         n_corr = np.clip(n_corr, 0, None)

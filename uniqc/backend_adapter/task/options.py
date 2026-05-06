@@ -12,13 +12,13 @@ Using the typed interface::
     from uniqc.backend_adapter.task.options import OriginQOptions
     from uniqc import submit_task
 
-    opts = OriginQOptions(backend_name="origin:wuyuan:d5", circuit_optimize=True)
+    opts = OriginQOptions(backend_name="originq:WK_C180", circuit_optimize=True)
     task_id = submit_task(circuit, "originq", shots=1000, options=opts)
 
 Equivalent using the legacy interface::
 
     task_id = submit_task(circuit, "originq", shots=1000,
-                          backend_name="origin:wuyuan:d5", circuit_optimize=True)
+                          backend_name="originq:WK_C180", circuit_optimize=True)
 """
 
 from __future__ import annotations
@@ -38,9 +38,10 @@ import dataclasses
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import Platform
+from uniqc.exceptions import UnifiedQuantumError
 
 
-class BackendOptionsError(ValueError):
+class BackendOptionsError(UnifiedQuantumError, ValueError):
     """Raised when :class:`BackendOptions` construction, validation, or normalisation fails."""
 
 
@@ -71,12 +72,14 @@ class BackendOptions:
         raise NotImplementedError
 
     @classmethod
-    def from_kwargs(cls, platform: str, kwargs: dict[str, Any]) -> BackendOptions:
+    def from_kwargs(
+        cls, platform: str, kwargs: dict[str, Any] | None = None, **extra: Any
+    ) -> BackendOptions:
         """Construct the appropriate :class:`BackendOptions` from a ``**kwargs`` dict.
 
         This is a convenience alias for :meth:`BackendOptionsFactory.from_kwargs`.
         """
-        return BackendOptionsFactory.from_kwargs(platform, kwargs)
+        return BackendOptionsFactory.from_kwargs(platform, kwargs, **extra)
 
 
 @dataclasses.dataclass
@@ -86,8 +89,8 @@ class OriginQOptions(BackendOptions):
     Parameters
     ----------
     backend_name : str
-        Full OriginQ backend name, e.g. ``"origin:wuyuan:d5"``.
-        Default: ``"origin:wuyuan:d5"``.
+        Full OriginQ backend name, e.g. ``"originq:WK_C180"``.
+        Default: ``"originq:WK_C180"``.
     circuit_optimize : bool
         Enable circuit optimisation on the backend. Default: ``True``.
     measurement_amend : bool
@@ -97,7 +100,7 @@ class OriginQOptions(BackendOptions):
     """
 
     platform: dataclasses.InitVar[Platform] = dataclasses.field(default=Platform.ORIGINQ, repr=False)
-    backend_name: str = "origin:wuyuan:d5"
+    backend_name: str = "originq:WK_C180"
     circuit_optimize: bool = True
     measurement_amend: bool = False
     auto_mapping: bool = False
@@ -301,15 +304,26 @@ class BackendOptionsFactory:
     }
 
     @classmethod
-    def from_kwargs(cls, platform: str, kwargs: dict[str, Any]) -> BackendOptions:
+    def from_kwargs(
+        cls,
+        platform: str,
+        kwargs: dict[str, Any] | None = None,
+        **extra: Any,
+    ) -> BackendOptions:
         """Construct the appropriate :class:`BackendOptions` from a ``**kwargs`` dict.
+
+        Accepts both forms for backwards compatibility:
+
+        * ``BackendOptionsFactory.from_kwargs("originq", {"shots": 100})``
+        * ``BackendOptionsFactory.from_kwargs("originq", shots=100)``
 
         Parameters
         ----------
         platform :
             Platform name — one of ``"originq"``, ``"quafu"``, ``"ibm"``, ``"dummy"``.
         kwargs :
-            Keyword arguments from :func:`submit_task`.
+            Optional keyword arguments dict. Merged with any additional
+            keyword arguments passed via ``**extra``.
 
         Returns
         -------
@@ -328,14 +342,19 @@ class BackendOptionsFactory:
                 f"Unknown platform {platform_lower!r}. Available: {list(cls._PLATFORM_MAP.keys())}"
             )
 
-        kwargs = dict(kwargs)  # Don't mutate caller's dict
+        if kwargs is None:
+            kwargs = {}
+        else:
+            kwargs = dict(kwargs)  # Don't mutate caller's dict
+        if extra:
+            kwargs.update(extra)
 
         shots = kwargs.pop("shots", 1000)
 
         if platform_lower == "originq":
             return OriginQOptions(
                 shots=shots,
-                backend_name=kwargs.pop("backend_name", "origin:wuyuan:d5"),
+                backend_name=kwargs.pop("backend_name", "originq:WK_C180"),
                 circuit_optimize=kwargs.pop("circuit_optimize", True),
                 measurement_amend=kwargs.pop("measurement_amend", False),
                 auto_mapping=kwargs.pop("auto_mapping", False),

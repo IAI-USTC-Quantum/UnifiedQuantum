@@ -107,7 +107,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     QuantumAdapter,
 )
 from uniqc.backend_adapter.task.options import BackendOptions, BackendOptionsFactory
-from uniqc.backend_adapter.task.result_types import DryRunResult
+from uniqc.backend_adapter.task.result_types import DryRunResult, UnifiedResult
 from uniqc.backend_adapter.task.store import (
     DEFAULT_CACHE_DIR,
     TaskInfo,
@@ -372,16 +372,23 @@ def list_tasks(
     return _store(cache_dir).list(status=status, backend=backend)
 
 
-def clear_completed_tasks(cache_dir: Path | None = None) -> int:
+def clear_completed_tasks(
+    cache_dir: Path | None = None, status: str | None = None
+) -> int:
     """Remove completed tasks from the cache.
 
     Args:
         cache_dir: Optional custom cache directory.
+        status: If given, only remove tasks with this status (case-insensitive,
+            same normalization as ``list_tasks``). When ``None``, removes all
+            tasks in any terminal status (success, failed, cancelled, ...).
 
     Returns:
         Number of tasks removed.
     """
-    return _store(cache_dir).clear_completed()
+    if status is None:
+        return _store(cache_dir).clear_completed()
+    return _store(cache_dir).clear_completed(terminal_statuses=(status,))
 
 
 def clear_cache(cache_dir: Path | None = None) -> None:
@@ -1177,13 +1184,53 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     return task_info
 
 
+def _wrap_as_unified_result(
+    raw: Any,
+    task_id: str,
+    backend: str | None,
+    shots: int | None = None,
+) -> UnifiedResult:
+    """Wrap a raw adapter result into a :class:`UnifiedResult`.
+
+    Adapters historically return either a flat counts dict
+    (``{"00": 512, "11": 488}``) or a wrapped form
+    (``{"result": {"00": 512, ...}, ...}``). This helper normalizes both
+    and preserves the original payload as ``raw_result``.
+    """
+    if isinstance(raw, UnifiedResult):
+        return raw
+
+    if isinstance(raw, dict) and "result" in raw and isinstance(raw["result"], dict):
+        counts = raw["result"]
+    elif isinstance(raw, dict):
+        counts = raw
+    else:
+        counts = {}
+
+    counts = {str(k): int(v) for k, v in counts.items()} if counts else {}
+
+    backend_name = backend or "unknown"
+    platform = backend_name.split(":", 1)[0] if backend_name else "unknown"
+
+    result = UnifiedResult.from_counts(
+        counts=counts,
+        platform=platform,
+        task_id=task_id,
+        backend_name=backend_name,
+        raw_result=raw,
+    )
+    if shots is not None and not result.shots:
+        result.shots = shots
+    return result
+
+
 def wait_for_result(
     task_id: str,
     backend: str | None = None,
     timeout: float = 300.0,
     poll_interval: float = 5.0,
     raise_on_failure: bool = True,
-) -> dict | None:
+) -> UnifiedResult | None:
     """Wait for a task to complete and return its result.
 
     This function polls the task status until it completes, fails, or
@@ -1197,7 +1244,11 @@ def wait_for_result(
         raise_on_failure: If True, raises TaskFailedError on task failure.
 
     Returns:
-        The task result dictionary if successful, None if timed out.
+        A :class:`UnifiedResult` on success, or ``None`` if the task failed
+        and ``raise_on_failure=False``. The returned object is dict-like
+        (``result["00"]``, ``len(result)``, iteration, equality with a plain
+        counts dict all work). Use :meth:`UnifiedResult.raw` to access the
+        original platform-specific payload.
 
     Raises:
         TaskTimeoutError: If the timeout is reached before completion.
@@ -1207,8 +1258,12 @@ def wait_for_result(
 
     Example:
         >>> result = wait_for_result('task-123', backend='quafu', timeout=300)
-        >>> print(result['counts'])
+        >>> print(result.counts)        # unified accessor
         {'00': 512, '11': 488}
+        >>> result['00']                # dict-like access still works
+        512
+        >>> result.raw()                # original adapter payload
+        {'result': {'00': 512, '11': 488}, ...}
     """
     start_time = time.time()
 
@@ -1218,11 +1273,12 @@ def wait_for_result(
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
-            # Unwrap: adapter returns {"result": counts_dict}, return just the counts
-            raw = task_info.result
-            if isinstance(raw, dict) and "result" in raw:
-                return raw["result"]
-            return raw
+            return _wrap_as_unified_result(
+                task_info.result,
+                task_id=task_id,
+                backend=task_info.backend,
+                shots=task_info.shots,
+            )
 
         # Check if failed
         if task_info.status == TaskStatus.FAILED:
@@ -1251,7 +1307,11 @@ def wait_for_result(
                         backend=backend,
                     )
                 if final_info.get("status") == TASK_STATUS_SUCCESS:
-                    return final_info.get("result")
+                    return _wrap_as_unified_result(
+                        final_info.get("result"),
+                        task_id=task_id,
+                        backend=backend,
+                    )
 
             raise TaskTimeoutError(
                 f"Timeout waiting for task '{task_id}' to complete.",
@@ -1332,8 +1392,8 @@ class TaskManager:
         timeout: float = 300.0,
         poll_interval: float = 5.0,
         raise_on_failure: bool = True,
-    ) -> dict | None:
-        """Wait for a task to complete."""
+    ) -> UnifiedResult | None:
+        """Wait for a task to complete. See :func:`wait_for_result`."""
         return wait_for_result(
             task_id,
             backend,

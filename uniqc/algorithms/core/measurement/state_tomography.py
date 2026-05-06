@@ -460,7 +460,7 @@ def state_tomography(
     except ImportError:
         # Fallback: manual construction (only handles real matrices correctly)
         d = 2**n
-        rho = np.zeros((d, d), dtype=float)
+        rho = np.zeros((d, d), dtype=complex)
 
         # Build lookup: for each (a,b) pair, compute sum_P <P> * <a|P|b>
         for a in range(d):
@@ -474,7 +474,7 @@ def state_tomography(
                         ai, bi = (a >> i) & 1, (b >> i) & 1
                         pi = p[i]
                         if pi == "I":
-                            prod *= 1
+                            prod *= 1 if ai == bi else 0
                         elif pi == "Z":
                             prod *= (1 if ai == 0 else -1) if ai == bi else 0
                         elif pi == "X":
@@ -491,8 +491,7 @@ def state_tomography(
                     val += exp * prod
                 rho[a, b] = val / (2**n)
 
-        rho = rho.real
-        rho = (rho + rho.T) / 2  # symmetrize (should already be symmetric for pure states)
+        rho = (rho + rho.conj().T) / 2  # Hermitian-symmetrize
 
     return rho
 

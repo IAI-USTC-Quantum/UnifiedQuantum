@@ -6,7 +6,11 @@ and IR conversion failures.
 """
 
 __all__ = ["CompilationFailedException", "IRConversionFailedException"]
-class CompilationFailedException(RuntimeError):
+
+from uniqc.exceptions import UnifiedQuantumError
+
+
+class CompilationFailedException(UnifiedQuantumError, RuntimeError):
     """Raised when quantum circuit compilation fails."""
     pass
 

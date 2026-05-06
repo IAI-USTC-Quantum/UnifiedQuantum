@@ -121,6 +121,8 @@ class RegionSelector:
 
         # Two-qubit fidelity map: undirected edge -> best gate fidelity
         for tq_data in self._chip.two_qubit_data:
+            if tq_data.qubit_u == tq_data.qubit_v:
+                continue  # skip self-loops which are not real two-qubit edges
             for gate in tq_data.gates:
                 if gate.fidelity is not None:
                     edge = tuple(sorted((tq_data.qubit_u, tq_data.qubit_v)))
@@ -134,11 +136,15 @@ class RegionSelector:
 
         for edge_topo in self._chip.connectivity:
             u, v = edge_topo.u, edge_topo.v
+            if u == v:
+                continue
             undirected[u].add(v)
             undirected[v].add(u)
 
         for edge_topo in self._chip.connectivity:
             u, v = edge_topo.u, edge_topo.v
+            if u == v:
+                continue
             edge = tuple(sorted((u, v)))
             fid = self._tq_fid.get(edge, _DEFAULT_FIDELITY)
             weight = 1.0 - fid  # lower weight = better

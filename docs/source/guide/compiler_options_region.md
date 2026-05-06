@@ -78,21 +78,32 @@ qasm = compile(circuit, backend_info=info, output_format="qasm")
 assert "OPENQASM" in qasm
 ```
 
-### 1.5 `TranspilerConfig`：类型化配置
+### 1.5 `TranspilerConfig`：类型化配置（可选）
+
+`TranspilerConfig` 是一个 `frozen=True` 的数据类，可用于打包并复用一组编译参数（便于缓存、传参）。注意：`compile()` 当前不直接接受 `config` 参数，调用时需要把字段展开传入：
 
 ```python
-from uniqc import TranspilerConfig
+from uniqc import TranspilerConfig, compile, find_backend
 
 config = TranspilerConfig(
-    type="qiskit",               # 目前仅支持 "qiskit"，预留扩展
-    level=3,                     # 最强优化
-    basis_gates=["cx", "u3"],   # 自定义基门集
-    chip_characterization=chip,  # 传入标定数据以启用感知路由
+    type="qiskit",                # 目前仅支持 "qiskit"，预留扩展
+    level=3,                      # 最强优化
+    basis_gates=["cz", "sx", "rz"],  # 自定义基门集
+    chip_characterization=chip,   # 传入标定数据以启用感知路由
 )
 
-# frozen=True，可哈希，可安全用于缓存
-compiled = compile(circuit, config=config, ...)
+backend_info = find_backend('originq:WK_C180')
+compiled = compile(
+    circuit,
+    backend_info,
+    type=config.type,
+    level=config.level,
+    basis_gates=config.basis_gates,
+    chip_characterization=config.chip_characterization,
+)
 ```
+
+`compile()` 总是直接返回 `Circuit`（或字符串，取决于 `output_format`）。需要拿到 SWAP 数量、估算成功率等编译元数据时，请使用内部 API `compile_full()`，它返回 `CompilationResult`（注意：`compile_full` 与 `CompilationResult` 当前未在公开命名空间暴露）。
 
 ### 1.6 芯片标定感知路由
 
@@ -509,3 +520,7 @@ uv pip install unified-quantum[qiskit]
 ```
 pip install matplotlib
 ```
+
+:::{note}
+🔧 `schedule_circuit` 与 `plot_time_line*` 在内部依赖 `compile()` 把逻辑线路展开为芯片原生门，因此同样需要可选的 `unified-quantum[qiskit]` extra。如果你只想对**已经编译过、且只使用平台原生门**的线路做调度，可在不安装 `[qiskit]` 的前提下直接传入；否则请先 `pip install unified-quantum[qiskit]`。
+:::

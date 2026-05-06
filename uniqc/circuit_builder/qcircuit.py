@@ -641,6 +641,16 @@ class Circuit:
         """
         self.add_gate("ZZ", [q1, q2], params=theta)
 
+    def xy(self, q1: QubitInput, q2: QubitInput, theta: float) -> None:
+        """Apply XY Ising interaction gate.
+
+        Args:
+            q1: First qubit - can be int, Qubit, or QRegSlice
+            q2: Second qubit - can be int, Qubit, or QRegSlice
+            theta: Interaction angle in radians.
+        """
+        self.add_gate("XY", [q1, q2], params=theta)
+
     def phase2q(self, q1: QubitInput, q2: QubitInput, theta1: float, theta2: float, thetazz: float) -> None:
         """Apply two-qubit phase gate with local and ZZ terms.
 
