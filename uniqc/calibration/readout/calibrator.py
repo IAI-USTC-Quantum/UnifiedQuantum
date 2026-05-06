@@ -59,16 +59,19 @@ class ReadoutCalibrator:
     # Public API
     # -------------------------------------------------------------------------
 
-    def calibrate_1q(self, qubit: int) -> dict[str, Any]:
+    def calibrate_1q(self, qubit: int) -> ReadoutCalibrationResult:
         """Calibrate readout for a single qubit.
 
         Args:
             qubit: Qubit index.
 
         Returns:
-            A dict with keys: ``qubit``, ``type="readout_1q"``,
-            ``confusion_matrix`` (2×2 list), ``assignment_fidelity``,
+            A :class:`ReadoutCalibrationResult` dataclass with fields:
+            ``qubit``, ``type="readout_1q"``,
+            ``confusion_matrix`` (tuple of tuples), ``assignment_fidelity``,
             ``calibrated_at``, ``backend``.
+            Supports dict-like access (``result["confusion_matrix"]``)
+            for backward compatibility.
         """
         from uniqc.calibration.results import ReadoutCalibrationResult, save_calibration_result
 
@@ -99,9 +102,9 @@ class ReadoutCalibrator:
             assignment_fidelity=assignment_fid,
         )
         save_calibration_result(result, type_prefix="readout_1q", cache_dir=self.cache_dir)
-        return result.to_dict()
+        return result
 
-    def calibrate_2q(self, qubit_u: int, qubit_v: int) -> dict[str, Any]:
+    def calibrate_2q(self, qubit_u: int, qubit_v: int) -> ReadoutCalibrationResult:
         """Calibrate joint readout for a two-qubit pair.
 
         Args:
@@ -109,9 +112,12 @@ class ReadoutCalibrator:
             qubit_v: Second qubit index.
 
         Returns:
-            A dict with keys: ``qubit`` (tuple), ``type="readout_2q"``,
-            ``confusion_matrix`` (4×4 list), ``assignment_fidelity``,
+            A :class:`ReadoutCalibrationResult` dataclass with fields:
+            ``qubit`` (tuple), ``type="readout_2q"``,
+            ``confusion_matrix`` (tuple of tuples), ``assignment_fidelity``,
             ``calibrated_at``, ``backend``.
+            Supports dict-like access (``result["confusion_matrix"]``)
+            for backward compatibility.
         """
         from uniqc.calibration.results import ReadoutCalibrationResult, save_calibration_result
 
@@ -145,9 +151,9 @@ class ReadoutCalibrator:
             assignment_fidelity=assignment_fid,
         )
         save_calibration_result(result, type_prefix="readout_2q", cache_dir=self.cache_dir)
-        return result.to_dict()
+        return result
 
-    def calibrate_qubits(self, qubits: list[int]) -> dict[int, dict[str, Any]]:
+    def calibrate_qubits(self, qubits: list[int]) -> dict[int, ReadoutCalibrationResult]:
         """Calibrate readout for multiple single qubits.
 
         Args:
@@ -160,7 +166,7 @@ class ReadoutCalibrator:
 
     def calibrate_pairs(
         self, pairs: list[tuple[int, int]]
-    ) -> dict[tuple[int, int], dict[str, Any]]:
+    ) -> dict[tuple[int, int], ReadoutCalibrationResult]:
         """Calibrate joint readout for multiple qubit pairs.
 
         Args:

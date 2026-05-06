@@ -227,9 +227,13 @@ class ReadoutEM:
         This marginalizes over all other qubits and applies the 1q correction.
         """
         mit = self._get_mitigator_1q(qubit)
-        # Get the 1q confusion matrix
+        # Get the 1q confusion matrix (works with both dict and dataclass)
         cal = mit.calibration_result
-        C = np.array(cal["confusion_matrix"])  # 2x2: [p(meas|prep)]
+        if hasattr(cal, "confusion_matrix"):
+            cm = cal.confusion_matrix
+        else:
+            cm = cal["confusion_matrix"]
+        C = np.array(cm)  # 2x2: [p(meas|prep)]
 
         if n_total is None:
             max_outcome = max(counts.keys()) if counts else 0

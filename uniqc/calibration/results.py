@@ -105,6 +105,16 @@ class ReadoutCalibrationResult(CalibrationResult):
     confusion_matrix: tuple[tuple[float, ...], ...] = ()  # 2x2 or 4x4
     assignment_fidelity: float = 0.0
 
+    def __getitem__(self, name: str) -> Any:
+        """Dict-like access for backward compatibility."""
+        if hasattr(self, name):
+            return getattr(self, name)
+        raise KeyError(name)
+
+    def __contains__(self, name: str) -> bool:
+        """Support ``"key" in result`` for backward compatibility."""
+        return hasattr(self, name)
+
     def to_dict(self) -> dict[str, Any]:
         d = dataclasses.asdict(self)
         d["confusion_matrix"] = [list(row) for row in self.confusion_matrix]
