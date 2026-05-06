@@ -313,6 +313,10 @@ result = selector.find_best_1D_chain(4, start=2)
 # 无法达到精确长度时，返回最长可用链
 result = selector.find_best_1D_chain(100)  # 芯片只有 10 个 qubit
 print(f"最长链: {result.chain}")  # 返回全芯片最长路径
+
+# 控制搜索超时（默认 30 秒，大芯片上可适当放宽）
+result = selector.find_best_1D_chain(20, max_search_seconds=60.0)
+# 超时后返回当前找到的最优结果（可能是部分链）
 ```
 
 **算法说明**：
@@ -491,7 +495,7 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 | 方法 | 说明 |
 |------|------|
-| `find_best_1D_chain(length, start)` | 找最优 `length`-qubit 线性链 |
+| `find_best_1D_chain(length, start, max_search_seconds)` | 找最优 `length`-qubit 线性链 |
 | `find_best_2D_from_circuit(circuit, ...)` | 找最适合电路的 2D 区域 |
 | `estimate_circuit_fidelity(circuit, qubits)` | 估算电路在给定量子比特上的成功率 |
 | `get_qubit_rankings()` | 按 fidelity 排名所有量子比特 |

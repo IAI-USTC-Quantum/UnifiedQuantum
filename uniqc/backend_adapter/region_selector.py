@@ -161,6 +161,7 @@ class RegionSelector:
         self,
         length: int,
         start: int | None = None,
+        max_search_seconds: float = 30.0,
     ) -> ChainSearchResult:
         """Find the highest-fidelity linear chain of connected qubits.
 
@@ -192,6 +193,10 @@ class RegionSelector:
         start :
             Physical qubit index to start the chain from. If ``None``,
             the qubit with the highest single-gate fidelity is used.
+        max_search_seconds :
+            Time budget for the search. If exceeded during the backtracking
+            phase, the best result found so far is returned. Default: 30 seconds.
+            The greedy phase is typically fast and always runs to completion.
 
         Returns
         -------
@@ -210,6 +215,7 @@ class RegionSelector:
             return ChainSearchResult(chain=None, estimated_fidelity=None, num_swaps=0)
 
         available = set(self._chip.available_qubits)
+        deadline = time.time() + max_search_seconds
 
         # Determine candidate starting qubits
         if start is not None:
@@ -225,15 +231,17 @@ class RegionSelector:
             if not candidates:
                 candidates = list(available)
 
-        # --- Greedy expansion ---
+        # --- Greedy expansion (typically fast, no deadline needed) ---
         for start_q in candidates:
             chain, fidelity, swaps = self._greedy_chain_expand(start_q, length, available)
             if chain is not None and len(chain) == length:
                 return ChainSearchResult(chain=chain, estimated_fidelity=fidelity, num_swaps=swaps)
 
-        # --- Backtracking DFS search ---
+        # --- Backtracking DFS search (deadline-checked) ---
         for start_q in candidates:
-            result = self._backtrack_chain(start_q, length, available)
+            if time.time() > deadline:
+                break
+            result = self._backtrack_chain(start_q, length, available, deadline=deadline)
             if result[0] is not None and len(result[0]) == length:
                 return ChainSearchResult(chain=result[0], estimated_fidelity=result[1], num_swaps=result[2])
 
@@ -520,6 +528,7 @@ class RegionSelector:
         start: int,
         length: int,
         available: set[int],
+        deadline: float | None = None,
     ) -> tuple[list[int], float, int]:
         """DFS backtracking search for a chain of exactly ``length`` qubits.
 
@@ -533,6 +542,7 @@ class RegionSelector:
         best_fid = 0.0
         best_len = 0
         found_exact_len = False
+        timed_out = False
 
         # Separate tracking for exact-length paths only:
         # When found_exact_len=True, best_path may be updated by later DFS branches
@@ -542,8 +552,16 @@ class RegionSelector:
         best_exact_fid = 0.0
 
         def dfs(current: int, path: list[int], visited: set[int], fid: float) -> None:
-            nonlocal best_path, best_fid, best_len, found_exact_len
+            nonlocal best_path, best_fid, best_len, found_exact_len, timed_out
             nonlocal best_exact_path, best_exact_fid
+
+            if timed_out:
+                return
+
+            # Deadline check (every few levels to reduce syscall overhead)
+            if deadline is not None and len(path) % 4 == 0 and time.time() > deadline:
+                timed_out = True
+                return
 
             # Update global best (any length)
             if len(path) > best_len or (len(path) == best_len and fid > best_fid):
@@ -569,6 +587,8 @@ class RegionSelector:
                 return
 
             for v in sorted(self._undirected_adj.get(current, set()) & available - visited):
+                if timed_out:
+                    return
                 edge_fid = self._tq_fid.get(tuple(sorted((current, v))), _DEFAULT_FIDELITY)
                 path.append(v)
                 visited.add(v)
