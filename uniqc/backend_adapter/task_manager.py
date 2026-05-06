@@ -5,11 +5,6 @@ managing task lifecycle, and caching results locally. All persistent
 storage is delegated to :class:`uniqc.backend_adapter.task.store.TaskStore` (SQLite at
 ``~/.uniqc/cache/tasks.sqlite``).
 
-Environment Variables:
-    UNIQC_DUMMY: Set to 'true', '1', or 'yes' to enable dummy mode.
-        When enabled, all task submissions use local simulation instead
-        of real quantum backends. Useful for development and testing.
-
 Usage::
 
     from uniqc.backend_adapter.task_manager import submit_task, query_task, wait_for_result, dry_run_task
@@ -26,7 +21,7 @@ Usage::
     if not result.success:
         print(f"Validation failed: {result.error}")
 
-    # Submit task (use UNIQC_DUMMY=true for local simulation)
+    # Submit task
     task_id = submit_task(circuit, backend='quafu', shots=1000)
 
     # Wait for result
@@ -36,8 +31,8 @@ Usage::
     info = query_task(task_id, backend='quafu')
     print(info['status'])  # 'running', 'success', or 'failed'
 
-    # Explicitly use dummy mode for a single submission
-    task_id = submit_task(circuit, backend='quafu', dummy=True)
+    # Use dummy backend for local simulation
+    task_id = submit_task(circuit, backend='dummy', shots=1000)
 
 Note:
     Any dry-run success followed by actual submission failure is a critical bug.
@@ -66,14 +61,10 @@ __all__ = [
     "TaskInfo",
     "TaskStatus",
     "TaskManager",
-    # Dummy mode
-    "UNIQC_DUMMY",
-    "is_dummy_mode",
     # Storage path (useful for tests / tooling)
     "DEFAULT_CACHE_DIR",
 ]
 
-import os
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -119,23 +110,6 @@ from uniqc.backend_adapter.task.store import (
 # Configuration
 # -----------------------------------------------------------------------------
 
-# Environment variable for global dummy mode
-UNIQC_DUMMY = os.environ.get("UNIQC_DUMMY", "").lower() in ("true", "1", "yes")
-
-# Environment variable for skipping pre-submission validation. Set when the
-# user is intentionally pushing experimental gates / topologies.
-UNIQC_SKIP_VALIDATION = os.environ.get("UNIQC_SKIP_VALIDATION", "").lower() in ("true", "1", "yes")
-
-
-def is_dummy_mode() -> bool:
-    """Check if dummy mode is enabled via environment variable.
-
-    Returns:
-        True if UNIQC_DUMMY is set to 'true', '1', or 'yes'.
-    """
-    return UNIQC_DUMMY
-
-
 # -----------------------------------------------------------------------------
 # Circuit Adapter Mapping
 # -----------------------------------------------------------------------------
@@ -175,7 +149,6 @@ def dry_run_task(
     circuit: Circuit,
     backend: str,
     shots: int = 1000,
-    dummy: bool | None = None,
     **kwargs: Any,
 ) -> DryRunResult:
     """Validate a circuit against a backend without making network calls.
@@ -190,9 +163,9 @@ def dry_run_task(
 
     Args:
         circuit: The UnifiedQuantum Circuit to validate.
-        backend: The backend name (e.g., 'originq', 'quafu', 'quark', 'ibm').
+        backend: The backend name (e.g., 'originq', 'quafu', 'quark', 'ibm',
+            'dummy', 'dummy:originq:WK_C180').
         shots: Number of measurement shots for validation.
-        dummy: Override dummy mode. If None, uses UNIQC_DUMMY env var.
         **kwargs: Additional backend-specific parameters.
             - For IBM: chip_id (required for full validation)
             - For Quafu: chip_id (required for full validation)
@@ -222,10 +195,6 @@ def dry_run_task(
     from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
     from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
-    use_dummy = dummy if dummy is not None else UNIQC_DUMMY
-    if backend == "dummy" or backend.startswith("dummy:"):
-        use_dummy = True
-
     adapter_map: dict[str, type[QuantumAdapter]] = {
         "originq": OriginQAdapter,
         "quafu": QuafuAdapter,
@@ -234,11 +203,10 @@ def dry_run_task(
         "dummy": DummyAdapter,
     }
 
-    if use_dummy:
+    if backend == "dummy" or backend.startswith("dummy:"):
         try:
             from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
 
-            dummy_backend = backend if backend == "dummy" or backend.startswith("dummy:") else "dummy"
             adapter: QuantumAdapter = DummyAdapter(
                 **dummy_adapter_kwargs(
                     dummy_backend,
@@ -289,7 +257,6 @@ def dry_run_batch(
     circuits: list[Circuit],
     backend: str,
     shots: int = 1000,
-    dummy: bool | None = None,
     **kwargs: Any,
 ) -> list[DryRunResult]:
     """Validate multiple circuits against a backend without making network calls.
@@ -301,7 +268,6 @@ def dry_run_batch(
         circuits: List of UnifiedQuantum Circuits to validate.
         backend: The backend name.
         shots: Number of measurement shots per circuit.
-        dummy: Override dummy mode.
         **kwargs: Additional backend-specific parameters.
 
     Returns:
@@ -311,7 +277,7 @@ def dry_run_batch(
         Any dry-run success followed by actual submission failure is a
         critical bug. Please report it at the UnifiedQuantum issue tracker.
     """
-    return [dry_run_task(c, backend, shots=shots, dummy=dummy, **kwargs) for c in circuits]
+    return [dry_run_task(c, backend, shots=shots, **kwargs) for c in circuits]
 
 
 # -----------------------------------------------------------------------------
@@ -606,20 +572,6 @@ def _backend_platform_key(backend: str) -> str:
     return backend.split(":", 1)[0]
 
 
-def _dummy_identifier_from_deprecated_flag(backend: str, kwargs: dict[str, Any]) -> str:
-    if backend == "dummy" or backend.startswith("dummy:"):
-        return backend
-    if backend == "originq":
-        target = kwargs.get("backend_name") or kwargs.get("chip_id")
-    elif backend in {"quafu", "quark", "ibm"}:
-        target = kwargs.get("chip_id") or kwargs.get("backend_name")
-    else:
-        target = None
-    if target:
-        return f"dummy:{backend}:{target}"
-    return "dummy"
-
-
 def _backend_info_from_chip(spec: Any):
     """Build BackendInfo for compiling a chip-backed dummy target."""
     from uniqc.backend_adapter.backend_info import BackendInfo, QubitTopology
@@ -667,7 +619,6 @@ def submit_task(
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
-    dummy: bool | None = None,
     options: BackendOptions | dict | None = None,
     **kwargs: Any,
 ) -> str:
@@ -678,12 +629,10 @@ def submit_task(
 
     Args:
         circuit: The UnifiedQuantum Circuit to submit.
-        backend: The backend name (e.g., 'originq', 'quafu', 'ibm', 'dummy').
+        backend: The backend name (e.g., 'originq', 'quafu', 'ibm', 'dummy',
+            'dummy:originq:WK_C180').
         shots: Number of measurement shots.
         metadata: Optional metadata to store with the task.
-        dummy: **Deprecated.** Use ``backend='dummy'`` instead.
-            If True, routes to the local dummy simulator.
-            If None, uses the ``UNIQC_DUMMY`` environment variable.
         options: Optional typed backend options. Accepts a
             :class:`BackendOptions` instance, a plain dict (treated as
             ``**kwargs``), or ``None`` for platform defaults.
@@ -730,17 +679,6 @@ def submit_task(
         merged_kwargs.update(kwargs)
         kwargs = merged_kwargs
         shots = opts.shots
-
-    # Handle dummy= parameter (deprecated)
-    use_dummy = dummy if dummy is not None else UNIQC_DUMMY
-    if use_dummy and not (backend == "dummy" or backend.startswith("dummy:")):
-        warnings.warn(
-            "submit_task(..., dummy=True) is deprecated. "
-            "Use a dummy backend id such as 'dummy' or 'dummy:originq:WK_C180' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        backend = _dummy_identifier_from_deprecated_flag(backend, kwargs)
 
     metadata = _metadata_with_circuit(circuit, metadata)
 
@@ -882,7 +820,6 @@ def submit_batch(
     circuits: list[Circuit],
     backend: str,
     shots: int = 1000,
-    dummy: bool | None = None,
     options: BackendOptions | dict | None = None,
     **kwargs: Any,
 ) -> list[str]:
@@ -892,7 +829,6 @@ def submit_batch(
         circuits: List of UnifiedQuantum Circuits to submit.
         backend: The backend name.
         shots: Number of measurement shots per circuit.
-        dummy: **Deprecated.** Use ``backend='dummy'`` instead.
         options: Optional typed backend options. Same as in :func:`submit_task`.
         **kwargs: Additional backend-specific parameters.
             - For Quafu: chip_id, auto_mapping, group_name
@@ -914,8 +850,6 @@ def submit_batch(
         >>> circuits = [circuit1, circuit2, circuit3]
         >>> task_ids = submit_batch(circuits, backend='quafu', shots=1000, chip_id='ScQ-P10')
     """
-    import warnings
-
     # Normalise options
     if options is not None:
         opts = BackendOptionsFactory.normalize_options(options, _backend_platform_key(backend))
@@ -924,20 +858,7 @@ def submit_batch(
         kwargs = merged_kwargs
         shots = opts.shots
 
-    # Handle dummy= parameter (deprecated)
-    use_dummy = dummy if dummy is not None else UNIQC_DUMMY
-    if use_dummy and not (backend == "dummy" or backend.startswith("dummy:")):
-        warnings.warn(
-            "submit_batch(..., dummy=True) is deprecated. "
-            "Use a dummy backend id such as 'dummy' or 'dummy:originq:WK_C180' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        backend = _dummy_identifier_from_deprecated_flag(backend, kwargs)
-
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
-    # Use backend=="dummy" directly (consistent with submit_task() fix) so that
-    # submit_batch(..., backend="dummy", dummy=None) also works.
     if backend == "dummy" or backend.startswith("dummy:"):
         return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
 

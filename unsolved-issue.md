@@ -20,11 +20,9 @@
   - 改为推荐 `submit_task(..., skip_validation=True)` 关键字（需新增），或改为提示用户在 shell 里 `export UNIQC_SKIP_VALIDATION=true` 并重启 Python
 - 阻塞：需要决定 skip-validation 是改成运行期参数还是只保留环境变量
 
-### D3 [bug · medium] 环境变量在模块导入时一次性读取
-- 文件：`uniqc/__init__.py` 及 `uniqc/config.py` 的相关常量
-- 现象：`UNIQC_DUMMY` / `UNIQC_SKIP_VALIDATION` 等被在 import 时缓存为模块级常量，运行期赋值无效。docs/skill 多处暗示可以"运行期开关 dummy"，与实际不符
-- 建议：把这些常量改为函数 `is_dummy_mode()` / `should_skip_validation()`，每次调用时读取 `os.environ`
-- 阻塞：影响范围需梳理（多处 `if _DUMMY_MODE:` 调用点），需要回归测试覆盖
+### D3 ~~[bug · medium] 环境变量在模块导入时一次性读取~~ ✅ 已修复
+- **修复方案**：完全移除 `UNIQC_DUMMY` 环境变量和 `is_dummy_mode()` 函数。dummy 模式现在只通过 backend 名称前缀（`dummy`、`dummy:...`）激活，不再依赖环境变量。
+- `UNIQC_SKIP_VALIDATION` 仍保留（待独立处理）。
 
 ### D4 [bug+doc · medium] `dummy:originq:<chip>` 隐式依赖 qiskit
 - 现象：`find_backend("dummy:originq:WK_C180")` 在没有 qiskit extras 时报 ImportError，但 `dummy` 的卖点本应是"无 extras 即可本地仿真"

@@ -344,11 +344,11 @@ export HTTPS_PROXY=http://proxy:8080
 
 ### 6.4 Dummy 模式
 
-```bash
-export UNIQC_DUMMY=true
-# 可选：指定拓扑
-export ORIGINQ_AVAILABLE_QUBITS='[0,1,2,3]'
-export ORIGINQ_AVAILABLE_TOPOLOGY='[[0,1],[1,2],[2,3]]'
+通过 backend 名称前缀 ``dummy`` 激活本地模拟，无需环境变量：
+
+```python
+task_id = submit_task(circuit, backend='dummy')                    # 默认模拟
+task_id = submit_task(circuit, backend='dummy:virtual-line-3')     # 线性 3q 拓扑
 ```
 
 ---

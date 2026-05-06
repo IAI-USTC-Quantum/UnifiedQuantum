@@ -280,7 +280,7 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 | OriginQ | `originq.token` | API 密钥 |
 | Quafu | `quafu.token` | API Token |
 | IBM | `ibm.token` | IBM Quantum Token |
-| Dummy | `UNIQC_DUMMY` | 启用 Dummy 模式 |
+| Dummy | backend 前缀 | 通过 ``backend='dummy'`` 或 ``'dummy:...'`` 激活 |
 
 ### 配置加载
 

@@ -165,10 +165,8 @@
   传 `auto_compile=False` 抛同样错误；`auto_compile=True` 不会自动编译；唯一可绕过的是 `UNIQC_SKIP_VALIDATION=true` 环境变量（且必须在 import 之前设）。
 - 建议：(a) 让 `auto_compile=True` 真的调用 compiler；(b) `auto_compile=False` 真的跳过 validation；(c) 错误文案别再推荐两个不工作的开关。
 
-### D3 [bug · medium] `UNIQC_DUMMY` / `UNIQC_SKIP_VALIDATION` 在模块导入时一次性读取
-- 文件：`uniqc/backend_adapter/task_manager.py`（模块级常量 `UNIQC_DUMMY/UNIQC_SKIP_VALIDATION`）
-- 现象：`is_dummy_mode()` 永远等于 import 时缓存的常量；运行中再 `os.environ[...]='1'` 仍返回 `False`。
-- 建议：每次调用时 `os.environ.get(...)`；或在 `is_dummy_mode()` 内部重新读取并刷新文档。
+### D3 ~~[bug · medium] `UNIQC_DUMMY` 在模块导入时一次性读取~~ ✅ 已修复
+- **修复方案**：完全移除 `UNIQC_DUMMY` 环境变量、`is_dummy_mode()` 函数及 `dummy=` 参数。dummy 模式现在只通过 backend 名称前缀（`dummy`、`dummy:...`）激活。
 
 ### D4 [bug+doc · medium] `dummy:originq:<chip>` 隐式依赖 qiskit
 - 现象：`submit_task(c, backend='dummy:originq:WK_C180', ...)` 走 `_compile_for_chip_backed_dummy → compile()`，强依赖 qiskit transpiler；本环境无 qiskit 时直接 `CompilationFailedException`。同时 `find_backend('dummy:originq:WK_C180')` 抛 `ValueError`，与「这是提交规则而非 list 项」的设计自洽，但用户难以发现。
