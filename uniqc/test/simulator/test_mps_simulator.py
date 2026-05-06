@@ -191,8 +191,10 @@ def test_dummy_mps_submit_roundtrip():
     task = submit_task(c, backend="dummy:mps:linear-4", shots=400)
     res = wait_for_result(task, timeout=30)
 
-    # Result is a dict[str, int] of counts.
-    assert isinstance(res, dict)
+    # Result is a UnifiedResult that exposes counts dict-like.
+    from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+    assert isinstance(res, UnifiedResult)
     assert sum(res.values()) == 400
     # GHZ-style: only all-zeros and all-ones, ≈50/50.
     keys = list(res.keys())

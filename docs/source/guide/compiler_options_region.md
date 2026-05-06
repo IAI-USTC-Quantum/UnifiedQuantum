@@ -505,7 +505,7 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 **缺少 Qiskit 依赖**
 
-调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedException`，提示：
+调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedError`，提示：
 
 ```
 pip install unified-quantum[qiskit]
