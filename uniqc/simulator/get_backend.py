@@ -60,15 +60,21 @@ def create_simulator(
 
 
 def get_simulator(
-    program_type: str = "originir",
     backend_type: str = "statevector",
+    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Create a simulator instance (alias for :func:`create_simulator`).
 
+    The argument order matches :func:`create_simulator` — ``backend_type``
+    first, then ``program_type``. Both arguments default to the most common
+    case (``"statevector"`` + ``"originir"``).
+
     Args:
-        program_type: Type of quantum program (``"originir"`` or ``"qasm"``).
-        backend_type: Simulator backend (``"statevector"``, ``"density_matrix"``, etc.).
+        backend_type: Simulator backend, e.g. ``"statevector"``,
+            ``"density_matrix"``, ``"mps"``, ``"torchquantum"``.
+        program_type: Quantum program format, ``"originir"`` (default) or
+            ``"qasm"``.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
@@ -78,8 +84,8 @@ def get_simulator(
 
 
 def get_backend(
-    program_type: str = "originir",
     backend_type: str = "statevector",
+    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Deprecated: use :func:`get_simulator` or :func:`create_simulator`."""

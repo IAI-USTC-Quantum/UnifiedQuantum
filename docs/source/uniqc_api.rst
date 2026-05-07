@@ -3,40 +3,21 @@ API 参考
 
 UnifiedQuantum 公开 API 的完整参考文档。
 
+- 手动维护的 API 入口（推荐先读）：``api_index``
+- 自动生成的 API 树（由 ``sphinx-autoapi`` 从源码生成）：``api/uniqc/index``
+
+如果在本地构建文档时未安装 ``sphinx-autoapi`` extra，自动生成的 API 树
+会缺失。建议安装 ``unified-quantum[docs]`` 后再 ``sphinx-build``。
+
 .. toctree::
    :maxdepth: 2
+   :caption: 入口
 
-   uniqc
-   uniqc.circuit_builder
-   uniqc.circuit_builder.qubit
-   uniqc.circuit_builder.parameter
-   uniqc.circuit_builder.named_circuit
-   uniqc.simulator
-   uniqc.compile.originir
-   uniqc.compile.qasm
-   uniqc.compile.compiler
-   uniqc.compile
-   uniqc.config
-   uniqc.utils
-   uniqc.visualization
-   uniqc.algorithms.core
-   uniqc.algorithms.workflows
-   uniqc.backend_adapter.task
-   uniqc.backend_adapter.task.adapters
-   uniqc.backend_adapter.task.normalizers
-   uniqc.backend_adapter.task.result_types
-   uniqc.algorithms.core.ansatz
-   uniqc.algorithms.core.circuits
-   uniqc.algorithms.core.measurement
-   uniqc.algorithms.core.state_preparation
-   uniqc.backend_adapter.config
-   uniqc.backend_adapter.backend
-   uniqc.backend_adapter.backend_info
-   uniqc.backend_adapter.backend_registry
-   uniqc.backend_adapter.circuit_adapter
-   uniqc.backend_adapter.task_manager
-   uniqc.backend_adapter.region_selector
-   uniqc.backend_adapter.task.options
-   uniqc.exceptions
-   uniqc.backend_adapter.network_utils
-   uniqc.torch_adapter
+   api_index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 自动生成 API 索引
+
+   api/uniqc/index
+

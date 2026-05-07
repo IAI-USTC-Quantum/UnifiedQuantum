@@ -103,11 +103,15 @@ prob = sim.simulate_pmeasure(qasm_str)
 
 ## Opcode 模拟器与本地模拟后端 {#guide-simulation-opcode}
 
-底层模拟器，直接操作 opcode 列表。支持多后端：
+底层模拟器，直接操作 opcode 列表。支持多后端（每个后端都接受多种别名，便于在 CLI、Python API、文档之间互换）：
 
-- `statevector` — 状态向量（无噪声）
-- `density_matrix` — 密度矩阵（支持噪声）
-- `density_matrix_qutip` — 基于 Qutip 的密度矩阵
+| 规范名 (canonical) | 别名 (aliases) | 说明 |
+|--------------------|----------------|------|
+| `statevector` | `state_vector` | 状态向量（无噪声） |
+| `density_operator` | `density_matrix`, `densitymatrix`, `densityoperator`, `density` (CLI) | 密度矩阵（支持噪声） |
+| `density_operator_qutip` | `density_matrix_qutip` | 基于 QuTiP 的密度矩阵；需要 `unified-quantum[simulation]` extra（`qutip` + `qutip-qip`） |
+
+> 别名在 {func}`uniqc.simulator.backend_alias` 中统一解析；`OpcodeSimulator`、`create_simulator` 与 CLI `uniqc simulate --backend` 接受同一组别名。
 
 ```python
 from uniqc.simulator import OpcodeSimulator
@@ -142,7 +146,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 | `density_matrix` | 含噪声模拟，双比特门为主 | ✅ | 较慢（内存 O(4^n)） |
 | `density_matrix_qutip` | 复杂噪声模型，高精度需求 | ✅ | 较慢，依赖 Qutip |
 
-> **CLI 注意**：`uniqc simulate --backend density` 在 CLI 层映射到 Python API 的 `densitymatrix` 后端，二者行为一致，无需额外转换。
+> **CLI 与 Python API 的别名一致性**：CLI `uniqc simulate --backend density` 与 Python API 的 `density_matrix` / `density_operator` / `densitymatrix` / `density` 都是同一种密度矩阵后端的别名（在 {func}`uniqc.simulator.backend_alias` 内部归一化为 `density_operator`）。`density_operator_qutip` 与其别名 `density_matrix_qutip` 同理。
 
 **选择建议**：
 - 一般无噪声模拟 → {class}`uniqc.simulator.OriginIR_Simulator`（基于 statevector）

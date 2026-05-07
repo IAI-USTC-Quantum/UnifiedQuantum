@@ -154,8 +154,36 @@ extensions = [
     # 'recommonmark',
     'myst_parser',
     'nbsphinx',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
 ]
+
+# -- sphinx-autoapi ---------------------------------------------------------
+# Auto-generated API reference pages live under ``api/`` (built into the
+# Sphinx output tree). This replaces the old hand-maintained `uniqc.*.rst`
+# stubs that were never created and produced toctree dead links (B-U5/F-U4).
+try:
+    import autoapi  # noqa: F401  -- only enable if the extra is installed
+    extensions.append('autoapi.extension')
+    autoapi_type = 'python'
+    autoapi_dirs = [str((parent_path / 'uniqc').resolve())]
+    autoapi_root = 'api'
+    autoapi_keep_files = False
+    autoapi_add_toctree_entry = False
+    autoapi_options = [
+        'members',
+        'undoc-members',
+        'show-inheritance',
+        'show-module-summary',
+        'imported-members',
+    ]
+    autoapi_ignore = [
+        '*/test/*',
+        '*/_version.py',
+        '*/uniqc_cpp*',
+    ]
+    autoapi_python_class_content = 'both'
+except ImportError:
+    pass
 
 # -- Options for myst_parser
 # See https://myst-parser.readthedocs.io/en/latest/syntax/optional.html
