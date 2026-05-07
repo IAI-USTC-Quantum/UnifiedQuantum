@@ -276,7 +276,9 @@ class Circuit:
         return header + circuit_str + "\n" + measure
 
     def _make_qasm_circuit(self) -> str:
-        header = make_header_qasm(self.qubit_num, self.cbit_num)
+        from .translate_qasm2_oir import collect_qasm2_custom_gates
+        custom_gates = collect_qasm2_custom_gates(self.opcode_list)
+        header = make_header_qasm(self.qubit_num, self.cbit_num, custom_gates=custom_gates)
         circuit_str = "\n".join([opcode_to_line_qasm(op, self.qubit_num) for op in self.opcode_list])
         measure = make_measure_qasm(self.measure_list)
         return header + circuit_str + "\n" + measure
@@ -380,6 +382,20 @@ class Circuit:
         if not qubit_depths:
             return 0
         return max(qubit_depths.values())
+
+    def get_matrix(self):
+        """Return the full unitary matrix of this circuit as ``np.ndarray``.
+
+        Qubit 0 is treated as the least-significant bit of the statevector index.
+        The returned matrix uses the convention ``state_out = U @ state_in`` and
+        gates are applied in the same order as ``opcode_list``.
+
+        Raises:
+            NotMatrixableError: If the circuit contains MEASURE / CONTROL /
+                DAGGER scope opcodes that have no unitary representation.
+        """
+        from .matrix import get_matrix as _get_matrix
+        return _get_matrix(self)
 
     # ─────────────────── Single-qubit gates (no parameters) ───────────────────
 

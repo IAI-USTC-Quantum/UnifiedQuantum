@@ -1,4 +1,5 @@
 from .qcircuit import Circuit
+from .matrix import get_matrix, NotMatrixableError
 from .qubit import Qubit, QReg, QRegSlice
 from .parameter import Parameter, Parameters
 from .named_circuit import circuit_def, NamedCircuit

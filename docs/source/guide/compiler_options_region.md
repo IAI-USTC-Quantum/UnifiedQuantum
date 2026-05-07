@@ -1,5 +1,18 @@
 # 编译、选项与区域选择 {#guide-compiler-options}
 
+```{important}
+本页所有 `compile()` / `compile_with_config()` / `compile_for_backend()` /
+`schedule_circuit()` / `plot_time_line_html()` 调用都**强制依赖** Qiskit。
+任何 `level`（含 `level=0`）都会进入 Qiskit transpiler 路径，缺少 `qiskit`
+时直接抛 `CompilationFailedError`。请先安装可选依赖：
+
+    pip install "unified-quantum[qiskit]"
+
+只做线路构建、`Circuit.qasm` / `Circuit.originir` 导出、模拟器运行（含
+`OriginIR_Simulator` / `MPSSimulator` / `dummy:virtual-line-N`）这些场景**不需要**
+qiskit；只有进入"编译/调度/timeline"才需要。
+```
+
 ## 什么时候进入本页 {#guide-compiler-options-when-to-read}
 
 当你已经掌握线路构建和本地模拟的基础流程，并希望：
@@ -411,7 +424,7 @@ for i in range(5):
     circuit.h(i)
 for i in range(4):
     circuit.cnot(i, i + 1)
-circuit.measure(list(range(5)), list(range(5)))
+circuit.measure(*range(5))
 
 # 2. 获取芯片标定
 adapter = OriginQAdapter()
@@ -526,5 +539,12 @@ pip install matplotlib
 ```
 
 :::{note}
-🔧 `schedule_circuit` 与 `plot_time_line*` 在内部依赖 `compile()` 把逻辑线路展开为芯片原生门，因此同样需要可选的 `unified-quantum[qiskit]` extra。如果你只想对**已经编译过、且只使用平台原生门**的线路做调度，可在不安装 `[qiskit]` 的前提下直接传入；否则请先 `pip install unified-quantum[qiskit]`。
+🔧 `schedule_circuit` 与 `plot_time_line*` 在内部**始终**调用 `compile()`（默认
+`compile_to_basis=True`），即便输入只使用平台原生门也不例外。因此它们**强制依赖**
+`unified-quantum[qiskit]`：
+
+    pip install "unified-quantum[qiskit]"
+
+唯一可绕过 `compile()` 的路径是：构造一份所有 entry 都已带 `start_time` 的 pulse /
+timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 `TimelineDurationError`）。
 :::

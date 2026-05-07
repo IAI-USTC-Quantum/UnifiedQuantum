@@ -48,8 +48,17 @@ class OpenQASM2_BaseParser:
 
     def _format_and_check(self):
         '''Format the original qasm code and check if it is valid.
-           Currently, this is a simple parser, so that "gate" defines are not
-           supported, and 'if' statements are not supported.
+
+           As of v0.0.11, the parser strips ``gate <name>(...) ... { ... }``
+           definitions (and inline ``opaque`` declarations).  Built-in gates
+           from ``qelib1.inc`` plus the custom OriginIR-native gates emitted by
+           :class:`uniqc.Circuit.qasm` (``iswap``, ``rphi``, ``phase2q``, ``xy``,
+           ``uu15``) are recognized directly via the gate-name → opcode table
+           in ``translate_qasm2_oir``; gate **bodies** are not inlined or
+           interpreted, so user-defined custom gates whose name does not match
+           a known opcode will be rejected later by ``get_opcode_from_QASM2``.
+           ``if`` statements are still not supported.
+
            A canonical format of qasm code is like:
            OPENQASM 2.0;
            include "qelib1.inc";
@@ -59,25 +68,38 @@ class OpenQASM2_BaseParser:
            creg c[m];
            <other creg definitions>
            <program_body>
-           
+
            These rules will be applied in the formatted qasm code.
            1. OPENQASM 2.0 and include "qelib1.inc" will be removed.
-           2. qreg definitions are collected together; so as creg definitions.
-           3. program body is line-wise, separated by semicolons
-           4. measurements must be at the end of the program body.
-           5. barriers are kept in the program body.
+           2. ``gate ... { ... }`` definitions are stripped (their bodies are
+              not expanded; recognition relies on the gate-name registry).
+           3. qreg definitions are collected together; so as creg definitions.
+           4. program body is line-wise, separated by semicolons
+           5. measurements must be at the end of the program body.
+           6. barriers are kept in the program body.
         '''
         if self.raw_qasm is None:
             raise ValueError("No raw qasm code provided.")
-        
-        # check if there is "gate" definitions
-        if 'gate' in self.raw_qasm and '{' in self.raw_qasm:
-            raise NotSupportedGateError("Gate definitions are not supported yet.")
-        
-        # TODO: Current check is too naive - uses substring match which causes false positives
-        # (e.g., "Unified" contains "if"). Should use regex to match QASM if keyword: r'\bif\s*\('
-        # check if there is "if" statements
-        if 'if' in self.raw_qasm:
+
+        import re
+
+        # Strip gate-definition blocks (and ``opaque`` decls without bodies).
+        # We tolerate them but do not inline their bodies — recognition of
+        # custom gate names is handled by translate_qasm2_oir.
+        def _strip_gate_defs(src: str) -> str:
+            pattern = re.compile(
+                r"\b(?:opaque|gate)\b\s+[A-Za-z_][A-Za-z0-9_]*"
+                r"(?:\s*\([^)]*\))?\s*[^;{]*"
+                r"(?:\{[^{}]*\}|;)",
+                flags=re.MULTILINE | re.DOTALL,
+            )
+            return pattern.sub("", src)
+
+        raw = _strip_gate_defs(self.raw_qasm)
+
+        # check if there is "if" statements (use word boundary regex to avoid
+        # false positives on substrings like "Unified" that contain "if").
+        if re.search(r"\bif\s*\(", raw):
             raise NotSupportedGateError("If statements are not supported yet.")
         
         collected_qregs = list()
@@ -85,8 +107,8 @@ class OpenQASM2_BaseParser:
         collected_measurements = list()
         program_body = list()
 
-        # split all codes by semicolons
-        codes = self.raw_qasm.split(';')
+        # split all codes by semicolons (use the gate-def-stripped source)
+        codes = raw.split(';')
         for code in codes:
             # strip leading and trailing whitespaces
             code = code.strip()

@@ -108,6 +108,12 @@ def compile(
     by adding chip-characterization-aware routing, a typed configuration object,
     and a Circuit return type.
 
+    .. important::
+       ``compile`` (at every optimization ``level``, including ``level=0``)
+       requires the ``[qiskit]`` extra: ``pip install "unified-quantum[qiskit]"``.
+       Without ``qiskit`` installed every call raises ``CompilationFailedError``.
+       There is currently no pure-Python fallback path.
+
     Parameters
     ----------
     circuit :
