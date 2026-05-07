@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠ BREAKING
+
+- **uniqc-managed task IDs (`uqt_*`)** — `submit_task` / `submit_batch` now
+  always return a single opaque uniqc task id of the form
+  `uqt_<32-hex>` (36 chars total) rather than the underlying platform's
+  raw id. Internally the new `task_shards` table maps each `uqt_*` to
+  one or more platform-issued ids and tracks per-shard status. Migration
+  is automatic — pre-existing rows in the local sqlite cache are
+  upgraded to the new layout on first use (each old row becomes its own
+  `uqt_*` parent + 1 shard, with the original platform id preserved
+  under `metadata.legacy_platform_id`). Querying with a raw platform
+  id still works but emits a `DeprecationWarning` and resolves via the
+  shard index.
+
+  Why: the previous behaviour leaked platform-specific id formats
+  (OriginQ MD5, IBM `cp...` job ids, Quafu UUIDs, dummy `0xabc...`)
+  through every downstream tool; uniqc now exposes one consistent
+  format. It also enables transparent **auto-sharding**: when a batch
+  exceeds an adapter's `max_native_batch_size` (OriginQ default 200 via
+  `originq.task_group_size`, IBM 100), uniqc splits it into multiple
+  cloud submissions, each tracked as a separate shard, while the user
+  still sees one task id.
+
+  Impact: any caller that compared returned task ids against a regex
+  for the old platform format, or that persisted platform ids into its
+  own database, must update to use `uqt_*` ids. To recover the
+  underlying platform ids, call `uniqc.get_platform_task_ids(uid)` (also
+  exposed via `uniqc task shards <uid>` and
+  `GET /api/tasks/{uid}/shards`).
+
+### Added
+
+- `uniqc.get_platform_task_ids(task_id) -> list[TaskShard]` — public API
+  for inspecting the shard mapping behind a `uqt_*` id. Each shard
+  exposes `platform_task_id`, `shard_index`, `circuit_count`,
+  `sub_index_offset`, `status`, `error_message`, `submit_time` and
+  `update_time`.
+- `uniqc task shards <uid>` CLI subcommand (`--format table|json`).
+- `GET /api/tasks/{uniqc_id}/shards` REST endpoint on the gateway.
+- `submit_batch(..., return_platform_ids=True)` opt-in that returns the
+  list of platform ids in submission order (for callers that want both
+  the uniqc id and the per-circuit platform ids; the uniqc id is still
+  the canonical handle for `query_task` / `wait_for_result`).
+- `QuantumAdapter.max_native_batch_size` class attribute (default 1).
+  OriginQ exposes it as a property reading
+  `originq.task_group_size` (default 200); qiskit hard-codes 100.
+- Schema v4 (`task_shards` + `archived_task_shards` tables with FK
+  `ON DELETE CASCADE`) and v5 (legacy-row migration). Schema version is
+  bumped from 2 → 5; the gateway `ArchiveStore.archive_task` /
+  `restore_task` / `delete_archived` paths now cascade shard rows
+  alongside the parent.
+
+### Fixed
+
+- Cloud failure messages from OriginQ are now propagated to
+  `TaskInfo.error_message` (and `TaskShard.error_message`). Previously
+  the adapter nested the error under `result["result"]["error"]`, but
+  `query_task` and friends only inspected `result.get("error")`,
+  silently leaving `error_message=None` on every failed task.
+- Pre-existing bug in `gateway.db.archive_store.ArchiveStore.restore_task`
+  that iterated a sqlite3 `Row` as values instead of keys (made
+  archive→restore round-trip raise `IndexError`).
+
 ### Added
 
 - **Native batch submission for OriginQ and IBM** (`uniqc/backend_adapter/task/adapters/originq_adapter.py`, `qiskit_adapter.py`, `uniqc/backend_adapter/task_manager.py`, `uniqc/backend_adapter/backend.py`):

@@ -54,6 +54,11 @@ class QiskitAdapter(QuantumAdapter):
     """
 
     name = "ibm"
+    # Qiskit Runtime ``Sampler.run([circuits])`` accepts a list of PUBs
+    # natively; one Sampler job covers many circuits and one queue slot.
+    # ``100`` is a conservative default; raise via subclass override or
+    # config if your access tier permits more.
+    max_native_batch_size: int = 100
 
     def __init__(self, proxy: dict[str, str] | str | None = None) -> None:
         """Initialize the Qiskit adapter.

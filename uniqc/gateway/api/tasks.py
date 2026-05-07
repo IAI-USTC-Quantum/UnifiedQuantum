@@ -89,6 +89,41 @@ def get_task(task_id: str) -> dict[str, Any]:
     }
 
 
+@router.get("/{task_id}/shards")
+def get_task_shards(task_id: str) -> dict[str, Any]:
+    """Return the shard mapping for a uniqc task id.
+
+    Each shard records a single submission to the underlying cloud
+    platform; ``circuit_count`` indicates how many circuits the shard
+    covers (>= 1 for native-batch platforms, == 1 otherwise).
+    Result payloads are excluded — fetch ``GET /api/tasks/{task_id}``
+    for the aggregated result.
+    """
+    store = TaskStore()
+    if store.get(task_id) is None:
+        raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found")
+    shards = store.get_shards(task_id)
+    return {
+        "task_id": task_id,
+        "shard_count": len(shards),
+        "shards": [
+            {
+                "uniqc_task_id": s.uniqc_task_id,
+                "shard_index": s.shard_index,
+                "platform_task_id": s.platform_task_id,
+                "backend": s.backend,
+                "circuit_count": s.circuit_count,
+                "sub_index_offset": s.sub_index_offset,
+                "status": s.status,
+                "error_message": s.error_message,
+                "submit_time": s.submit_time,
+                "update_time": s.update_time,
+            }
+            for s in shards
+        ],
+    }
+
+
 @router.delete("/{task_id}")
 def delete_task(task_id: str) -> dict[str, str]:
     """Permanently delete a task."""

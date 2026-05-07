@@ -82,6 +82,18 @@ class OriginQAdapter(QuantumAdapter):
 
     name = "originq"
 
+    @property
+    def max_native_batch_size(self) -> int:
+        """OriginQ native batch limit, taken from ``originq.task_group_size``.
+
+        Configurable via ``~/.uniqc/uniqc.yml``. Default ``200``. uniqc
+        slices any user batch larger than this into multiple platform
+        jobs (one shard per slice) and aggregates the results
+        transparently behind a single ``uqt_*`` task id.
+        """
+        # ``int(...)`` defends against config returning a string.
+        return int(self._task_group_size or 200)
+
     def __init__(self, backend_name: str | None = None) -> None:
         """Initialize the OriginQ adapter.
 

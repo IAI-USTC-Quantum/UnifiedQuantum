@@ -51,6 +51,7 @@ __all__ = [
     # Task query
     "query_task",
     "wait_for_result",
+    "get_platform_task_ids",
     # Cache management
     "save_task",
     "get_task",
@@ -59,6 +60,7 @@ __all__ = [
     "clear_cache",
     # Classes
     "TaskInfo",
+    "TaskShard",
     "TaskStatus",
     "TaskManager",
     # Storage path (useful for tests / tooling)
@@ -101,9 +103,14 @@ from uniqc.backend_adapter.task.options import BackendOptions, BackendOptionsFac
 from uniqc.backend_adapter.task.result_types import DryRunResult, UnifiedResult
 from uniqc.backend_adapter.task.store import (
     DEFAULT_CACHE_DIR,
+    TERMINAL_STATUSES,
     TaskInfo,
+    TaskShard,
     TaskStatus,
     TaskStore,
+    UNIQC_TASK_ID_PREFIX,
+    generate_uniqc_task_id,
+    is_uniqc_task_id,
 )
 
 # -----------------------------------------------------------------------------
@@ -855,19 +862,37 @@ def submit_task(
 
     metadata = _metadata_with_circuit(circuit, metadata)
 
+    # Generate the uniqc-managed task id up front. This is the ID we
+    # return to the caller; it maps internally to one or more
+    # platform-issued task ids via the ``task_shards`` table.
+    uniqc_task_id = generate_uniqc_task_id()
+
     # Route dummy backend through _submit_dummy which pre-populates the result.
     # This ensures 'uniqc result <task_id>' returns data immediately without
     # needing a subsequent query against a cloud backend.
     if backend == "dummy" or backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
         return _submit_dummy(circuit, backend, shots=shots, metadata=metadata,
-                             local_compile=local_compile, **kwargs)
+                             local_compile=local_compile,
+                             uniqc_task_id=uniqc_task_id, **kwargs)
 
     # Pre-submission validation + optional local compile.
     circuit, prep_extras = _prepare_circuit_for_submission(
         circuit, backend, kwargs, local_compile=local_compile
     )
     metadata = {**metadata, **prep_extras}
+
+    # Persist a parent task row BEFORE remote submission so that any
+    # mid-submit failure leaves a discoverable parent the caller can
+    # still query / inspect.
+    task_info = TaskInfo(
+        task_id=uniqc_task_id,
+        backend=backend,
+        status=TaskStatus.PENDING,
+        shots=shots,
+        metadata=metadata or {},
+    )
+    save_task(task_info)
 
     # Resolve backend instance
     try:
@@ -893,22 +918,36 @@ def submit_task(
 
     # Submit to backend
     try:
-        task_id = backend_instance.submit(native_circuit, shots=shots, **kwargs)
+        platform_task_id = backend_instance.submit(native_circuit, shots=shots, **kwargs)
     except Exception as e:
+        # Mark the parent FAILED with submission_error metadata so the
+        # uniqc id is still discoverable — important for debugging
+        # transient cloud errors.
+        task_info.status = TaskStatus.FAILED
+        task_info.error_message = f"submit failed: {e!r}"
+        task_info.metadata = {**(task_info.metadata or {}),
+                              "submission_error": str(e)}
+        save_task(task_info)
         mapped_error = _map_adapter_error(e, backend)
         raise mapped_error from e
 
-    # Create and save task info
-    task_info = TaskInfo(
-        task_id=task_id,
+    # Persist a single shard row mapping the uniqc id to the platform id.
+    shard = TaskShard(
+        uniqc_task_id=uniqc_task_id,
+        shard_index=0,
+        platform_task_id=platform_task_id,
         backend=backend,
+        circuit_count=1,
+        sub_index_offset=0,
         status=TaskStatus.RUNNING,
-        shots=shots,
-        metadata=metadata or {},
     )
+    _store().save_shard(shard)
+
+    # Promote parent to RUNNING now that we have at least one shard.
+    task_info.status = TaskStatus.RUNNING
     save_task(task_info)
 
-    return task_id
+    return uniqc_task_id
 
 
 def _submit_dummy(
@@ -918,6 +957,7 @@ def _submit_dummy(
     metadata: dict | None = None,
     *,
     local_compile: int = 1,
+    uniqc_task_id: str | None = None,
     **kwargs: Any,
 ) -> str:
     """Submit a circuit using the dummy adapter for local simulation.
@@ -927,13 +967,18 @@ def _submit_dummy(
         backend: The backend name (used for logging/metadata only).
         shots: Number of measurement shots.
         metadata: Optional metadata.
+        uniqc_task_id: Pre-generated uniqc task id to associate this
+            shard with. When ``None`` a fresh id is allocated.
         **kwargs: Additional parameters (passed to dummy adapter).
 
     Returns:
-        Task ID from the dummy adapter.
+        The uniqc task id ``uqt_*`` mapped to the dummy platform id.
     """
     from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs, resolve_dummy_backend
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+
+    if uniqc_task_id is None:
+        uniqc_task_id = generate_uniqc_task_id()
 
     spec = resolve_dummy_backend(
         backend,
@@ -956,10 +1001,10 @@ def _submit_dummy(
         local_compile=local_compile,
         available_qubits=kwargs.get("available_qubits"),
     )
-    task_id = dummy_adapter.submit(originir, shots=shots)
+    platform_task_id = dummy_adapter.submit(originir, shots=shots)
 
     # Get result from dummy adapter
-    result = dummy_adapter.query(task_id)
+    result = dummy_adapter.query(platform_task_id)
     adapter_status = result.get("status", TASK_STATUS_RUNNING)
 
     # Map adapter status to TaskStatus
@@ -972,9 +1017,9 @@ def _submit_dummy(
     }
     task_status = status_map.get(adapter_status, TaskStatus.FAILED)
 
-    # Create and save task info
+    # Create and save task info under the uniqc id.
     task_info = TaskInfo(
-        task_id=task_id,
+        task_id=uniqc_task_id,
         backend=spec.identifier,
         status=task_status,
         shots=shots,
@@ -993,10 +1038,26 @@ def _submit_dummy(
     # Store result if successful
     if adapter_status == TASK_STATUS_SUCCESS:
         task_info.result = result.get("result")
+    elif adapter_status == TASK_STATUS_FAILED:
+        task_info.error_message = result.get("error_message") or result.get("error")
 
     save_task(task_info)
 
-    return task_id
+    # Persist a single shard row pointing at the dummy platform id.
+    shard = TaskShard(
+        uniqc_task_id=uniqc_task_id,
+        shard_index=0,
+        platform_task_id=platform_task_id,
+        backend=spec.identifier,
+        circuit_count=1,
+        sub_index_offset=0,
+        status=task_status,
+        result=result.get("result"),
+        error_message=task_info.error_message,
+    )
+    _store().save_shard(shard)
+
+    return uniqc_task_id
 
 
 def submit_batch(
@@ -1010,9 +1071,24 @@ def submit_batch(
     backend_name: str | None = None,
     chip_id: str | None = None,
     native_batch: bool = True,
+    return_platform_ids: bool = False,
     **kwargs: Any,
-) -> list[str]:
-    """Submit multiple circuits as a batch to a quantum backend.
+) -> str | list[str]:
+    """Submit multiple circuits as a batch and return a single uniqc task id.
+
+    uniqc maintains an internal mapping from one ``uqt_*`` task id to one
+    or more platform-issued task ids. The user manages exactly **one**
+    handle, regardless of the underlying platform's batch capabilities:
+
+    * For platforms with native batch (OriginQ, IBM) — circuits are packed
+      into one platform job per shard. uniqc auto-shards if the batch
+      exceeds the adapter's :attr:`max_native_batch_size` (e.g. OriginQ
+      ``task_group_size`` 200, IBM 100).
+    * For platforms without native batch (Quafu, Quark, Dummy) —
+      ``max_native_batch_size = 1``: uniqc loops one platform job per
+      circuit, but the user still receives a single ``uqt_*`` id and
+      :func:`wait_for_result` returns the per-circuit results in
+      submission order.
 
     Args:
         circuits: List of UnifiedQuantum Circuits to submit.
@@ -1026,32 +1102,31 @@ def submit_batch(
         backend_name: OriginQ chip name (optional when ``backend`` already
             encodes the chip).
         chip_id: Quafu / IBM chip ID.
-        native_batch: When ``True`` (default), backends that natively support
-            grouped submission (OriginQ ``run_instruction``, IBM Sampler) pack
-            all circuits into a single cloud job — returning a one-element
-            list ``[batch_task_id]`` and only one queue position.
-            When ``False``, each circuit is submitted as a separate job and
-            one task ID per circuit is returned (legacy behaviour useful for
-            independently retrying or cancelling individual circuits).
+        native_batch: When ``True`` (default), shards use the platform's
+            native grouped-submission API (one platform job per shard).
+            When ``False``, every circuit is submitted as a separate
+            platform job (one shard per circuit). Useful when you need
+            to retry/cancel individual circuits but do not need
+            per-circuit task ids returned.
+        return_platform_ids: When ``True``, returns the list of
+            platform-issued task ids (one per shard, NOT one per
+            circuit). Provided only for legacy code paths and debugging;
+            new code should always use the single returned ``uqt_*`` id
+            and call :func:`get_platform_task_ids` if it needs the
+            mapping.
         **kwargs: Additional backend-specific parameters.
-            - For Quafu: chip_id, auto_mapping, group_name
-            - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize
-            - For dummy: chip_characterization, noise_model, available_qubits
 
     Returns:
-        List of task IDs assigned by the backend.
-
-    Raises:
-        BackendNotFoundError: If the backend is not recognized.
-        BackendNotAvailableError: If the backend is not available.
-        AuthenticationError: If authentication fails.
-        InsufficientCreditsError: If account has insufficient credits.
-        QuotaExceededError: If usage quota is exceeded.
-        NetworkError: If a network error occurs.
+        The uniqc task id ``uqt_*`` for this batch, or a list of platform
+        task ids when ``return_platform_ids=True``.
 
     Example:
-        >>> circuits = [circuit1, circuit2, circuit3]
-        >>> task_ids = submit_batch(circuits, backend='quafu', shots=1000, chip_id='ScQ-P10')
+        >>> circuits = [build(i) for i in range(400)]
+        >>> uid = submit_batch(circuits, 'originq', shots=1000,
+        ...                    backend_name='WK_C180')
+        >>> # `uid` is one ``uqt_*`` covering up to ``ceil(400/200) = 2`` shards
+        >>> results = wait_for_result(uid)         # list[UnifiedResult] len=400
+        >>> shards  = get_platform_task_ids(uid)   # 2 shard rows
     """
     # Re-pack explicit kwargs.
     if backend_name is not None:
@@ -1070,12 +1145,20 @@ def submit_batch(
         kwargs = merged_kwargs
         shots = opts.shots
 
+    # Pre-allocate the uniqc id; it is the single handle returned to the user.
+    uniqc_task_id = generate_uniqc_task_id()
+
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
     if backend == "dummy" or backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
         kwargs.pop("native_batch", None)
-        return _submit_batch_dummy(circuits, backend, shots=shots,
-                                   local_compile=local_compile, **kwargs)
+        result_id = _submit_batch_dummy(
+            circuits, backend, shots=shots, local_compile=local_compile,
+            uniqc_task_id=uniqc_task_id, **kwargs,
+        )
+        if return_platform_ids:
+            return [s.platform_task_id for s in _store().get_shards(result_id)]
+        return result_id
 
     # Pre-submission validation for each circuit; local-compile any that fail.
     prepared: list[Circuit] = []
@@ -1088,60 +1171,124 @@ def submit_batch(
         prep_extras_list.append(extras)
     circuits = prepared
 
+    # Persist the parent task row immediately so that any mid-submit
+    # failure leaves the uniqc id queryable.
+    parent_metadata: dict[str, Any] = {
+        "batch": True,
+        "batch_size": len(circuits),
+        "circuits": [
+            _metadata_with_circuit(c, {})["circuit_ir"] for c in circuits
+        ],
+        "circuit_language": "OriginIR",
+    }
+    parent_info = TaskInfo(
+        task_id=uniqc_task_id,
+        backend=backend,
+        status=TaskStatus.PENDING,
+        shots=shots,
+        metadata=parent_metadata,
+    )
+    save_task(parent_info)
+
     # Resolve backend instance
     try:
         backend_instance = backend_module.get_backend(backend)
     except ValueError as e:
         raise BackendNotFoundError(str(e)) from e
 
-    # Check backend availability
     if not backend_instance.is_available():
         raise BackendNotAvailableError(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
 
-    # Convert circuits using adapter
     try:
         adapter = _get_adapter(backend)
         native_circuits = adapter.adapt_batch(circuits)
     except Exception as e:
         raise _map_adapter_error(e, backend) from e
 
-    # Strip uniqc-internal kwargs.
+    # Decide shard size. ``native_batch=False`` forces one circuit per
+    # platform job (i.e. shard size 1). Otherwise honour the adapter's
+    # ``max_native_batch_size`` (an instance attribute or class attr).
+    task_adapter = backend_instance.adapter  # the QuantumAdapter instance
+    max_size = max(1, int(getattr(task_adapter, "max_native_batch_size", 1)))
+    shard_size = 1 if not native_batch else max_size
+
     kwargs.pop("cloud_compile", None)
 
-    # Submit batch to backend
+    shards_submitted: list[TaskShard] = []
     try:
-        result = backend_instance.submit_batch(native_circuits, shots=shots, **kwargs)
-        # Handle both list of task IDs and single group ID
-        task_ids = result if isinstance(result, list) else [result]
-    except Exception as e:
-        mapped_error = _map_adapter_error(e, backend)
-        raise mapped_error from e
+        for shard_index, start in enumerate(range(0, len(native_circuits), shard_size)):
+            chunk = native_circuits[start:start + shard_size]
+            chunk_shots = shots
+            try:
+                result = backend_instance.submit_batch(
+                    chunk, shots=chunk_shots, **kwargs,
+                )
+            except Exception as exc:
+                # Mark parent FAILED with submission_error and the list
+                # of already-submitted shards so the user can still
+                # query/cancel them.
+                parent_info.status = TaskStatus.FAILED
+                parent_info.error_message = (
+                    f"Shard {shard_index}/{ -(-len(native_circuits) // shard_size) } "
+                    f"submit failed: {exc!r}"
+                )
+                parent_info.metadata = {
+                    **(parent_info.metadata or {}),
+                    "submission_error": str(exc),
+                    "partial_submitted_shards": [
+                        s.platform_task_id for s in shards_submitted
+                    ],
+                }
+                save_task(parent_info)
+                mapped_error = _map_adapter_error(exc, backend)
+                raise mapped_error from exc
 
-    # Create and save task info for each task
-    for index, task_id in enumerate(task_ids):
-        metadata = {"batch": True, "batch_size": len(circuits)}
-        if index < len(circuits):
-            metadata = _metadata_with_circuit(circuits[index], metadata)
-            if index < len(prep_extras_list):
-                metadata.update(prep_extras_list[index])
-        else:
-            metadata["circuits"] = [
-                _metadata_with_circuit(circuit, {})["circuit_ir"]
-                for circuit in circuits
-            ]
-            metadata["circuit_language"] = "OriginIR"
-        task_info = TaskInfo(
-            task_id=task_id,
-            backend=backend,
-            status=TaskStatus.RUNNING,
-            shots=shots,
-            metadata=metadata,
-        )
-        save_task(task_info)
+            # Adapters may return ``str`` (one platform job) or a list of
+            # ``str`` for non-native-batch shards (one platform job per
+            # circuit). Normalise to list, then pack into shard rows.
+            ids = result if isinstance(result, list) else [result]
+            if len(ids) == 1:
+                # Single platform job covers the whole shard chunk.
+                shard = TaskShard(
+                    uniqc_task_id=uniqc_task_id,
+                    shard_index=shard_index,
+                    platform_task_id=ids[0],
+                    backend=backend,
+                    circuit_count=len(chunk),
+                    sub_index_offset=start,
+                    status=TaskStatus.RUNNING,
+                )
+                _store().save_shard(shard)
+                shards_submitted.append(shard)
+            else:
+                # Adapter expanded to one job per circuit even though we
+                # asked for native batch (e.g. native_batch=False or
+                # adapter has max_native_batch_size=1). Each platform id
+                # becomes its own shard with circuit_count=1.
+                for offset, pid in enumerate(ids):
+                    shard = TaskShard(
+                        uniqc_task_id=uniqc_task_id,
+                        shard_index=len(shards_submitted),
+                        platform_task_id=pid,
+                        backend=backend,
+                        circuit_count=1,
+                        sub_index_offset=start + offset,
+                        status=TaskStatus.RUNNING,
+                    )
+                    _store().save_shard(shard)
+                    shards_submitted.append(shard)
 
-    return task_ids
+        # All shards submitted successfully → parent is RUNNING.
+        parent_info.status = TaskStatus.RUNNING
+        save_task(parent_info)
+    except Exception:
+        raise
+
+    if return_platform_ids:
+        return [s.platform_task_id for s in shards_submitted]
+    return uniqc_task_id
 
 
 def _submit_batch_dummy(
@@ -1150,21 +1297,20 @@ def _submit_batch_dummy(
     shots: int = 1000,
     *,
     local_compile: int = 1,
+    uniqc_task_id: str | None = None,
     **kwargs: Any,
-) -> list[str]:
+) -> str:
     """Submit multiple circuits using the dummy adapter.
 
-    Args:
-        circuits: List of UnifiedQuantum Circuits to simulate.
-        backend: The backend name (used for logging/metadata only).
-        shots: Number of measurement shots per circuit.
-        **kwargs: Additional parameters.
-
-    Returns:
-        List of task IDs from the dummy adapter.
+    Returns the parent ``uqt_*`` id; per-circuit dummy platform ids are
+    persisted as one shard each so :func:`wait_for_result` can return a
+    ``list[UnifiedResult]`` in submission order.
     """
     from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs, resolve_dummy_backend
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+
+    if uniqc_task_id is None:
+        uniqc_task_id = generate_uniqc_task_id()
 
     spec = resolve_dummy_backend(
         backend,
@@ -1192,51 +1338,72 @@ def _submit_batch_dummy(
         )
         originir_circuits.append(originir)
         compiled_metadata.append(item_metadata)
-    task_ids = dummy_adapter.submit_batch(originir_circuits, shots=shots)
+    platform_ids = dummy_adapter.submit_batch(originir_circuits, shots=shots)
 
-    # Create and save task info for each
-    for index, task_id in enumerate(task_ids):
-        result = dummy_adapter.query(task_id)
+    # Aggregate parent metadata.
+    parent_metadata: dict[str, Any] = {
+        "batch": True,
+        "batch_size": len(circuits),
+        "circuits": [
+            _metadata_with_circuit(c, {})["circuit_ir"] for c in circuits
+        ],
+        "circuit_language": "OriginIR",
+        "dummy_backend_id": spec.identifier,
+        "dummy_noise_source": spec.noise_source,
+        "dummy_source_backend": (
+            f"{spec.source_platform.value}:{spec.source_name}"
+            if spec.source_platform is not None and spec.source_name
+            else None
+        ),
+    }
+
+    # Persist parent FIRST so the FK from task_shards.uniqc_task_id is
+    # satisfied. Initial status PENDING will be replaced with the
+    # aggregated value once shards are written.
+    parent_info = TaskInfo(
+        task_id=uniqc_task_id,
+        backend=spec.identifier,
+        status=TaskStatus.PENDING,
+        shots=shots,
+        metadata=parent_metadata,
+    )
+    save_task(parent_info)
+
+    status_map = {
+        TASK_STATUS_SUCCESS: TaskStatus.SUCCESS,
+        TASK_STATUS_FAILED: TaskStatus.FAILED,
+        TASK_STATUS_RUNNING: TaskStatus.RUNNING,
+    }
+
+    # Persist one shard per circuit.
+    for index, platform_id in enumerate(platform_ids):
+        result = dummy_adapter.query(platform_id)
         adapter_status = result.get("status", TASK_STATUS_RUNNING)
-
-        # Map adapter status to TaskStatus
-        status_map = {
-            TASK_STATUS_SUCCESS: TaskStatus.SUCCESS,
-            TASK_STATUS_FAILED: TaskStatus.FAILED,
-            TASK_STATUS_RUNNING: TaskStatus.RUNNING,
-        }
-        task_status = status_map.get(adapter_status, TaskStatus.FAILED)
-
-        metadata = {"batch": True, "batch_size": len(circuits)}
-        if index < len(circuits):
-            metadata = _metadata_with_circuit(circuits[index], metadata)
-            metadata.update(compiled_metadata[index])
-        task_info = TaskInfo(
-            task_id=task_id,
+        shard_status = status_map.get(adapter_status, TaskStatus.FAILED)
+        shard = TaskShard(
+            uniqc_task_id=uniqc_task_id,
+            shard_index=index,
+            platform_task_id=platform_id,
             backend=spec.identifier,
-            status=task_status,
-            shots=shots,
-            metadata={
-                **metadata,
-                "dummy_backend_id": spec.identifier,
-                "dummy_noise_source": spec.noise_source,
-                "dummy_source_backend": (
-                    f"{spec.source_platform.value}:{spec.source_name}"
-                    if spec.source_platform is not None and spec.source_name
-                    else None
-                ),
-            },
+            circuit_count=1,
+            sub_index_offset=index,
+            status=shard_status,
+            result=result.get("result") if adapter_status == TASK_STATUS_SUCCESS else None,
+            error_message=(
+                _extract_error_message(result)
+                if adapter_status == TASK_STATUS_FAILED else None
+            ),
         )
-        if adapter_status == TASK_STATUS_SUCCESS:
-            task_info.result = result.get("result")
-        elif adapter_status == TASK_STATUS_FAILED:
-            task_info.error_message = (
-                str(result.get("error") or result.get("message") or "")
-                or None
-            )
-        save_task(task_info)
+        _store().save_shard(shard)
 
-    return task_ids
+    # Aggregate parent status from saved shards and persist.
+    shards = _store().get_shards(uniqc_task_id)
+    parent_info.status = TaskStore.aggregate_status(shards)
+    if parent_info.status == TaskStatus.SUCCESS.value:
+        parent_info.result = [s.result for s in shards]
+    save_task(parent_info)
+
+    return uniqc_task_id
 
 
 # -----------------------------------------------------------------------------
@@ -1244,38 +1411,188 @@ def _submit_batch_dummy(
 # -----------------------------------------------------------------------------
 
 
+def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
+    """Resolve ``task_id`` to a uniqc parent id.
+
+    Returns ``(uniqc_id, is_legacy_alias)``. When the input was a
+    platform task id discovered via the shard index, ``is_legacy_alias``
+    is ``True`` and a one-shot ``DeprecationWarning`` is emitted.
+
+    Raises ``TaskNotFoundError`` if neither path resolves.
+    """
+    if is_uniqc_task_id(task_id):
+        return task_id, False
+    # Try platform-id lookup via the shard index.
+    found = _store().find_uniqc_id_by_platform_id(task_id)
+    if found is not None:
+        import warnings
+        warnings.warn(
+            f"Task lookup via platform id {task_id!r} is deprecated; "
+            f"use the uniqc id {found!r} instead. The platform id will "
+            "still resolve via the shard index but this fallback may "
+            "be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return found, True
+    # Fall through to legacy direct path — caller's job to handle missing.
+    return task_id, False
+
+
+def get_platform_task_ids(task_id: str) -> list[TaskShard]:
+    """Return the shard mapping for a uniqc task id.
+
+    Each :class:`TaskShard` records:
+
+    * ``platform_task_id`` — the id assigned by the cloud platform
+    * ``shard_index`` — 0-based ordering within the parent
+    * ``circuit_count`` — number of circuits packed into this shard
+    * ``sub_index_offset`` — index of this shard's first circuit in the
+      original :func:`submit_batch` list
+    * ``status`` / ``error_message`` — per-shard liveness
+
+    Args:
+        task_id: A uniqc task id (``uqt_*``). For backwards compatibility
+            this will also accept a platform task id and emit a
+            :class:`DeprecationWarning` while resolving the parent.
+
+    Returns:
+        Shards in submission order. Empty list when the task has no
+        shards yet (e.g. submission failed before any shard was
+        persisted) or when ``task_id`` is unknown.
+    """
+    uniqc_id, _ = _resolve_to_uniqc_id(task_id)
+    return _store().get_shards(uniqc_id)
+
+
+def _extract_error_message(query_result: dict) -> str | None:
+    """Extract a human-readable error message from an adapter query result.
+
+    Adapters use slightly different layouts when a task fails:
+
+    * OriginQ batch:    ``{"status": "failed", "result": {"error": "..."}}``
+    * OriginQ single:   ``{"status": "failed", "result": {"error": "..."}}``
+    * Generic fallback: ``{"status": "failed", "error": "..."}`` or
+                        ``{"status": "failed", "message": "..."}``
+    """
+    inner = query_result.get("result")
+    if isinstance(inner, dict):
+        for key in ("error", "error_message", "message"):
+            val = inner.get(key)
+            if val:
+                return str(val)
+    for key in ("error_message", "error", "message"):
+        val = query_result.get(key)
+        if val:
+            return str(val)
+    return None
+
+
+def _refresh_shard_from_backend(shard: TaskShard) -> TaskShard:
+    """Best-effort refresh of a single shard's status from its backend.
+
+    Updates ``shard`` in place and persists it. Network/auth errors are
+    swallowed and the previous status is preserved — callers see the
+    stale value rather than a hard failure.
+    """
+    if shard.status in TERMINAL_STATUSES:
+        return shard
+    try:
+        backend_instance = backend_module.get_backend(shard.backend)
+    except Exception:
+        return shard
+    try:
+        result = backend_instance.query(shard.platform_task_id)
+    except Exception:
+        return shard
+    adapter_status = result.get("status", TASK_STATUS_RUNNING)
+    status_map = {
+        TASK_STATUS_SUCCESS: TaskStatus.SUCCESS,
+        TASK_STATUS_FAILED: TaskStatus.FAILED,
+        TASK_STATUS_RUNNING: TaskStatus.RUNNING,
+        "pending": TaskStatus.PENDING,
+        "cancelled": TaskStatus.CANCELLED,
+    }
+    new_status = status_map.get(adapter_status, TaskStatus.RUNNING)
+    shard.status = (
+        new_status.value if isinstance(new_status, TaskStatus) else str(new_status)
+    )
+    if shard.status == TaskStatus.SUCCESS.value:
+        shard.result = result.get("result")
+        shard.error_message = None
+    elif shard.status == TaskStatus.FAILED.value:
+        shard.error_message = _extract_error_message(result)
+        # Preserve the raw failure payload so debug output isn't lost.
+        shard.result = result.get("result") if isinstance(result.get("result"), dict) else None
+    _store().save_shard(shard)
+    return shard
+
+
+# Constant exported for external use (TERMINAL_STATUSES re-export from store).
+
+
 def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     """Query the status of a task.
 
-    This function queries the backend for the current status of a task
-    and updates the local cache.
+    For uniqc-managed task ids, refreshes each shard's status from its
+    backend (best-effort), then denormalises the aggregate status onto
+    the parent ``tasks`` row. The returned :class:`TaskInfo` therefore
+    reflects the freshest known state.
+
+    For legacy platform task ids (pre-v4 cache rows or rows without
+    shards), falls back to the historical direct-query path.
 
     Args:
-        task_id: The task identifier.
-        backend: The backend name. If None, attempts to look up from cache.
-            Prefer using None to let the system auto-detect the correct backend.
+        task_id: The task identifier. Accepts a uniqc id (``uqt_*``)
+            or, with a deprecation warning, a raw platform id.
+        backend: Ignored when the task is found in cache (the backend
+            is resolved from the stored shards). Only used for legacy
+            direct-query fallback.
 
     Returns:
-        TaskInfo with current status and result if available.
-
-    Raises:
-        TaskNotFoundError: If the task is not found locally or remotely.
-        BackendNotFoundError: If the backend is not recognized.
-        NetworkError: If a network error occurs.
-
-    Example:
-        >>> info = query_task('task-123', backend='quafu')
-        >>> print(info.status)
-        'success'
+        :class:`TaskInfo` with current aggregated status.
     """
-    # Always prefer cached backend info to handle dummy mode correctly
     cached_task = get_task(task_id)
+
+    # Path A: uniqc id with one or more shards → aggregate from shards.
+    if cached_task is not None and is_uniqc_task_id(task_id):
+        shards = _store().get_shards(task_id)
+        if shards:
+            # Dummy tasks pre-store results at submit time; their shards
+            # are already terminal so the refresh loop is a no-op.
+            for shard in shards:
+                _refresh_shard_from_backend(shard)
+            shards = _store().get_shards(task_id)
+            agg_status = TaskStore.aggregate_status(shards)
+            cached_task.status = agg_status
+            if agg_status == TaskStatus.SUCCESS.value:
+                # Aggregate per-shard results into a flat list ordered by
+                # ``sub_index_offset`` so wait_for_result can produce
+                # the per-circuit UnifiedResult list directly.
+                cached_task.result = _aggregate_shard_results(shards)
+                cached_task.error_message = None
+            elif agg_status == TaskStatus.FAILED.value:
+                failed = [s for s in shards if s.status == TaskStatus.FAILED.value]
+                msgs = [
+                    f"shard {s.shard_index}: {s.error_message or 'failed'}"
+                    for s in failed
+                ]
+                cached_task.error_message = "; ".join(msgs) or "shard(s) failed"
+            save_task(cached_task)
+            return cached_task
+
+    # Path B: legacy / dummy direct path (no shards or non-uniqc id).
     if cached_task is not None:
-        # Use cached backend (e.g., 'dummy:originq' for dummy mode)
         backend = cached_task.backend
-        # For dummy tasks, results are already stored - return cached info directly
         if backend == "dummy" or backend.startswith("dummy:"):
             return cached_task
+
+    # Path C: not in cache. Try resolving via platform-id alias first
+    # (legacy support — emits DeprecationWarning).
+    if cached_task is None and not is_uniqc_task_id(task_id):
+        uniqc_id, was_alias = _resolve_to_uniqc_id(task_id)
+        if was_alias:
+            return query_task(uniqc_id, backend=backend)
 
     if backend is None:
         raise TaskNotFoundError(f"Task '{task_id}' not found in local cache. Please provide the backend parameter.")
@@ -1287,14 +1604,13 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     except ValueError as e:
         raise BackendNotFoundError(str(e)) from e
 
-    # Query backend
+    # Query backend (legacy direct path)
     try:
         result = backend_instance.query(task_id)
     except Exception as e:
         mapped_error = _map_adapter_error(e, backend)
         if isinstance(mapped_error, NetworkError):
             raise mapped_error from e
-        # For other errors, try to use cached info
         cached_task = get_task(task_id)
         if cached_task is not None:
             return cached_task
@@ -1303,7 +1619,6 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
             task_id=task_id,
         ) from e
 
-    # Map adapter status to TaskStatus
     adapter_status = result.get("status", TASK_STATUS_RUNNING)
     status_map = {
         TASK_STATUS_SUCCESS: TaskStatus.SUCCESS,
@@ -1314,19 +1629,15 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     }
     task_status = status_map.get(adapter_status, TaskStatus.PENDING)
 
-    # Update task info
     task_info = TaskInfo(
         task_id=task_id,
         backend=backend,
         status=task_status,
         result=result.get("result") if task_status == TaskStatus.SUCCESS else None,
         error_message=(
-            str(result.get("error") or result.get("message") or "")
-            or None
+            _extract_error_message(result)
         ) if task_status == TaskStatus.FAILED else None,
     )
-
-    # Merge with existing metadata if available
     cached_task = get_task(task_id)
     if cached_task is not None:
         task_info.submit_time = cached_task.submit_time
@@ -1335,6 +1646,45 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
 
     save_task(task_info)
     return task_info
+
+
+def _aggregate_shard_results(shards: list[TaskShard]) -> Any:
+    """Flatten shard results into a single per-circuit list.
+
+    For shards with ``circuit_count == 1`` the shard's ``result`` is one
+    dict (or a 1-element list — accept both). For native-batch shards
+    with ``circuit_count > 1`` the shard's ``result`` is a list of
+    counts dicts. We concatenate in ``sub_index_offset`` order. The
+    returned list length equals the user's original batch size when all
+    shards report the expected cardinality.
+
+    If the parent represents a single-circuit submission (one shard,
+    ``circuit_count == 1``) we return the single counts dict directly so
+    that ``wait_for_result`` keeps returning a scalar
+    :class:`UnifiedResult`.
+    """
+    ordered = sorted(shards, key=lambda s: s.sub_index_offset)
+    if len(ordered) == 1 and ordered[0].circuit_count == 1:
+        return ordered[0].result
+    flat: list[Any] = []
+    for s in ordered:
+        if s.circuit_count == 1:
+            flat.append(s.result)
+        elif isinstance(s.result, list):
+            if len(s.result) != s.circuit_count:
+                # Surface the mismatch by padding/truncating to expected
+                # length; downstream wrap will produce that many UR objects.
+                items = list(s.result)
+                while len(items) < s.circuit_count:
+                    items.append(None)
+                flat.extend(items[: s.circuit_count])
+            else:
+                flat.extend(s.result)
+        else:
+            # Unexpected shape — wrap as a single entry per circuit.
+            for _ in range(s.circuit_count):
+                flat.append(s.result)
+    return flat
 
 
 def _wrap_as_unified_result(
