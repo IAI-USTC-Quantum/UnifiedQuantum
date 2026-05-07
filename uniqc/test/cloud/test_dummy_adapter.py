@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
-
 import pytest
 
 
@@ -130,32 +128,3 @@ class TestDummyAdapter:
 
         result = adapter.query(task_id)
         assert result["status"] == "failed"
-
-
-class TestUniqcDummyEnv:
-    """Tests for UNIQC_DUMMY environment variable."""
-
-    def test_env_variable_true(self, monkeypatch):
-        """Test UNIQC_DUMMY=true is recognized."""
-        monkeypatch.setenv("UNIQC_DUMMY", "true")
-        # Re-import to pick up new env var
-        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
-        importlib.reload(dummy_mod)
-
-        assert dummy_mod.UNIQC_DUMMY is True
-
-    def test_env_variable_false(self, monkeypatch):
-        """Test UNIQC_DUMMY=false is recognized as false."""
-        monkeypatch.setenv("UNIQC_DUMMY", "false")
-        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
-        importlib.reload(dummy_mod)
-
-        assert dummy_mod.UNIQC_DUMMY is False
-
-    def test_env_variable_1(self, monkeypatch):
-        """Test UNIQC_DUMMY=1 is recognized as true."""
-        monkeypatch.setenv("UNIQC_DUMMY", "1")
-        import uniqc.backend_adapter.task.adapters.dummy_adapter as dummy_mod
-        importlib.reload(dummy_mod)
-
-        assert dummy_mod.UNIQC_DUMMY is True

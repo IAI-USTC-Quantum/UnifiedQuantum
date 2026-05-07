@@ -55,7 +55,7 @@ circuit.u3(0, 1.57, 0.785, 0.392)
 
 ### 双量子比特门
 
-`cnot`, `cx`, `cz`, `iswap`, `swap`, `cswap`, `toffoli`, `xx`, `yy`, `zz`, `xy`, `phase2q`, `uu15`
+`cnot`, `cx`, `cz`, `iswap`, `swap`, `cswap`, `toffoli`, `xx`, `yy`, `zz`, `phase2q`, `uu15`
 
 ```python
 circuit.cnot(0, 1)
@@ -109,13 +109,20 @@ qasm_str = circuit.qasm
 
 ## 线路信息
 
+`Circuit` 的几个常用统计量都通过 **属性 (property)** 暴露 —— 直接 `circuit.depth` 取值，
+不要写成 `circuit.depth()`（会得到 `TypeError: 'int' object is not callable`）。
+
 ```python
-circuit.depth        # 线路深度
-circuit.circuit      # 完整线路字符串（含头和测量）
-circuit.qubit_num    # 量子比特数
-circuit.cbit_num     # 经典比特数
-circuit.opcode_list  # 门操作列表
+circuit.depth        # 属性：线路深度（不计 I / BARRIER）
+circuit.circuit      # 属性：完整线路字符串（含头和测量）
+circuit.qubit_num    # 属性：量子比特数
+circuit.cbit_num     # 属性：经典比特数
+circuit.opcode_list  # 属性：门操作列表
 ```
+
+如果需要按门类型 / 仅计算某些子集的深度，可使用底层函数
+{func}`uniqc.compile.compute_gate_depth`，它接受一个 `Circuit` 并接受
+`virtual_z=True/False` 等开关，返回与 `Circuit.depth` 同种类的整数指标。
 
 ## 量子比特重映射
 
@@ -138,20 +145,33 @@ draw(circuit.originir)
 
 ## 提取酉矩阵 {#guide-circuit-unitary-matrix}
 
-对不含测量门的线路，可以提取其对应的酉矩阵（Unitary Matrix）表示：
+对于不含测量门的线路，可以直接通过 `Circuit.get_matrix()`（或顶层 `uniqc.get_matrix(circuit)`）获取完整酉矩阵：
 
 ```python
-from uniqc import Circuit
+import numpy as np
+from uniqc import Circuit, get_matrix
 
 c = Circuit()
 c.h(0)
 c.cnot(0, 1)
 
-matrix = c.get_matrix()   # numpy.ndarray，shape = (4, 4)
-print(matrix.round(4))
+U = c.get_matrix()       # 等价于 get_matrix(c)
+print(U.shape)           # (4, 4)
 ```
 
-支持的门：`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`，以及各受控变体。含测量或退相干通道的线路会抛出 {exc}`NotMatrixableError`。
+约定：qubit 0 是 statevector 索引的最低位（little-endian），且 `state_out = U @ state_in`，门按 `opcode_list` 中的顺序左乘。
+
+:::{note}
+若线路中包含 `MEASURE` / `CONTROL` / `DAGGER` 等无 unitary 表示的 opcode，会抛出 `NotMatrixableError`。如果只想看演化后的态矢，推荐使用状态向量模拟器：
+
+```python
+from uniqc.simulator import OriginIR_Simulator
+sim = OriginIR_Simulator(backend_type='statevector')
+psi = sim.simulate_statevector(c.originir)
+```
+
+由于 `get_matrix` 显式构造 `2**n × 2**n` 矩阵，仅适合小规模（约 ≤ 12 qubit）线路。
+:::
 
 ## 命名量子寄存器 {#guide-circuit-named-qreg}
 
@@ -221,7 +241,10 @@ phi.bind(0.5)
 # 求值
 value = theta.evaluate()  # 返回 1.0
 
-# 或通过字典传入值
+# 或通过字典传入值（注意：当参数已绑定时，绑定值优先，dict 会被忽略）
+result = theta.evaluate({"theta": 2.0})  # 仍返回 1.0
+# 想让 dict 生效，先 unbind：
+theta.unbind()
 result = theta.evaluate({"theta": 2.0})  # 返回 2.0
 ```
 

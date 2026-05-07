@@ -1,7 +1,8 @@
 """Variational Quantum Deflation (VQD) circuit components."""
 
-__all__ = ["vqd_circuit", "vqd_overlap_circuit"]
+__all__ = ["vqd_circuit", "vqd_ansatz", "vqd_overlap_circuit", "vqd_example"]
 
+import warnings
 from typing import List, Optional
 
 import numpy as np
@@ -56,61 +57,86 @@ def _hea_ansatz(
             circuit.cnot(qubits[i], qubits[i + 1])
 
 
-def vqd_circuit(
-    circuit: Circuit,
+def vqd_ansatz(
+    n_qubits: int,
     ansatz_params: List[float],
     prev_states: List[np.ndarray],
     qubits: Optional[List[int]] = None,
     penalty: float = 10.0,
     n_layers: int = 2,
-) -> None:
-    r"""Apply a VQD ansatz circuit to *circuit*.
+) -> Circuit:
+    r"""Build a VQD ansatz circuit fragment (variational style).
 
-    Variational Quantum Deflation (VQD) is a hybrid algorithm for finding
-    excited states of a Hamiltonian one at a time.  It minimises the
-    cost function
-
-    .. math::
-
-        C(\boldsymbol{\theta}) =
-        \langle\psi(\boldsymbol{\theta})|H|\psi(\boldsymbol{\theta})\rangle
-        + \sum_i \beta_i\,|\langle\psi(\boldsymbol{\theta})|\phi_i\rangle|^2
-
-    where :math:`|\phi_i\rangle` are previously found lower-energy states
-    and :math:`\beta_i` are penalty coefficients.
-
-    This function **only** constructs the parameterised ansatz on the
-    circuit.  The overlap penalty terms are evaluated separately (see
-    :func:`vqd_overlap_circuit`) and combined by a classical optimiser.
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        ansatz_params: Parameters for the HEA ansatz.
-        prev_states: List of previously found state vectors (used by
-            the classical optimiser, not directly in this circuit).
-        qubits: Qubit indices.  ``None`` means all qubits of *circuit*.
-        penalty: Penalty coefficient :math:`\beta` (used by the caller).
-        n_layers: Number of HEA layers.
-
-    Raises:
-        ValueError: If *prev_states* is empty (use VQE for the ground state).
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> import numpy as np
-        >>> c = Circuit(2)
-        >>> gs = np.array([1, 0, 0, 0], dtype=complex)
-        >>> vqd_circuit(c, [0.1]*4, prev_states=[gs], n_layers=2)
+    Returns a fresh :class:`Circuit`.  ``prev_states`` is accepted to keep
+    the VQD signature, but is only used by the classical optimiser.
     """
     if qubits is None:
-        qubits = list(range(circuit.qubit_num))
-
+        qubits = list(range(n_qubits))
     if len(prev_states) == 0:
         raise ValueError(
             "prev_states is empty. Use VQE (not VQD) for the ground state."
         )
+    fragment = Circuit()
+    _hea_ansatz(fragment, ansatz_params, n_layers, qubits)
+    return fragment
 
-    _hea_ansatz(circuit, ansatz_params, n_layers, qubits)
+
+def vqd_circuit(
+    *args,
+    ansatz_params: Optional[List[float]] = None,
+    prev_states: Optional[List[np.ndarray]] = None,
+    qubits: Optional[List[int]] = None,
+    penalty: float = 10.0,
+    n_layers: int = 2,
+):
+    r"""Build (or apply) a VQD ansatz.
+
+    Two calling conventions:
+
+    .. code-block:: python
+
+        # Variational fragment style (recommended; see also vqd_ansatz):
+        c = vqd_circuit(2, ansatz_params=[0.1]*4, prev_states=[gs], n_layers=2)
+
+        # Legacy in-place (deprecated):
+        c = Circuit(2)
+        vqd_circuit(c, [0.1]*4, prev_states=[gs], n_layers=2)
+    """
+    if len(args) >= 1 and isinstance(args[0], Circuit):
+        circuit_in = args[0]
+        if len(args) >= 2 and ansatz_params is None:
+            ansatz_params = args[1]
+        if len(args) >= 3 and prev_states is None:
+            prev_states = args[2]
+        warnings.warn(
+            "vqd_circuit(circuit, ansatz_params, prev_states, ...) (in-place form) is "
+            "deprecated. Use vqd_ansatz(n_qubits, ansatz_params, prev_states, ...) "
+            "and add_circuit().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if qubits is None:
+            qubits = list(range(circuit_in.qubit_num))
+        if not prev_states:
+            raise ValueError(
+                "prev_states is empty. Use VQE (not VQD) for the ground state."
+            )
+        _hea_ansatz(circuit_in, ansatz_params, n_layers, qubits)
+        return None
+
+    # Fragment-style call
+    if len(args) >= 1 and isinstance(args[0], int):
+        n_qubits = args[0]
+    elif qubits is not None:
+        n_qubits = max(qubits) + 1
+    else:
+        raise TypeError("vqd_circuit requires n_qubits as first positional arg")
+    if ansatz_params is None or prev_states is None:
+        raise TypeError("vqd_circuit requires ansatz_params and prev_states")
+    return vqd_ansatz(
+        n_qubits, ansatz_params, prev_states,
+        qubits=qubits, penalty=penalty, n_layers=n_layers,
+    )
 
 
 def vqd_overlap_circuit(
@@ -278,3 +304,9 @@ def _state_prep_recursive(
     if norm_bot > 1e-15:
         _state_prep_recursive(circuit, bot / norm_bot, qubits[1:])
     circuit.x(qubits[0])
+
+
+def vqd_example() -> Circuit:
+    """Return a small VQD ansatz fragment for tests/docs."""
+    gs = np.array([1, 0, 0, 0], dtype=complex)
+    return vqd_ansatz(2, [0.1] * 4, prev_states=[gs], n_layers=2)

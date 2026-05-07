@@ -8,13 +8,14 @@ Installation:
 
 from __future__ import annotations
 
-__all__ = ["BackendUnavailableError", "OriginQAdapter"]
+__all__ = ["OriginQAdapter"]
 
 import time
 import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES
+from uniqc.exceptions import BackendNotAvailableError
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -31,23 +32,41 @@ def _avg(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
-class BackendUnavailableError(RuntimeError):
-    """Raised when a hardware backend is currently unavailable.
+# OriginQ's pyqpanda3 OriginIR parser does not currently accept ``SX`` /
+# ``SX.dagger`` tokens even though the platform's basis gate set advertises
+# SX. Rewrite them to the equivalent ``RX(±π/2)`` form before submission.
+#
+# SX            = RX( π/2)   (up to a global phase, irrelevant for sampling)
+# SX.dagger     = RX(-π/2)
+import re as _re
+_SX_PI_OVER_2 = "1.5707963267948966"
+_NEG_SX_PI_OVER_2 = "-1.5707963267948966"
+_SX_DAGGER_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*\.\s*dagger\s*$", _re.IGNORECASE)
+_SX_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*$", _re.IGNORECASE)
 
-    Hardware backends may become unavailable due to maintenance, queue
-    congestion, or other operational reasons. Use
-    ``OriginQAdapter.get_available_backends()`` to enumerate backends that
-    can currently accept jobs.
+
+def _rewrite_sx_to_rx(originir: str) -> str:
+    """Rewrite ``SX q[i]`` → ``RX q[i],(π/2)`` and ``SX q[i].dagger`` → ``RX q[i],(-π/2)``.
+
+    OriginQ's remote pyqpanda3 parser rejects the bare ``SX`` token even
+    though the platform basis gate set lists SX. Substituting with the
+    equivalent ``RX(±π/2)`` form keeps the transpiled circuit compatible
+    with the cloud parser.
     """
-
-    def __init__(self, backend_name: str) -> None:
-        self.backend_name = backend_name
-        available = None  # filled by caller
-        msg = (
-            f"Hardware backend '{backend_name}' is currently unavailable. "
-            f"To see available backends, run: uniqc backend list --info"
-        )
-        super().__init__(msg)
+    if "SX" not in originir:
+        return originir
+    out_lines = []
+    for line in originir.splitlines():
+        m = _SX_DAGGER_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_NEG_SX_PI_OVER_2})")
+            continue
+        m = _SX_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_SX_PI_OVER_2})")
+            continue
+        out_lines.append(line)
+    return "\n".join(out_lines) + ("\n" if originir.endswith("\n") else "")
 
 
 class OriginQAdapter(QuantumAdapter):
@@ -248,7 +267,7 @@ class OriginQAdapter(QuantumAdapter):
         return [b for b in all_backends if b["available"]]
 
     def _validate_backend(self, backend_name: str) -> None:
-        """Raise BackendUnavailableError if a hardware backend is not available.
+        """Raise BackendNotAvailableError if a hardware backend is not available.
 
         Simulator backends are always considered available.
 
@@ -256,7 +275,7 @@ class OriginQAdapter(QuantumAdapter):
             backend_name: Backend name to validate.
 
         Raises:
-            BackendUnavailableError: If the backend is a hardware backend
+            BackendNotAvailableError: If the backend is a hardware backend
                 but is currently unavailable.
         """
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -265,7 +284,10 @@ class OriginQAdapter(QuantumAdapter):
         cached_available = self._backend_avail_cache.get(backend_name)
         if cached_available is not None:
             if not cached_available:
-                raise BackendUnavailableError(backend_name)
+                raise BackendNotAvailableError(
+                    f"Hardware backend '{backend_name}' is currently unavailable. "
+                    f"To see available backends, run: uniqc backend list --info"
+                )
             return
 
         all_backends = self.list_backends()
@@ -273,7 +295,10 @@ class OriginQAdapter(QuantumAdapter):
             if b["name"] == backend_name:
                 self._backend_avail_cache[backend_name] = bool(b["available"])
                 if not b["available"]:
-                    raise BackendUnavailableError(backend_name)
+                    raise BackendNotAvailableError(
+                        f"Hardware backend '{backend_name}' is currently unavailable. "
+                        f"To see available backends, run: uniqc backend list --info"
+                    )
                 return
 
         # Backend name not found at all — let submit() fail naturally
@@ -296,7 +321,7 @@ class OriginQAdapter(QuantumAdapter):
             QProg object for pyqpanda3.
         """
         self._ensure_imports()
-        return self._convert_originir(originir)
+        return self._convert_originir(_rewrite_sx_to_rx(originir))
 
     # -------------------------------------------------------------------------
     # Task submission

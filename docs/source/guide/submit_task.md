@@ -89,8 +89,8 @@ print(f"Task ID: {task_id}")
 
 # 3. 等待结果
 result = wait_for_result(task_id, backend='originq', timeout=300)
-print(f"Counts: {result['counts']}")
-print(f"Probabilities: {result['probabilities']}")
+print(f"Counts: {result.counts}")
+print(f"Probabilities: {result.probabilities}")
 
 # 4. 查询任务状态
 info = query_task(task_id, backend='originq')
@@ -140,8 +140,11 @@ clear_cache()
 ```python
 from uniqc import backend
 
-# 列出所有可用后端
-backends = backend.list_backends()
+# 列出所有已注册后端名称
+names = backend.list_backends()  # ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+
+# 获取详细状态信息
+backends = backend.list_backends_by_platform()
 for name, info in backends.items():
     print(f"{name}: available={info['available']}")
 
@@ -152,31 +155,22 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 
 ## Dummy 模式（本地模拟） {#guide-submit-task-dummy}
 
-Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。新代码推荐直接使用显式 backend id。
+Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。通过 backend 名称前缀 ``dummy`` 激活。
 
 ### 启用方式
 
-```bash
-# 方式一：环境变量
-export UNIQC_DUMMY=true
-```
-
 ```python
-# 方式二：代码中设置
-import os
-os.environ['UNIQC_DUMMY'] = 'true'
-
 from uniqc import submit_task, wait_for_result
 
-# 现在所有提交都会使用本地 dummy 模拟
-task_id = submit_task(circuit, backend='originq', shots=1000)
+# 默认 dummy 模拟
+task_id = submit_task(circuit, backend='dummy')
 result = wait_for_result(task_id)
-```
 
-```python
-# 方式三：使用本地 dummy 后端（推荐）
-task_id = submit_task(circuit, backend='dummy')  # 无约束、无噪声
-line_task = submit_task(circuit, backend='dummy:virtual-line-3')  # 线性 3q 拓扑、无噪声
+# 带 chip 特征的 dummy 模拟
+task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
+
+# 线性拓扑 dummy
+line_task = submit_task(circuit, backend='dummy:virtual-line-3')
 grid_task = submit_task(circuit, backend='dummy:virtual-grid-2x2')  # 2x2 网格、无噪声
 noisy_task = submit_task(circuit, backend='dummy:originq:WK_C180')  # 真实 backend compile/transpile + 本地含噪执行
 ```
@@ -222,12 +216,12 @@ from uniqc import UnifiedResult
 result = wait_for_result(task_id, backend='originq')
 
 # 访问测量结果
-print(result['counts'])         # {'00': 512, '11': 488}
-print(result['probabilities'])  # {'00': 0.512, '11': 0.488}
+print(result.counts)         # {'00': 512, '11': 488}
+print(result.probabilities)  # {'00': 0.512, '11': 0.488}
 
 # 计算期望值
 from uniqc import calculate_expectation
-exp_zz = calculate_expectation(result['probabilities'], 'ZZ')
+exp_zz = calculate_expectation(result.probabilities, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
 

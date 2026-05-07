@@ -10,6 +10,7 @@ It:
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -29,6 +30,23 @@ class BackendAuditIssue:
     severity: str
     field: str
     message: str
+
+
+@dataclass(frozen=True, slots=True)
+class FetchResult:
+    """Result of fetching backends from all platforms.
+
+    Attributes
+    ----------
+    backends :
+        Per-platform backend descriptors.
+    fetch_failures :
+        Platforms that had credentials but failed to fetch,
+        mapped to the error message.
+    """
+
+    backends: dict[Platform, list[BackendInfo]]
+    fetch_failures: dict[Platform, str] = dataclasses.field(default_factory=dict)
 
 
 def _clean_quafu_gates(gates: list[str]) -> list[str]:
@@ -306,9 +324,9 @@ def _build_adapter(platform: Platform):
 
         return QuarkAdapter()
     elif platform == Platform.IBM:
-        from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+        from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 
-        return IBMAdapter()
+        return QiskitAdapter()
     elif platform == Platform.DUMMY:
         from uniqc.backend_adapter.task.adapters import DummyAdapter
 
@@ -329,8 +347,14 @@ def fetch_platform_backends(
     Returns:
         A tuple of (backends, fetched_newly) where fetched_newly is True
         if the data was fetched from the network (vs. served from cache).
+
+    Raises:
+        BackendError: If the platform has credentials configured but the
+            fetch fails (network error, API error, etc.) and no stale
+            cache is available as fallback.
     """
     from uniqc.backend_adapter.backend_cache import is_stale  # noqa: PLC0415
+    from uniqc.config import has_platform_credentials
 
     fetched_newly = False
 
@@ -339,6 +363,11 @@ def fetch_platform_backends(
 
         backends = list_dummy_backend_infos()
         return backends, True
+
+    # No credentials → skip silently (not an error)
+    if not has_platform_credentials(platform.value):
+        logger.debug("Platform %s has no credentials configured — skipping", platform.value)
+        return [], False
 
     if not force_refresh and not is_stale(platform.value):
         backends = get_cached_backends(platform)
@@ -354,15 +383,24 @@ def fetch_platform_backends(
         update_cache(platform, backends)
         fetched_newly = True
         logger.debug("Fetched %d %s backends from API", len(backends), platform.value)
-    except BackendError:
-        logger.warning("Platform %s not configured — skipping", platform.value)
-        backends = []
+    except (ImportError, ModuleNotFoundError) as exc:
+        # SDK not installed — surface as a fetch failure so the user knows
+        # this platform is configured but unusable.
+        logger.warning("Platform %s SDK not installed — skipping", platform.value)
+        backends = get_cached_backends(platform)
+        if not backends:
+            raise BackendError(
+                f"Platform {platform.value} has credentials but its SDK is not installed: {exc}. "
+                f"Install the relevant extras (e.g. `pip install unified-quantum[{platform.value}]`)."
+            ) from exc
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch %s backends: %s", platform.value, exc)
         # Try to serve stale cache as a fallback
         backends = get_cached_backends(platform)
         if not backends:
-            raise
+            raise BackendError(
+                f"Failed to fetch {platform.value} backends and no cached data available: {exc}"
+            ) from exc
 
     return backends, fetched_newly
 
@@ -377,17 +415,37 @@ def fetch_all_backends(
 
     Returns:
         Dict mapping Platform to its list of BackendInfo objects.
-        Platforms that fail are omitted with a warning.
+        Platforms with no credentials are silently omitted.
+        Platforms with credentials but fetch failures are omitted
+        with a warning.
+    """
+    return fetch_all_backends_with_status(force_refresh).backends
+
+
+def fetch_all_backends_with_status(
+    force_refresh: bool = False,
+) -> FetchResult:
+    """Fetch backends from all platforms, returning fetch failures too.
+
+    Like :func:`fetch_all_backends` but also returns information about
+    platforms that had credentials but failed to fetch, so callers can
+    surface these as audit issues.
     """
     results: dict[Platform, list[BackendInfo]] = {}
+    failures: dict[Platform, str] = {}
     for platform in Platform:
         try:
             backends, _ = fetch_platform_backends(platform, force_refresh=force_refresh)
             if backends:
                 results[platform] = backends
-        except Exception as exc:  # noqa: BLE001
+        except BackendError as exc:
             logger.warning("Skipping %s: %s", platform.value, exc)
-    return results
+            failures[platform] = str(exc)
+        except Exception as exc:  # noqa: BLE001
+            # Defensive: any unhandled error must be surfaced, never silently dropped.
+            logger.warning("Unexpected error fetching %s: %s", platform.value, exc)
+            failures[platform] = f"unexpected error: {exc}"
+    return FetchResult(backends=results, fetch_failures=failures)
 
 
 def audit_backend_info(backend: BackendInfo) -> list[BackendAuditIssue]:
@@ -433,21 +491,81 @@ def audit_backend_info(backend: BackendInfo) -> list[BackendAuditIssue]:
     return issues
 
 
-def audit_backends(backends: list[BackendInfo] | dict[Platform, list[BackendInfo]]) -> list[BackendAuditIssue]:
-    """Validate normalized backend descriptors returned by the registry."""
+def audit_backends(
+    backends: list[BackendInfo] | dict[Platform, list[BackendInfo]],
+    *,
+    fetch_failures: dict[Platform, str] | None = None,
+) -> list[BackendAuditIssue]:
+    """Validate normalized backend descriptors returned by the registry.
+
+    Parameters
+    ----------
+    backends :
+        Backend descriptors (flat list or per-platform dict).
+    fetch_failures :
+        Optional mapping of platforms that had credentials but failed
+        to fetch, with the error message.  Each entry is emitted as a
+        ``BackendAuditIssue(severity="warning")`` so the caller can see
+        which platforms were not audited.
+    """
+    issues: list[BackendAuditIssue] = []
+
+    # Report platforms that had credentials but failed to fetch
+    if fetch_failures:
+        for platform, error_msg in fetch_failures.items():
+            issues.append(
+                BackendAuditIssue(
+                    backend_id=f"{platform.value}:__platform__",
+                    severity="warning",
+                    field="platform_fetch",
+                    message=f"Failed to fetch {platform.value} backends: {error_msg}",
+                )
+            )
+
     if isinstance(backends, dict):
         items = [backend for platform_backends in backends.values() for backend in platform_backends]
     else:
         items = backends
-    return [issue for backend in items for issue in audit_backend_info(backend)]
+    issues.extend(issue for backend in items for issue in audit_backend_info(backend))
+    return issues
+
+
+def _resolve_backend_aliases(platform: Platform, name: str) -> list[str]:
+    """Build the candidate list (in priority order) for matching ``name``.
+
+    The first candidate is the user-supplied ``name``. We then add lower /
+    upper / underscored variants and any platform-specific alias so that
+    ``find_backend('originq:wk_c180')``, ``'originq:WK_C180'`` and
+    ``'originq:wk180'`` all resolve to the same chip.
+    """
+    from uniqc.backend_adapter.dummy_backend import _originq_alias
+
+    candidates: list[str] = [name]
+    if platform == Platform.ORIGINQ:
+        candidates.append(_originq_alias(name))
+
+    expanded = list(dict.fromkeys(candidates))  # de-dup, preserve order
+    return expanded
+
+
+def _names_match(candidate: str, available_name: str) -> bool:
+    """Case-insensitive backend-name match that also normalises ``- ↔ _``."""
+    def _norm(s: str) -> str:
+        return s.strip().lower().replace("-", "_")
+
+    return _norm(candidate) == _norm(available_name)
 
 
 def find_backend(identifier: str) -> BackendInfo:
     """Find a backend by its identifier.
 
     Supports two forms:
-        - ``platform:name``  (e.g. ``originq:HanYuan_01``)
+        - ``platform:name``  (e.g. ``originq:WK_C180``)
         - bare ``name``      (searches all platforms)
+
+    Matching is case-insensitive and treats ``-`` and ``_`` as equivalent
+    so ``originq:wk_c180`` and ``originq:WK_C180`` both succeed. For OriginQ
+    a small alias table also maps short names like ``wk180`` to ``WK_C180``.
 
     Args:
         identifier: Backend identifier.
@@ -464,21 +582,29 @@ def find_backend(identifier: str) -> BackendInfo:
     try:
         platform, name = parse_backend_id(identifier)
         backends, _ = fetch_platform_backends(platform)
-        for backend in backends:
-            if backend.name == name:
-                return backend
+        candidates = _resolve_backend_aliases(platform, name)
+        for candidate in candidates:
+            for backend in backends:
+                if _names_match(candidate, backend.name):
+                    return backend
         available = ", ".join(b.name for b in backends) or "(none)"
-        raise ValueError(f"Backend '{name}' not found on platform '{platform.value}'. Available backends: {available}")
+        raise ValueError(
+            f"Backend '{name}' not found on platform '{platform.value}'. "
+            f"Available backends: {available}"
+        )
     except ValueError:
-        # Bare name — search all platforms
+        # Bare name — search all platforms (still case-insensitive).
         for plat in Platform:
             try:
                 backends, _ = fetch_platform_backends(plat)
             except Exception:  # noqa: BLE001
                 continue
-            for backend in backends:
-                if backend.name == identifier:
-                    return backend
+            candidates = _resolve_backend_aliases(plat, identifier)
+            for candidate in candidates:
+                for backend in backends:
+                    if _names_match(candidate, backend.name):
+                        return backend
         raise ValueError(
-            f"Backend '{identifier}' not found on any platform. Use 'uniqc backend list' to see available backends."
+            f"Backend '{identifier}' not found on any platform. "
+            f"Use 'uniqc backend list' to see available backends."
         ) from None

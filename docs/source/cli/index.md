@@ -14,5 +14,6 @@ config
 task
 backend
 calibrate
+gateway
 workflow
 ```

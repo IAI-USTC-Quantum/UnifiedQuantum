@@ -160,7 +160,7 @@ def clear(
     from uniqc.backend_adapter.task_manager import clear_completed_tasks, clear_cache, list_tasks
 
     if status:
-        count = clear_completed_tasks()
+        count = clear_completed_tasks(status=status)
     else:
         if not force:
             confirm = typer.confirm("Clear all cached tasks?")

@@ -142,11 +142,10 @@ print(report)
 ok = is_compatible(circuit, backend_info)
 
 # 让 uniqc 自动按 backend 政策编译后再提交
-task_id = submit_task(circuit, backend="originq:WK_C180", auto_compile=True)
+task_id = submit_task(circuit, backend="originq:WK_C180")
 
-# 完全跳过（仅在你确信前端已经做过等价校验时使用）
-import os
-os.environ["UNIQC_SKIP_VALIDATION"] = "1"
+# 完全跳过校验（仅在你确信前端已经做过等价校验时使用）
+task_id = submit_task(circuit, backend="originq:WK_C180", skip_validation=True)
 ```
 
 或者编程式预先编译：
@@ -344,11 +343,11 @@ export HTTPS_PROXY=http://proxy:8080
 
 ### 6.4 Dummy 模式
 
-```bash
-export UNIQC_DUMMY=true
-# 可选：指定拓扑
-export ORIGINQ_AVAILABLE_QUBITS='[0,1,2,3]'
-export ORIGINQ_AVAILABLE_TOPOLOGY='[[0,1],[1,2],[2,3]]'
+通过 backend 名称前缀 ``dummy`` 激活本地模拟，无需环境变量：
+
+```python
+task_id = submit_task(circuit, backend='dummy')                    # 默认模拟
+task_id = submit_task(circuit, backend='dummy:virtual-line-3')     # 线性 3q 拓扑
 ```
 
 ---

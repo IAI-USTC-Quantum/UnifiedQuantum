@@ -68,6 +68,20 @@ def basis_rotation_measurement(
     """
     n_qubits = circuit.max_qubit + 1
 
+    # Guard: this implementation injects basis-rotation gates immediately
+    # before existing MEASURE instructions in the circuit's QASM. If the
+    # caller has not already added MEASURE instructions, no rotations are
+    # applied and the result will silently fall back to the Z-basis
+    # distribution — which is **wrong** for X/Y measurements. Catch that
+    # here so users get an actionable error instead of bad numbers.
+    if not getattr(circuit, "measure_list", None):
+        raise ValueError(
+            "basis_rotation_measurement requires the circuit to already contain "
+            "MEASURE instructions (e.g. `circuit.measure(*qubits)`); "
+            "without them, basis rotations cannot be injected and the "
+            "returned distribution would silently be wrong for X/Y bases."
+        )
+
     if qubits is None:
         qubits = list(range(n_qubits))
     else:
@@ -135,3 +149,64 @@ def basis_rotation_measurement(
     else:
         counts = sim.simulate_shots(modified_qasm, shots=shots)
         return {f"{k:0{n}b}": v for k, v in counts.items()}
+
+
+__all__ = list(set(globals().get("__all__", []) + [
+    "basis_rotation_measurement",
+    "BasisRotationMeasurement", "basis_rotation_measurement_example",
+]))
+
+
+class BasisRotationMeasurement:
+    """Class-based interface for single-/multi-basis rotation measurement."""
+
+    def __init__(
+        self,
+        circuit: Circuit,
+        qubits: Optional[List[int]] = None,
+        basis: Optional[Union[str, List[str]]] = None,
+        shots: Optional[int] = None,
+    ) -> None:
+        self.circuit = circuit.copy()
+        self.qubits = qubits
+        self.basis = basis
+        self.shots = shots
+
+    def get_readout_circuits(self) -> List[Circuit]:
+        """Return the basis-rotated, measured circuit(s).
+
+        For a single-basis measurement returns a one-element list.
+        """
+        rot = self.circuit.copy()
+        n = rot.max_qubit + 1
+        basis = self.basis
+        if isinstance(basis, str):
+            basis = list(basis)
+        if basis is None:
+            basis = ["Z"] * n
+        for i, b in enumerate(basis):
+            if b == "X":
+                rot.h(i)
+            elif b == "Y":
+                rot.sdg(i)
+                rot.h(i)
+        for q in range(n):
+            rot.measure(q)
+        return [rot]
+
+    def execute(self, backend="statevector", *, program_type="qasm", **kwargs):
+        """Run the measurement and return the existing function's output."""
+        measured = self.circuit.copy()
+        n = measured.max_qubit + 1
+        for q in range(n):
+            measured.measure(q)
+        return basis_rotation_measurement(
+            measured, qubits=self.qubits, basis=self.basis, shots=self.shots
+        )
+
+
+def basis_rotation_measurement_example():
+    """Tiny example: measure a |+⟩ state in the X basis."""
+    c = Circuit()
+    c.h(0)
+    return BasisRotationMeasurement(c, basis="X", shots=1024).execute()

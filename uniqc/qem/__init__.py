@@ -6,9 +6,11 @@ Uses calibration data from ``uniqc.calibration`` with TTL-based freshness enforc
 
 from uniqc.qem.m3 import M3Mitigator, StaleCalibrationError
 from uniqc.qem.readout_em import ReadoutEM
+from uniqc.qem.zne import ZNE
 
 __all__ = [
     "M3Mitigator",
     "StaleCalibrationError",
     "ReadoutEM",
+    "ZNE",
 ]

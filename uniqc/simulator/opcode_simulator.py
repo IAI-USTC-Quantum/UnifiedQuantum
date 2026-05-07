@@ -13,12 +13,20 @@ if TYPE_CHECKING:
 def backend_alias(backend_type):
     """Resolve backend type aliases to canonical names.
 
-    Supported backends: statevector, density_matrix
+    Recognised aliases (case-insensitive)::
 
-    Note: Uppercase and lowercase are both supported.
+        statevector / state_vector                   -> statevector
+        density_matrix / density_operator
+            / densitymatrix / densityoperator        -> density_operator
+        density_matrix_qutip / density_operator_qutip
+                                                     -> density_operator_qutip
 
     Returns:
-        Canonical backend type string ("statevector" or "density_operator").
+        Canonical backend type string ("statevector", "density_operator",
+        or "density_operator_qutip").
+
+    Raises:
+        ValueError: If ``backend_type`` is not a recognised alias.
     """
     statevector_alias = ['statevector', 'state_vector']
     density_operator_alias = ['density_matrix', 'density_operator',
@@ -55,7 +63,8 @@ class OpcodeSimulator:
                 Supported aliases: statevector, state_vector, density_matrix,
                 density_operator, density_matrix_qutip, density_operator_qutip.
         """
-        backend_type = backend_alias(backend_type)        
+        original_backend_type = backend_type
+        backend_type = backend_alias(backend_type)
         if backend_type =='statevector':
             self.SimulatorType = StatevectorSimulator
             self.simulator_typestr = 'statevector'
@@ -67,8 +76,11 @@ class OpcodeSimulator:
                 from .qutip_sim_impl import DensityOperatorSimulatorQutip
             except ImportError as exc:
                 raise ImportError(
-                    "backend_type='density_operator_qutip' requires the optional "
-                    "'simulation' dependencies. Install unified-quantum[simulation]."
+                    f"backend_type={original_backend_type!r} (canonical name "
+                    "'density_operator_qutip', alias 'density_matrix_qutip') "
+                    "requires the optional 'simulation' extras "
+                    "(qutip + qutip-qip). Install with "
+                    "``pip install unified-quantum[simulation]``."
                 ) from exc
             self.SimulatorType = DensityOperatorSimulatorQutip
             self.simulator_typestr = 'density_operator'

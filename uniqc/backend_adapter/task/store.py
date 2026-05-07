@@ -102,6 +102,13 @@ class TaskInfo:
         submit_time: ISO format timestamp of submission.
         update_time: ISO format timestamp of last status update.
         metadata: Additional metadata about the task.
+        error_message: When ``status == FAILED`` (or for any non-success
+            terminal state) this carries a human-readable explanation —
+            e.g. the dummy adapter's stderr or the cloud platform's
+            error string. ``None`` while the task is still running or on
+            success.
+        archived_at: Timestamp when the task was archived; ``None`` if
+            still in the live ``tasks`` table.
     """
 
     task_id: str
@@ -112,6 +119,7 @@ class TaskInfo:
     submit_time: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     update_time: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     metadata: dict = field(default_factory=dict)
+    error_message: str | None = None
     archived_at: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -121,6 +129,9 @@ class TaskInfo:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TaskInfo":
         """Create from dictionary."""
+        # Tolerate older snapshots that didn't carry ``error_message``.
+        if "error_message" not in data:
+            data = {**data, "error_message": None}
         return cls(**data)
 
 
@@ -184,6 +195,18 @@ def _apply_v2(conn: sqlite3.Connection) -> None:
     )
 
 
+def _apply_v3(conn: sqlite3.Connection) -> None:
+    """v3: add ``error_message`` column to ``tasks`` and ``archived_tasks``."""
+    for table in ("tasks", "archived_tasks"):
+        # Use try/except: ALTER TABLE ADD COLUMN is not idempotent across
+        # SQLite versions and we want migrations to be safe to re-apply.
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN error_message TEXT")
+        except sqlite3.OperationalError as e:  # noqa: PERF203
+            if "duplicate column" not in str(e).lower():
+                raise
+
+
 MigrateFn = Callable[[sqlite3.Connection], None]
 
 # Ordered list of ``(target_version, migrate_fn)``. Append future migrations
@@ -191,6 +214,7 @@ MigrateFn = Callable[[sqlite3.Connection], None]
 MIGRATIONS: list[tuple[int, MigrateFn]] = [
     (1, _apply_v1),
     (2, _apply_v2),
+    (3, _apply_v3),
 ]
 
 
@@ -237,6 +261,7 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
     metadata = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
     # archived_at only exists in archived_tasks, not in tasks
     archived_at = row["archived_at"] if "archived_at" in row.keys() else None
+    error_message = row["error_message"] if "error_message" in row.keys() else None
     return TaskInfo(
         task_id=row["task_id"],
         backend=row["backend"],
@@ -246,6 +271,7 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
         update_time=row["update_time"],
         result=result,
         metadata=metadata,
+        error_message=error_message,
         archived_at=archived_at,
     )
 
@@ -359,21 +385,25 @@ class TaskStore:
             "update_time": now,
             "result_json": result_json,
             "metadata_json": metadata_json,
+            "error_message": task_info.error_message,
         }
         with self._tx() as conn:
             conn.execute(
                 """
                 INSERT INTO tasks
-                    (task_id, backend, status, shots, submit_time, update_time, result_json, metadata_json)
+                    (task_id, backend, status, shots, submit_time, update_time,
+                     result_json, metadata_json, error_message)
                 VALUES
-                    (:task_id, :backend, :status, :shots, :submit_time, :update_time, :result_json, :metadata_json)
+                    (:task_id, :backend, :status, :shots, :submit_time, :update_time,
+                     :result_json, :metadata_json, :error_message)
                 ON CONFLICT(task_id) DO UPDATE SET
                     backend       = excluded.backend,
                     status        = excluded.status,
                     shots         = excluded.shots,
                     update_time   = excluded.update_time,
                     result_json   = excluded.result_json,
-                    metadata_json = excluded.metadata_json
+                    metadata_json = excluded.metadata_json,
+                    error_message = excluded.error_message
                 """,
                 params,
             )

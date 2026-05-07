@@ -1,4 +1,4 @@
-from ._utils import CompilationFailedException as CompilationFailedException
+from ._utils import CompilationFailedError as CompilationFailedError
 from .compiler import CompilationResult as CompilationResult
 from .compiler import TranspilerConfig as TranspilerConfig
 from .compiler import compile as compile

@@ -819,16 +819,17 @@ class TestTranslateQasm2OirErrorPaths:
     def test_unsupported_operation_raises_notimplementederror(self):
         """get_QASM2_from_opcode with unsupported operation raises NotImplementedError."""
         from uniqc.circuit_builder.translate_qasm2_oir import get_QASM2_from_opcode
-        # 'XY' is not in OriginIR_QASM2_dict
-        opcode = ('XY', 0, None, None, False, None)
+        # 'NOT_A_REAL_GATE' is not in OriginIR_QASM2_dict
+        opcode = ('NOT_A_REAL_GATE', 0, None, None, False, None)
         with pytest.raises(NotImplementedError):
             get_QASM2_from_opcode(opcode)
 
     def test_dagger_with_unsupported_gate_raises_notimplementederror(self):
         """Dagger flag on an unsupported gate raises NotImplementedError."""
         from uniqc.circuit_builder.translate_qasm2_oir import get_QASM2_from_opcode
-        # 'Y' dagger is supported (Y → ydg); but 'XY' dagger is not supported
-        opcode = ('XY', 0, None, None, True, None)
+        # 'XY' is mapped (XY → xy) but dagger of xy is not implemented in the
+        # dagger dispatch table.
+        opcode = ('XY', [0, 1], None, 0.5, True, None)
         with pytest.raises(NotImplementedError):
             get_QASM2_from_opcode(opcode)
 

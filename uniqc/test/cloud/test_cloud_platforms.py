@@ -231,9 +231,17 @@ class TestBackendFactory:
 
     def test_list_backends(self) -> None:
         """Test listing available backends."""
-        from uniqc.backend_adapter.backend import BACKENDS, list_backends
+        from uniqc.backend_adapter.backend import BACKENDS, list_backends, list_backends_by_platform
 
-        backends = list_backends()
+        # list_backends() returns a flat list of names
+        names = list_backends()
+        assert "originq" in names
+        assert "quafu" in names
+        assert "quark" in names
+        assert "ibm" in names
+
+        # list_backends_by_platform() returns detailed dict
+        backends = list_backends_by_platform()
         assert "originq" in backends
         assert "quafu" in backends
         assert "quark" in backends

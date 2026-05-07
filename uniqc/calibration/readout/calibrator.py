@@ -47,9 +47,13 @@ class ReadoutCalibrator:
         adapter: QuantumAdapter,
         shots: int = 1000,
         cache_dir: str | pathlib.Path | None = None,
+        timeout: float = 300.0,
+        poll_interval: float = 2.0,
     ) -> None:
         self.adapter = adapter
         self.shots = shots
+        self.timeout = timeout
+        self.poll_interval = poll_interval
         if cache_dir is None:
             cache_dir = pathlib.Path.home() / ".uniqc" / "calibration_cache"
         self.cache_dir = pathlib.Path(cache_dir)
@@ -59,16 +63,19 @@ class ReadoutCalibrator:
     # Public API
     # -------------------------------------------------------------------------
 
-    def calibrate_1q(self, qubit: int) -> dict[str, Any]:
+    def calibrate_1q(self, qubit: int) -> ReadoutCalibrationResult:
         """Calibrate readout for a single qubit.
 
         Args:
             qubit: Qubit index.
 
         Returns:
-            A dict with keys: ``qubit``, ``type="readout_1q"``,
-            ``confusion_matrix`` (2×2 list), ``assignment_fidelity``,
+            A :class:`ReadoutCalibrationResult` dataclass with fields:
+            ``qubit``, ``type="readout_1q"``,
+            ``confusion_matrix`` (tuple of tuples), ``assignment_fidelity``,
             ``calibrated_at``, ``backend``.
+            Supports dict-like access (``result["confusion_matrix"]``)
+            for backward compatibility.
         """
         from uniqc.calibration.results import ReadoutCalibrationResult, save_calibration_result
 
@@ -99,9 +106,9 @@ class ReadoutCalibrator:
             assignment_fidelity=assignment_fid,
         )
         save_calibration_result(result, type_prefix="readout_1q", cache_dir=self.cache_dir)
-        return result.to_dict()
+        return result
 
-    def calibrate_2q(self, qubit_u: int, qubit_v: int) -> dict[str, Any]:
+    def calibrate_2q(self, qubit_u: int, qubit_v: int) -> ReadoutCalibrationResult:
         """Calibrate joint readout for a two-qubit pair.
 
         Args:
@@ -109,9 +116,12 @@ class ReadoutCalibrator:
             qubit_v: Second qubit index.
 
         Returns:
-            A dict with keys: ``qubit`` (tuple), ``type="readout_2q"``,
-            ``confusion_matrix`` (4×4 list), ``assignment_fidelity``,
+            A :class:`ReadoutCalibrationResult` dataclass with fields:
+            ``qubit`` (tuple), ``type="readout_2q"``,
+            ``confusion_matrix`` (tuple of tuples), ``assignment_fidelity``,
             ``calibrated_at``, ``backend``.
+            Supports dict-like access (``result["confusion_matrix"]``)
+            for backward compatibility.
         """
         from uniqc.calibration.results import ReadoutCalibrationResult, save_calibration_result
 
@@ -145,29 +155,29 @@ class ReadoutCalibrator:
             assignment_fidelity=assignment_fid,
         )
         save_calibration_result(result, type_prefix="readout_2q", cache_dir=self.cache_dir)
-        return result.to_dict()
+        return result
 
-    def calibrate_qubits(self, qubits: list[int]) -> dict[int, dict[str, Any]]:
+    def calibrate_qubits(self, qubits: list[int]) -> dict[int, ReadoutCalibrationResult]:
         """Calibrate readout for multiple single qubits.
 
         Args:
             qubits: List of qubit indices.
 
         Returns:
-            Dict mapping qubit index → calibration result dict.
+            Dict mapping qubit index → :class:`ReadoutCalibrationResult`.
         """
         return {q: self.calibrate_1q(q) for q in qubits}
 
     def calibrate_pairs(
         self, pairs: list[tuple[int, int]]
-    ) -> dict[tuple[int, int], dict[str, Any]]:
+    ) -> dict[tuple[int, int], ReadoutCalibrationResult]:
         """Calibrate joint readout for multiple qubit pairs.
 
         Args:
             pairs: List of (qubit_u, qubit_v) tuples.
 
         Returns:
-            Dict mapping (u, v) → calibration result dict.
+            Dict mapping ``(u, v)`` → :class:`ReadoutCalibrationResult`.
         """
         return {(u, v): self.calibrate_2q(u, v) for u, v in pairs}
 
@@ -218,17 +228,19 @@ class ReadoutCalibrator:
         return self._submit_and_measure_2q(c, qubit_u, qubit_v)
 
     def _submit_and_measure(self, circuit: Circuit) -> dict[int, int]:
-        """Submit a 1-qubit circuit and return counts as {0: n0, 1: n1}.
+        """Submit a 1-qubit circuit and return counts as ``{0: n0, 1: n1}``.
 
-        Polls the cloud backend until the task completes (up to 60s timeout)
-        to ensure we get actual shot counts rather than a "running" status.
+        Polls the cloud backend until the task reaches a terminal status,
+        using ``self.timeout`` (default ``300.0`` s) as the maximum wait and
+        ``self.poll_interval`` (default ``2.0`` s) between polls. Both can be
+        overridden via the constructor's ``timeout=`` / ``poll_interval=``
+        keyword arguments.
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
 
-        # Poll until task completes (cloud backends are async by default)
-        timeout = 300.0
-        interval = 2.0
+        timeout = self.timeout
+        interval = self.poll_interval
         elapsed = 0.0
         while elapsed < timeout:
             result = self.adapter.query(task_id)
@@ -252,18 +264,20 @@ class ReadoutCalibrator:
     def _submit_and_measure_2q(
         self, circuit: Circuit, qubit_u: int, qubit_v: int
     ) -> dict[int, int]:
-        """Submit a 2-qubit circuit, return counts as {0..3: n}.
+        """Submit a 2-qubit circuit and return counts as ``{0..3: n}``.
 
-        Converts simulator outcome indices (0="00", 1="01", 2="10", 3="11")
-        to integers where qubit_u is the LSB.
-        Polls the cloud backend until the task completes (up to 60s timeout).
+        Converts simulator outcome indices (``0="00"``, ``1="01"``,
+        ``2="10"``, ``3="11"``) to integers where ``qubit_u`` is the LSB.
+        Polls the cloud backend until the task reaches a terminal status,
+        using ``self.timeout`` (default ``300.0`` s) and
+        ``self.poll_interval`` (default ``2.0`` s); both are configurable via
+        the constructor's ``timeout=`` / ``poll_interval=`` keyword arguments.
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
 
-        # Poll until task completes
-        timeout = 300.0
-        interval = 2.0
+        timeout = self.timeout
+        interval = self.poll_interval
         elapsed = 0.0
         while elapsed < timeout:
             result = self.adapter.query(task_id)

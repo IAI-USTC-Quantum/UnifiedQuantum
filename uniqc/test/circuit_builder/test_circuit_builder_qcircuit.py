@@ -862,13 +862,13 @@ class TestISwapGate:
         c.iswap(0, 1)
         assert "ISWAP q[0], q[1]" in c.originir
 
-    def test_iswap_qasm_format_raises(self):
-        """ISWAP is not supported in QASM output and raises NotImplementedError."""
+    def test_iswap_qasm_format_emits_custom_gate(self):
+        """ISWAP is exported as ``iswap`` with a prepended QASM2 ``gate iswap`` definition."""
         c = Circuit()
         c.iswap(0, 1)
-        # ISWAP is not in OriginIR_QASM2_dict, so qasm property raises NotImplementedError
-        with pytest.raises(NotImplementedError):
-            _ = c.qasm
+        qasm = c.qasm
+        assert "gate iswap a, b" in qasm
+        assert "iswap q[0], q[1];" in qasm
 
     def test_iswap_noncontiguous_qubits(self):
         """iswap works with non-contiguous qubit indices."""
@@ -907,12 +907,13 @@ class TestUU15Gate:
         assert "q[0]" in originir
         assert "q[1]" in originir
 
-    def test_uu15_qasm_format_raises(self):
-        """UU15 is not supported in QASM output and raises NotImplementedError."""
+    def test_uu15_qasm_format_emits_custom_gate(self):
+        """UU15 is exported as ``uu15`` with a prepended QASM2 ``gate uu15`` definition."""
         c = Circuit()
         c.uu15(0, 1, [0.0] * 15)
-        with pytest.raises(NotImplementedError):
-            _ = c.qasm
+        qasm = c.qasm
+        assert "gate uu15(" in qasm
+        assert "uu15(" in qasm and "q[0], q[1];" in qasm
 
 
 # =============================================================================
@@ -940,13 +941,13 @@ class TestPhase2QGate:
         originir = c.originir
         assert "PHASE2Q" in originir
 
-    def test_phase2q_qasm_format_raises(self):
-        """PHASE2Q is not supported in QASM output and raises NotImplementedError."""
+    def test_phase2q_qasm_format_emits_custom_gate(self):
+        """PHASE2Q is exported as ``phase2q`` with a prepended ``gate phase2q`` definition."""
         c = Circuit()
         c.phase2q(0, 1, 0.1, 0.2, 0.3)
-        # PHASE2Q is not in OriginIR_QASM2_dict, so qasm property raises NotImplementedError
-        with pytest.raises(NotImplementedError):
-            _ = c.qasm
+        qasm = c.qasm
+        assert "gate phase2q(theta1, theta2, theta_zz) a, b" in qasm
+        assert "phase2q(0.1, 0.2, 0.3) q[0], q[1];" in qasm
 
 
 # =============================================================================
@@ -974,12 +975,13 @@ class TestRPhiGate:
         assert c.qubit_num == 4
         assert 3 in c.used_qubit_list
 
-    def test_rphi_qasm_raises_notimplemented(self):
-        """RPhi is not supported in QASM and raises NotImplementedError."""
+    def test_rphi_qasm_emits_custom_gate(self):
+        """RPhi is exported as ``rphi`` with a prepended ``gate rphi`` definition."""
         c = Circuit()
         c.rphi(0, 0.5, 1.0)
-        with pytest.raises(NotImplementedError):
-            _ = c.qasm
+        qasm = c.qasm
+        assert "gate rphi(theta, phi) a" in qasm
+        assert "rphi(0.5, 1.0) q[0];" in qasm
 
 
 # =============================================================================
@@ -1078,14 +1080,15 @@ class TestMeasureEdgeCases:
     """Additional measure() edge case tests beyond the existing ones."""
 
     def test_measure_same_qubit_twice(self):
-        """Measuring the same qubit multiple times accumulates correctly."""
+        """Measuring the same qubit twice raises ValueError (D-U10)."""
         c = Circuit()
         c.h(0)
         c.measure(0)
-        c.measure(0)
-        # Same qubit measured twice: measure_list = [0, 0], cbit_num = 2
-        assert c.measure_list == [0, 0]
-        assert c.cbit_num == 2
+        with pytest.raises(ValueError, match="already measured"):
+            c.measure(0)
+        with pytest.raises(ValueError, match="already measured"):
+            c2 = Circuit()
+            c2.measure(0, 0)
 
     def test_measure_updates_cbit_num(self):
         """measure() correctly sets cbit_num to len(measure_list)."""

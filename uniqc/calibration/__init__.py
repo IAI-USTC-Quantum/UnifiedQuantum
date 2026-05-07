@@ -16,6 +16,7 @@ from uniqc.calibration.results import (
     load_calibration_result,
     save_calibration_result,
 )
+from uniqc.calibration.xeb import XEBenchmarker
 
 __all__ = [
     "xeb",
@@ -23,6 +24,7 @@ __all__ = [
     "CalibrationResult",
     "XEBResult",
     "ReadoutCalibrationResult",
+    "XEBenchmarker",
     "save_calibration_result",
     "load_calibration_result",
     "find_cached_results",

@@ -261,7 +261,7 @@ def profile(
         raise typer.Exit(1)
 
 
-@app.command("always-ai-hints")
+@app.command("always-ai-hints", hidden=True)
 @app.command("always-ai-hint")
 def always_ai_hint(
     action: str = typer.Argument("status", help="Action: on/off/status"),

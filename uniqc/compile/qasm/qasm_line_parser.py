@@ -368,6 +368,11 @@ class OpenQASM2_LineParser:  # noqa: N801
         return OpenQASM2_LineParser.handle_2qnp(line, 4)
 
     @staticmethod
+    def handle_2q15p(line: str) -> tuple[str, list[float], str, int, str, int]:
+        """Parse a 2-qubit 15-parameter gate line (UU15)."""
+        return OpenQASM2_LineParser.handle_2qnp(line, 15)
+
+    @staticmethod
     def handle_3q1p(line: str) -> tuple[str, list[float], str, int, str, int, str, int]:
         """Parse a 3-qubit 1-parameter gate line.
 
@@ -534,7 +539,7 @@ class OpenQASM2_LineParser:  # noqa: N801
             elif operation in ("u3", "u"):
                 operation, parameter, qreg_name, qubit_index = OpenQASM2_LineParser.handle_1q3p(line)  # type: ignore[assignment]
                 q = (qreg_name, qubit_index)
-            elif operation in ("rxx", "ryy", "rzz", "cu1", "crx", "cry", "crz"):
+            elif operation in ("rxx", "ryy", "rzz", "cu1", "crx", "cry", "crz", "xy"):
                 (
                     operation,
                     parameter,
@@ -553,6 +558,38 @@ class OpenQASM2_LineParser:  # noqa: N801
                     qreg_name2,
                     qubit_index2,
                 ) = OpenQASM2_LineParser.handle_2q3p(line)  # type: ignore[assignment]
+                q = [(qreg_name1, qubit_index1), (qreg_name2, qubit_index2)]
+            elif operation == "iswap":
+                (
+                    operation,
+                    qreg_name1,
+                    qubit_index1,
+                    qreg_name2,
+                    qubit_index2,
+                ) = OpenQASM2_LineParser.handle_2q(line)
+                q = [(qreg_name1, qubit_index1), (qreg_name2, qubit_index2)]
+            elif operation == "rphi":
+                operation, parameter, qreg_name, qubit_index = OpenQASM2_LineParser.handle_1q2p(line)  # type: ignore[assignment]
+                q = (qreg_name, qubit_index)
+            elif operation == "phase2q":
+                (
+                    operation,
+                    parameter,
+                    qreg_name1,
+                    qubit_index1,
+                    qreg_name2,
+                    qubit_index2,
+                ) = OpenQASM2_LineParser.handle_2q3p(line)  # type: ignore[assignment]
+                q = [(qreg_name1, qubit_index1), (qreg_name2, qubit_index2)]
+            elif operation == "uu15":
+                (
+                    operation,
+                    parameter,
+                    qreg_name1,
+                    qubit_index1,
+                    qreg_name2,
+                    qubit_index2,
+                ) = OpenQASM2_LineParser.handle_2q15p(line)  # type: ignore[assignment]
                 q = [(qreg_name1, qubit_index1), (qreg_name2, qubit_index2)]
             elif operation == "barrier":
                 q = OpenQASM2_LineParser.handle_barrier(line)

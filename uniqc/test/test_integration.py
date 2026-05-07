@@ -214,8 +214,8 @@ class TestRegionSelectorIntegration:
 class TestDummySubmitIntegration:
     """Integration: submit_task with BackendOptions works end-to-end via dummy adapter.
 
-    Use dummy=True to activate the dummy adapter (bypasses _get_adapter lookup,
-    which requires a registered backend key). The backend arg is used for logging only.
+    Use backend='dummy' to activate the dummy adapter (bypasses _get_adapter lookup,
+    which requires a registered backend key).
     """
 
     def test_submit_task_with_options_dict(self):

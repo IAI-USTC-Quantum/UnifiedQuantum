@@ -276,7 +276,9 @@ class Circuit:
         return header + circuit_str + "\n" + measure
 
     def _make_qasm_circuit(self) -> str:
-        header = make_header_qasm(self.qubit_num, self.cbit_num)
+        from .translate_qasm2_oir import collect_qasm2_custom_gates
+        custom_gates = collect_qasm2_custom_gates(self.opcode_list)
+        header = make_header_qasm(self.qubit_num, self.cbit_num, custom_gates=custom_gates)
         circuit_str = "\n".join([opcode_to_line_qasm(op, self.qubit_num) for op in self.opcode_list])
         measure = make_measure_qasm(self.measure_list)
         return header + circuit_str + "\n" + measure
@@ -380,6 +382,20 @@ class Circuit:
         if not qubit_depths:
             return 0
         return max(qubit_depths.values())
+
+    def get_matrix(self):
+        """Return the full unitary matrix of this circuit as ``np.ndarray``.
+
+        Qubit 0 is treated as the least-significant bit of the statevector index.
+        The returned matrix uses the convention ``state_out = U @ state_in`` and
+        gates are applied in the same order as ``opcode_list``.
+
+        Raises:
+            NotMatrixableError: If the circuit contains MEASURE / CONTROL /
+                DAGGER scope opcodes that have no unitary representation.
+        """
+        from .matrix import get_matrix as _get_matrix
+        return _get_matrix(self)
 
     # ─────────────────── Single-qubit gates (no parameters) ───────────────────
 
@@ -641,6 +657,16 @@ class Circuit:
         """
         self.add_gate("ZZ", [q1, q2], params=theta)
 
+    def xy(self, q1: QubitInput, q2: QubitInput, theta: float) -> None:
+        """Apply XY Ising interaction gate.
+
+        Args:
+            q1: First qubit - can be int, Qubit, or QRegSlice
+            q2: Second qubit - can be int, Qubit, or QRegSlice
+            theta: Interaction angle in radians.
+        """
+        self.add_gate("XY", [q1, q2], params=theta)
+
     def phase2q(self, q1: QubitInput, q2: QubitInput, theta1: float, theta2: float, thetazz: float) -> None:
         """Apply two-qubit phase gate with local and ZZ terms.
 
@@ -676,15 +702,20 @@ class Circuit:
     def measure(self, *qubits: QubitInput) -> None:
         """Schedule qubits for measurement.
 
-        Appends the given qubits to the measurement list.  Multiple calls
-        accumulate measurements; classical bit indices are assigned in the
-        order qubits are added.
+        Each qubit may be measured **at most once** per circuit. Calling
+        ``measure(0)`` and then ``measure(0)`` again — or passing the same
+        qubit twice in a single call (``measure(0, 0)``) — raises
+        ``ValueError``. This guards against the common mistake of using
+        ``measure(0, 1)`` to measure two qubits when ``cbit`` is meant to be
+        implicit; use one ``measure(q)`` call per qubit instead, or pass
+        distinct qubit indices.
 
         Args:
-            *qubits: One or more qubits to measure - can be int, Qubit, or QRegSlice
+            *qubits: One or more qubits to measure — can be int, Qubit, or QRegSlice.
 
         Raises:
-            ValueError: Called inside an active CONTROL or DAGGER context block.
+            ValueError: Called inside an active CONTROL or DAGGER context
+                block, or any qubit would be measured more than once.
         """
         if self._active_controls:
             raise ValueError("measure() cannot be called inside a control() context block.")
@@ -698,6 +729,23 @@ class Circuit:
                 resolved_qubits.extend(resolved)
             else:
                 resolved_qubits.append(resolved)
+
+        # Reject duplicate measurements (within this call AND against any
+        # previously-recorded measurements). This catches `measure(0, 0)`
+        # and silent failures like `measure(0); measure(0)` that previously
+        # accumulated into the measurement list.
+        existing = set(self.measure_list or [])
+        seen: set[int] = set()
+        for q in resolved_qubits:
+            if q in seen or q in existing:
+                raise ValueError(
+                    f"Qubit {q} is already measured in this circuit. "
+                    f"Each qubit may be measured at most once. "
+                    f"Did you mean `c.measure({q}); c.measure({q + 1})` "
+                    f"instead of `c.measure({q}, {q})`?"
+                )
+            seen.add(q)
+
         self.record_qubit(resolved_qubits)
         if self.measure_list is None:
             self.measure_list = []

@@ -1,5 +1,18 @@
 # 编译、选项与区域选择 {#guide-compiler-options}
 
+```{important}
+本页所有 `compile()` / `compile_with_config()` / `compile_for_backend()` /
+`schedule_circuit()` / `plot_time_line_html()` 调用都**强制依赖** Qiskit。
+任何 `level`（含 `level=0`）都会进入 Qiskit transpiler 路径，缺少 `qiskit`
+时直接抛 `CompilationFailedError`。请先安装可选依赖：
+
+    pip install "unified-quantum[qiskit]"
+
+只做线路构建、`Circuit.qasm` / `Circuit.originir` 导出、模拟器运行（含
+`OriginIR_Simulator` / `MPSSimulator` / `dummy:virtual-line-N`）这些场景**不需要**
+qiskit；只有进入"编译/调度/timeline"才需要。
+```
+
 ## 什么时候进入本页 {#guide-compiler-options-when-to-read}
 
 当你已经掌握线路构建和本地模拟的基础流程，并希望：
@@ -78,21 +91,32 @@ qasm = compile(circuit, backend_info=info, output_format="qasm")
 assert "OPENQASM" in qasm
 ```
 
-### 1.5 `TranspilerConfig`：类型化配置
+### 1.5 `TranspilerConfig`：类型化配置（可选）
+
+`TranspilerConfig` 是一个 `frozen=True` 的数据类，可用于打包并复用一组编译参数（便于缓存、传参）。注意：`compile()` 当前不直接接受 `config` 参数，调用时需要把字段展开传入：
 
 ```python
-from uniqc import TranspilerConfig
+from uniqc import TranspilerConfig, compile, find_backend
 
 config = TranspilerConfig(
-    type="qiskit",               # 目前仅支持 "qiskit"，预留扩展
-    level=3,                     # 最强优化
-    basis_gates=["cx", "u3"],   # 自定义基门集
-    chip_characterization=chip,  # 传入标定数据以启用感知路由
+    type="qiskit",                # 目前仅支持 "qiskit"，预留扩展
+    level=3,                      # 最强优化
+    basis_gates=["cz", "sx", "rz"],  # 自定义基门集
+    chip_characterization=chip,   # 传入标定数据以启用感知路由
 )
 
-# frozen=True，可哈希，可安全用于缓存
-compiled = compile(circuit, config=config, ...)
+backend_info = find_backend('originq:WK_C180')
+compiled = compile(
+    circuit,
+    backend_info,
+    type=config.type,
+    level=config.level,
+    basis_gates=config.basis_gates,
+    chip_characterization=config.chip_characterization,
+)
 ```
+
+`compile()` 总是直接返回 `Circuit`（或字符串，取决于 `output_format`）。需要拿到 SWAP 数量、估算成功率等编译元数据时，请使用内部 API `compile_full()`，它返回 `CompilationResult`（注意：`compile_full` 与 `CompilationResult` 当前未在公开命名空间暴露）。
 
 ### 1.6 芯片标定感知路由
 
@@ -302,6 +326,10 @@ result = selector.find_best_1D_chain(4, start=2)
 # 无法达到精确长度时，返回最长可用链
 result = selector.find_best_1D_chain(100)  # 芯片只有 10 个 qubit
 print(f"最长链: {result.chain}")  # 返回全芯片最长路径
+
+# 控制搜索超时（默认 30 秒，大芯片上可适当放宽）
+result = selector.find_best_1D_chain(20, max_search_seconds=60.0)
+# 超时后返回当前找到的最优结果（可能是部分链）
 ```
 
 **算法说明**：
@@ -396,7 +424,7 @@ for i in range(5):
     circuit.h(i)
 for i in range(4):
     circuit.cnot(i, i + 1)
-circuit.measure(list(range(5)), list(range(5)))
+circuit.measure(*range(5))
 
 # 2. 获取芯片标定
 adapter = OriginQAdapter()
@@ -480,7 +508,7 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 | 方法 | 说明 |
 |------|------|
-| `find_best_1D_chain(length, start)` | 找最优 `length`-qubit 线性链 |
+| `find_best_1D_chain(length, start, max_search_seconds)` | 找最优 `length`-qubit 线性链 |
 | `find_best_2D_from_circuit(circuit, ...)` | 找最适合电路的 2D 区域 |
 | `estimate_circuit_fidelity(circuit, qubits)` | 估算电路在给定量子比特上的成功率 |
 | `get_qubit_rankings()` | 按 fidelity 排名所有量子比特 |
@@ -490,7 +518,7 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 **缺少 Qiskit 依赖**
 
-调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedException`，提示：
+调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedError`，提示：
 
 ```
 pip install unified-quantum[qiskit]
@@ -509,3 +537,14 @@ uv pip install unified-quantum[qiskit]
 ```
 pip install matplotlib
 ```
+
+:::{note}
+🔧 `schedule_circuit` 与 `plot_time_line*` 在内部**始终**调用 `compile()`（默认
+`compile_to_basis=True`），即便输入只使用平台原生门也不例外。因此它们**强制依赖**
+`unified-quantum[qiskit]`：
+
+    pip install "unified-quantum[qiskit]"
+
+唯一可绕过 `compile()` 的路径是：构造一份所有 entry 都已带 `start_time` 的 pulse /
+timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 `TimelineDurationError`）。
+:::

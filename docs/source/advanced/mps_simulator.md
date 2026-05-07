@@ -50,7 +50,7 @@ probs = sim.simulate_pmeasure(c.originir)   # ≤ 24 measured qubit
 
 `MPSConfig` 字段：
 
-* `chi_max: int = 256` — 键维上限。χ 越大越精确，代价 `O(χ³)`
+* `chi_max: int = 64` — 键维上限。χ 越大越精确，代价 `O(χ³)`；高度纠缠的线路需要把 `chi_max` 调大，单层张量的内存大致按 `N · χ² · d²` 增长（`d=2` 为单比特维度）
 * `svd_cutoff: float = 1e-12` — 截掉小于该阈值的奇异值
 * `seed: int | None = None` — `simulate_shots` 抽样的随机种子
 

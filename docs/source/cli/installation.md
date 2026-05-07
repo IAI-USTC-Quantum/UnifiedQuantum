@@ -12,6 +12,8 @@ uniqc --help
 python -m uniqc.cli --help
 ```
 
+> ⚠️ 该包不再支持 `python -m uniqc`。请直接使用 `uniqc`，或在确实需要以模块方式启动时使用 `python -m uniqc.cli`。
+
 ## AI Agent 技能安装（可选）
 
 如果你需要给 AI Agent（Codex 或 Claude Code）补齐 UnifiedQuantum 最佳使用流程，可直接安装本仓库的 skill 集：

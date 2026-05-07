@@ -189,9 +189,7 @@ class TestGroverDiffusionDeprecation:
             grover_diffusion(c, qubits=[0, 1, 2], ancilla=3)
 
     def test_no_warning_when_ancilla_none(self):
-        """grover_diffusion with ancilla=None should not warn."""
+        """grover_diffusion(circuit, ...) emits the new in-place DeprecationWarning."""
         c = Circuit()
-        import warnings as _w
-        with _w.catch_warnings():
-            _w.simplefilter("error", DeprecationWarning)
-            grover_diffusion(c, qubits=[0, 1, 2])  # should not raise
+        with pytest.warns(DeprecationWarning, match="in-place form"):
+            grover_diffusion(c, qubits=[0, 1, 2])

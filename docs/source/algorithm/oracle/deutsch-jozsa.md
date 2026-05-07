@@ -73,6 +73,10 @@ deutsch_jozsa_circuit(c, oracle, qubits=list(range(n)), ancilla=n)
 3. 数据比特施加 Hadamard 门
 4. 测量数据比特
 
+:::{warning}
+`deutsch_jozsa_circuit` 已在内部对数据比特执行 `circuit.measure(...)`。**请勿再手动调用** `circuit.measure(...)`，否则会产生重复测量指令，导致模拟器报错。
+:::
+
 ### 判定逻辑
 
 ```python

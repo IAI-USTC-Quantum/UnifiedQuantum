@@ -29,18 +29,15 @@ Usage:
     task_id = adapter.submit(originir_circuit, shots=1000)
     result = adapter.query(task_id)
 
-Environment Variable:
-    UNIQC_DUMMY: Set to 'true', '1', or 'yes' to enable dummy mode
-    globally. When set, all task submissions use local simulation instead
-    of real quantum backends.
+Activate dummy mode by using a backend name prefixed with ``dummy``
+(e.g. ``dummy``, ``dummy:originq:WK_C180``).
 """
 
 from __future__ import annotations
 
-__all__ = ["DummyAdapter", "UNIQC_DUMMY"]
+__all__ = ["DummyAdapter"]
 
 import hashlib
-import os
 from typing import TYPE_CHECKING, Any
 
 from ..result_types import UnifiedResult
@@ -48,9 +45,6 @@ from .base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS, DryRunResult, Quantum
 
 if TYPE_CHECKING:
     from uniqc.cli.chip_info import ChipCharacterization
-
-# Check environment variable for global dummy mode
-UNIQC_DUMMY = os.environ.get("UNIQC_DUMMY", "").lower() in ("true", "1", "yes")
 
 
 class DummyAdapter(QuantumAdapter):

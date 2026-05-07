@@ -22,12 +22,12 @@ def demo_2():
     """Demo 2: Submit task using dummy mode."""
     circuit = _build_circuit()
 
-    # Submit with dummy=True for local simulation
-    task_id = submit_task(circuit, backend='originq', shots=1000, dummy=True)
+    # Submit with dummy backend for local simulation
+    task_id = submit_task(circuit, backend='dummy', shots=1000)
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
-    result = wait_for_result(task_id, backend='originq', timeout=60)
+    result = wait_for_result(task_id, timeout=60)
 
     if result:
         print(f"Counts: {result.get('counts', {})}")
@@ -39,8 +39,8 @@ def demo_3():
     circuit = _build_circuit()
 
     # Submit with dummy mode
-    task_id = submit_task(circuit, backend='originq', shots=1000, dummy=True)
-    result = wait_for_result(task_id, backend='originq', timeout=60)
+    task_id = submit_task(circuit, backend='dummy', shots=1000)
+    result = wait_for_result(task_id, timeout=60)
 
     if result:
         probs = result.get('probabilities', {})

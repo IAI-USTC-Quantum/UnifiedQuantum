@@ -16,16 +16,14 @@
 
 ## Enabling Dummy Mode
 
-    There are three ways to enable dummy mode:
+    Use a backend name prefixed with ``dummy`` to activate local simulation:
 
-    1. Environment variable: export UNIQC_DUMMY=true
-    2. Code: os.environ['UNIQC_DUMMY'] = 'true'
-    3. Per-task: submit_task(..., dummy=True)
+        - ``dummy`` — default simulator
+        - ``dummy:originq:WK_C180`` — simulator with chip characterization
 
 '''
 
 import math
-import os
 from uniqc import Circuit, submit_task, wait_for_result, query_task
 
 
@@ -46,19 +44,18 @@ def demo_2():
     # Build circuit
     circuit = build_circuit()
 
-    # Submit task with dummy=True for local simulation
+    # Submit task with dummy backend for local simulation
     # This works without any real cloud platform configuration
     task_id = submit_task(
         circuit,
-        backend='originq',
+        backend='dummy',
         shots=1000,
-        dummy=True
     )
 
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
-    result = wait_for_result(task_id, backend='originq', timeout=60)
+    result = wait_for_result(task_id, backend='dummy', timeout=60)
 
     if result:
         print(f"Status: success")
@@ -68,22 +65,8 @@ def demo_2():
         print("Task did not complete")
 
     # Query task status
-    task_info = query_task(task_id, backend='originq')
+    task_info = query_task(task_id, backend='dummy')
     print(f"Task status: {task_info.status}")
-
-
-def demo_2_env():
-    """Demonstrate dummy mode via environment variable."""
-    # Enable dummy mode globally
-    os.environ['UNIQC_DUMMY'] = 'true'
-
-    circuit = build_circuit()
-
-    # All submissions will use local simulation
-    task_id = submit_task(circuit, backend='originq', shots=1000)
-    result = wait_for_result(task_id, backend='originq')
-
-    print(f"Result: {result}")
 
 
 if __name__ == '__main__':

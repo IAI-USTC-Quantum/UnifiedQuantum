@@ -124,19 +124,31 @@ def make_measure_originir(measure_list: List[int]):
     return ret
 
 
-def make_header_qasm(qubit_num: int, cbit_num: int) -> str:
+def make_header_qasm(qubit_num: int, cbit_num: int, custom_gates: Optional[List[str]] = None) -> str:
     """
     Generate the header of QASM code for the given qubit and cbit number.
 
     Args:
         qubit_num (int): The number of qubits in the circuit.
         cbit_num (int): The number of classical bits in the circuit.
+        custom_gates (Optional[List[str]]): Names of OriginIR-native custom
+            gates (e.g. ``"iswap"``, ``"rphi"``, ``"phase2q"``, ``"xy"``,
+            ``"uu15"``) whose QASM 2.0 ``gate ... { ... }`` definitions should
+            be inlined right after the ``include "qelib1.inc";`` line.  The
+            corresponding definitions live in
+            :data:`uniqc.circuit_builder.translate_qasm2_oir.QASM2_CUSTOM_GATE_DEFS`.
 
     Returns:
         str: The header of QASM code.
     """
 
     ret = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
+    if custom_gates:
+        from .translate_qasm2_oir import QASM2_CUSTOM_GATE_DEFS
+        for name in custom_gates:
+            gate_def = QASM2_CUSTOM_GATE_DEFS.get(name)
+            if gate_def is not None:
+                ret += gate_def + "\n"
     ret += "qreg q[{}];\n".format(qubit_num)
     ret += "creg c[{}];\n".format(cbit_num)
     return ret

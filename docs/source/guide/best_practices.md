@@ -158,8 +158,7 @@ depth_no_vz = compute_gate_depth(circuit, virtual_z=False)
 
 **何时绕过校验**：
 
-- 一次性绕过：`submit_task(..., auto_compile=False)`（仍校验，失败抛 `UnsupportedGateError`）
-- 完全跳过：环境变量 `UNIQC_SKIP_VALIDATION=1`（仅在你确信前端已经做过等价校验时使用，例如自定义 transpiler 已经把电路降到 backend 原生门集，再用 `uniqc` 仅作 IR adapter）
+- 一次性绕过：`submit_task(..., skip_validation=True)`（仅在你确信前端已经做过等价校验时使用，例如自定义 transpiler 已经把电路降到 backend 原生门集，再用 `uniqc` 仅作 IR adapter）
 - 没有 backend 缓存时：`compatibility_report` 会以 warning 形式提示，并继续执行；建议先 `uniqc backend refresh --platform <name>` 把后端拓扑拉到本地缓存
 
 **多平台编译政策**（由 `compile_for_backend` 与 `submit_task(..., auto_compile=True)` 自动处理）：

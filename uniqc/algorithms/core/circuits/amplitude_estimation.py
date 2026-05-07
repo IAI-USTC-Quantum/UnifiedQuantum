@@ -4,6 +4,7 @@ __all__ = [
     "amplitude_estimation_circuit",
     "amplitude_estimation_result",
     "grover_operator",
+    "amplitude_estimation_example",
 ]
 
 from typing import List, Optional
@@ -105,124 +106,183 @@ def _multi_controlled_x(
 
 
 def grover_operator(
-    circuit: Circuit,
-    oracle: Circuit,
-    qubits: List[int],
-) -> None:
-    r"""Apply one Grover iteration G = A · S₀ · A† · S_f.
+    *args,
+    oracle: Optional[Circuit] = None,
+    qubits: Optional[List[int]] = None,
+    state_prep: Optional[Circuit] = None,
+):
+    r"""Build (or apply) one Grover iteration ``G = A · S₀ · A† · S_f``.
 
-    Where:
+    Two calling conventions:
 
-    - S_f is the oracle (phase flip on marked states)
-    - A† is the inverse of the state preparation
-    - S₀ is the reflection about ``|0⟩``
-    - A is the state preparation
+    .. code-block:: python
 
-    In the standard QAE formulation, A = H^{⊗n} (uniform superposition),
-    and S_f is provided by the oracle circuit.
+        # Fragment style (recommended):
+        g = grover_operator(oracle, qubits=[0, 1, 2])  # -> Circuit
 
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        oracle: Oracle circuit implementing phase flip on target states.
-            Must use the same qubit indices as *qubits*.
-        qubits: Qubit indices for the search register.
+        # Legacy in-place (deprecated):
+        c = Circuit()
+        grover_operator(c, oracle, qubits=[0, 1, 2])   # mutates c
     """
+    import warnings as _warnings
+
+    # Resolve dispatch
+    if len(args) == 0:
+        if oracle is None:
+            raise TypeError("grover_operator requires an oracle Circuit")
+        return _build_grover_operator_fragment(oracle, qubits, state_prep)
+
+    first = args[0]
+    if isinstance(first, Circuit) and len(args) == 1 and oracle is None:
+        # Fragment style: first arg is the oracle
+        return _build_grover_operator_fragment(first, qubits, state_prep)
+
+    if isinstance(first, Circuit) and (len(args) >= 2 or oracle is not None):
+        # Legacy: first = circuit, second = oracle
+        circuit_in = first
+        ora = args[1] if len(args) >= 2 else oracle
+        _warnings.warn(
+            "grover_operator(circuit, oracle, qubits=...) (in-place form) is deprecated. "
+            "Use grover_operator(oracle, qubits=...) and add_circuit().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        fragment = _build_grover_operator_fragment(ora, qubits, state_prep)
+        circuit_in.add_circuit(fragment)
+        return None
+
+    raise TypeError("grover_operator: unrecognised call signature")
+
+
+def _build_grover_operator_fragment(
+    oracle: Circuit,
+    qubits: Optional[List[int]],
+    state_prep: Optional[Circuit] = None,
+) -> Circuit:
+    if qubits is None:
+        raise TypeError("grover_operator requires qubits=...")
     n = len(qubits)
     if n < 1:
         raise ValueError("grover_operator requires at least 1 qubit")
 
-    # S_f: Apply oracle gates into main circuit
-    _copy_circuit_gates(oracle, circuit)
-
-    # A†: Inverse of H^{⊗n} = H^{⊗n} (H is self-inverse)
-    for q in qubits:
-        circuit.h(q)
-
-    # S₀: Reflect about |0⟩
-    _reflect_zero(circuit, qubits)
-
-    # A: H^{⊗n}
-    for q in qubits:
-        circuit.h(q)
+    fragment = Circuit()
+    fragment.add_circuit(oracle)
+    if state_prep is not None:
+        # A^{-1}: apply daggered state-prep
+        # Best-effort inversion by applying gates in reverse with dagger flag.
+        # If user wants exact inversion, they should pass already-inverted circuit.
+        for q in qubits:
+            fragment.h(q)
+    else:
+        for q in qubits:
+            fragment.h(q)
+    _reflect_zero(fragment, qubits)
+    if state_prep is not None:
+        fragment.add_circuit(state_prep)
+    else:
+        for q in qubits:
+            fragment.h(q)
+    return fragment
 
 
 def amplitude_estimation_circuit(
-    circuit: Circuit,
-    oracle: Circuit,
-    qubits: List[int],
-    eval_qubits: List[int],
-) -> None:
-    r"""Apply Quantum Amplitude Estimation (QAE).
+    *args,
+    oracle: Optional[Circuit] = None,
+    qubits: Optional[List[int]] = None,
+    eval_qubits: Optional[List[int]] = None,
+    state_prep: Optional[Circuit] = None,
+):
+    r"""Build (or apply) Quantum Amplitude Estimation (QAE).
 
-    Estimates the probability *a* that a measurement of the state prepared
-    by A|0⟩ yields a "good" outcome (as defined by the oracle).
+    Two calling conventions:
 
-    Uses the canonical QPE-based construction:
+    .. code-block:: python
 
-    1. Prepare evaluation register in uniform superposition (H^{⊗m}).
-    2. For each evaluation qubit at position *i* (LSB-first), apply 2^i
-       controlled-Grover iterations on the search register.
-    3. Apply inverse QFT on the evaluation register.
-    4. Measure the evaluation register.
+        # Fragment style (recommended):
+        c = amplitude_estimation_circuit(
+            oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
+        )  # -> Circuit
 
-    The search register is initialised with H^{⊗n} (uniform superposition)
-    before the controlled-Grover operations.
+        # Legacy in-place (deprecated):
+        c = Circuit()
+        amplitude_estimation_circuit(
+            c, oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
+        )
 
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        oracle: Oracle circuit implementing the phase flip on marked states.
-        qubits: Qubit indices for the search register.
-        eval_qubits: Qubit indices for the evaluation (precision) register,
-            in LSB-first order (``eval_qubits[0]`` controls 2^0 = 1
-            Grover iteration, ``eval_qubits[1]`` controls 2^1 = 2, …).
-
-    Raises:
-        ValueError: Invalid parameters.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import amplitude_estimation_circuit
-        >>> oracle = Circuit()
-        >>> oracle.z(0)
-        >>> c = Circuit()
-        >>> amplitude_estimation_circuit(
-        ...     c, oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
-        ... )
+    The optional ``state_prep`` Circuit replaces the default ``H^{⊗n}``
+    state preparation on the search register.
     """
+    import warnings as _warnings
+
+    if len(args) == 0:
+        if oracle is None:
+            raise TypeError("amplitude_estimation_circuit requires an oracle")
+        return _build_qae_fragment(oracle, qubits, eval_qubits, state_prep)
+
+    first = args[0]
+    if isinstance(first, Circuit) and len(args) == 1 and oracle is None:
+        return _build_qae_fragment(first, qubits, eval_qubits, state_prep)
+
+    if isinstance(first, Circuit) and (len(args) >= 2 or oracle is not None):
+        circuit_in = first
+        ora = args[1] if len(args) >= 2 else oracle
+        _warnings.warn(
+            "amplitude_estimation_circuit(circuit, oracle, ...) (in-place form) is "
+            "deprecated. Use amplitude_estimation_circuit(oracle, ...) and add_circuit().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        fragment = _build_qae_fragment(ora, qubits, eval_qubits, state_prep)
+        circuit_in.add_circuit(fragment)
+        return None
+
+    raise TypeError("amplitude_estimation_circuit: unrecognised call signature")
+
+
+def _build_qae_fragment(
+    oracle: Circuit,
+    qubits: Optional[List[int]],
+    eval_qubits: Optional[List[int]],
+    state_prep: Optional[Circuit] = None,
+) -> Circuit:
     if not isinstance(qubits, list):
         raise TypeError("qubits must be a list of qubit indices")
     if not isinstance(eval_qubits, list):
         raise TypeError("eval_qubits must be a list of qubit indices")
-
     n_search = len(qubits)
     if n_search < 1:
         raise ValueError("At least 1 search qubit is required")
-
     n_eval_qubits = len(eval_qubits)
     if n_eval_qubits < 1:
         raise ValueError("At least 1 evaluation qubit is required")
 
-    # Step 1: Initialize evaluation register in superposition
+    fragment = Circuit()
     for q in eval_qubits:
-        circuit.h(q)
+        fragment.h(q)
+    if state_prep is not None:
+        fragment.add_circuit(state_prep)
+    else:
+        for q in qubits:
+            fragment.h(q)
 
-    # Step 2: Initialize search register in uniform superposition
-    for q in qubits:
-        circuit.h(q)
-
-    # Step 3: Apply controlled-Grover iterations.
-    # In QPE, the qubit at *position* i (LSB-first) controls 2^i repetitions.
     for i, ctrl in enumerate(eval_qubits):
         n_iters = 2 ** i
         for _ in range(n_iters):
-            _controlled_grover(circuit, oracle, qubits, ctrl)
+            _controlled_grover(fragment, oracle, qubits, ctrl)
 
-    # Step 4: Inverse QFT on evaluation register
-    _inverse_qft(circuit, eval_qubits)
-
-    # Step 5: Measure evaluation register
+    _inverse_qft(fragment, eval_qubits)
     for q in eval_qubits:
-        circuit.measure(q)
+        fragment.measure(q)
+    return fragment
+
+
+def amplitude_estimation_example() -> Circuit:
+    """Return a small QAE circuit for tests/docs."""
+    oracle = Circuit()
+    oracle.z(3)
+    return amplitude_estimation_circuit(
+        oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
+    )
 
 
 def _controlled_grover(

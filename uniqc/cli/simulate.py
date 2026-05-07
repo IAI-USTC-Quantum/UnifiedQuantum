@@ -18,7 +18,14 @@ HELP = (
 
 def simulate(
     input_file: Path = typer.Argument(..., help="Circuit file (OriginIR or QASM)", exists=True),
-    backend: str = typer.Option("statevector", "--backend", "-b", help="Backend type: statevector/density"),
+    backend: str = typer.Option(
+        "statevector",
+        "--backend",
+        "-b",
+        help=(
+            "Backend type: statevector / density (alias: density_matrix, densitymatrix)"
+        ),
+    ),
     shots: int = typer.Option(1024, "--shots", "-s", help="Number of measurement shots"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
@@ -28,7 +35,8 @@ def simulate(
 
     Workflow:
       - Use --backend statevector for exact probabilities (default, fast).
-      - Use --backend density for noisy simulation of NISQ devices.
+      - Use --backend density (or alias: density_matrix / densitymatrix) for
+        noisy simulation of NISQ devices.
       - Use --shots to set measurement repetitions (default 1024).
       - Use --format json for machine-readable output; --output to write to a file.
     """
@@ -37,9 +45,18 @@ def simulate(
 
     content = input_file.read_text(encoding="utf-8")
 
-    if backend not in ("statevector", "density"):
-        print_error(f"Unknown backend: {backend}. Use 'statevector' or 'density'.")
+    _DENSITY_ALIASES = {"density", "density_matrix", "densitymatrix"}
+    if backend == "statevector":
+        backend_canonical = "statevector"
+    elif backend in _DENSITY_ALIASES:
+        backend_canonical = "density"
+    else:
+        print_error(
+            f"Unknown backend: {backend}. "
+            "Use 'statevector' or 'density' (alias: density_matrix, densitymatrix)."
+        )
         raise typer.Exit(1)
+    backend = backend_canonical
 
     try:
         result = _run_simulation(content, backend, shots)

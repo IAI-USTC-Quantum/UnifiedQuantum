@@ -1,69 +1,73 @@
-"""Thermal state preparation circuit."""
+"""Thermal state preparation circuit fragment."""
 
-__all__ = ["thermal_state_circuit"]
+__all__ = ["thermal_state_circuit", "thermal_state_example"]
 
 from typing import List, Optional
 import math
 
 from uniqc.circuit_builder import Circuit
+from uniqc.algorithms._compat import dispatch_circuit_fragment
 
 
-def thermal_state_circuit(
-    circuit: Circuit,
-    beta: float,
+def _build_thermal_fragment(
+    *,
+    n_qubits: int,
     qubits: Optional[List[int]] = None,
-) -> None:
-    r"""Prepare a thermal state via single-qubit rotations.
-
-    For the transverse-field-free Hamiltonian :math:`H = \sum_i Z_i`, the
-    thermal (Gibbs) state at inverse temperature :math:`\beta` factorises
-    into a product of single-qubit states.  Each qubit is prepared in
-
-    .. math::
-
-        \sqrt{p_0}\,|0\rangle + \sqrt{p_1}\,|1\rangle
-
-    where
-
-    .. math::
-
-        p_0 = \frac{e^{\beta}}{e^{\beta}+e^{-\beta}}, \qquad
-        p_1 = 1 - p_0.
-
-    This is achieved by applying :math:`R_y(\theta)` with
-    :math:`\theta = 2\arccos(\sqrt{p_0})` to every qubit independently.
-
-    This is a lightweight, circuit-only counterpart of
-    ``state_preparation.thermal_state`` for the default Hamiltonian case.
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        beta: Inverse temperature (:math:`\beta > 0`).  Larger values
-            bias the state towards :math:`|0\rangle`.
-        qubits: Qubit indices to use.  ``None`` means all qubits of
-            *circuit* (``list(range(circuit.qubit_num))``).
-
-    Raises:
-        ValueError: *beta* is negative.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import thermal_state_circuit
-        >>> c = Circuit(3)
-        >>> thermal_state_circuit(c, beta=1.0)
-    """
+    beta: float = 1.0,
+) -> Circuit:
     if beta < 0:
         raise ValueError(f"beta must be non-negative, got {beta}")
-
     if qubits is None:
-        qubits = list(range(circuit.qubit_num))
-
-    # Compute rotation angle: theta = 2 * arccos(sqrt(p0))
-    # p0 = e^beta / (e^beta + e^{-beta})
+        qubits = list(range(n_qubits))
     exp_beta = math.exp(beta)
     exp_neg_beta = math.exp(-beta)
     p0 = exp_beta / (exp_beta + exp_neg_beta)
     theta = 2.0 * math.acos(math.sqrt(p0))
-
+    fragment = Circuit()
     for q in qubits:
-        circuit.ry(q, theta)
+        fragment.ry(q, theta)
+    return fragment
+
+
+def thermal_state_circuit(
+    first_arg=None,
+    beta: float = 1.0,
+    qubits: Optional[List[int]] = None,
+) -> Optional[Circuit]:
+    r"""Build (or apply) a thermal-state preparation fragment for :math:`H=\sum_i Z_i`.
+
+    Two calling conventions:
+
+    .. code-block:: python
+
+        # Fragment style (recommended):
+        c = thermal_state_circuit(3, beta=1.0)         # returns Circuit
+
+        # Legacy in-place style (deprecated):
+        c = Circuit(3)
+        thermal_state_circuit(c, beta=1.0)             # mutates c in place
+
+    Each qubit is prepared in :math:`\sqrt{p_0}|0\rangle + \sqrt{p_1}|1\rangle`
+    with :math:`p_0 = e^\beta / (e^\beta + e^{-\beta})`.
+
+    Args:
+        first_arg: Either ``n_qubits: int`` (fragment) or ``circuit: Circuit``
+            (deprecated).
+        beta: Inverse temperature (must be non-negative).
+        qubits: Qubit indices to use.
+
+    Returns:
+        Fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+    """
+    return dispatch_circuit_fragment(
+        name="thermal_state_circuit",
+        fragment_builder=_build_thermal_fragment,
+        first_arg=first_arg,
+        legacy_qubits=qubits,
+        extra_kwargs={"beta": beta},
+    )
+
+
+def thermal_state_example() -> Circuit:
+    """Return a 3-qubit thermal-state circuit at :math:`\\beta=1` for tests/docs."""
+    return thermal_state_circuit(3, beta=1.0)

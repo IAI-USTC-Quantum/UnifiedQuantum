@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass
+@dataclass(eq=False)
 class UnifiedResult:
     """Unified quantum execution result format.
 
@@ -169,6 +169,64 @@ class UnifiedResult:
         """
         return self.counts
 
+    def raw(self) -> Any:
+        """Return the original platform-specific raw result.
+
+        This is the unprocessed object/dict returned by the backend adapter
+        before normalization. Use it for debugging, accessing platform-specific
+        fields, or when you need the exact wire-format response.
+
+        Returns:
+            The raw_result attribute (may be ``None`` if not preserved).
+        """
+        return self.raw_result
+
+    # ------------------------------------------------------------------
+    # Dict-like behavior over ``counts``
+    #
+    # ``UnifiedResult`` quacks like a ``dict[str, int]`` of measurement
+    # counts so existing code that did ``result["00"]``, ``len(result)``,
+    # iteration, or ``result == {"00": 512}`` continues to work.
+    # ------------------------------------------------------------------
+    def __getitem__(self, key: str) -> int:
+        return self.counts[key]
+
+    def __iter__(self):
+        return iter(self.counts)
+
+    def __len__(self) -> int:
+        return len(self.counts)
+
+    def __contains__(self, key: object) -> bool:
+        return key in self.counts
+
+    def keys(self):
+        return self.counts.keys()
+
+    def values(self):
+        return self.counts.values()
+
+    def items(self):
+        return self.counts.items()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.counts.get(key, default)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, UnifiedResult):
+            return (
+                self.counts == other.counts
+                and self.shots == other.shots
+                and self.platform == other.platform
+                and self.task_id == other.task_id
+            )
+        if isinstance(other, dict):
+            return self.counts == other
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return id(self)
+
     def get_expectation(self, observable: str = "Z") -> float:
         """Compute expectation value for a simple observable.
 
@@ -213,6 +271,17 @@ class DryRunResult:
         details: Human-readable description of what was checked and the outcome.
         warnings: Non-fatal warnings (e.g., no chip_id provided, partial validation).
         error: Error message if success is False.
+        error_kind: Coarse classification of ``error`` so callers can branch on
+            *why* the dry-run failed without parsing the message. One of:
+
+            - ``"unknown_backend"``  — backend identifier not recognised
+            - ``"sdk_missing"``      — required platform SDK / extra not installed
+            - ``"credential_missing"`` — auth token / config missing
+            - ``"circuit_invalid"``  — translation or basis-set check failed
+            - ``"adapter_init"``     — adapter constructor itself raised
+            - ``"unknown"``          — anything not yet classified
+
+            ``None`` when ``success`` is True.
         backend_name: The backend/chip ID used for this dry-run.
         circuit_qubits: Number of qubits in the circuit (extracted from OriginIR
             QINIT line, without making any API call).
@@ -228,6 +297,7 @@ class DryRunResult:
     details: str
     warnings: tuple[str, ...] = ()
     error: str | None = None
+    error_kind: str | None = None
     backend_name: str | None = None
     circuit_qubits: int | None = None
     supported_gates: tuple[str, ...] = ()

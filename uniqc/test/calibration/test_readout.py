@@ -8,19 +8,27 @@ class TestReadoutCalibrator1Q:
         """With a noiseless DummyAdapter, confusion matrix should be identity."""
         from uniqc.backend_adapter.task.adapters import DummyAdapter
         from uniqc.calibration.readout import ReadoutCalibrator
+        from uniqc.calibration.results import ReadoutCalibrationResult
 
         adapter = DummyAdapter()  # noiseless
         cal = ReadoutCalibrator(adapter=adapter, shots=1000, cache_dir=tmp_path)
         result = cal.calibrate_1q(qubit=0)
 
+        # Returns a ReadoutCalibrationResult dataclass
+        assert isinstance(result, ReadoutCalibrationResult)
+        assert result.type == "readout_1q"
+        assert result.qubit == 0
+
+        # Dict-like access still works (backward compat)
         assert result["type"] == "readout_1q"
         assert result["qubit"] == 0
+        assert "calibrated_at" in result
+
         cm = result["confusion_matrix"]
         # Noiseless → [[1, 0], [0, 1]]
         assert cm[0][0] == pytest.approx(1.0)
         assert cm[1][1] == pytest.approx(1.0)
-        assert result["assignment_fidelity"] == pytest.approx(1.0)
-        assert "calibrated_at" in result
+        assert result.assignment_fidelity == pytest.approx(1.0)
 
     def test_dummy_readout_noise_produces_non_identity_matrix(self, tmp_path):
         """Explicit dummy readout noise should affect calibration counts."""

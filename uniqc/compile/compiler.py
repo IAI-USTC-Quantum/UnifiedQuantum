@@ -8,7 +8,7 @@ typed configuration object.
 
 from __future__ import annotations
 
-__all__ = ["compile", "TranspilerConfig", "CompilationResult", "CompilationFailedException"]
+__all__ = ["compile", "TranspilerConfig", "CompilationResult", "CompilationFailedError"]
 
 import heapq
 import re
@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from ._utils import CompilationFailedException
+from ._utils import CompilationFailedError
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
 
 if TYPE_CHECKING:
@@ -108,6 +108,12 @@ def compile(
     by adding chip-characterization-aware routing, a typed configuration object,
     and a Circuit return type.
 
+    .. important::
+       ``compile`` (at every optimization ``level``, including ``level=0``)
+       requires the ``[qiskit]`` extra: ``pip install "unified-quantum[qiskit]"``.
+       Without ``qiskit`` installed every call raises ``CompilationFailedError``.
+       There is currently no pure-Python fallback path.
+
     Parameters
     ----------
     circuit :
@@ -137,7 +143,7 @@ def compile(
 
     Raises
     ------
-    CompilationFailedException
+    CompilationFailedError
         If transpilation fails.
     ValueError
         If the transpiler type is unsupported, the optimization level is out
@@ -185,20 +191,24 @@ def compile_with_config(
     # Resolve input string
     originir_input = circuit.originir if hasattr(circuit, "originir") else str(circuit)
 
-    # Fidelity-weighted routing
+    # Fidelity-weighted *mapping* selection (no OriginIR rewriting)
     routed_originir = originir_input
     routing_overhead = 0
     fidelity_estimate: float | None = None
+    initial_layout: list[int] | None = None
 
     if config.chip_characterization is not None:
         (
             routed_originir,
             routing_overhead,
             fidelity_estimate,
+            initial_layout,
         ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization)
+        layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
-            f"Routing used chip characterization (SWAP overhead: {routing_overhead}, "
-            f"fidelity estimate: {fidelity_estimate:.4f})"
+            f"Mapping selected from chip characterization "
+            f"(fidelity estimate: {fidelity_estimate:.4f}{layout_msg}). "
+            f"SWAP routing deferred to qiskit transpile."
         )
     else:
         messages.append("No chip characterization provided; routing uses topology only.")
@@ -206,13 +216,14 @@ def compile_with_config(
     # Convert to QASM for Qiskit
     qasm_input = convert_oir_to_qasm(routed_originir)
 
-    # Qiskit transpilation
+    # Qiskit transpilation (handles routing + SWAP insertion using full coupling map)
     transpile_qasm = _load_transpile_qasm()
     transpiled_qasm = transpile_qasm(
         [qasm_input],
         topology=topology,
         optimization_level=config.level,
         basis_gates=list(config.basis_gates),
+        initial_layout=initial_layout,
     )[0]
 
     # Build return value
@@ -274,16 +285,20 @@ def compile_full(
     routed_originir = originir_input
     routing_overhead = 0
     fidelity_estimate: float | None = None
+    initial_layout: list[int] | None = None
 
     if config.chip_characterization is not None:
         (
             routed_originir,
             routing_overhead,
             fidelity_estimate,
+            initial_layout,
         ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization)
+        layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
-            f"Routing used chip characterization (SWAP overhead: {routing_overhead}, "
-            f"fidelity estimate: {fidelity_estimate:.4f})"
+            f"Mapping selected from chip characterization "
+            f"(fidelity estimate: {fidelity_estimate:.4f}{layout_msg}). "
+            f"SWAP routing deferred to qiskit transpile."
         )
     else:
         messages.append("No chip characterization; routing uses topology only.")
@@ -295,6 +310,7 @@ def compile_full(
         topology=topology,
         optimization_level=config.level,
         basis_gates=list(config.basis_gates),
+        initial_layout=initial_layout,
     )[0]
 
     if output_format == "originir":
@@ -321,7 +337,7 @@ def _load_transpile_qasm():
     try:
         from .qiskit_transpiler import transpile_qasm
     except ImportError as exc:
-        raise CompilationFailedException(
+        raise CompilationFailedError(
             "compile() requires the optional qiskit dependencies. "
             "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`."
         ) from exc
@@ -332,15 +348,38 @@ def _route_with_fidelity(
     originir: str,
     topology: list[tuple[int, int]],
     chip: ChipCharacterization,
-) -> tuple[str, int, float]:
-    """Chip-aware routing: insert SWAPs preferring high-fidelity edges.
+) -> tuple[str, int, float, list[int] | None]:
+    """Chip-aware *mapping* selection + fidelity estimate.
 
-    Uses Dijkstra's algorithm on a weighted graph where edge weight = 1 - fidelity,
-    so the shortest (lowest-weight) path corresponds to the highest-fidelity path.
+    Picks an initial logical→physical mapping that prefers high-fidelity
+    qubits/edges on the chip, and returns it as a Qiskit-style
+    ``initial_layout`` list (``initial_layout[i]`` is the physical qubit
+    on which logical qubit ``i`` should be placed). Routing (SWAP
+    insertion) is left to the downstream Qiskit transpile pass — it sees
+    the full ``coupling_map`` and is much better at it than this function.
+
+    Returns
+    -------
+    routed_originir : str
+        The OriginIR string passed in, unchanged. Returned as the first
+        element to keep the original (mapping, swap_count, fidelity)
+        contract callable.
+    swap_count : int
+        Always ``0`` from this layer; the actual SWAP count comes from
+        Qiskit transpile downstream.
+    fidelity_estimate : float
+        Product-of-fidelities estimate, computed against the chosen
+        initial mapping.
+    initial_layout : list[int] | None
+        Physical qubit list ordered by logical qubit. ``None`` if the
+        chip has no usable fidelity data (caller should fall back to
+        Qiskit's default layout selection).
     """
-    # Build best 2Q fidelity map per undirected edge
+    # Build best 2Q fidelity map per undirected edge (skip self-loops)
     tq_fid: dict[tuple[int, int], float] = {}
     for tq_data in chip.two_qubit_data:
+        if tq_data.qubit_u == tq_data.qubit_v:
+            continue
         for gate in tq_data.gates:
             if gate.fidelity is not None:
                 edge = tuple(sorted((tq_data.qubit_u, tq_data.qubit_v)))
@@ -348,99 +387,102 @@ def _route_with_fidelity(
                 if existing is None or gate.fidelity > existing:
                     tq_fid[edge] = gate.fidelity
 
-    # Build weighted adjacency list
-    adj: dict[int, list[tuple[int, float]]] = defaultdict(list)
-    seen: set[tuple[int, int]] = set()
+    # Build undirected adjacency (for region selection)
+    undirected_adj: dict[int, set[int]] = defaultdict(set)
     for u, v in topology:
-        edge = tuple(sorted((u, v)))
-        if edge in seen:
+        if u == v:
             continue
-        seen.add(edge)
-        fid = tq_fid.get(edge, _DEFAULT_FIDELITY)
-        weight = 1.0 - fid
-        adj[u].append((v, weight))
-        adj[v].append((u, weight))
+        undirected_adj[u].add(v)
+        undirected_adj[v].add(u)
 
-    # Parse OriginIR
-    lines = originir.strip().splitlines()
-    routed_lines: list[str] = []
-    swap_count = 0
-
-    # Build fidelity maps for estimate
+    # Single-qubit fidelity map
     sq_fid: dict[int, float] = {}
     for sq_data in chip.single_qubit_data:
         if sq_data.single_gate_fidelity is not None:
             sq_fid[sq_data.qubit_id] = sq_data.single_gate_fidelity
 
-    # Determine number of qubits from QINIT line
+    # Determine n_qubits from QINIT
+    lines = originir.strip().splitlines()
     n_qubits = 0
     for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("QINIT"):
-            n_qubits = int(stripped.split()[1])
+        s = line.strip()
+        if s.startswith("QINIT"):
+            n_qubits = int(s.split()[1])
             break
-    logical_to_physical = {i: i for i in range(n_qubits)}
-    physical_to_logical = {i: i for i in range(n_qubits)}
 
-    from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
-
-    for line in lines:
-        stripped = line.strip()
-        # Pass through metadata / non-gate lines
-        if not stripped or stripped.startswith(("QINIT", "CREG", "MEASURE", "BARRIER")):
-            routed_lines.append(line)
-            continue
-
+    # ---- Initial mapping selection (no OriginIR rewriting) ----
+    initial_layout: list[int] | None = None
+    if n_qubits == 0:
+        initial_layout = None
+    elif n_qubits == 1:
+        # Pick best single-qubit fidelity if known; else any chip qubit.
+        if sq_fid:
+            best_q = max(sq_fid.items(), key=lambda kv: kv[1])[0]
+            initial_layout = [best_q]
+        elif undirected_adj:
+            initial_layout = [next(iter(undirected_adj))]
+    elif n_qubits == 2:
+        # Mapping-only: pick the highest-fidelity adjacent physical pair
+        # (skipping self-loops just in case).
+        valid_edges = {e: f for e, f in tq_fid.items() if e[0] != e[1]}
+        if valid_edges:
+            best_edge = max(valid_edges.items(), key=lambda kv: kv[1])[0]
+            initial_layout = [best_edge[0], best_edge[1]]
+    else:
+        # For larger circuits, defer to RegionSelector to pick a connected
+        # high-fidelity region on the FULL chip topology, then use that
+        # region as the initial layout. SWAP insertion remains qiskit's job.
         try:
-            op, qubit, cbit, param, dagger, ctrl = OriginIR_LineParser.parse_line(stripped)
+            from uniqc.backend_adapter.region_selector import RegionSelector
+
+            selector = RegionSelector(chip)
+            region = selector.find_best_1D_chain(n_qubits, max_search_seconds=2.0)
+            if region.qubits is not None and len(region.qubits) >= n_qubits:
+                # find_best_1D_chain returns a SET; recover order via the
+                # adjacency walk so neighbouring logicals stay adjacent.
+                ordered = _order_chain(region.qubits, undirected_adj)
+                initial_layout = ordered[:n_qubits]
         except Exception:
-            routed_lines.append(line)
-            continue
+            initial_layout = None
 
-        if op is None:
-            routed_lines.append(line)
-            continue
-
-        # Single-qubit gate: pass through
-        if isinstance(qubit, int):
-            routed_lines.append(line)
-            continue
-
-        # Multi-qubit gate
-        if isinstance(qubit, list) and len(qubit) >= 2:
-            q0, q1 = qubit[0], qubit[1]
-            p0 = logical_to_physical.get(q0, q0)
-            p1 = logical_to_physical.get(q1, q1)
-
-            # Check adjacency
-            neighbors = {v for v, _ in adj.get(p0, [])}
-            if p1 not in neighbors:
-                # Need SWAPs: find path p0 -> ... -> p1
-                path = _dijkstra_path(p0, p1, adj)
-                if path is None:
-                    path = _bfs_path(p0, p1, adj)
-
-                if path and len(path) > 1:
-                    for i in range(len(path) - 1):
-                        a, b = path[i], path[i + 1]
-                        routed_lines.append(f"SWAP q[{a}], q[{b}]")
-                        swap_count += 1
-                        l_a = physical_to_logical[a]
-                        l_b = physical_to_logical[b]
-                        physical_to_logical[a], physical_to_logical[b] = l_b, l_a
-                        logical_to_physical[l_a] = b
-                        logical_to_physical[l_b] = a
-
-            routed_lines.append(line)
-            continue
-
-        routed_lines.append(line)
-
+    # Fidelity estimate against the chosen layout
+    if initial_layout is not None:
+        l2p = {i: initial_layout[i] for i in range(min(n_qubits, len(initial_layout)))}
+    else:
+        l2p = {i: i for i in range(n_qubits)}
     fidelity = _estimate_circuit_fidelity_from_lines(
-        routed_lines, sq_fid, tq_fid, logical_to_physical, physical_to_logical
+        lines, sq_fid, tq_fid, l2p, {}
     )
 
-    return "\n".join(routed_lines), swap_count, fidelity
+    return originir, 0, fidelity, initial_layout
+
+
+def _order_chain(qubits: set[int], adj: dict[int, set[int]]) -> list[int]:
+    """Walk a connected qubit set into a path order."""
+    qset = set(qubits)
+    if not qset:
+        return []
+    # Start from any endpoint (degree 1 within the set), else any node.
+    endpoints = [q for q in qset if len(adj.get(q, set()) & qset) <= 1]
+    start = endpoints[0] if endpoints else next(iter(qset))
+    order: list[int] = [start]
+    visited = {start}
+    while True:
+        cur = order[-1]
+        nxt = None
+        for nb in adj.get(cur, set()):
+            if nb in qset and nb not in visited:
+                nxt = nb
+                break
+        if nxt is None:
+            break
+        order.append(nxt)
+        visited.add(nxt)
+    # Append any leftovers (shouldn't happen for a chain, but be safe)
+    for q in qset:
+        if q not in visited:
+            order.append(q)
+    return order
 
 
 def _dijkstra_path(start: int, end: int, adj: dict[int, list[tuple[int, float]]]) -> list[int] | None:
@@ -484,6 +526,45 @@ def _bfs_path(start: int, end: int, adj: dict[int, list[tuple[int, float]]]) -> 
                 visited.add(neighbor)
                 queue.append((neighbor, path + [neighbor]))
     return None
+
+
+_QREG_RE = re.compile(r"q\[(\d+)\]")
+
+
+def _rewrite_originir_qubits(line: str, old_qubits: list[int], new_qubits: list[int]) -> str:
+    """Rewrite the ``q[i]`` references in an OriginIR line in order.
+
+    Replaces the *first* occurrence of ``q[old_qubits[0]]`` with
+    ``q[new_qubits[0]]``, the second with ``q[new_qubits[1]]``, etc.
+    Substitution is done positionally, not value-based, so swapping
+    operands (e.g. CNOT q[1] q[0] → CNOT q[0] q[1]) works correctly
+    even when source and target indices overlap.
+    """
+    if old_qubits == list(new_qubits):
+        return line
+    parts = _QREG_RE.split(line)
+    # parts alternates [text, qidx_str, text, qidx_str, ...]
+    out: list[str] = []
+    consumed = 0
+    for i, p in enumerate(parts):
+        if i % 2 == 0:
+            out.append(p)
+        else:
+            if consumed < len(new_qubits):
+                out.append(f"q[{new_qubits[consumed]}]")
+                consumed += 1
+            else:
+                out.append(f"q[{p}]")
+    return "".join(out)
+
+
+def _remap_measure_line(line: str, l2p: dict[int, int]) -> str:
+    """Rewrite ``MEASURE q[L], c[k]`` so that L → l2p[L]."""
+    def _sub(m: re.Match[str]) -> str:
+        lq = int(m.group(1))
+        pq = l2p.get(lq, lq)
+        return f"q[{pq}]"
+    return _QREG_RE.sub(_sub, line)
 
 
 def _estimate_circuit_fidelity_from_lines(
