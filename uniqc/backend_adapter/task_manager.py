@@ -1009,6 +1009,7 @@ def submit_batch(
     cloud_compile: int = 1,
     backend_name: str | None = None,
     chip_id: str | None = None,
+    native_batch: bool = True,
     **kwargs: Any,
 ) -> list[str]:
     """Submit multiple circuits as a batch to a quantum backend.
@@ -1025,6 +1026,13 @@ def submit_batch(
         backend_name: OriginQ chip name (optional when ``backend`` already
             encodes the chip).
         chip_id: Quafu / IBM chip ID.
+        native_batch: When ``True`` (default), backends that natively support
+            grouped submission (OriginQ ``run_instruction``, IBM Sampler) pack
+            all circuits into a single cloud job — returning a one-element
+            list ``[batch_task_id]`` and only one queue position.
+            When ``False``, each circuit is submitted as a separate job and
+            one task ID per circuit is returned (legacy behaviour useful for
+            independently retrying or cancelling individual circuits).
         **kwargs: Additional backend-specific parameters.
             - For Quafu: chip_id, auto_mapping, group_name
             - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize
@@ -1052,6 +1060,7 @@ def submit_batch(
         kwargs.setdefault("chip_id", chip_id)
     kwargs.setdefault("circuit_optimize", cloud_compile > 0)
     kwargs["cloud_compile"] = cloud_compile
+    kwargs["native_batch"] = native_batch
 
     # Normalise options
     if options is not None:
@@ -1064,6 +1073,7 @@ def submit_batch(
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
     if backend == "dummy" or backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
+        kwargs.pop("native_batch", None)
         return _submit_batch_dummy(circuits, backend, shots=shots,
                                    local_compile=local_compile, **kwargs)
 
@@ -1339,6 +1349,10 @@ def _wrap_as_unified_result(
     (``{"00": 512, "11": 488}``) or a wrapped form
     (``{"result": {"00": 512, ...}, ...}``). This helper normalizes both
     and preserves the original payload as ``raw_result``.
+
+    For native batch jobs (one cloud task ID covering many circuits) the
+    adapter returns ``result`` as a ``list[dict]`` — one counts dict per
+    circuit. In that case use :func:`_wrap_as_unified_result_list`.
     """
     if isinstance(raw, UnifiedResult):
         return raw
@@ -1367,12 +1381,39 @@ def _wrap_as_unified_result(
     return result
 
 
+def _wrap_as_unified_result_list(
+    raw: Any,
+    task_id: str,
+    backend: str | None,
+    shots: int | None = None,
+) -> list[UnifiedResult]:
+    """Wrap a batch adapter result into a list of :class:`UnifiedResult`.
+
+    Accepts:
+      * ``list[dict[str, int]]`` — one counts dict per circuit
+      * ``dict`` with ``"result": list[dict]`` wrapper
+    """
+    if isinstance(raw, dict) and isinstance(raw.get("result"), list):
+        per_circuit = raw["result"]
+    elif isinstance(raw, list):
+        per_circuit = raw
+    else:
+        # Fall back to single-result wrapping in a list of length one.
+        return [_wrap_as_unified_result(raw, task_id, backend, shots)]
+
+    out: list[UnifiedResult] = []
+    for idx, counts in enumerate(per_circuit):
+        sub_id = f"{task_id}#{idx}"
+        out.append(_wrap_as_unified_result(counts, sub_id, backend, shots))
+    return out
+
+
 def wait_for_result(
     task_id: str,
     timeout: float = 300.0,
     poll_interval: float = 5.0,
     raise_on_failure: bool = True,
-) -> UnifiedResult | None:
+) -> UnifiedResult | list[UnifiedResult] | None:
     """Wait for a task to complete and return its result.
 
     This function polls the task status until it completes, fails, or
@@ -1387,11 +1428,19 @@ def wait_for_result(
         raise_on_failure: If True, raises TaskFailedError on task failure.
 
     Returns:
-        A :class:`UnifiedResult` on success, or ``None`` if the task failed
-        and ``raise_on_failure=False``. The returned object is dict-like
-        (``result["00"]``, ``len(result)``, iteration, equality with a plain
-        counts dict all work). Use :meth:`UnifiedResult.raw` to access the
-        original platform-specific payload.
+        Single-circuit submissions return a :class:`UnifiedResult`.
+
+        Native batch submissions (one cloud task ID covering many circuits,
+        as produced by :func:`submit_batch` with ``native_batch=True``)
+        return a ``list[UnifiedResult]`` — one entry per circuit, in the
+        order they were submitted.
+
+        Returns ``None`` if the task failed and ``raise_on_failure=False``.
+
+        The :class:`UnifiedResult` object is dict-like (``result["00"]``,
+        ``len(result)``, iteration, equality with a plain counts dict all
+        work). Use :meth:`UnifiedResult.raw` to access the original
+        platform-specific payload.
 
     Raises:
         TaskTimeoutError: If the timeout is reached before completion.
@@ -1407,8 +1456,26 @@ def wait_for_result(
         512
         >>> result.raw()                # original adapter payload
         {'result': {'00': 512, '11': 488}, ...}
+
+        Native batch result:
+
+        >>> task_ids = submit_batch([c1, c2, c3], backend='originq:WK_C180')
+        >>> results = wait_for_result(task_ids[0])
+        >>> for r in results:
+        ...     print(r.counts)
     """
     start_time = time.time()
+
+    def _wrap(raw: Any, backend: str | None, shots: int | None,
+              metadata: dict[str, Any] | None) -> UnifiedResult | list[UnifiedResult]:
+        is_batch = bool(metadata and metadata.get("batch"))
+        if is_batch and isinstance(raw, list):
+            return _wrap_as_unified_result_list(
+                raw, task_id=task_id, backend=backend, shots=shots,
+            )
+        return _wrap_as_unified_result(
+            raw, task_id=task_id, backend=backend, shots=shots,
+        )
 
     while True:
         # Query current status (backend auto-resolved from cache by task_id)
@@ -1417,12 +1484,8 @@ def wait_for_result(
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
-            return _wrap_as_unified_result(
-                task_info.result,
-                task_id=task_id,
-                backend=task_info.backend,
-                shots=task_info.shots,
-            )
+            return _wrap(task_info.result, task_info.backend,
+                         task_info.shots, task_info.metadata)
 
         # Check if failed
         if task_info.status == TaskStatus.FAILED:
@@ -1455,11 +1518,8 @@ def wait_for_result(
                         backend=backend,
                     )
                 if final_info.get("status") == TASK_STATUS_SUCCESS:
-                    return _wrap_as_unified_result(
-                        final_info.get("result"),
-                        task_id=task_id,
-                        backend=backend,
-                    )
+                    return _wrap(final_info.get("result"), backend,
+                                 task_info.shots, task_info.metadata)
 
             raise TaskTimeoutError(
                 f"Timeout waiting for task '{task_id}' to complete.",
@@ -1539,7 +1599,7 @@ class TaskManager:
         timeout: float = 300.0,
         poll_interval: float = 5.0,
         raise_on_failure: bool = True,
-    ) -> UnifiedResult | None:
+    ) -> UnifiedResult | list[UnifiedResult] | None:
         """Wait for a task to complete. See :func:`wait_for_result`."""
         return wait_for_result(
             task_id,

@@ -399,3 +399,175 @@ class TestOriginQAdapterUnit:
         assert chip.two_qubit_data[0].qubit_v == 1
         # Fidelity was available even without u/v accessors
         assert chip.two_qubit_data[0].gates[0].fidelity == 0.85
+
+
+# ---------------------------------------------------------------------------
+# Native batch submission unit tests (mock-based)
+# ---------------------------------------------------------------------------
+
+
+class TestOriginQNativeBatch:
+    """Unit tests for OriginQ native batch submission via run_instruction()."""
+
+    def _make_adapter(self, mock_backend, batch_size_qubits: int = 2):
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = type("S", (), {"backend": lambda self, name: mock_backend})()
+        # _create_options needs a callable QCloudOptions class.
+
+        class _Opt:
+            def __init__(self):
+                self.amend = False
+                self.mapping = False
+                self.optimization = True
+
+            def set_amend(self, v): self.amend = v
+            def set_mapping(self, v): self.mapping = v
+            def set_optimization(self, v): self.optimization = v
+
+        adapter._QCloudOptions = _Opt
+        adapter._QCloudJob = None
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._convert_originir = None
+        adapter._last_backend_name = "WK_C180"
+        adapter._last_n_qubits = batch_size_qubits
+        adapter._canonical_backend_cache = {"WK_C180": "WK_C180"}
+        adapter._batch_job_sizes = {}
+        return adapter
+
+    def test_native_batch_uses_run_list_and_returns_single_id(self, monkeypatch):
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
+
+        captured = {}
+
+        class FakeJob:
+            def job_id(self): return "BATCH-JOB-ID-1"
+
+        class FakeBackend:
+            def chip_info(self):
+                return type("CI", (), {"qubits_num": lambda self: 2})()
+
+            def run(self, progs, shots, options):
+                # pyqpanda3 native batch overload: list[QProg], shots, options
+                captured["progs"] = progs
+                captured["shots"] = shots
+                captured["options"] = options
+                return FakeJob()
+
+            def run_instruction(self, *args, **kwargs):
+                raise AssertionError("Native batch must not use run_instruction")
+
+        adapter = self._make_adapter(FakeBackend())
+
+        # Fake QProg sentinel
+        class FakeQProg:
+            def __init__(self, ir): self.ir = ir
+
+        adapter.translate_circuit = lambda ir: FakeQProg(ir)
+        adapter._validate_backend = lambda name: None
+        adapter._ensure_imports = lambda: None
+
+        circuits = ["c0", "c1", "c2"]
+        ids = adapter.submit_batch(circuits, shots=2048, backend_name="WK_C180")
+
+        assert ids == ["BATCH-JOB-ID-1"]
+        assert len(captured["progs"]) == 3
+        assert all(isinstance(p, FakeQProg) for p in captured["progs"])
+        assert [p.ir for p in captured["progs"]] == circuits
+        assert captured["shots"] == 2048
+        assert adapter._batch_job_sizes["BATCH-JOB-ID-1"] == (3, 2048)
+
+    def test_native_batch_disabled_falls_back_to_per_circuit_run(self):
+        class FakeJob:
+            _next = 0
+            def job_id(self):
+                FakeJob._next += 1
+                return f"JOB-{FakeJob._next}"
+
+        run_call_args: list = []
+
+        class FakeBackend:
+            def chip_info(self):
+                return type("CI", (), {"qubits_num": lambda self: 2})()
+            def run(self, *args, **kwargs):
+                run_call_args.append((args, kwargs))
+                return FakeJob()
+            def run_instruction(self, *a, **kw):
+                raise AssertionError("Should not call run_instruction")
+
+        adapter = self._make_adapter(FakeBackend())
+        adapter.translate_circuit = lambda ir: object()
+        adapter._validate_backend = lambda name: None
+        adapter._ensure_imports = lambda: None
+
+        ids = adapter.submit_batch(
+            ["c0", "c1", "c2"], shots=100, native_batch=False,
+            backend_name="WK_C180",
+        )
+        assert len(ids) == 3
+        # Three calls, each a single QProg (not a list)
+        assert len(run_call_args) == 3
+        for args, kwargs in run_call_args:
+            first = args[0]
+            assert not isinstance(first, list), "per-circuit fallback must pass single QProg"
+        # Per-circuit submissions must not register batch sizing.
+        assert adapter._batch_job_sizes == {}
+
+    def test_native_batch_single_circuit_falls_back_to_run(self):
+        run_calls: list = []
+
+        class FakeJob:
+            def job_id(self): return "SINGLE-1"
+
+        class FakeBackend:
+            def chip_info(self):
+                return type("CI", (), {"qubits_num": lambda self: 2})()
+            def run(self, *args, **kwargs):
+                run_calls.append((args, kwargs))
+                return FakeJob()
+            def run_instruction(self, *a, **kw):
+                raise AssertionError("Single-circuit batch should not call run_instruction")
+
+        adapter = self._make_adapter(FakeBackend())
+        adapter.translate_circuit = lambda ir: object()
+        adapter._validate_backend = lambda name: None
+        adapter._ensure_imports = lambda: None
+
+        ids = adapter.submit_batch(["only"], shots=10, backend_name="WK_C180")
+        assert ids == ["SINGLE-1"]
+        assert len(run_calls) == 1
+        first_arg = run_calls[0][0][0]
+        assert not isinstance(first_arg, list)
+
+
+class TestNativeBatchHighLevel:
+    """Tests for the public submit_batch / wait_for_result batch contract."""
+
+    def test_wrap_batch_result_list(self):
+        from uniqc.backend_adapter.task_manager import _wrap_as_unified_result_list
+
+        raw = [{"00": 100, "11": 100}, {"01": 200}]
+        results = _wrap_as_unified_result_list(
+            raw, task_id="batch-1", backend="originq:WK_C180", shots=200,
+        )
+        assert isinstance(results, list)
+        assert len(results) == 2
+        assert results[0].counts == {"00": 100, "11": 100}
+        assert results[0].task_id == "batch-1#0"
+        assert results[1].counts == {"01": 200}
+        assert results[1].task_id == "batch-1#1"
+        assert results[0].platform == "originq"
+
+    def test_wrap_batch_result_handles_dict_wrapper(self):
+        from uniqc.backend_adapter.task_manager import _wrap_as_unified_result_list
+
+        raw = {"result": [{"0": 50}, {"1": 50}], "status": "success"}
+        results = _wrap_as_unified_result_list(
+            raw, task_id="b", backend="ibm", shots=50,
+        )
+        assert len(results) == 2
+        assert results[0].counts == {"0": 50}
+        assert results[1].counts == {"1": 50}

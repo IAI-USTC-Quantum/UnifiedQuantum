@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Native batch submission for OriginQ and IBM** (`uniqc/backend_adapter/task/adapters/originq_adapter.py`, `qiskit_adapter.py`, `uniqc/backend_adapter/task_manager.py`, `uniqc/backend_adapter/backend.py`):
+  `submit_batch(circuits, ..., native_batch=True)` (default) now packs all
+  circuits into a single cloud job — one queue position, one task ID per
+  batch — by routing through pyqpanda3's
+  `QCloudBackend.run(list[QProg], shots, options)` overload for OriginQ
+  and through qiskit-runtime's native `Sampler.run([circuits])` for IBM.
+  `wait_for_result(batch_id)` returns a `list[UnifiedResult]` for native
+  batches, with each child `task_id` formatted as `"{batch_id}#{idx}"`
+  (preserves submission order). Pass `native_batch=False` to fall back to
+  one cloud job per circuit (legacy behaviour). Live-verified on WK_C180
+  for batches of 3 circuits, and end-to-end through `wait_for_result`.
+  This dramatically reduces queueing time for high-throughput workflows
+  like XEB and noise characterization.
+
 ## [0.0.11.post1] - 2026-05-07
 
 ### Fixed

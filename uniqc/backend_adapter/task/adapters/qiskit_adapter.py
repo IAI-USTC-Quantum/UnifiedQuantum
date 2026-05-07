@@ -83,6 +83,8 @@ class QiskitAdapter(QuantumAdapter):
             channel="ibm_quantum_platform",
             token=self._api_token,
         )
+        # Track batch jobs so query() can decide between scalar/list result.
+        self._batch_job_sizes: dict[str, int] = {}
 
     def _setup_proxy(self, proxy: dict[str, str] | str | None) -> None:
         """Configure proxy settings for Qiskit/IBM provider.
@@ -167,19 +169,41 @@ class QiskitAdapter(QuantumAdapter):
             task_name=task_name,
         )
 
-    def submit_batch(self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, **kwargs: Any) -> list[str]:
+    def submit_batch(self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, native_batch: bool = True, **kwargs: Any) -> list[str]:
         """Submit multiple circuits as a batch.
 
-        IBM executes all circuits in a single job, so this returns a single-element
-        list containing that job's ID. The batch result is retrieved via that ID.
+        IBM Quantum (qiskit-runtime ``Sampler``) natively supports running a
+        list of circuits inside a single job, which spends only one position
+        in the queue. With ``native_batch=True`` (default), this returns a
+        single-element list containing that one job ID; ``query()`` /
+        ``wait_for_result()`` will then surface the per-circuit count
+        distributions as a list.
+
+        With ``native_batch=False``, each circuit is submitted as its own
+        job (one ID per circuit) — useful when downstream code wants
+        individually addressable task IDs.
 
         Returns:
-            list[str]: Single-element list with the IBM job ID.
+            list[str]: ``[batch_job_id]`` for native batch, or one job ID per
+            circuit otherwise.
         """
         chip_id: str | None = kwargs.get("chip_id")
         auto_mapping: Any = kwargs.get("auto_mapping", False)
         circuit_optimize: bool = kwargs.get("circuit_optimize", True)
         task_name: str | None = kwargs.get("task_name")
+
+        if not native_batch:
+            return [
+                self._submit_impl(
+                    circuits=[c],
+                    chip_id=chip_id,
+                    shots=shots,
+                    auto_mapping=auto_mapping,
+                    circuit_optimize=circuit_optimize,
+                    task_name=task_name,
+                )
+                for c in circuits
+            ]
 
         job_id = self._submit_impl(
             circuits=circuits,
@@ -189,6 +213,8 @@ class QiskitAdapter(QuantumAdapter):
             circuit_optimize=circuit_optimize,
             task_name=task_name,
         )
+        if len(circuits) > 1:
+            self._batch_job_sizes[job_id] = len(circuits)
         return [job_id]
 
     def _submit_impl(
@@ -289,7 +315,11 @@ class QiskitAdapter(QuantumAdapter):
 
         return {
             "status": TASK_STATUS_SUCCESS,
-            "result": results[0] if results else {},
+            "result": (
+                results
+                if (self._batch_job_sizes.get(taskid, 1) > 1 or len(results) > 1)
+                else (results[0] if results else {})
+            ),
             "time": job.creation_date.strftime("%a %d %b %Y, %I:%M%p") if hasattr(job, "creation_date") else "",
             "backend_name": job.backend().name if hasattr(job, "backend") else "",
         }
