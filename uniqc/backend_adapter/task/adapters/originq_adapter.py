@@ -32,6 +32,43 @@ def _avg(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
+# OriginQ's pyqpanda3 OriginIR parser does not currently accept ``SX`` /
+# ``SX.dagger`` tokens even though the platform's basis gate set advertises
+# SX. Rewrite them to the equivalent ``RX(±π/2)`` form before submission.
+#
+# SX            = RX( π/2)   (up to a global phase, irrelevant for sampling)
+# SX.dagger     = RX(-π/2)
+import re as _re
+_SX_PI_OVER_2 = "1.5707963267948966"
+_NEG_SX_PI_OVER_2 = "-1.5707963267948966"
+_SX_DAGGER_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*\.\s*dagger\s*$", _re.IGNORECASE)
+_SX_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*$", _re.IGNORECASE)
+
+
+def _rewrite_sx_to_rx(originir: str) -> str:
+    """Rewrite ``SX q[i]`` → ``RX q[i],(π/2)`` and ``SX q[i].dagger`` → ``RX q[i],(-π/2)``.
+
+    OriginQ's remote pyqpanda3 parser rejects the bare ``SX`` token even
+    though the platform basis gate set lists SX. Substituting with the
+    equivalent ``RX(±π/2)`` form keeps the transpiled circuit compatible
+    with the cloud parser.
+    """
+    if "SX" not in originir:
+        return originir
+    out_lines = []
+    for line in originir.splitlines():
+        m = _SX_DAGGER_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_NEG_SX_PI_OVER_2})")
+            continue
+        m = _SX_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_SX_PI_OVER_2})")
+            continue
+        out_lines.append(line)
+    return "\n".join(out_lines) + ("\n" if originir.endswith("\n") else "")
+
+
 class OriginQAdapter(QuantumAdapter):
     """Adapter for OriginQ Cloud (本源量子云) using pyqpanda3.
 
@@ -284,7 +321,7 @@ class OriginQAdapter(QuantumAdapter):
             QProg object for pyqpanda3.
         """
         self._ensure_imports()
-        return self._convert_originir(originir)
+        return self._convert_originir(_rewrite_sx_to_rx(originir))
 
     # -------------------------------------------------------------------------
     # Task submission

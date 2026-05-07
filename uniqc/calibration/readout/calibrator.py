@@ -47,9 +47,13 @@ class ReadoutCalibrator:
         adapter: QuantumAdapter,
         shots: int = 1000,
         cache_dir: str | pathlib.Path | None = None,
+        timeout: float = 300.0,
+        poll_interval: float = 2.0,
     ) -> None:
         self.adapter = adapter
         self.shots = shots
+        self.timeout = timeout
+        self.poll_interval = poll_interval
         if cache_dir is None:
             cache_dir = pathlib.Path.home() / ".uniqc" / "calibration_cache"
         self.cache_dir = pathlib.Path(cache_dir)
@@ -224,17 +228,19 @@ class ReadoutCalibrator:
         return self._submit_and_measure_2q(c, qubit_u, qubit_v)
 
     def _submit_and_measure(self, circuit: Circuit) -> dict[int, int]:
-        """Submit a 1-qubit circuit and return counts as {0: n0, 1: n1}.
+        """Submit a 1-qubit circuit and return counts as ``{0: n0, 1: n1}``.
 
-        Polls the cloud backend until the task completes (up to 300s timeout)
-        to ensure we get actual shot counts rather than a "running" status.
+        Polls the cloud backend until the task reaches a terminal status,
+        using ``self.timeout`` (default ``300.0`` s) as the maximum wait and
+        ``self.poll_interval`` (default ``2.0`` s) between polls. Both can be
+        overridden via the constructor's ``timeout=`` / ``poll_interval=``
+        keyword arguments.
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
 
-        # Poll until task completes (cloud backends are async by default)
-        timeout = 300.0
-        interval = 2.0
+        timeout = self.timeout
+        interval = self.poll_interval
         elapsed = 0.0
         while elapsed < timeout:
             result = self.adapter.query(task_id)
@@ -258,18 +264,20 @@ class ReadoutCalibrator:
     def _submit_and_measure_2q(
         self, circuit: Circuit, qubit_u: int, qubit_v: int
     ) -> dict[int, int]:
-        """Submit a 2-qubit circuit, return counts as {0..3: n}.
+        """Submit a 2-qubit circuit and return counts as ``{0..3: n}``.
 
-        Converts simulator outcome indices (0="00", 1="01", 2="10", 3="11")
-        to integers where qubit_u is the LSB.
-        Polls the cloud backend until the task completes (up to 300s timeout).
+        Converts simulator outcome indices (``0="00"``, ``1="01"``,
+        ``2="10"``, ``3="11"``) to integers where ``qubit_u`` is the LSB.
+        Polls the cloud backend until the task reaches a terminal status,
+        using ``self.timeout`` (default ``300.0`` s) and
+        ``self.poll_interval`` (default ``2.0`` s); both are configurable via
+        the constructor's ``timeout=`` / ``poll_interval=`` keyword arguments.
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)
 
-        # Poll until task completes
-        timeout = 300.0
-        interval = 2.0
+        timeout = self.timeout
+        interval = self.poll_interval
         elapsed = 0.0
         while elapsed < timeout:
             result = self.adapter.query(task_id)

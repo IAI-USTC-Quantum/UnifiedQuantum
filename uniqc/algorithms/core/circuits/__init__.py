@@ -2,6 +2,7 @@
 
 __all__ = [
     "qft_circuit",
+    "qpe_circuit",
     "deutsch_jozsa_circuit",
     "deutsch_jozsa_oracle",
     "thermal_state_circuit",
@@ -20,6 +21,7 @@ __all__ = [
 ]
 
 from .qft import qft_circuit
+from .qpe import qpe_circuit
 from .deutsch_jozsa import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 from .thermal_state import thermal_state_circuit
 from .dicke_state import dicke_state_circuit

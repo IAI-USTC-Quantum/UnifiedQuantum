@@ -68,6 +68,20 @@ def basis_rotation_measurement(
     """
     n_qubits = circuit.max_qubit + 1
 
+    # Guard: this implementation injects basis-rotation gates immediately
+    # before existing MEASURE instructions in the circuit's QASM. If the
+    # caller has not already added MEASURE instructions, no rotations are
+    # applied and the result will silently fall back to the Z-basis
+    # distribution — which is **wrong** for X/Y measurements. Catch that
+    # here so users get an actionable error instead of bad numbers.
+    if not getattr(circuit, "measure_list", None):
+        raise ValueError(
+            "basis_rotation_measurement requires the circuit to already contain "
+            "MEASURE instructions (e.g. `circuit.measure(*qubits)`); "
+            "without them, basis rotations cannot be injected and the "
+            "returned distribution would silently be wrong for X/Y bases."
+        )
+
     if qubits is None:
         qubits = list(range(n_qubits))
     else:

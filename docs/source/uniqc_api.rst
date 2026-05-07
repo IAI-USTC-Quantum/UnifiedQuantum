@@ -21,3 +21,10 @@ UnifiedQuantum 公开 API 的完整参考文档。
 
    api/uniqc/index
 
+.. note::
+
+   ``api/uniqc/index`` 是 ``sphinx-autoapi`` 在 build 时根据 ``uniqc/`` 源码
+   自动生成的产物，**不在 git 仓库中**。在本地执行 ``sphinx-build`` 之前，请
+   先 ``pip install unified-quantum[docs]``（包含 ``sphinx-autoapi``）。否则
+   该 toctree 节点会出现 "document isn't included in any toctree" 警告。
+

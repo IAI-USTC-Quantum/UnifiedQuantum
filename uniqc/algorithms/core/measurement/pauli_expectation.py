@@ -105,14 +105,93 @@ def _shots_expectation(circuit: Circuit, pauli_string: str, shots: int) -> float
     return float(exp_val)
 
 
+def _normalize_pauli_string(
+    pauli_spec: Union[str, List[tuple]],
+    n_qubits: int,
+) -> str:
+    """Normalize the various supported Pauli-string formats to compact form.
+
+    Accepted inputs:
+
+    - **Compact string** (``len == n_qubits``): ``"ZIZ"``, ``"XYZ"``, ``"IZI"`` —
+      ``pauli_spec[i]`` is the operator on qubit ``i`` (left-to-right).
+    - **Indexed string**: ``"Z0Z1"``, ``"X0Y2"`` — operator-index pairs; any
+      qubit not listed is treated as identity.  Indices may appear in any
+      order but must be in ``[0, n_qubits)``.
+    - **List of tuples**: ``[("Z", 0), ("Z", 1)]`` — same semantics as the
+      indexed-string form.
+
+    Returns the compact-string representation (length exactly ``n_qubits``,
+    upper-cased, characters in ``"IXYZ"``).
+
+    Raises:
+        ValueError: If ``pauli_spec`` is malformed, contains invalid Pauli
+            characters, or addresses qubit indices outside ``[0, n_qubits)``.
+    """
+    import re as _re
+
+    # Form 3: list[tuple[str, int]]
+    if isinstance(pauli_spec, list):
+        out = ["I"] * n_qubits
+        for item in pauli_spec:
+            if not (isinstance(item, tuple) and len(item) == 2):
+                raise ValueError(
+                    "pauli_string list entries must be (Pauli, qubit) tuples, "
+                    f"got: {item!r}"
+                )
+            op, idx = item
+            op = str(op).upper()
+            if op not in ("I", "X", "Y", "Z"):
+                raise ValueError(f"pauli_string contains invalid operator: {op!r}")
+            if not isinstance(idx, int) or idx < 0 or idx >= n_qubits:
+                raise ValueError(
+                    f"pauli_string qubit index out of range [0, {n_qubits}): {idx!r}"
+                )
+            out[idx] = op
+        return "".join(out)
+
+    if not isinstance(pauli_spec, str):
+        raise ValueError(
+            f"pauli_string must be a str or list[(op, qubit)], got: {type(pauli_spec).__name__}"
+        )
+
+    upper = pauli_spec.upper().replace(" ", "")
+
+    # Form 2: indexed string like "Z0Z1" / "X0Y2"
+    if _re.fullmatch(r"([IXYZ]\d+)+", upper):
+        out = ["I"] * n_qubits
+        for op, idx_str in _re.findall(r"([IXYZ])(\d+)", upper):
+            idx = int(idx_str)
+            if idx < 0 or idx >= n_qubits:
+                raise ValueError(
+                    f"pauli_string qubit index out of range [0, {n_qubits}): {idx}"
+                )
+            out[idx] = op
+        return "".join(out)
+
+    # Form 1: compact string
+    if len(upper) != n_qubits:
+        raise ValueError(
+            f"pauli_string length ({len(upper)}) must match circuit n_qubits "
+            f"({n_qubits}), or use indexed form like 'Z0Z1' / [('Z', 0), ('Z', 1)]"
+        )
+    for ch in upper:
+        if ch not in ("I", "X", "Y", "Z"):
+            raise ValueError(
+                f"pauli_string must contain only I/X/Y/Z, got: {pauli_spec!r}"
+            )
+    return upper
+
+
 def pauli_expectation(
     circuit: Circuit,
-    pauli_string: str,
+    pauli_string: Union[str, List[tuple]],
     shots: Optional[int] = None,
 ) -> float:
     """Measure the expectation value of a Pauli string on a circuit.
 
-    For each qubit i, the measurement basis is determined by ``pauli_string[i]``:
+    For each qubit i, the measurement basis is determined by the operator
+    assigned to that qubit:
 
     - ``'I'``: trace out (identity, contributes trivially)
     - ``'Z'``: measure in the computational (Z) basis — no rotation needed
@@ -126,8 +205,15 @@ def pauli_expectation(
     Args:
         circuit: Quantum circuit. Must contain only gates supported by
             ``QASM_Simulator`` and end with measurement instructions.
-        pauli_string: Case-insensitive Pauli string (e.g. ``"XYZ"``, ``"IZI"``).
-            Characters must be ``I``, ``X``, ``Y``, or ``Z``.
+        pauli_string: Pauli string in any of three accepted forms (case-
+            insensitive):
+
+            - **Compact** (length == n_qubits): ``"XYZ"``, ``"IZI"``.
+            - **Indexed** (``"Z0Z1"``): operator-index pairs; any qubit not
+              listed is identity. Matches the convention of
+              :func:`uniqc.algorithms.core.ansatz.qaoa_ansatz.cost_hamiltonian`.
+            - **Tuple list**: ``[("Z", 0), ("Z", 1)]`` — same semantics as
+              the indexed form.
         shots: Number of measurement shots. ``None`` uses statevector mode
             for the exact analytical value.
 
@@ -135,8 +221,8 @@ def pauli_expectation(
         Expectation value ⟨psi|P|psi⟩ as a float in the interval ``[-1, 1]``.
 
     Raises:
-        ValueError: ``pauli_string`` contains invalid characters or its length
-            does not match the number of qubits in ``circuit``.
+        ValueError: ``pauli_string`` is malformed, contains invalid characters,
+            or its length / qubit indices do not fit the circuit.
         ValueError: ``shots`` is not a positive integer.
 
     Example:
@@ -146,33 +232,22 @@ def pauli_expectation(
         >>> c.h(0)
         >>> c.cx(0, 1)          # Bell state (|00⟩+|11⟩)/√2
         >>> c.measure(0, 1)
-        >>> pauli_expectation(c, "ZZ", shots=None)   # exact: 1.0
+        >>> pauli_expectation(c, "ZZ")               # compact form
         1.0
-        >>> abs(pauli_expectation(c, "ZZ", shots=10000) - 1.0) < 0.1
-        True
+        >>> pauli_expectation(c, "Z0Z1")             # indexed form
+        1.0
+        >>> pauli_expectation(c, [("Z", 0), ("Z", 1)])  # tuple-list form
+        1.0
     """
-    # Validate pauli_string
-    pauli_upper = pauli_string.upper()
     n_qubits = circuit.max_qubit + 1
-
-    if len(pauli_upper) != n_qubits:
-        raise ValueError(
-            f"pauli_string length ({len(pauli_string)}) must match "
-            f"circuit n_qubits ({n_qubits})"
-        )
-
-    for ch in pauli_upper:
-        if ch not in ('I', 'X', 'Y', 'Z'):
-            raise ValueError(
-                f"pauli_string must contain only I/X/Y/Z, got: {pauli_string!r}"
-            )
+    pauli_upper = _normalize_pauli_string(pauli_string, n_qubits)
 
     if shots is not None:
         if not isinstance(shots, int) or shots <= 0:
             raise ValueError(f"shots must be a positive integer, got: {shots}")
-        return _shots_expectation(circuit, pauli_string, shots)
+        return _shots_expectation(circuit, pauli_upper, shots)
 
-    return _statevector_expectation(circuit, pauli_string)
+    return _statevector_expectation(circuit, pauli_upper)
 
 
 class PauliExpectation:
@@ -198,21 +273,11 @@ class PauliExpectation:
     def __init__(
         self,
         circuit: Circuit,
-        pauli_string: str,
+        pauli_string: Union[str, List[tuple]],
         shots: Optional[int] = None,
     ) -> None:
-        pauli_upper = pauli_string.upper()
         n_qubits = circuit.max_qubit + 1
-        if len(pauli_upper) != n_qubits:
-            raise ValueError(
-                f"pauli_string length ({len(pauli_string)}) must match "
-                f"circuit n_qubits ({n_qubits})"
-            )
-        for ch in pauli_upper:
-            if ch not in ("I", "X", "Y", "Z"):
-                raise ValueError(
-                    f"pauli_string must contain only I/X/Y/Z, got: {pauli_string!r}"
-                )
+        pauli_upper = _normalize_pauli_string(pauli_string, n_qubits)
         if shots is not None and (not isinstance(shots, int) or shots <= 0):
             raise ValueError(f"shots must be a positive integer, got: {shots}")
         self.circuit = circuit.copy()
