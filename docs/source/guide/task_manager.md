@@ -73,7 +73,7 @@ task_id = submit_task(
 
 # 等待结果（阻塞直到完成）
 result = wait_for_result(task_id, backend='originq', timeout=300)
-print(result['counts'])
+print(result.counts)
 ```
 
 ## 核心 API {#guide-task-manager-core-api}

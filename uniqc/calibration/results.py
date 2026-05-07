@@ -95,7 +95,9 @@ class ReadoutCalibrationResult(CalibrationResult):
         type: "readout_1q" or "readout_2q"
         qubit: int for 1q, tuple[int, int] for 2q
         confusion_matrix:
-            1q: [[p00, p10], [p01, p11]] where p_ij = P(measure=i | prep=j)
+            1q: 2x2 matrix where rows=measured, cols=prepared.
+                ``confusion_matrix[i][j] = P(measure=i | prep=j)``, so the
+                diagonal is ``[P(0|0), P(1|1)]``.
             2q: 4x4 matrix where rows=measured, cols=prepared (|00⟩,|01⟩,|10⟩,|11⟩)
         assignment_fidelity: average diagonal element = (p00+p11)/2 (1q) or avg(diagonal) (2q)
     """
@@ -155,7 +157,12 @@ def save_calibration_result(
         cache_dir = pathlib.Path(cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
     qid = _qubit_identifier(result)
-    ts = result.calibrated_at.replace(":", "").replace("-", "").replace("+00:00", "Z")
+    ts = (
+        result.calibrated_at
+        .replace("+00:00", "Z")
+        .replace(":", "")
+        .replace("-", "")
+    )
     filename = f"{type_prefix}_{result.backend}_{qid}_{ts}.json"
     path = cache_dir / filename
     with open(path, "w") as f:

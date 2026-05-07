@@ -89,8 +89,8 @@ print(f"Task ID: {task_id}")
 
 # 3. 等待结果
 result = wait_for_result(task_id, backend='originq', timeout=300)
-print(f"Counts: {result['counts']}")
-print(f"Probabilities: {result['probabilities']}")
+print(f"Counts: {result.counts}")
+print(f"Probabilities: {result.probabilities}")
 
 # 4. 查询任务状态
 info = query_task(task_id, backend='originq')
@@ -216,12 +216,12 @@ from uniqc import UnifiedResult
 result = wait_for_result(task_id, backend='originq')
 
 # 访问测量结果
-print(result['counts'])         # {'00': 512, '11': 488}
-print(result['probabilities'])  # {'00': 0.512, '11': 0.488}
+print(result.counts)         # {'00': 512, '11': 488}
+print(result.probabilities)  # {'00': 0.512, '11': 0.488}
 
 # 计算期望值
 from uniqc import calculate_expectation
-exp_zz = calculate_expectation(result['probabilities'], 'ZZ')
+exp_zz = calculate_expectation(result.probabilities, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
 

@@ -125,8 +125,13 @@ ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
 def _get_adapter(backend_name: str) -> CircuitAdapter:
     """Get the appropriate circuit adapter for a backend.
 
+    Accepts both bare platform names (``'originq'``) and ``'<platform>:<chip>'``
+    (``'originq:WK_C180'``) so that user code can pass through the backend
+    string used in :func:`submit_task` without losing information.
+
     Args:
-        backend_name: The name of the backend.
+        backend_name: The platform name (e.g. ``'originq'``) or a
+            ``'<platform>:<chip>'`` string.
 
     Returns:
         CircuitAdapter instance for the backend.
@@ -134,10 +139,21 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
     Raises:
         BackendNotFoundError: If no adapter exists for the backend.
     """
-    if backend_name not in ADAPTER_MAP:
+    platform = backend_name.split(":", 1)[0] if ":" in backend_name else backend_name
+    if platform not in ADAPTER_MAP:
         available = ", ".join(ADAPTER_MAP.keys())
-        raise BackendNotFoundError(f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}")
-    return ADAPTER_MAP[backend_name]()
+        if ":" in backend_name:
+            hint = (
+                f" Did you mean `backend='{platform}', backend_name="
+                f"'{backend_name.split(':', 1)[1]}'`?"
+            )
+        else:
+            hint = ""
+        raise BackendNotFoundError(
+            f"No circuit adapter for backend '{backend_name}'. "
+            f"Available adapters: {available}.{hint}"
+        )
+    return ADAPTER_MAP[platform]()
 
 
 # -----------------------------------------------------------------------------
@@ -169,7 +185,7 @@ def dry_run_task(
         **kwargs: Additional backend-specific parameters.
             - For IBM: chip_id (required for full validation)
             - For Quafu: chip_id (required for full validation)
-            - For OriginQ: backend_name (e.g., 'origin:wuyuan:d5')
+            - For OriginQ: backend_name (e.g., 'WK_C180')
 
     Returns:
         DryRunResult indicating success or failure with details and warnings.
@@ -667,7 +683,7 @@ def submit_task(
             for the fields it defines.
         **kwargs: Additional backend-specific parameters.
             - For Quafu: chip_id, auto_mapping
-            - For OriginQ: backend_name (e.g., 'origin:wuyuan:d5'), circuit_optimize, measurement_amend
+            - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize, measurement_amend
             - For dummy: chip_characterization, noise_model, available_qubits, available_topology
 
     Returns:
@@ -685,10 +701,10 @@ def submit_task(
         >>> circuit = Circuit()
         >>> circuit.h(0)
         >>> circuit.measure(0)
-        >>> task_id = submit_task(circuit, backend='originq', shots=1000, backend_name='origin:wuyuan:d5')
+        >>> task_id = submit_task(circuit, backend='originq', shots=1000, backend_name='WK_C180')
         >>> # Local noisy simulation using chip characterization
         >>> from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
-        >>> chip = OriginQAdapter().get_chip_characterization("origin:wuyuan:d5")
+        >>> chip = OriginQAdapter().get_chip_characterization("WK_C180")
         >>> task_id = submit_task(circuit, backend='dummy', chip_characterization=chip)
     """
     import warnings
@@ -853,7 +869,7 @@ def submit_batch(
         options: Optional typed backend options. Same as in :func:`submit_task`.
         **kwargs: Additional backend-specific parameters.
             - For Quafu: chip_id, auto_mapping, group_name
-            - For OriginQ: backend_name (e.g., 'origin:wuyuan:d5'), circuit_optimize
+            - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize
             - For dummy: chip_characterization, noise_model, available_qubits
 
     Returns:

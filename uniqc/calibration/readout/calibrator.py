@@ -160,7 +160,7 @@ class ReadoutCalibrator:
             qubits: List of qubit indices.
 
         Returns:
-            Dict mapping qubit index → calibration result dict.
+            Dict mapping qubit index → :class:`ReadoutCalibrationResult`.
         """
         return {q: self.calibrate_1q(q) for q in qubits}
 
@@ -173,7 +173,7 @@ class ReadoutCalibrator:
             pairs: List of (qubit_u, qubit_v) tuples.
 
         Returns:
-            Dict mapping (u, v) → calibration result dict.
+            Dict mapping ``(u, v)`` → :class:`ReadoutCalibrationResult`.
         """
         return {(u, v): self.calibrate_2q(u, v) for u, v in pairs}
 
@@ -226,7 +226,7 @@ class ReadoutCalibrator:
     def _submit_and_measure(self, circuit: Circuit) -> dict[int, int]:
         """Submit a 1-qubit circuit and return counts as {0: n0, 1: n1}.
 
-        Polls the cloud backend until the task completes (up to 60s timeout)
+        Polls the cloud backend until the task completes (up to 300s timeout)
         to ensure we get actual shot counts rather than a "running" status.
         """
         originir = circuit.originir
@@ -262,7 +262,7 @@ class ReadoutCalibrator:
 
         Converts simulator outcome indices (0="00", 1="01", 2="10", 3="11")
         to integers where qubit_u is the LSB.
-        Polls the cloud backend until the task completes (up to 60s timeout).
+        Polls the cloud backend until the task completes (up to 300s timeout).
         """
         originir = circuit.originir
         task_id = self.adapter.submit(originir, shots=self.shots)

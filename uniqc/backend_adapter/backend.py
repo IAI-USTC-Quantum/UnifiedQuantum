@@ -613,7 +613,7 @@ class DummyBackend(QuantumBackend):
         task_id = backend.submit(circuit, shots=1000)
 
         # With explicit chip_id (fetches from OriginQ)
-        backend = get_backend("dummy", config={"chip_id": "origin:wuyuan:d5"})
+        backend = get_backend("dummy", config={"chip_id": "WK_C180"})
 
         # Noiseless (perfect simulator)
         backend = get_backend("dummy")
@@ -624,7 +624,7 @@ class DummyBackend(QuantumBackend):
             calibration data. The backend converts T1/T2, gate fidelities, and
             readout errors into realistic noise parameters automatically.
         chip_id:
-            OriginQ chip identifier (e.g. ``"origin:wuyuan:d5"``). When set,
+            OriginQ chip identifier (e.g. ``"WK_C180"``). When set,
             the backend fetches the chip characterization from OriginQ and
             uses it to configure noise. Cannot be used together with
             ``chip_characterization``.

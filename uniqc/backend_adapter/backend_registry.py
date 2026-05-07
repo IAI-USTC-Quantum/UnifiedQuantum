@@ -324,9 +324,9 @@ def _build_adapter(platform: Platform):
 
         return QuarkAdapter()
     elif platform == Platform.IBM:
-        from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+        from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 
-        return IBMAdapter()
+        return QiskitAdapter()
     elif platform == Platform.DUMMY:
         from uniqc.backend_adapter.task.adapters import DummyAdapter
 
