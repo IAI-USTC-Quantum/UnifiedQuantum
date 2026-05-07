@@ -26,6 +26,7 @@ def transpile_qasm(
     topology: List[Union[List[int], Tuple[int, int]]] = None,
     optimization_level: int = 1,
     basis_gates: Optional[List[str]] = None,
+    initial_layout: Optional[List[int]] = None,
 ) -> List[str]:
     """
     使用指定的拓扑、基本门和优化级别编译一组OPENQASM 2.0线路字符串。
@@ -84,7 +85,8 @@ def transpile_qasm(
             circuits,
             coupling_map=coupling_map,
             basis_gates=basis_gates,
-            optimization_level=optimization_level
+            optimization_level=optimization_level,
+            initial_layout=initial_layout,
         )
 
         output_qasm_strings = []

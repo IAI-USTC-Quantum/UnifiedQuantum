@@ -72,6 +72,50 @@ class ReadoutEM:
         # Cache of loaded M3Mitigator instances: (qubit_ident) → M3Mitigator
         self._mitigators: dict[str, Any] = {}
 
+    def apply(self, result: Any, measured_qubits: list[int] | None = None) -> Any:
+        """Apply readout mitigation to a :class:`UnifiedResult`.
+
+        Pipeline-style API: returns a new :class:`UnifiedResult` ready to be
+        consumed by the rest of uniqc. ``measured_qubits`` defaults to
+        ``list(range(width))`` inferred from the bitstring length.
+        """
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        if not isinstance(result, UnifiedResult):
+            raise TypeError(
+                "ReadoutEM.apply expects a UnifiedResult; "
+                f"got {type(result).__name__}."
+            )
+
+        if not result.counts:
+            return result
+
+        width = max(len(b) for b in result.counts.keys())
+        if measured_qubits is None:
+            measured_qubits = list(range(width))
+
+        counts_int = {int(b, 2): int(c) for b, c in result.counts.items()}
+        mitigated = self.mitigate_counts(counts_int, measured_qubits)
+
+        new_counts: dict[str, int] = {}
+        for outcome, value in mitigated.items():
+            new_counts[format(outcome, f"0{width}b")] = int(round(value))
+
+        total = sum(new_counts.values()) or 1
+        new_probs = {k: v / total for k, v in new_counts.items()}
+
+        return UnifiedResult(
+            counts=new_counts,
+            probabilities=new_probs,
+            shots=result.shots,
+            platform=result.platform,
+            task_id=result.task_id,
+            backend_name=result.backend_name,
+            execution_time=result.execution_time,
+            raw_result=result,
+            error_message=result.error_message,
+        )
+
     def mitigate_counts(
         self,
         counts: dict[int, int],

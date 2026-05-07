@@ -271,6 +271,17 @@ class DryRunResult:
         details: Human-readable description of what was checked and the outcome.
         warnings: Non-fatal warnings (e.g., no chip_id provided, partial validation).
         error: Error message if success is False.
+        error_kind: Coarse classification of ``error`` so callers can branch on
+            *why* the dry-run failed without parsing the message. One of:
+
+            - ``"unknown_backend"``  — backend identifier not recognised
+            - ``"sdk_missing"``      — required platform SDK / extra not installed
+            - ``"credential_missing"`` — auth token / config missing
+            - ``"circuit_invalid"``  — translation or basis-set check failed
+            - ``"adapter_init"``     — adapter constructor itself raised
+            - ``"unknown"``          — anything not yet classified
+
+            ``None`` when ``success`` is True.
         backend_name: The backend/chip ID used for this dry-run.
         circuit_qubits: Number of qubits in the circuit (extracted from OriginIR
             QINIT line, without making any API call).
@@ -286,6 +297,7 @@ class DryRunResult:
     details: str
     warnings: tuple[str, ...] = ()
     error: str | None = None
+    error_kind: str | None = None
     backend_name: str | None = None
     circuit_qubits: int | None = None
     supported_gates: tuple[str, ...] = ()

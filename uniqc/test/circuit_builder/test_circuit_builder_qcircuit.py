@@ -1080,14 +1080,15 @@ class TestMeasureEdgeCases:
     """Additional measure() edge case tests beyond the existing ones."""
 
     def test_measure_same_qubit_twice(self):
-        """Measuring the same qubit multiple times accumulates correctly."""
+        """Measuring the same qubit twice raises ValueError (D-U10)."""
         c = Circuit()
         c.h(0)
         c.measure(0)
-        c.measure(0)
-        # Same qubit measured twice: measure_list = [0, 0], cbit_num = 2
-        assert c.measure_list == [0, 0]
-        assert c.cbit_num == 2
+        with pytest.raises(ValueError, match="already measured"):
+            c.measure(0)
+        with pytest.raises(ValueError, match="already measured"):
+            c2 = Circuit()
+            c2.measure(0, 0)
 
     def test_measure_updates_cbit_num(self):
         """measure() correctly sets cbit_num to len(measure_list)."""

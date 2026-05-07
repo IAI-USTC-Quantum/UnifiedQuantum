@@ -85,6 +85,64 @@ class M3Mitigator:
             )
         return self._cal
 
+    def apply(self, result: Any) -> Any:
+        """Apply mitigation to a :class:`UnifiedResult` and return a new one.
+
+        This is the recommended pipeline-style API: call ``M3Mitigator(...).apply(result)``
+        and feed the returned object straight back into any uniqc workflow that
+        expects a :class:`UnifiedResult`.
+
+        Args:
+            result: A :class:`uniqc.backend_adapter.task.result_types.UnifiedResult`
+                produced by ``submit_task``/``wait_for_result``/``simulate``.
+
+        Returns:
+            A new ``UnifiedResult`` whose ``counts``/``probabilities`` are
+            mitigated. ``shots``, ``platform``, ``task_id`` and metadata are
+            preserved; the original is kept as ``raw_result``.
+        """
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        if not isinstance(result, UnifiedResult):
+            raise TypeError(
+                "M3Mitigator.apply expects a UnifiedResult; "
+                f"got {type(result).__name__}. Use mitigate_counts/mitigate_probabilities "
+                "for raw dict input."
+            )
+
+        # Convert string bitstrings → int and apply mitigation.
+        counts_int: dict[int, int] = {}
+        for bitstring, count in result.counts.items():
+            counts_int[int(bitstring, 2) if isinstance(bitstring, str) else int(bitstring)] = int(count)
+
+        mitigated_int = self.mitigate_counts(counts_int)
+
+        # Round to integer counts and convert back to bitstrings of the same width.
+        if result.counts:
+            width = max(len(b) for b in result.counts.keys())
+        else:
+            width = max(1, int(np.ceil(np.log2(max(1, len(mitigated_int))))))
+
+        new_counts: dict[str, int] = {}
+        for outcome, value in mitigated_int.items():
+            key = format(outcome, f"0{width}b")
+            new_counts[key] = int(round(value))
+
+        total = sum(new_counts.values()) or 1
+        new_probs = {k: v / total for k, v in new_counts.items()}
+
+        return UnifiedResult(
+            counts=new_counts,
+            probabilities=new_probs,
+            shots=result.shots,
+            platform=result.platform,
+            task_id=result.task_id,
+            backend_name=result.backend_name,
+            execution_time=result.execution_time,
+            raw_result=result,
+            error_message=result.error_message,
+        )
+
     def mitigate_counts(
         self, counts: dict[int, int]
     ) -> dict[int, float]:

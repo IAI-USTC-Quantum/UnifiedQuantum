@@ -423,76 +423,29 @@ def state_tomography(
     # which cancel out. For simplicity with floating point, we compute
     # using qutip which handles this correctly.
 
-    try:
-        import qutip as qt
+    # Pure-numpy reconstruction of ρ = (1/2^n) Σ_P <P> P.
+    # Build each n-qubit Pauli via Kronecker product. Tensor convention
+    # mirrors qutip/qiskit: qubit 0 is the LEAST significant bit of the
+    # row/column index, so we kron from qubit (n-1) down to qubit 0.
+    PAULI_MATS = {
+        "I": np.eye(2, dtype=complex),
+        "X": np.array([[0, 1], [1, 0]], dtype=complex),
+        "Y": np.array([[0, -1j], [1j, 0]], dtype=complex),
+        "Z": np.array([[1, 0], [0, -1]], dtype=complex),
+    }
 
-        # Use QuTiP for correct complex matrix construction
-        d = 2**n
-        rho = np.zeros((d, d), dtype=complex)
+    d = 2**n
+    rho = np.zeros((d, d), dtype=complex)
+    for p in pauli_strings:
+        exp = expectations[p]
+        op = PAULI_MATS[p[-1]]
+        for pi in reversed(p[:-1]):
+            op = np.kron(op, PAULI_MATS[pi])
+        rho = rho + exp * op
+    rho = rho / d
 
-        # Pauli matrices in QuTiP ordering: dimension 2, first qubit is leftmost
-        # Qubit 0 → most significant bit → index offset 2^(n-1-i)
-        PAMS = {
-            "I": qt.qeye(2),
-            "X": qt.sigmax(),
-            "Y": qt.sigmay(),
-            "Z": qt.sigmaz(),
-        }
-
-        for p in pauli_strings:
-            exp = expectations[p]
-            # Build the n-qubit Pauli operator by tensor product.
-            # Outcomes are LSB-first (qubit 0 = least significant bit of
-            # the integer index), and numpy/QuTiP tensor convention puts
-            # the first operand on the most-significant subsystem. So
-            # qt.tensor(A, B) = A_{MSB} ⊗ B_{LSB}: the Pauli for qubit
-            # n-1 must come first, down to qubit 0 last.
-            op = PAMS[p[-1]]
-            for pi in reversed(p[:-1]):
-                op = qt.tensor(op, PAMS[pi])
-            rho = rho + exp * op.full()
-
-        rho = rho / (2**n)
-
-        # Make numerically Hermitian
-        rho = (rho + rho.conj().T) / 2
-
-    except ImportError:
-        # Fallback: manual construction (only handles real matrices correctly)
-        d = 2**n
-        rho = np.zeros((d, d), dtype=complex)
-
-        # Build lookup: for each (a,b) pair, compute sum_P <P> * <a|P|b>
-        for a in range(d):
-            for b in range(d):
-                val = 0.0
-                for p in pauli_strings:
-                    exp = expectations[p]
-                    prod = 1.0 + 0.0j  # complex for uniform handling
-                    for i in range(n):
-                        # LSB-first: bit i of a/b is qubit i
-                        ai, bi = (a >> i) & 1, (b >> i) & 1
-                        pi = p[i]
-                        if pi == "I":
-                            prod *= 1 if ai == bi else 0
-                        elif pi == "Z":
-                            prod *= (1 if ai == 0 else -1) if ai == bi else 0
-                        elif pi == "X":
-                            prod *= 1 if ai != bi else 0
-                        elif pi == "Y":
-                            # Y = [[0,-i],[i,0]] in Z basis
-                            # <a|Y|b> = -i if (a,b)=(0,1), i if (a,b)=(1,0)
-                            if (ai, bi) == (0, 1):
-                                prod *= -1j
-                            elif (ai, bi) == (1, 0):
-                                prod *= 1j
-                            else:
-                                prod *= 0
-                    val += exp * prod
-                rho[a, b] = val / (2**n)
-
-        rho = (rho + rho.conj().T) / 2  # Hermitian-symmetrize
-
+    # Make numerically Hermitian.
+    rho = (rho + rho.conj().T) / 2
     return rho
 
 
@@ -500,18 +453,37 @@ def tomography_summary(
     rho: np.ndarray,
     label: str = "ρ",
     reference_state: Optional[np.ndarray] = None,
-) -> None:
-    """Print a human-readable summary of a density matrix tomography result.
+    *,
+    print_summary: bool = True,
+) -> dict:
+    """Compute a human-readable summary of a density matrix tomography result.
 
-    Shows eigenvalues, purity (:math:`\mathrm{Tr}(\rho^2)`), trace, and,
-    if ``reference_state`` is provided, the fidelity
-    :math:`F(\rho, \sigma) = (\mathrm{Tr} \sqrt{\sqrt{\rho}\,\sigma\sqrt{\rho}})^2`.
+    Returns a dict with the eigenvalues, purity (:math:`\\mathrm{Tr}(\\rho^2)`),
+    trace, and (when ``reference_state`` is provided) the fidelity
+    :math:`F(\\rho, \\sigma) = (\\mathrm{Tr} \\sqrt{\\sqrt{\\rho}\\,\\sigma\\sqrt{\\rho}})^2`.
+
+    Implementation is pure NumPy/SciPy (no qutip dependency).
 
     Args:
         rho: Density matrix from :func:`state_tomography`.
-        label: Label to print alongside the matrix (e.g. ``"ρ"``).
+        label: Label printed alongside the matrix (e.g. ``"ρ"``).
         reference_state: Optional reference density matrix for fidelity
-            computation. If ``None`` the fidelity is skipped.
+            computation. If ``None`` the fidelity entry is omitted.
+        print_summary: If ``True`` (default) also print the formatted summary
+            to stdout for interactive use.
+
+    Returns:
+        Dict with keys::
+
+            {
+                "label":       str,         # the label argument
+                "n_qubits":    int,
+                "eigenvalues": np.ndarray,  # real, sorted descending
+                "purity":      float,       # Tr(ρ²)
+                "trace":       float,       # Tr(ρ)
+                "is_pure":     bool,        # |purity-1| < 1e-4
+                "fidelity":    float | None # F(ρ, σ) if reference given
+            }
 
     Example:
         >>> from uniqc.circuit_builder import Circuit
@@ -521,42 +493,71 @@ def tomography_summary(
         >>> c = Circuit()
         >>> c.h(0)
         >>> c.cx(0, 1)
-        >>> c.measure(0, 1)
+        >>> c.measure(0); c.measure(1)
         >>> rho = state_tomography(c, shots=4096)
-        >>> tomography_summary(rho)   # doctest: +SKIP
+        >>> info = tomography_summary(rho)   # doctest: +SKIP
+        >>> info["purity"]                   # doctest: +SKIP
+        0.987
     """
-    import qutip as qt
-
     n = int(np.log2(rho.shape[0]))
-    qt_rho = qt.Qobj(rho, dims=[[2] * n, [2] * n])
 
-    # Eigenvalues
-    eigvals = qt_rho.eigenenergies()
+    # Eigenvalues via Hermitian eigensolver (rho is Hermitian-symmetrised in
+    # _reconstruct_density_matrix). Sort descending and clip tiny imaginary
+    # parts that arise from float noise.
+    eigvals = np.linalg.eigvalsh(rho)
     eigvals = np.sort(eigvals.real)[::-1]
 
-    print(f"{'=' * 50}")
-    print(f"State Tomography Summary  (n_qubits={n})")
-    print(f"{'=' * 50}")
-    print(f"\nEigenvalues (largest first):")
-    for i, ev in enumerate(eigvals):
-        print(f"  λ_{i} = {ev: .6f}")
-
-    # Purity
     purity = float(np.real(np.trace(rho @ rho)))
-    print(f"\nPurity  Tr(ρ²) = {purity:.6f}  "
-          f"({'pure' if abs(purity - 1.0) < 1e-4 else 'mixed'})")
+    trace = float(np.real(np.trace(rho)))
+    is_pure = abs(purity - 1.0) < 1e-4
 
-    # Trace
-    tr = float(np.real(np.trace(rho)))
-    print(f"Trace   Tr(ρ)   = {tr:.6f}")
-
-    # Fidelity with reference
+    fidelity: Optional[float] = None
     if reference_state is not None:
-        qt_ref = qt.Qobj(reference_state, dims=[[2] * n, [2] * n])
-        fid = qt.fidelity(qt_rho, qt_ref)
-        print(f"\nFidelity F(ρ, σ) = {fid:.6f}")
+        fidelity = _density_matrix_fidelity(rho, reference_state)
 
-    print(f"{'=' * 50}\n")
+    if print_summary:
+        print(f"{'=' * 50}")
+        print(f"State Tomography Summary  (label={label}, n_qubits={n})")
+        print(f"{'=' * 50}")
+        print(f"\nEigenvalues (largest first):")
+        for i, ev in enumerate(eigvals):
+            print(f"  λ_{i} = {ev: .6f}")
+        print(f"\nPurity  Tr(ρ²) = {purity:.6f}  "
+              f"({'pure' if is_pure else 'mixed'})")
+        print(f"Trace   Tr(ρ)   = {trace:.6f}")
+        if fidelity is not None:
+            print(f"\nFidelity F(ρ, σ) = {fidelity:.6f}")
+        print(f"{'=' * 50}\n")
+
+    return {
+        "label": label,
+        "n_qubits": n,
+        "eigenvalues": eigvals,
+        "purity": purity,
+        "trace": trace,
+        "is_pure": is_pure,
+        "fidelity": fidelity,
+    }
+
+
+def _density_matrix_fidelity(rho: np.ndarray, sigma: np.ndarray) -> float:
+    """Compute F(ρ, σ) = (Tr √(√ρ σ √ρ))² using numpy/scipy only.
+
+    Uses Hermitian eigendecomposition for the matrix square roots; safe
+    for small dimensions (typical tomography is ≤ a few qubits).
+    """
+    from scipy.linalg import sqrtm
+
+    # √ρ via eigendecomposition (numerically stabler than scipy.sqrtm
+    # on near-singular ρ that tomography often produces).
+    w, v = np.linalg.eigh(rho)
+    w_clipped = np.clip(w.real, 0.0, None)
+    sqrt_rho = (v * np.sqrt(w_clipped)) @ v.conj().T
+
+    inner = sqrt_rho @ sigma @ sqrt_rho
+    sqrt_inner = sqrtm(inner)
+    fid = float(np.real(np.trace(sqrt_inner)) ** 2)
+    return fid
 
 
 __all__ = ["state_tomography", "tomography_summary", "StateTomography",

@@ -31,11 +31,12 @@ python examples/measurement/state_tomography.py --n-shots 2000
 ```python
 from uniqc import state_tomography, tomography_summary
 
-# 执行层析
-results = state_tomography(circuit, qubits=[0, 1], shots=2000)
+# 执行层析（直接返回密度矩阵 ρ）
+rho = state_tomography(circuit, qubits=[0, 1], shots=2000)
 
-# 获取重建的密度矩阵
-rho = tomography_summary(results, n_qubits=2)
+# 计算并打印总结，同时拿到结构化字典（无 qutip 依赖，纯 numpy/scipy）
+info = tomography_summary(rho, label="ρ")
+# info["eigenvalues"] / info["purity"] / info["trace"] / info["fidelity"]
 ```
 
 ### 主要特性

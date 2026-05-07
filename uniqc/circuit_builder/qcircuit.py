@@ -702,15 +702,20 @@ class Circuit:
     def measure(self, *qubits: QubitInput) -> None:
         """Schedule qubits for measurement.
 
-        Appends the given qubits to the measurement list.  Multiple calls
-        accumulate measurements; classical bit indices are assigned in the
-        order qubits are added.
+        Each qubit may be measured **at most once** per circuit. Calling
+        ``measure(0)`` and then ``measure(0)`` again — or passing the same
+        qubit twice in a single call (``measure(0, 0)``) — raises
+        ``ValueError``. This guards against the common mistake of using
+        ``measure(0, 1)`` to measure two qubits when ``cbit`` is meant to be
+        implicit; use one ``measure(q)`` call per qubit instead, or pass
+        distinct qubit indices.
 
         Args:
-            *qubits: One or more qubits to measure - can be int, Qubit, or QRegSlice
+            *qubits: One or more qubits to measure — can be int, Qubit, or QRegSlice.
 
         Raises:
-            ValueError: Called inside an active CONTROL or DAGGER context block.
+            ValueError: Called inside an active CONTROL or DAGGER context
+                block, or any qubit would be measured more than once.
         """
         if self._active_controls:
             raise ValueError("measure() cannot be called inside a control() context block.")
@@ -724,6 +729,23 @@ class Circuit:
                 resolved_qubits.extend(resolved)
             else:
                 resolved_qubits.append(resolved)
+
+        # Reject duplicate measurements (within this call AND against any
+        # previously-recorded measurements). This catches `measure(0, 0)`
+        # and silent failures like `measure(0); measure(0)` that previously
+        # accumulated into the measurement list.
+        existing = set(self.measure_list or [])
+        seen: set[int] = set()
+        for q in resolved_qubits:
+            if q in seen or q in existing:
+                raise ValueError(
+                    f"Qubit {q} is already measured in this circuit. "
+                    f"Each qubit may be measured at most once. "
+                    f"Did you mean `c.measure({q}); c.measure({q + 1})` "
+                    f"instead of `c.measure({q}, {q})`?"
+                )
+            seen.add(q)
+
         self.record_qubit(resolved_qubits)
         if self.measure_list is None:
             self.measure_list = []

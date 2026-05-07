@@ -21,6 +21,7 @@ simulation
 submit_task
 task_manager
 algorithm_design
+compile_levels
 compiler_options_region
 pytorch
 ```

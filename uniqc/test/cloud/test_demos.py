@@ -27,7 +27,7 @@ def demo_2():
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
-    result = wait_for_result(task_id, backend='dummy', timeout=60)
+    result = wait_for_result(task_id, timeout=60)
 
     if result:
         print(f"Counts: {result.get('counts', {})}")
@@ -40,7 +40,7 @@ def demo_3():
 
     # Submit with dummy mode
     task_id = submit_task(circuit, backend='dummy', shots=1000)
-    result = wait_for_result(task_id, backend='dummy', timeout=60)
+    result = wait_for_result(task_id, timeout=60)
 
     if result:
         probs = result.get('probabilities', {})

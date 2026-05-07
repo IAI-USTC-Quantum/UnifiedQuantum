@@ -179,13 +179,17 @@ def dry_run_task(
 
     Args:
         circuit: The UnifiedQuantum Circuit to validate.
-        backend: The backend name (e.g., 'originq', 'quafu', 'quark', 'ibm',
-            'dummy', 'dummy:originq:WK_C180').
+        backend: The backend identifier. Accepts the same forms as
+            :func:`submit_task`, including ``'<platform>:<chip>'``
+            (e.g. ``'originq:WK_C180'``, ``'dummy:originq:WK_C180'``).
         shots: Number of measurement shots for validation.
         **kwargs: Additional backend-specific parameters.
             - For IBM: chip_id (required for full validation)
             - For Quafu: chip_id (required for full validation)
-            - For OriginQ: backend_name (e.g., 'WK_C180')
+            - For OriginQ: backend_name (e.g., 'WK_C180'). When ``backend``
+              already contains the chip suffix (``'originq:WK_C180'``) the
+              chip is extracted automatically and forwarded as
+              ``backend_name``.
 
     Returns:
         DryRunResult indicating success or failure with details and warnings.
@@ -206,26 +210,16 @@ def dry_run_task(
         critical bug. Please report it at the UnifiedQuantum issue tracker.
     """
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
-    from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
-    from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
-    from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-    from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
-    adapter_map: dict[str, type[QuantumAdapter]] = {
-        "originq": OriginQAdapter,
-        "quafu": QuafuAdapter,
-        "quark": QuarkAdapter,
-        "ibm": QiskitAdapter,
-        "dummy": DummyAdapter,
-    }
-
+    # Dummy backends still need their special init path because they pull
+    # chip_characterization / noise_model / available_qubits from kwargs.
     if backend == "dummy" or backend.startswith("dummy:"):
         try:
             from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
 
             adapter: QuantumAdapter = DummyAdapter(
                 **dummy_adapter_kwargs(
-                    dummy_backend,
+                    backend,
                     chip_characterization=kwargs.get("chip_characterization"),
                     noise_model=kwargs.get("noise_model"),
                     available_qubits=kwargs.get("available_qubits"),
@@ -237,34 +231,70 @@ def dry_run_task(
                 success=False,
                 details=f"Cannot initialize dummy adapter: {e}",
                 error=str(e),
+                error_kind="adapter_init",
                 backend_name="dummy",
             )
+        forwarded_kwargs = dict(kwargs)
     else:
-        if backend not in adapter_map:
+        # Reuse the same adapter resolver as submit_task so that
+        # 'originq:WK_C180' works in both APIs.
+        platform = backend.split(":", 1)[0] if ":" in backend else backend
+        chip = backend.split(":", 1)[1] if ":" in backend else None
+        try:
+            adapter = _get_adapter(backend)
+        except BackendNotFoundError as e:
             return DryRunResult(
                 success=False,
-                details=f"No adapter registered for backend '{backend}'.",
-                error=f"Unknown backend: {backend}",
-                warnings=("Known backends: originq, quafu, quark, ibm",),
+                details=str(e),
+                error=str(e),
+                error_kind="unknown_backend",
+                warnings=("Known backends: originq, quafu, quark, ibm, dummy",),
             )
-
-        try:
-            adapter = adapter_map[backend]()
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError) as e:
+            return DryRunResult(
+                success=False,
+                details=(
+                    f"Adapter for '{backend}' is not installed. "
+                    f"Install the matching extra (e.g. "
+                    f"`pip install \"unified-quantum[{platform}]\"`)."
+                ),
+                error=str(e),
+                error_kind="sdk_missing",
+            )
+        except Exception as e:  # noqa: BLE001
             return DryRunResult(
                 success=False,
                 details=f"Failed to initialize adapter for '{backend}': {e}",
                 error=str(e),
+                error_kind="adapter_init",
             )
+
+        # If the user passed 'originq:WK_C180' we forward the chip via
+        # backend_name kwarg so the adapter validates the right device.
+        forwarded_kwargs = dict(kwargs)
+        if chip is not None and "backend_name" not in forwarded_kwargs:
+            forwarded_kwargs["backend_name"] = chip
 
     originir = circuit.originir
     try:
-        return adapter.dry_run(originir, shots=shots, **kwargs)
+        return adapter.dry_run(originir, shots=shots, **forwarded_kwargs)
+    except (ImportError, ModuleNotFoundError) as e:
+        return DryRunResult(
+            success=False,
+            details=(
+                f"dry_run() needs an SDK that is not installed: {e}. "
+                f"Install the matching extra and retry."
+            ),
+            error=str(e),
+            error_kind="sdk_missing",
+            backend_name=getattr(adapter, "name", None),
+        )
     except Exception as e:
         return DryRunResult(
             success=False,
             details=f"dry_run() raised an unhandled exception: {e}",
             error=str(e),
+            error_kind="unknown",
             backend_name=getattr(adapter, "name", None),
         )
 
@@ -492,30 +522,31 @@ def _prepare_circuit_for_submission(
     backend: str,
     kwargs: dict[str, Any],
     *,
-    auto_compile: bool = True,
+    local_compile: int = 1,
 ) -> tuple[Circuit, dict[str, Any]]:
-    """Validate a circuit against ``backend`` and optionally compile it.
+    """Validate a circuit against ``backend`` and optionally compile it locally.
 
     Returns ``(circuit, metadata_extras)``. The returned circuit is either the
-    original (when it already satisfies the backend's gate set / topology) or
-    a freshly-compiled circuit produced by
-    :func:`uniqc.compile.compile_for_backend`.
+    original (when ``local_compile == 0`` or when it already satisfies the
+    backend's gate set / topology) or a freshly-compiled circuit produced by
+    :func:`uniqc.compile.compile_for_backend` at ``optimization_level=local_compile``.
 
-    Raises :class:`uniqc.exceptions.UnsupportedGateError` when validation fails
-    and the circuit cannot be auto-compiled (or auto-compilation also fails to
-    land in the basis set / topology).
+    Raises :class:`uniqc.exceptions.UnsupportedGateError` only when the circuit
+    is incompatible with the *target IR language* (e.g. ``RPhi`` → QASM2-only
+    platforms — there is no representation for it). All other validation
+    failures are surfaced as warnings; if ``local_compile > 0`` the circuit
+    is rewritten through qiskit transpile to satisfy them, otherwise it is
+    submitted as-is and the cloud platform is left to handle compilation.
 
-    Validation is split into two layers:
-
-    1. **Hard block** (never skippable): IR language compatibility — gates that
-       cannot be expressed in the target platform's submission format (e.g.
-       ``RPhi`` → QASM2-only platforms) are always rejected.
-    2. **Soft validation** (skippable): basis gate set, qubit count, topology.
-       Pass ``kwargs['skip_validation']=True`` to bypass these checks and let
-       the cloud platform handle them.
+    Parameters
+    ----------
+    local_compile : int
+        ``0`` skips local compilation entirely (no qiskit transpile pass).
+        ``1``-``3`` runs qiskit transpile at the corresponding optimization
+        level when basis-gate or topology validation fails. Higher values
+        cost more CPU time but generally yield shorter / higher-fidelity
+        circuits.
     """
-    skip_validation = kwargs.pop("skip_validation", False)
-
     if backend == "dummy" or backend.startswith("dummy:"):
         # Dummy backends accept anything; their dedicated path handles compilation.
         return circuit, {}
@@ -535,9 +566,6 @@ def _prepare_circuit_for_submission(
 
         raise UnsupportedGateError("; ".join(_lang_report.errors))
 
-    if skip_validation:
-        return circuit, {}
-
     # --- Soft validation: basis gates, qubit count, topology ---
     backend_info = _resolve_backend_info_for_validation(backend, kwargs)
     basis = list(resolve_basis_gates(backend, backend_info)) or None
@@ -554,6 +582,7 @@ def _prepare_circuit_for_submission(
     extras["gate_depth"] = report.gate_depth
     extras["used_gates"] = sorted(report.used_gates)
     extras["submit_language"] = language
+    extras["local_compile"] = local_compile
 
     if backend_info is not None and backend_info.extra.get("_uniqc_topology_stale"):
         extras["topology_stale"] = True
@@ -565,23 +594,35 @@ def _prepare_circuit_for_submission(
     if report.compatible:
         return circuit, extras
 
-    if not auto_compile or backend_info is None:
+    # Validation failed but local_compile=0 → submit as-is (cloud will compile).
+    if local_compile <= 0:
+        extras["validation_warnings"].append(
+            f"Circuit not in basis gates / topology for '{backend}', but "
+            f"local_compile=0; submitting untransformed and relying on cloud."
+        )
+        return circuit, extras
+
+    if backend_info is None:
         from uniqc.exceptions import UnsupportedGateError
 
         msg = "; ".join(report.errors) or "validation failed"
         raise UnsupportedGateError(
             f"Circuit is not compatible with backend '{backend}': {msg}. "
-            "Use skip_validation=True to bypass."
+            f"local_compile={local_compile} requested but no backend_info "
+            f"available to compile against."
         )
 
     # Try compiling and re-validate.
     try:
-        compiled = compile_for_backend(circuit, backend_info)
+        compiled = compile_for_backend(
+            circuit, backend_info, level=local_compile
+        )
     except Exception as exc:  # pragma: no cover - depends on optional qiskit
         from uniqc.exceptions import UnsupportedGateError
 
         raise UnsupportedGateError(
-            f"Circuit failed validation for '{backend}' and auto-compile errored: {exc}"
+            f"Circuit failed validation for '{backend}' and "
+            f"local_compile={local_compile} errored: {exc}"
         ) from exc
 
     post = compatibility_report(
@@ -657,57 +698,92 @@ def submit_task(
     shots: int = 1000,
     metadata: dict | None = None,
     options: BackendOptions | dict | None = None,
+    *,
+    local_compile: int = 1,
+    cloud_compile: int = 1,
+    backend_name: str | None = None,
+    chip_id: str | None = None,
     **kwargs: Any,
 ) -> str:
     """Submit a single circuit to a quantum backend.
 
-    This function converts the circuit to the backend's native format,
-    submits it, and caches the task information locally.
+    This function performs IR-language validation, optionally rewrites the
+    circuit through a local qiskit transpile pass, then ships the result to
+    the backend's native API.
 
     Args:
         circuit: The UnifiedQuantum Circuit to submit.
-        backend: The backend name (e.g., 'originq', 'quafu', 'ibm', 'dummy',
-            'dummy:originq:WK_C180').
+        backend: The backend name (e.g., ``'originq'``, ``'originq:WK_C180'``,
+            ``'quafu'``, ``'ibm'``, ``'dummy'``, ``'dummy:originq:WK_C180'``).
         shots: Number of measurement shots.
         metadata: Optional metadata to store with the task.
         options: Optional typed backend options. Accepts a
             :class:`BackendOptions` instance, a plain dict (treated as
             ``**kwargs``), or ``None`` for platform defaults.
-            Example::
+        local_compile: Local qiskit transpile pass strength.
 
-                from uniqc.backend_adapter.task.options import OriginQOptions
-                opts = OriginQOptions(circuit_optimize=False)
-                submit_task(circuit, "originq", options=opts)
+            - ``0`` — no local transpile. The circuit is shipped as-authored
+              (after IR-language validation). Use this when you have
+              hand-tuned the circuit or want to delegate everything to the
+              cloud transpiler.
+            - ``1`` (default) — light qiskit transpile to the chip's basis
+              gates and topology when validation fails.
+            - ``2`` / ``3`` — heavier qiskit optimization. Slower but yields
+              shorter / higher-fidelity circuits.
 
-            If provided alongside ``**kwargs``, ``options`` takes precedence
-            for the fields it defines.
-        **kwargs: Additional backend-specific parameters.
-            - For Quafu: chip_id, auto_mapping
-            - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize, measurement_amend
-            - For dummy: chip_characterization, noise_model, available_qubits, available_topology
+            See ``docs/source/compile/compile_levels.md`` for details on what
+            each level does.
+        cloud_compile: Cloud-side compile request strength forwarded to the
+            adapter. ``0`` disables cloud compile (e.g.
+            ``OriginQAdapter`` receives ``circuit_optimize=False``); any
+            value ``> 0`` enables it (boolean cloud APIs see ``True``).
+            Adapters with finer control may interpret ``1``/``2``/``3``
+            directly.
+        backend_name: OriginQ chip name (e.g. ``'WK_C180'``). Optional when
+            ``backend`` already encodes the chip as ``'originq:<chip>'``.
+        chip_id: Quafu / IBM chip ID. Required for full validation on those
+            platforms.
+        **kwargs: Additional backend-specific parameters passed through to
+            the underlying adapter (e.g. ``measurement_amend``,
+            ``available_qubits``, ``noise_model``).
 
     Returns:
         The task ID assigned by the backend.
 
     Raises:
         BackendNotFoundError: If the backend is not recognized.
-        BackendNotAvailableError: If the backend is not available.
-        AuthenticationError: If authentication fails.
-        InsufficientCreditsError: If account has insufficient credits.
-        QuotaExceededError: If usage quota is exceeded.
-        NetworkError: If a network error occurs.
+        UnsupportedGateError: If the circuit uses gates that cannot be
+            expressed in the backend's IR language (hard block — never
+            skippable, no amount of local/cloud compile can help).
 
     Example:
         >>> circuit = Circuit()
         >>> circuit.h(0)
         >>> circuit.measure(0)
-        >>> task_id = submit_task(circuit, backend='originq', shots=1000, backend_name='WK_C180')
-        >>> # Local noisy simulation using chip characterization
+        >>> task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
+        >>> # Heavier local compile, no cloud-side recompile:
+        >>> task_id = submit_task(
+        ...     circuit, backend='originq:WK_C180', shots=1000,
+        ...     local_compile=3, cloud_compile=0,
+        ... )
+        >>> # Local noisy simulation using chip characterization:
         >>> from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
         >>> chip = OriginQAdapter().get_chip_characterization("WK_C180")
         >>> task_id = submit_task(circuit, backend='dummy', chip_characterization=chip)
     """
     import warnings
+
+    # Re-pack the explicit kwargs into the kwargs dict so the existing
+    # adapter wiring keeps working unchanged.
+    if backend_name is not None:
+        kwargs.setdefault("backend_name", backend_name)
+    if chip_id is not None:
+        kwargs.setdefault("chip_id", chip_id)
+
+    # Cloud-side compile flag → adapter kwarg. Boolean cloud APIs see
+    # bool(cloud_compile > 0); richer adapters can read the int directly.
+    kwargs.setdefault("circuit_optimize", cloud_compile > 0)
+    kwargs["cloud_compile"] = cloud_compile
 
     # Normalise options
     if options is not None:
@@ -723,12 +799,12 @@ def submit_task(
     # This ensures 'uniqc result <task_id>' returns data immediately without
     # needing a subsequent query against a cloud backend.
     if backend == "dummy" or backend.startswith("dummy:"):
+        kwargs.pop("cloud_compile", None)
         return _submit_dummy(circuit, backend, shots=shots, metadata=metadata, **kwargs)
 
-    # Pre-submission validation + optional auto-compile.
-    auto_compile = kwargs.pop("auto_compile", True)
+    # Pre-submission validation + optional local compile.
     circuit, prep_extras = _prepare_circuit_for_submission(
-        circuit, backend, kwargs, auto_compile=auto_compile
+        circuit, backend, kwargs, local_compile=local_compile
     )
     metadata = {**metadata, **prep_extras}
 
@@ -750,6 +826,9 @@ def submit_task(
         native_circuit = adapter.adapt(circuit)
     except Exception as e:
         raise _map_adapter_error(e, backend) from e
+
+    # Strip uniqc-internal kwargs that adapters don't accept.
+    kwargs.pop("cloud_compile", None)
 
     # Submit to backend
     try:
@@ -858,6 +937,11 @@ def submit_batch(
     backend: str,
     shots: int = 1000,
     options: BackendOptions | dict | None = None,
+    *,
+    local_compile: int = 1,
+    cloud_compile: int = 1,
+    backend_name: str | None = None,
+    chip_id: str | None = None,
     **kwargs: Any,
 ) -> list[str]:
     """Submit multiple circuits as a batch to a quantum backend.
@@ -867,6 +951,13 @@ def submit_batch(
         backend: The backend name.
         shots: Number of measurement shots per circuit.
         options: Optional typed backend options. Same as in :func:`submit_task`.
+        local_compile: Local qiskit transpile pass strength. See
+            :func:`submit_task` for the full semantics. Default ``1``.
+        cloud_compile: Cloud-side compile request strength. See
+            :func:`submit_task`. Default ``1``.
+        backend_name: OriginQ chip name (optional when ``backend`` already
+            encodes the chip).
+        chip_id: Quafu / IBM chip ID.
         **kwargs: Additional backend-specific parameters.
             - For Quafu: chip_id, auto_mapping, group_name
             - For OriginQ: backend_name (e.g., 'WK_C180'), circuit_optimize
@@ -887,6 +978,14 @@ def submit_batch(
         >>> circuits = [circuit1, circuit2, circuit3]
         >>> task_ids = submit_batch(circuits, backend='quafu', shots=1000, chip_id='ScQ-P10')
     """
+    # Re-pack explicit kwargs.
+    if backend_name is not None:
+        kwargs.setdefault("backend_name", backend_name)
+    if chip_id is not None:
+        kwargs.setdefault("chip_id", chip_id)
+    kwargs.setdefault("circuit_optimize", cloud_compile > 0)
+    kwargs["cloud_compile"] = cloud_compile
+
     # Normalise options
     if options is not None:
         opts = BackendOptionsFactory.normalize_options(options, _backend_platform_key(backend))
@@ -897,15 +996,15 @@ def submit_batch(
 
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
     if backend == "dummy" or backend.startswith("dummy:"):
+        kwargs.pop("cloud_compile", None)
         return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
 
-    # Pre-submission validation for each circuit; auto-compile any that fail.
-    auto_compile = kwargs.pop("auto_compile", True)
+    # Pre-submission validation for each circuit; local-compile any that fail.
     prepared: list[Circuit] = []
     prep_extras_list: list[dict[str, Any]] = []
     for c in circuits:
         c2, extras = _prepare_circuit_for_submission(
-            c, backend, kwargs, auto_compile=auto_compile
+            c, backend, kwargs, local_compile=local_compile
         )
         prepared.append(c2)
         prep_extras_list.append(extras)
@@ -929,6 +1028,9 @@ def submit_batch(
         native_circuits = adapter.adapt_batch(circuits)
     except Exception as e:
         raise _map_adapter_error(e, backend) from e
+
+    # Strip uniqc-internal kwargs.
+    kwargs.pop("cloud_compile", None)
 
     # Submit batch to backend
     try:
@@ -1043,6 +1145,11 @@ def _submit_batch_dummy(
         )
         if adapter_status == TASK_STATUS_SUCCESS:
             task_info.result = result.get("result")
+        elif adapter_status == TASK_STATUS_FAILED:
+            task_info.error_message = (
+                str(result.get("error") or result.get("message") or "")
+                or None
+            )
         save_task(task_info)
 
     return task_ids
@@ -1129,6 +1236,10 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
         backend=backend,
         status=task_status,
         result=result.get("result") if task_status == TaskStatus.SUCCESS else None,
+        error_message=(
+            str(result.get("error") or result.get("message") or "")
+            or None
+        ) if task_status == TaskStatus.FAILED else None,
     )
 
     # Merge with existing metadata if available
@@ -1184,7 +1295,6 @@ def _wrap_as_unified_result(
 
 def wait_for_result(
     task_id: str,
-    backend: str | None = None,
     timeout: float = 300.0,
     poll_interval: float = 5.0,
     raise_on_failure: bool = True,
@@ -1192,11 +1302,12 @@ def wait_for_result(
     """Wait for a task to complete and return its result.
 
     This function polls the task status until it completes, fails, or
-    the timeout is reached.
+    the timeout is reached. The backend is auto-resolved from the cached
+    :class:`TaskInfo` — task IDs are unique, so explicit ``backend=`` is
+    no longer needed.
 
     Args:
         task_id: The task identifier.
-        backend: The backend name. If None, attempts to look up from cache.
         timeout: Maximum time to wait in seconds.
         poll_interval: Time between status checks in seconds.
         raise_on_failure: If True, raises TaskFailedError on task failure.
@@ -1215,7 +1326,7 @@ def wait_for_result(
         NetworkError: If a network error occurs.
 
     Example:
-        >>> result = wait_for_result('task-123', backend='quafu', timeout=300)
+        >>> result = wait_for_result('task-123', timeout=300)
         >>> print(result.counts)        # unified accessor
         {'00': 512, '11': 488}
         >>> result['00']                # dict-like access still works
@@ -1226,8 +1337,9 @@ def wait_for_result(
     start_time = time.time()
 
     while True:
-        # Query current status
-        task_info = query_task(task_id, backend)
+        # Query current status (backend auto-resolved from cache by task_id)
+        task_info = query_task(task_id)
+        backend = task_info.backend
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
@@ -1241,10 +1353,14 @@ def wait_for_result(
         # Check if failed
         if task_info.status == TaskStatus.FAILED:
             if raise_on_failure:
+                detail = task_info.error_message or "(no error message recorded)"
                 raise TaskFailedError(
-                    f"Task '{task_id}' failed on backend '{task_info.backend}'.",
+                    f"Task '{task_id}' failed on backend "
+                    f"'{task_info.backend}': {detail}",
                     task_id=task_id,
                     backend=task_info.backend,
+                    details={"error_message": task_info.error_message,
+                             "metadata": task_info.metadata},
                 )
             return None
 
@@ -1346,7 +1462,6 @@ class TaskManager:
     def wait_for_result(
         self,
         task_id: str,
-        backend: str | None = None,
         timeout: float = 300.0,
         poll_interval: float = 5.0,
         raise_on_failure: bool = True,
@@ -1354,7 +1469,6 @@ class TaskManager:
         """Wait for a task to complete. See :func:`wait_for_result`."""
         return wait_for_result(
             task_id,
-            backend,
             timeout=timeout,
             poll_interval=poll_interval,
             raise_on_failure=raise_on_failure,

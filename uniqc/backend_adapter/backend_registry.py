@@ -383,10 +383,16 @@ def fetch_platform_backends(
         update_cache(platform, backends)
         fetched_newly = True
         logger.debug("Fetched %d %s backends from API", len(backends), platform.value)
-    except (ImportError, ModuleNotFoundError):
-        # SDK not installed — skip with warning
+    except (ImportError, ModuleNotFoundError) as exc:
+        # SDK not installed — surface as a fetch failure so the user knows
+        # this platform is configured but unusable.
         logger.warning("Platform %s SDK not installed — skipping", platform.value)
-        backends = []
+        backends = get_cached_backends(platform)
+        if not backends:
+            raise BackendError(
+                f"Platform {platform.value} has credentials but its SDK is not installed: {exc}. "
+                f"Install the relevant extras (e.g. `pip install unified-quantum[{platform.value}]`)."
+            ) from exc
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch %s backends: %s", platform.value, exc)
         # Try to serve stale cache as a fallback
@@ -435,6 +441,10 @@ def fetch_all_backends_with_status(
         except BackendError as exc:
             logger.warning("Skipping %s: %s", platform.value, exc)
             failures[platform] = str(exc)
+        except Exception as exc:  # noqa: BLE001
+            # Defensive: any unhandled error must be surfaced, never silently dropped.
+            logger.warning("Unexpected error fetching %s: %s", platform.value, exc)
+            failures[platform] = f"unexpected error: {exc}"
     return FetchResult(backends=results, fetch_failures=failures)
 
 
@@ -520,12 +530,42 @@ def audit_backends(
     return issues
 
 
+def _resolve_backend_aliases(platform: Platform, name: str) -> list[str]:
+    """Build the candidate list (in priority order) for matching ``name``.
+
+    The first candidate is the user-supplied ``name``. We then add lower /
+    upper / underscored variants and any platform-specific alias so that
+    ``find_backend('originq:wk_c180')``, ``'originq:WK_C180'`` and
+    ``'originq:wk180'`` all resolve to the same chip.
+    """
+    from uniqc.backend_adapter.dummy_backend import _originq_alias
+
+    candidates: list[str] = [name]
+    if platform == Platform.ORIGINQ:
+        candidates.append(_originq_alias(name))
+
+    expanded = list(dict.fromkeys(candidates))  # de-dup, preserve order
+    return expanded
+
+
+def _names_match(candidate: str, available_name: str) -> bool:
+    """Case-insensitive backend-name match that also normalises ``- ↔ _``."""
+    def _norm(s: str) -> str:
+        return s.strip().lower().replace("-", "_")
+
+    return _norm(candidate) == _norm(available_name)
+
+
 def find_backend(identifier: str) -> BackendInfo:
     """Find a backend by its identifier.
 
     Supports two forms:
-        - ``platform:name``  (e.g. ``originq:HanYuan_01``)
+        - ``platform:name``  (e.g. ``originq:WK_C180``)
         - bare ``name``      (searches all platforms)
+
+    Matching is case-insensitive and treats ``-`` and ``_`` as equivalent
+    so ``originq:wk_c180`` and ``originq:WK_C180`` both succeed. For OriginQ
+    a small alias table also maps short names like ``wk180`` to ``WK_C180``.
 
     Args:
         identifier: Backend identifier.
@@ -542,21 +582,29 @@ def find_backend(identifier: str) -> BackendInfo:
     try:
         platform, name = parse_backend_id(identifier)
         backends, _ = fetch_platform_backends(platform)
-        for backend in backends:
-            if backend.name == name:
-                return backend
+        candidates = _resolve_backend_aliases(platform, name)
+        for candidate in candidates:
+            for backend in backends:
+                if _names_match(candidate, backend.name):
+                    return backend
         available = ", ".join(b.name for b in backends) or "(none)"
-        raise ValueError(f"Backend '{name}' not found on platform '{platform.value}'. Available backends: {available}")
+        raise ValueError(
+            f"Backend '{name}' not found on platform '{platform.value}'. "
+            f"Available backends: {available}"
+        )
     except ValueError:
-        # Bare name — search all platforms
+        # Bare name — search all platforms (still case-insensitive).
         for plat in Platform:
             try:
                 backends, _ = fetch_platform_backends(plat)
             except Exception:  # noqa: BLE001
                 continue
-            for backend in backends:
-                if backend.name == identifier:
-                    return backend
+            candidates = _resolve_backend_aliases(plat, identifier)
+            for candidate in candidates:
+                for backend in backends:
+                    if _names_match(candidate, backend.name):
+                        return backend
         raise ValueError(
-            f"Backend '{identifier}' not found on any platform. Use 'uniqc backend list' to see available backends."
+            f"Backend '{identifier}' not found on any platform. "
+            f"Use 'uniqc backend list' to see available backends."
         ) from None
