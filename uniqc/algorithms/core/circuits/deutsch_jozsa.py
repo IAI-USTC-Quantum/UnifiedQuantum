@@ -1,7 +1,18 @@
-"""Deutsch-Jozsa algorithm circuit and oracle builder."""
+"""Deutsch-Jozsa algorithm circuit and oracle builder.
 
-__all__ = ["deutsch_jozsa_circuit", "deutsch_jozsa_oracle"]
+The oracular convention here (per :doc:`/guide/algorithm_design`) is:
 
+- :func:`deutsch_jozsa_oracle` returns a fresh ``Circuit`` (the oracle).
+- :func:`deutsch_jozsa_circuit` accepts a *quantum-circuit* oracle as its
+  argument and returns a fresh full-DJ ``Circuit`` (fragment style).
+
+A legacy in-place form ``deutsch_jozsa_circuit(circuit, oracle, qubits)`` is
+preserved as a deprecated dispatch and emits :class:`DeprecationWarning`.
+"""
+
+__all__ = ["deutsch_jozsa_circuit", "deutsch_jozsa_oracle", "deutsch_jozsa_example"]
+
+import warnings
 from typing import List, Optional
 
 from uniqc.circuit_builder import Circuit
@@ -14,19 +25,8 @@ def deutsch_jozsa_oracle(
 ) -> Circuit:
     r"""Build a Deutsch-Jozsa oracle circuit.
 
-    Generates either a **constant** oracle (maps all inputs to 0 or all to 1)
-    or a **balanced** oracle (maps half the inputs to 0 and half to 1).
-
-    * **Constant oracle**: does nothing (output = 0) or flips the ancilla
-      (output = 1).  Here we implement the identity (output always 0).
-
-    * **Balanced oracle**: applies CNOT from each *target_bit* to the
-      ancilla.  If ``target_bits`` is ``None``, all data qubits are used.
-      This yields a balanced function because the ancilla flips exactly
-      when an odd number of target bits are set.
-
-    The oracle acts on the data qubits in *qubits* plus one ancilla qubit
-    at ``max(qubits) + 1``.
+    See module docstring; behaviour is unchanged from previous releases —
+    this is already a fragment-style API (returns a fresh ``Circuit``).
 
     Args:
         qubits: Data-qubit indices (explicit list, no default).
@@ -37,15 +37,6 @@ def deutsch_jozsa_oracle(
 
     Returns:
         A new :class:`Circuit` containing the oracle gates.
-
-    Raises:
-        TypeError: *qubits* is not a list.
-        ValueError: *qubits* is empty, or *target_bits* contains invalid indices.
-
-    Example:
-        >>> oracle = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=True)
-        >>> oracle.qubit_num  # 3 data + 1 ancilla
-        4
     """
     if not isinstance(qubits, list):
         raise TypeError("qubits must be a list of qubit indices")
@@ -58,7 +49,6 @@ def deutsch_jozsa_oracle(
     oracle = Circuit()
 
     if not balanced:
-        # Constant oracle: output is always 0 → identity on ancilla
         return oracle
 
     if target_bits is None:
@@ -74,83 +64,105 @@ def deutsch_jozsa_oracle(
     return oracle
 
 
-def deutsch_jozsa_circuit(
-    circuit: Circuit,
+def _build_dj_fragment(
+    *,
     oracle: Circuit,
     qubits: List[int],
     ancilla: Optional[int] = None,
-) -> None:
-    r"""Apply the Deutsch-Jozsa algorithm to the circuit.
-
-    The Deutsch-Jozsa algorithm determines whether a function
-    :math:`f: \{0,1\}^n \to \{0,1\}` is **constant** or **balanced**
-    using a single quantum query.
-
-    Circuit steps:
-
-    1. Initialise data qubits to :math:`|+\rangle` and ancilla to
-       :math:`|-\rangle` (via ``X`` then ``H``).
-    2. Apply the oracle.
-    3. Apply Hadamard on all data qubits.
-    4. Measure data qubits: all-zeros → constant, otherwise → balanced.
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        oracle: Oracle sub-circuit to embed.  Must operate on
-            ``len(qubits) + 1`` qubits (data + ancilla), or be empty
-            (constant-zero oracle).
-        qubits: Data-qubit indices (explicit list, no default).
-        ancilla: Ancilla qubit index.  ``None`` means ``max(qubits) + 1``.
-
-    Raises:
-        TypeError: *qubits* is not a list.
-        ValueError: *qubits* is empty, or oracle qubit count mismatches.
-
-    Note:
-        This function already appends ``MEASURE`` on all data qubits.
-        Do **not** call ``circuit.measure(...)`` afterwards, or duplicate
-        measurement instructions will cause simulator errors.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import (
-        ...     deutsch_jozsa_circuit, deutsch_jozsa_oracle,
-        ... )
-        >>> n = 3
-        >>> oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=True)
-        >>> c = Circuit()
-        >>> deutsch_jozsa_circuit(c, oracle, qubits=list(range(n)), ancilla=n)
-    """
+) -> Circuit:
     if not isinstance(qubits, list):
         raise TypeError("qubits must be a list of qubit indices")
     if len(qubits) < 1:
         raise ValueError("qubits must contain at least 1 data qubit")
 
     n_data = len(qubits)
-
     if ancilla is None:
         ancilla = max(qubits) + 1
-
-    # Only validate oracle width when it has gates (empty constant oracle
-    # has qubit_num=0 but is still a valid DJ oracle for any n_data).
     if oracle.qubit_num > 0 and oracle.qubit_num != n_data + 1:
         raise ValueError(
             f"Oracle acts on {oracle.qubit_num} qubits, "
             f"expected {n_data + 1} (data + ancilla)"
         )
 
-    # Step 1: |+⟩ on data qubits, |−⟩ on ancilla
+    fragment = Circuit()
     for q in qubits:
-        circuit.h(q)
-    circuit.x(ancilla)
-    circuit.h(ancilla)
-
-    # Step 2: Apply oracle
-    circuit.add_circuit(oracle)
-
-    # Step 3: H on data qubits
+        fragment.h(q)
+    fragment.x(ancilla)
+    fragment.h(ancilla)
+    fragment.add_circuit(oracle)
     for q in qubits:
-        circuit.h(q)
+        fragment.h(q)
+    fragment.measure(*qubits)
+    return fragment
 
-    # Step 4: Measure data qubits
-    circuit.measure(*qubits)
+
+def deutsch_jozsa_circuit(
+    *args,
+    qubits: Optional[List[int]] = None,
+    ancilla: Optional[int] = None,
+    oracle: Optional[Circuit] = None,
+):
+    r"""Build (or apply) the Deutsch-Jozsa algorithm circuit.
+
+    Two calling conventions are supported:
+
+    .. code-block:: python
+
+        # Fragment style (recommended):
+        ora = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=True)
+        circuit = deutsch_jozsa_circuit(ora, qubits=[0, 1, 2])      # returns Circuit
+
+        # Legacy in-place style (deprecated):
+        c = Circuit()
+        deutsch_jozsa_circuit(c, ora, qubits=[0, 1, 2], ancilla=3)  # mutates c
+
+    Args:
+        *args: Either ``(oracle: Circuit, ...)`` (fragment) or
+            ``(circuit: Circuit, oracle: Circuit, ...)`` (deprecated in-place).
+        qubits: Data-qubit indices.
+        ancilla: Ancilla qubit index. ``None`` means ``max(qubits) + 1``.
+        oracle: The oracle ``Circuit`` (positional or keyword).
+
+    Returns:
+        A fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+    """
+    # Resolve dispatch
+    if len(args) == 0:
+        if oracle is None:
+            raise TypeError("deutsch_jozsa_circuit requires an oracle Circuit argument")
+        return _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
+
+    if len(args) == 1:
+        first = args[0]
+        # Fragment style: first arg IS the oracle
+        if oracle is None:
+            return _build_dj_fragment(oracle=first, qubits=qubits, ancilla=ancilla)
+        # Legacy: first arg is the in-place circuit
+        warnings.warn(
+            "deutsch_jozsa_circuit(circuit, oracle=...) (in-place form) is deprecated. "
+            "Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        fragment = _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
+        first.add_circuit(fragment)
+        return None
+
+    if len(args) >= 2:
+        # Legacy positional: (circuit, oracle, qubits=..., ancilla=...)
+        circuit_in, ora = args[0], args[1]
+        warnings.warn(
+            "deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form) is deprecated. "
+            "Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        fragment = _build_dj_fragment(oracle=ora, qubits=qubits, ancilla=ancilla)
+        circuit_in.add_circuit(fragment)
+        return None
+
+
+def deutsch_jozsa_example() -> Circuit:
+    """Return a 3-qubit balanced-DJ algorithm circuit for tests/docs."""
+    ora = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=True)
+    return deutsch_jozsa_circuit(ora, qubits=[0, 1, 2])

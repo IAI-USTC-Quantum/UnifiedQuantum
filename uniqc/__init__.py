@@ -88,16 +88,21 @@ from .algorithms.core.circuits import (
     grover_oracle,
     qft_circuit,
     thermal_state_circuit,
+    vqd_ansatz,
     vqd_circuit,
     vqd_overlap_circuit,
     w_state,
 )
 from .algorithms.core.measurement import (
     basis_rotation_measurement,
+    BasisRotationMeasurement,
     classical_shadow,
+    ClassicalShadow,
     pauli_expectation,
+    PauliExpectation,
     shadow_expectation,
     state_tomography,
+    StateTomography,
     tomography_summary,
 )
 from .algorithms.core.state_preparation import (
@@ -108,7 +113,7 @@ from .algorithms.core.state_preparation import (
     thermal_state,
 )
 from .algorithms.workflows import readout_em_workflow, xeb_workflow
-from .circuit_builder import Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def
+from .circuit_builder import Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def, get_matrix
 from .compile import CompilationFailedError, CompilationResult, TranspilerConfig, compile
 from .compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
 from .compile.validation import (
@@ -304,6 +309,7 @@ __all__ = [
     "audit_backend_info",
     "audit_backends",
     "basis_rotation_measurement",
+    "BasisRotationMeasurement",
     "basis_state",
     "batch_execute",
     "batch_execute_with_params",
@@ -317,6 +323,7 @@ __all__ = [
     "circuit_to_html",
     "circuit_def",
     "classical_shadow",
+    "ClassicalShadow",
     "clear_cache",
     "clear_completed_tasks",
     "cluster_state",
@@ -338,6 +345,7 @@ __all__ = [
     "find_backend",
     "get_backend",
     "get_ibm_proxy_from_config",
+    "get_matrix",
     "get_task",
     "ghz_state",
     "grover_diffusion",
@@ -358,6 +366,7 @@ __all__ = [
     "normalize_quafu",
     "parameter_shift_gradient",
     "pauli_expectation",
+    "PauliExpectation",
     "plot_time_line",
     "plot_time_line_html",
     "qaoa_ansatz",
@@ -372,6 +381,7 @@ __all__ = [
     "shots2prob",
     "schedule_circuit",
     "state_tomography",
+    "StateTomography",
     "submit_batch",
     "submit_task",
     "test_ibm_connectivity",
@@ -382,6 +392,7 @@ __all__ = [
     "resolve_basis_gates",
     "resolve_submit_language",
     "VIRTUAL_Z_GATES",
+    "vqd_ansatz",
     "vqd_circuit",
     "vqd_overlap_circuit",
     "wait_for_result",

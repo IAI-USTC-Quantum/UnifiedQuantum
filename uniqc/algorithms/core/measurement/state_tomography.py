@@ -557,3 +557,60 @@ def tomography_summary(
         print(f"\nFidelity F(ρ, σ) = {fid:.6f}")
 
     print(f"{'=' * 50}\n")
+
+
+__all__ = ["state_tomography", "tomography_summary", "StateTomography",
+           "state_tomography_example"]
+
+
+class StateTomography:
+    """Class-based interface for full quantum-state tomography.
+
+    The constructor takes a *clean* state-preparation circuit (no measurements);
+    the class adds basis rotations and measurements internally.
+    """
+
+    def __init__(
+        self,
+        circuit: Circuit,
+        qubits: Optional[List[int]] = None,
+        shots: int = 8192,
+    ) -> None:
+        self.circuit = circuit.copy()
+        self.qubits = qubits
+        self.shots = shots
+
+    def get_readout_circuits(self) -> List[Circuit]:
+        """Return one circuit per Pauli measurement basis (3^n total)."""
+        from itertools import product
+
+        n = self.circuit.max_qubit + 1
+        out: list[Circuit] = []
+        for basis in product("XYZ", repeat=n):
+            rot = self.circuit.copy()
+            for i, b in enumerate(basis):
+                if b == "X":
+                    rot.h(i)
+                elif b == "Y":
+                    rot.sdg(i)
+                    rot.h(i)
+            for q in range(n):
+                rot.measure(q)
+            out.append(rot)
+        return out
+
+    def execute(self, backend="statevector", *, program_type="qasm", **kwargs) -> np.ndarray:
+        """Run tomography and return the reconstructed density matrix."""
+        # Build a fresh measured circuit and call the existing function.
+        measured = self.circuit.copy()
+        n = measured.max_qubit + 1
+        for q in range(n):
+            measured.measure(q)
+        return state_tomography(measured, qubits=self.qubits, shots=self.shots)
+
+
+def state_tomography_example() -> np.ndarray:
+    """Tiny tomography demo on a |+⟩ state."""
+    c = Circuit()
+    c.h(0)
+    return StateTomography(c, shots=2048).execute()

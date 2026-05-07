@@ -1,8 +1,8 @@
 """Pauli string expectation value measurement via basis rotation."""
 
-__all__ = ["pauli_expectation"]
+__all__ = ["pauli_expectation", "PauliExpectation", "pauli_expectation_example"]
 
-from typing import Optional
+from typing import Optional, List, Union
 
 import numpy as np
 
@@ -173,3 +173,94 @@ def pauli_expectation(
         return _shots_expectation(circuit, pauli_string, shots)
 
     return _statevector_expectation(circuit, pauli_string)
+
+
+class PauliExpectation:
+    """Class-based interface for Pauli-string expectation measurement.
+
+    Convention: the constructor accepts a *clean* state-preparation
+    :class:`Circuit` (no measurement instructions). The class adds basis
+    rotations and measurements internally; the input circuit is **not**
+    mutated.
+
+    Example::
+
+        from uniqc.circuit_builder import Circuit
+        from uniqc.algorithms.core.measurement import PauliExpectation
+
+        c = Circuit()
+        c.h(0); c.cx(0, 1)
+        meas = PauliExpectation(c, "ZZ", shots=10000)
+        readouts = meas.get_readout_circuits()    # list[Circuit]
+        value = meas.execute("statevector")        # float in [-1, 1]
+    """
+
+    def __init__(
+        self,
+        circuit: Circuit,
+        pauli_string: str,
+        shots: Optional[int] = None,
+    ) -> None:
+        pauli_upper = pauli_string.upper()
+        n_qubits = circuit.max_qubit + 1
+        if len(pauli_upper) != n_qubits:
+            raise ValueError(
+                f"pauli_string length ({len(pauli_string)}) must match "
+                f"circuit n_qubits ({n_qubits})"
+            )
+        for ch in pauli_upper:
+            if ch not in ("I", "X", "Y", "Z"):
+                raise ValueError(
+                    f"pauli_string must contain only I/X/Y/Z, got: {pauli_string!r}"
+                )
+        if shots is not None and (not isinstance(shots, int) or shots <= 0):
+            raise ValueError(f"shots must be a positive integer, got: {shots}")
+        self.circuit = circuit.copy()
+        self.pauli_string = pauli_upper
+        self.shots = shots
+
+    def get_readout_circuits(self) -> List[Circuit]:
+        """Return the list of readout circuits (one per measurement basis).
+
+        For a single Pauli string this returns a one-element list containing
+        the basis-rotated, measured circuit.
+        """
+        rot = _apply_basis_rotation(self.circuit, self.pauli_string)
+        n = rot.max_qubit + 1
+        for q in range(n):
+            rot.measure(q)
+        return [rot]
+
+    def execute(
+        self,
+        backend: Union[str, "object"] = "statevector",
+        *,
+        program_type: str = "qasm",
+        **kwargs,
+    ) -> float:
+        """Execute the readout circuits and return the expectation value.
+
+        Args:
+            backend: Either a backend-type name (string, e.g. ``"statevector"``)
+                or a pre-built simulator object exposing ``simulate_statevector``
+                / ``simulate_shots``.
+            program_type: Currently only ``"qasm"`` is supported.
+            **kwargs: Forwarded to simulator construction when *backend* is a
+                string.
+        """
+        if program_type != "qasm":
+            raise ValueError(
+                f"PauliExpectation currently supports program_type='qasm' only, "
+                f"got {program_type!r}"
+            )
+        if self.shots is None:
+            return _statevector_expectation(self.circuit, self.pauli_string)
+        return _shots_expectation(self.circuit, self.pauli_string, self.shots)
+
+
+def pauli_expectation_example() -> float:
+    """Tiny PauliExpectation demo that returns ⟨ZZ⟩ on a Bell state (≈ 1.0)."""
+    c = Circuit()
+    c.h(0)
+    c.cx(0, 1)
+    return PauliExpectation(c, "ZZ").execute("statevector")

@@ -20,6 +20,7 @@ circuit
 simulation
 submit_task
 task_manager
+algorithm_design
 compiler_options_region
 pytorch
 ```

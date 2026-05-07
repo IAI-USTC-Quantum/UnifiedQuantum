@@ -8,6 +8,7 @@ __all__ = [
     "dicke_state_circuit",
     "grover_oracle",
     "grover_diffusion",
+    "vqd_ansatz",
     "vqd_circuit",
     "vqd_overlap_circuit",
     "amplitude_estimation_circuit",
@@ -23,6 +24,6 @@ from .deutsch_jozsa import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 from .thermal_state import thermal_state_circuit
 from .dicke_state import dicke_state_circuit
 from .grover_oracle import grover_oracle, grover_diffusion
-from .vqd import vqd_circuit, vqd_overlap_circuit
+from .vqd import vqd_ansatz, vqd_circuit, vqd_overlap_circuit
 from .amplitude_estimation import amplitude_estimation_circuit, amplitude_estimation_result, grover_operator
 from .entangled_states import ghz_state, w_state, cluster_state
