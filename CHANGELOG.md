@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11.post1] - 2026-05-07
+
 ### Fixed
 
 - **Chip-backed dummy `local_compile=0` honoured + `available_qubits` enforced** (`uniqc/backend_adapter/task_manager.py`, `uniqc/compile/compiler.py`):
