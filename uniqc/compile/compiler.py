@@ -100,6 +100,7 @@ def compile(
     basis_gates: list[str] | None = None,
     chip_characterization: ChipCharacterization | None = None,
     output_format: OutputFormat = "circuit",
+    available_qubits: list[int] | tuple[int, ...] | None = None,
 ) -> Circuit | str:
     """Compile a circuit for a specific backend using chip characterization data.
 
@@ -165,7 +166,8 @@ def compile(
         basis_gates=tuple(basis_gates) if basis_gates else _DEFAULT_BASIS_GATES,
         chip_characterization=chip_characterization,
     )
-    return compile_with_config(circuit, backend_info, config, output_format)
+    return compile_with_config(circuit, backend_info, config, output_format,
+                               available_qubits=available_qubits)
 
 
 def compile_with_config(
@@ -173,6 +175,8 @@ def compile_with_config(
     backend_info: BackendInfo | None,
     config: TranspilerConfig,
     output_format: OutputFormat,
+    *,
+    available_qubits: list[int] | tuple[int, ...] | None = None,
 ) -> Circuit | str:
     """Internal compile implementation that accepts a :class:`TranspilerConfig`."""
     messages: list[str] = []
@@ -187,6 +191,20 @@ def compile_with_config(
             "compile() requires either backend_info.topology or "
             "chip_characterization.connectivity to determine the coupling map."
         )
+
+    # If the caller restricted the chip to a subset of physical qubits
+    # (`available_qubits`), drop every edge that touches a forbidden qubit
+    # so neither the fidelity-aware mapper nor qiskit's downstream router
+    # can route onto excluded physical qubits (e.g. known-bad ones).
+    if available_qubits is not None:
+        allowed = {int(q) for q in available_qubits}
+        topology = [(u, v) for (u, v) in topology if u in allowed and v in allowed]
+        if not topology:
+            raise ValueError(
+                "compile(): available_qubits restriction yielded an empty "
+                "coupling map. Check that the requested physical qubits are "
+                "actually connected on the chip."
+            )
 
     # Resolve input string
     originir_input = circuit.originir if hasattr(circuit, "originir") else str(circuit)
@@ -203,7 +221,8 @@ def compile_with_config(
             routing_overhead,
             fidelity_estimate,
             initial_layout,
-        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization)
+        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization,
+                                 available_qubits=available_qubits)
         layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
             f"Mapping selected from chip characterization "
@@ -245,6 +264,7 @@ def compile_full(
     basis_gates: list[str] | None = None,
     chip_characterization: ChipCharacterization | None = None,
     output_format: OutputFormat = "circuit",
+    available_qubits: list[int] | tuple[int, ...] | None = None,
 ) -> CompilationResult:
     """Full compile returning a :class:`CompilationResult` with metadata.
 
@@ -257,7 +277,8 @@ def compile_full(
         The input circuit.
     backend_info :
         Target backend descriptor.
-    type, level, basis_gates, chip_characterization, output_format :
+    type, level, basis_gates, chip_characterization, output_format,
+    available_qubits :
         Same as :func:`compile`.
 
     Returns
@@ -281,6 +302,16 @@ def compile_full(
     else:
         raise ValueError("compile_full() requires either backend_info.topology or chip_characterization.connectivity.")
 
+    # Restrict the coupling map to user-allowed physical qubits, if any.
+    if available_qubits is not None:
+        allowed = {int(q) for q in available_qubits}
+        topology = [(u, v) for (u, v) in topology if u in allowed and v in allowed]
+        if not topology:
+            raise ValueError(
+                "compile_full(): available_qubits restriction yielded an "
+                "empty coupling map."
+            )
+
     originir_input = circuit.originir if hasattr(circuit, "originir") else str(circuit)
     routed_originir = originir_input
     routing_overhead = 0
@@ -293,7 +324,8 @@ def compile_full(
             routing_overhead,
             fidelity_estimate,
             initial_layout,
-        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization)
+        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization,
+                                 available_qubits=available_qubits)
         layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
             f"Mapping selected from chip characterization "
@@ -348,6 +380,8 @@ def _route_with_fidelity(
     originir: str,
     topology: list[tuple[int, int]],
     chip: ChipCharacterization,
+    *,
+    available_qubits: list[int] | tuple[int, ...] | None = None,
 ) -> tuple[str, int, float, list[int] | None]:
     """Chip-aware *mapping* selection + fidelity estimate.
 
@@ -357,6 +391,10 @@ def _route_with_fidelity(
     on which logical qubit ``i`` should be placed). Routing (SWAP
     insertion) is left to the downstream Qiskit transpile pass — it sees
     the full ``coupling_map`` and is much better at it than this function.
+
+    If ``available_qubits`` is given, every fidelity / topology entry that
+    references a forbidden physical qubit is dropped before selection so
+    the layout cannot land on excluded physical qubits.
 
     Returns
     -------
@@ -375,10 +413,16 @@ def _route_with_fidelity(
         chip has no usable fidelity data (caller should fall back to
         Qiskit's default layout selection).
     """
+    allowed = {int(q) for q in available_qubits} if available_qubits is not None else None
+
     # Build best 2Q fidelity map per undirected edge (skip self-loops)
     tq_fid: dict[tuple[int, int], float] = {}
     for tq_data in chip.two_qubit_data:
         if tq_data.qubit_u == tq_data.qubit_v:
+            continue
+        if allowed is not None and (
+            tq_data.qubit_u not in allowed or tq_data.qubit_v not in allowed
+        ):
             continue
         for gate in tq_data.gates:
             if gate.fidelity is not None:
@@ -387,7 +431,8 @@ def _route_with_fidelity(
                 if existing is None or gate.fidelity > existing:
                     tq_fid[edge] = gate.fidelity
 
-    # Build undirected adjacency (for region selection)
+    # Build undirected adjacency (for region selection) — already filtered
+    # by `topology`, which the caller restricted via available_qubits.
     undirected_adj: dict[int, set[int]] = defaultdict(set)
     for u, v in topology:
         if u == v:
@@ -398,6 +443,8 @@ def _route_with_fidelity(
     # Single-qubit fidelity map
     sq_fid: dict[int, float] = {}
     for sq_data in chip.single_qubit_data:
+        if allowed is not None and sq_data.qubit_id not in allowed:
+            continue
         if sq_data.single_gate_fidelity is not None:
             sq_fid[sq_data.qubit_id] = sq_data.single_gate_fidelity
 

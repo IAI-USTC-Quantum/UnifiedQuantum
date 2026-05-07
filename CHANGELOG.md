@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Chip-backed dummy `local_compile=0` honoured + `available_qubits` enforced** (`uniqc/backend_adapter/task_manager.py`, `uniqc/compile/compiler.py`):
+  Previously `dummy:originq:WK_C180` and other chip-backed dummies always
+  ran the qiskit layout pass inside `_compile_for_chip_backed_dummy`,
+  silently re-mapping the user's hand-picked safe qubits onto whatever
+  physical qubits `RegionSelector` chose — including chip qubits the
+  caller had explicitly excluded via `available_qubits` (e.g. q[58]/q[68]
+  silently moved onto the broken q[13]/q[21]). Three coupled fixes:
+  (1) `_compile_for_chip_backed_dummy(...)` now honours `local_compile=0`
+      and passes the source IR through verbatim;
+  (2) when `available_qubits` is forwarded (or recovered from the dummy
+      spec) and the source circuit's actively-touched qubits already lie
+      inside that allow-list, the IR is also passed through verbatim
+      regardless of `local_compile` — the user has chosen the layout and
+      we MUST NOT silently relabel;
+  (3) `compile()` / `compile_with_config()` / `compile_full()` /
+      `_route_with_fidelity()` now accept `available_qubits` and filter
+      both the coupling map and per-qubit/edge fidelity tables before
+      mapping selection, so any genuine relayout cannot land on excluded
+      qubits.
+  `submit_task` / `_submit_dummy` / `submit_batch` / `_submit_batch_dummy`
+  thread `local_compile` and `available_qubits` end-to-end. Regression
+  tests added in `uniqc/test/cloud/test_dummy_backend_design.py`.
+
 ## [0.0.11] - 2026-05-07
 
 This is a large release driven by a four-round end-to-end audit of every public

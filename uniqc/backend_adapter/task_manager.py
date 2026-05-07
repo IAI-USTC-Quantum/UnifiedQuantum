@@ -669,11 +669,70 @@ def _backend_info_from_chip(spec: Any):
     )
 
 
-def _compile_for_chip_backed_dummy(circuit: Circuit, spec: Any, metadata: dict | None) -> tuple[str, dict]:
-    """Compile source circuit when a dummy target mirrors a real chip."""
+def _active_qubits_from_originir(originir: str) -> set[int]:
+    """Best-effort scan of an OriginIR string for qubits actually touched
+    by gates (not counting unused logical slots from a generous QINIT)."""
+    import re
+    pattern = re.compile(r"q\[(\d+)\]")
+    active: set[int] = set()
+    for line in originir.splitlines():
+        s = line.strip()
+        if not s or s.startswith("QINIT") or s.startswith("CREG"):
+            continue
+        for m in pattern.finditer(s):
+            active.add(int(m.group(1)))
+    return active
+
+
+def _compile_for_chip_backed_dummy(
+    circuit: Circuit,
+    spec: Any,
+    metadata: dict | None,
+    *,
+    local_compile: int = 1,
+    available_qubits: list[int] | tuple[int, ...] | None = None,
+) -> tuple[str, dict]:
+    """Compile source circuit when a dummy target mirrors a real chip.
+
+    Honours the standard ``local_compile`` contract: ``local_compile=0``
+    skips the qiskit transpile + relayout entirely so the user's
+    physical-qubit choice is preserved verbatim. Any value ``> 0`` runs
+    the full chip-aware compile at qiskit ``optimization_level=2``.
+
+    When ``available_qubits`` is given (typically forwarded from the
+    user's ``submit_task`` kwargs that already constrain the dummy
+    simulator), the layout pass is restricted to that physical-qubit
+    subset so the relayout cannot land on chip-but-disabled qubits. As
+    an additional safety rule, if the source circuit's actually-touched
+    qubits are all already inside ``available_qubits``, the IR is
+    passed through verbatim regardless of ``local_compile`` — the user
+    has hand-picked a valid layout and we MUST NOT silently relabel
+    onto different physical qubits (the original bug that prompted
+    NEW-U1 / NEW-U2: q[58] silently moved to q[13] on a chip whose
+    q[13] had been excluded as bad).
+    """
     enriched = dict(metadata or {})
+
+    # Resolve the effective allow-list once: explicit kwarg > spec.
+    effective_available = (
+        available_qubits if available_qubits is not None else spec.available_qubits
+    )
+
+    source_originir = circuit.originir
+
+    # Pass-through cases:
+    if local_compile == 0:
+        return source_originir, enriched
     if spec.source_platform is None or spec.chip_characterization is None:
-        return circuit.originir, enriched
+        return source_originir, enriched
+    if effective_available is not None:
+        active = _active_qubits_from_originir(source_originir)
+        allowed = {int(q) for q in effective_available}
+        if active and active.issubset(allowed):
+            # User picked the layout. Don't relabel.
+            enriched.setdefault("compile_passthrough_reason",
+                                "active qubits already inside available_qubits")
+            return source_originir, enriched
 
     from uniqc.compile import compile as compile_circuit
 
@@ -683,6 +742,7 @@ def _compile_for_chip_backed_dummy(circuit: Circuit, spec: Any, metadata: dict |
         backend_info=backend_info,
         chip_characterization=spec.chip_characterization,
         output_format="originir",
+        available_qubits=effective_available,
     )
     enriched.setdefault("compiled_circuit_ir", compiled_originir)
     enriched.setdefault("compiled_circuit_language", "OriginIR")
@@ -800,7 +860,8 @@ def submit_task(
     # needing a subsequent query against a cloud backend.
     if backend == "dummy" or backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
-        return _submit_dummy(circuit, backend, shots=shots, metadata=metadata, **kwargs)
+        return _submit_dummy(circuit, backend, shots=shots, metadata=metadata,
+                             local_compile=local_compile, **kwargs)
 
     # Pre-submission validation + optional local compile.
     circuit, prep_extras = _prepare_circuit_for_submission(
@@ -855,6 +916,8 @@ def _submit_dummy(
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
+    *,
+    local_compile: int = 1,
     **kwargs: Any,
 ) -> str:
     """Submit a circuit using the dummy adapter for local simulation.
@@ -888,7 +951,11 @@ def _submit_dummy(
     )
     dummy_adapter = DummyAdapter(**adapter_kwargs)
 
-    originir, metadata = _compile_for_chip_backed_dummy(circuit, spec, metadata)
+    originir, metadata = _compile_for_chip_backed_dummy(
+        circuit, spec, metadata,
+        local_compile=local_compile,
+        available_qubits=kwargs.get("available_qubits"),
+    )
     task_id = dummy_adapter.submit(originir, shots=shots)
 
     # Get result from dummy adapter
@@ -997,7 +1064,8 @@ def submit_batch(
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
     if backend == "dummy" or backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
-        return _submit_batch_dummy(circuits, backend, shots=shots, **kwargs)
+        return _submit_batch_dummy(circuits, backend, shots=shots,
+                                   local_compile=local_compile, **kwargs)
 
     # Pre-submission validation for each circuit; local-compile any that fail.
     prepared: list[Circuit] = []
@@ -1070,6 +1138,8 @@ def _submit_batch_dummy(
     circuits: list[Circuit],
     backend: str,
     shots: int = 1000,
+    *,
+    local_compile: int = 1,
     **kwargs: Any,
 ) -> list[str]:
     """Submit multiple circuits using the dummy adapter.
@@ -1105,7 +1175,11 @@ def _submit_batch_dummy(
     originir_circuits: list[str] = []
     compiled_metadata: list[dict] = []
     for circuit in circuits:
-        originir, item_metadata = _compile_for_chip_backed_dummy(circuit, spec, {})
+        originir, item_metadata = _compile_for_chip_backed_dummy(
+            circuit, spec, {},
+            local_compile=local_compile,
+            available_qubits=kwargs.get("available_qubits"),
+        )
         originir_circuits.append(originir)
         compiled_metadata.append(item_metadata)
     task_ids = dummy_adapter.submit_batch(originir_circuits, shots=shots)
