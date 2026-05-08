@@ -76,6 +76,13 @@ result = wait_for_result(task_id, backend='originq', timeout=300)
 print(result.counts)
 ```
 
+> **Bitstring 约定（永久不变）**：所有平台返回的 `result.counts` 字典 key
+> 都满足 `c[0]` = 最右字符（LSB）、`c[N-1]` = 最左字符；`c[i]` 是第 `i` 次
+> `circuit.measure(q)` 调用的结果。详见
+> [`submit_task` §结果处理](submit_task.md#guide-submit-task-bitstring-convention)
+> 与 [`platform_conventions` §2.6](platform_conventions.md#platform-bit-endianness)。
+> 由 `uniqc/test/test_endianness_convention.py` 在所有 dummy 平台上回归保护。
+
 ## 核心 API {#guide-task-manager-core-api}
 
 ### 任务提交

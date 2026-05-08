@@ -307,10 +307,14 @@ class QiskitAdapter(QuantumAdapter):
                     arr = arr.flatten()
                     for val in arr:
                         val_int = int(val)
-                        # Convert to bitstring: q[0] as most significant bit
+                        # uniqc convention (see docs/source/guide/
+                        # platform_conventions.md §2.6): c[0] is the RIGHTMOST
+                        # character of the bitstring (LSB). Qiskit's BitArray
+                        # packs the lowest-indexed classical bit (c[0]) into
+                        # bit 0 of the integer, so ``format(val, f"0{n}b")``
+                        # already yields the expected ``c[N-1]…c[0]`` layout —
+                        # do NOT reverse.
                         bitstring = format(val_int, f"0{n_bits}b")
-                        # Reverse so q[0] is first character (MSB convention)
-                        bitstring = bitstring[::-1]
                         counts[bitstring] = counts.get(bitstring, 0) + 1
                     break
 
