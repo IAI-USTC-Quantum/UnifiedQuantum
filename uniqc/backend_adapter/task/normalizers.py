@@ -119,7 +119,10 @@ def normalize_quafu(
     # Extract counts from ExecResult
     counts: Dict[str, int] = {}
     if hasattr(result_obj, "counts") and result_obj.counts is not None:
-        counts = dict(result_obj.counts)
+        # Quafu uses q[0]/c[0] as the LEFTMOST bitstring character. uniqc
+        # convention (docs/source/guide/platform_conventions.md §2.6) puts
+        # c[0] on the RIGHT. Reverse each key here.
+        counts = {str(k)[::-1]: int(v) for k, v in dict(result_obj.counts).items()}
 
     # Try to get backend name from result object
     if backend_name is None and hasattr(result_obj, "task"):
@@ -183,22 +186,34 @@ def normalize_ibm(
     except (AttributeError, TypeError):
         pass
 
-    # Convert hex keys to binary if needed (Qiskit uses hex format)
+    # Convert counts keys to canonical binary form. Qiskit's
+    # ``Result.get_counts()`` already follows the c[N-1]…c[0] (c[0]=rightmost)
+    # convention which matches uniqc — see docs/source/guide/
+    # platform_conventions.md §2.6. We only normalise hex keys (legacy
+    # output) into plain binary strings, without changing bit order.
     normalized_counts: Dict[str, int] = {}
     for key, value in counts.items():
         if isinstance(key, str):
-            if key.startswith("0x"):
-                # Convert hex to binary
+            stripped = key.replace(" ", "")
+            if stripped.startswith("0x"):
+                # Width is unknown from a bare hex key; fall back to the
+                # minimum number of bits needed. Callers that need a fixed
+                # width should pad on their side.
                 try:
-                    n_qubits = len(key) - 2  # Remove '0x' prefix
-                    bin_key = bin(int(key, 16))[2:].zfill(n_qubits * 2)
-                    normalized_counts[bin_key] = value
+                    int_val = int(stripped, 16)
+                    width = max(1, int_val.bit_length())
+                    bin_key = format(int_val, f"0{width}b")
+                    normalized_counts[bin_key] = (
+                        normalized_counts.get(bin_key, 0) + int(value)
+                    )
                 except ValueError:
-                    normalized_counts[key] = value
+                    normalized_counts[stripped] = int(value)
             else:
-                normalized_counts[key] = value
+                normalized_counts[stripped] = (
+                    normalized_counts.get(stripped, 0) + int(value)
+                )
         else:
-            normalized_counts[str(key)] = value
+            normalized_counts[str(key)] = int(value)
 
     return UnifiedResult.from_counts(
         counts=normalized_counts,

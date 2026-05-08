@@ -689,9 +689,15 @@ class QuafuAdapter(QuantumAdapter):
         status_str = result.task_status
         status = status_map.get(status_str, TASK_STATUS_RUNNING)
         if status == TASK_STATUS_SUCCESS:
+            # Quafu's bitstring convention is q[0]/c[0] as the LEFTMOST
+            # character. uniqc convention (see docs/source/guide/
+            # platform_conventions.md §2.6) is c[0] as the RIGHTMOST
+            # character. Reverse each key on the way out.
+            raw_counts = dict(result.counts)
+            counts = {str(k)[::-1]: int(v) for k, v in raw_counts.items()}
             return {
                 "status": status,
-                "result": dict(result.counts),
+                "result": counts,
             }
         return {"status": status}
 

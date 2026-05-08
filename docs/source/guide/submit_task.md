@@ -206,6 +206,42 @@ print(f"Submitted {len(task_ids)} tasks")
 
 ## 结果处理
 
+### Bitstring 约定（永久不变）{#guide-submit-task-bitstring-convention}
+
+uniqc 在所有平台（OriginQ / Quafu / IBM-Qiskit / Quark / Dummy / 本地仿真）
+返回的 `result.counts` / `result.probabilities` 字典 key 都满足 **同一条永久
+约定**：
+
+> **`c[0]` 始终是 bitstring 的最右侧字符（LSB），`c[N-1]` 是最左侧字符。**
+
+`c[i]` 记录的是 **第 `i` 次** 调用 `circuit.measure(q)` 的比特，与 qubit
+索引解耦。如果你按 `circuit.measure(0); circuit.measure(1)` 的顺序写测量，
+那么 `c[0]` 对应 `q[0]` 的结果，`c[1]` 对应 `q[1]`。
+
+最简自检脚本（在任何后端都应给出 `'01'` 占绝对多数）：
+
+```python
+from uniqc.circuit_builder import Circuit
+from uniqc.backend_adapter.task_manager import submit_batch, wait_for_result
+
+c = Circuit(2)
+c.x(0)
+c.measure(0)        # -> c[0]
+c.measure(1)        # -> c[1]
+
+uid = submit_batch([c], backend='dummy:virtual-line-2', shots=1024)
+print(wait_for_result(uid)[0].counts)   # -> {'01': 1024}
+```
+
+`x(0)` 把 `q[0]` 翻成 `|1⟩`，`q[0]→c[0]→1`，所以读到的 bitstring 是 `'01'`
+（左边是 `c[1]=0`，右边是 `c[0]=1`）。这一约定由
+`uniqc/test/test_endianness_convention.py` 在每次发布前对所有平台 adapter
+强制校验，**不会再改变**。
+
+任何平台原生 SDK 的差异（IBM 默认 little-endian、Quafu 在某些后端 q[0]=
+最左、Quark 取决于固件）都已经在 adapter 内部统一翻译为以上约定；下游代码
+不必再做 `[::-1]` 之类的手工翻转。
+
 ### UnifiedResult 类型
 
 任务结果统一为 `UnifiedResult` 格式：
