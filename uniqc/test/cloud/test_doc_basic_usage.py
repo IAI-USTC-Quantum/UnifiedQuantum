@@ -104,6 +104,7 @@ class TestSubmitTaskDocBasicUsage:
             BackendNotFoundError,
             AuthenticationError,
             NetworkError,
+            UnsupportedGateError,
         )
 
         try:
@@ -117,6 +118,17 @@ class TestSubmitTaskDocBasicUsage:
             # Expected when the env has no real cloud creds / pyqpanda3 —
             # the format check passed, that's what we wanted to assert.
             pass
+        except UnsupportedGateError as e:
+            # In CI there is no cached originq chip topology, so the basis
+            # / topology validation step short-circuits with a "no backend
+            # info available" UnsupportedGateError. The error message must
+            # already reference the *canonical* form 'originq:WK_C180' —
+            # that's our proof that the legacy kwarg got normalised before
+            # the validation layer saw it.
+            assert "originq:WK_C180" in str(e), (
+                "legacy 'backend=originq, backend_name=WK_C180' should be "
+                f"normalised to 'originq:WK_C180' before validation, got: {e}"
+            )
         except BackendNotFoundError as e:
             pytest.fail(
                 "legacy 'backend=originq, backend_name=WK_C180' should be "
