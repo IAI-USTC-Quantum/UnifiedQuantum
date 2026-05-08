@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from uniqc._error_hints import format_enriched_message
+
 __all__ = [
     "run_1q_xeb_workflow",
     "run_2q_xeb_workflow",
@@ -233,7 +235,7 @@ def run_parallel_xeb_workflow(
     from uniqc.qem import ReadoutEM
 
     if chip_characterization is None:
-        raise ValueError("chip_characterization is required for parallel XEB")
+        raise ValueError(format_enriched_message("chip_characterization is required for parallel XEB", "circuit_validation"))
 
     if depths is None:
         depths = [5, 10, 20]
@@ -247,7 +249,7 @@ def run_parallel_xeb_workflow(
         edges = [(u, v) for u, v in edges if u in target_set and v in target_set]
 
     if not edges:
-        raise ValueError("No edges found in chip topology")
+        raise ValueError(format_enriched_message("No edges found in chip topology", "circuit_validation"))
 
     # Auto-generate parallel patterns
     gen = ParallelPatternGenerator(edges)

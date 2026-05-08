@@ -19,6 +19,7 @@ import numpy as np
 
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc._error_hints import format_enriched_message
 
 
 @dataclass
@@ -154,7 +155,7 @@ def classical_shadow(
         True
     """
     if not isinstance(shots, int) or shots <= 0:
-        raise ValueError(f"shots must be a positive integer, got {shots}")
+        raise ValueError(format_enriched_message(f"shots must be a positive integer, got {shots}", "measurement"))
 
     n_qubits = circuit.max_qubit + 1
     if qubits is None:
@@ -162,7 +163,7 @@ def classical_shadow(
     else:
         qubits = list(qubits)
         if any(q < 0 or q >= n_qubits for q in qubits):
-            raise ValueError(f"qubits must be within 0..{n_qubits - 1}")
+            raise ValueError(format_enriched_message(f"qubits must be within 0..{n_qubits - 1}", "measurement"))
 
     n = len(qubits)
 
@@ -171,7 +172,7 @@ def classical_shadow(
         n_shadow = int(np.ceil(2 * n * np.log(2.0 / delta)))
 
     if not isinstance(n_shadow, int) or n_shadow <= 0:
-        raise ValueError(f"n_shadow must be a positive integer, got {n_shadow}")
+        raise ValueError(format_enriched_message(f"n_shadow must be a positive integer, got {n_shadow}", "measurement"))
 
     rng = np.random.default_rng()
     sim = QASM_Simulator(least_qubit_remapping=False)
@@ -258,20 +259,20 @@ def shadow_expectation(
         >>> shadow_expectation(shadows, "ZZ")   # estimate <ZZ>
     """
     if not shadows:
-        raise ValueError("shadows list is empty")
+        raise ValueError(format_enriched_message("shadows list is empty", "measurement"))
 
     n = len(shadows[0].unitary_indices)
     if len(pauli_string) != n:
         raise ValueError(
-            f"pauli_string length ({len(pauli_string)}) must match "
-            f"snapshots ({n})"
+            format_enriched_message(f"pauli_string length ({len(pauli_string)}) must match "
+            f"snapshots ({n})", "measurement")
         )
 
     pauli_string = pauli_string.upper()
     for ch in pauli_string:
         if ch not in ("I", "X", "Y", "Z"):
             raise ValueError(
-                f"pauli_string must only contain I/X/Y/Z, got: {pauli_string!r}"
+                format_enriched_message(f"pauli_string must only contain I/X/Y/Z, got: {pauli_string!r}", "measurement")
             )
 
     # # of non-identity Paulis: determines the HKP prefactor 3^m

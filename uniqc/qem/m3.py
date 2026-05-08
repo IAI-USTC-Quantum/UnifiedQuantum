@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from uniqc.exceptions import StaleCalibrationError  # noqa: F401 — re-export
+from uniqc._error_hints import format_enriched_message
 
 __all__ = ["M3Mitigator", "StaleCalibrationError"]
 
@@ -20,7 +21,7 @@ __all__ = ["M3Mitigator", "StaleCalibrationError"]
 def _get_field(cal: Any, name: str) -> Any:
     """Read ``name`` from ``cal`` whether it is a dataclass or a dict."""
     if cal is None:
-        raise ValueError("calibration result is None")
+        raise ValueError(format_enriched_message("calibration result is None", "calibration"))
     if hasattr(cal, name):
         return getattr(cal, name)
     return cal[name]
@@ -105,9 +106,9 @@ class M3Mitigator:
 
         if not isinstance(result, UnifiedResult):
             raise TypeError(
-                "M3Mitigator.apply expects a UnifiedResult; "
+                format_enriched_message("M3Mitigator.apply expects a UnifiedResult; "
                 f"got {type(result).__name__}. Use mitigate_counts/mitigate_probabilities "
-                "for raw dict input."
+                "for raw dict input.", "calibration")
             )
 
         # Convert string bitstrings → int and apply mitigation.
@@ -244,7 +245,7 @@ class M3Mitigator:
         from uniqc.calibration.results import find_cached_results
 
         if qubit is None:
-            raise ValueError("qubit must be provided when loading from cache")
+            raise ValueError(format_enriched_message("qubit must be provided when loading from cache", "calibration"))
 
         result_type = "readout_2q" if isinstance(qubit, tuple) else "readout_1q"
 
@@ -256,9 +257,9 @@ class M3Mitigator:
         )
         if not paths:
             raise FileNotFoundError(
-                f"No fresh calibration result found for backend={backend}, "
+                format_enriched_message(f"No fresh calibration result found for backend={backend}, "
                 f"qubit={qubit}, max_age_hours={max_age_hours}. "
-                f"Run calibration first."
+                f"Run calibration first.", "calibration")
             )
 
         matching_paths: list[pathlib.Path] = []
@@ -277,9 +278,9 @@ class M3Mitigator:
 
         if not matching_paths:
             raise FileNotFoundError(
-                f"No fresh calibration result found for backend={backend}, "
+                format_enriched_message(f"No fresh calibration result found for backend={backend}, "
                 f"qubit={qubit}, max_age_hours={max_age_hours}. "
-                f"Run calibration first."
+                f"Run calibration first.", "calibration")
             )
 
         # Use the most recent exact qubit/pair match.
@@ -300,9 +301,9 @@ class M3Mitigator:
             age_hours = (now - ts).total_seconds() / 3600
             if age_hours > max_age_hours:
                 raise StaleCalibrationError(
-                    f"Calibration data is {age_hours:.1f} hours old "
+                    format_enriched_message(f"Calibration data is {age_hours:.1f} hours old "
                     f"(max_age_hours={max_age_hours}). "
-                    f"Calibrated at: {calibrated_at}"
+                    f"Calibrated at: {calibrated_at}", "calibration")
                 )
         except ValueError:
             pass  # Can't parse timestamp — skip age check

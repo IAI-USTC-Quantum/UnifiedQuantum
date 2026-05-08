@@ -11,6 +11,7 @@ from typing import List, Optional
 import math
 
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _copy_circuit_gates(src: Circuit, dst: Circuit) -> None:
@@ -129,7 +130,7 @@ def grover_operator(
     # Resolve dispatch
     if len(args) == 0:
         if oracle is None:
-            raise TypeError("grover_operator requires an oracle Circuit")
+            raise TypeError(format_enriched_message("grover_operator requires an oracle Circuit", "circuit_validation"))
         return _build_grover_operator_fragment(oracle, qubits, state_prep)
 
     first = args[0]
@@ -151,7 +152,7 @@ def grover_operator(
         circuit_in.add_circuit(fragment)
         return None
 
-    raise TypeError("grover_operator: unrecognised call signature")
+    raise TypeError(format_enriched_message("grover_operator: unrecognised call signature", "circuit_validation"))
 
 
 def _build_grover_operator_fragment(
@@ -160,10 +161,10 @@ def _build_grover_operator_fragment(
     state_prep: Optional[Circuit] = None,
 ) -> Circuit:
     if qubits is None:
-        raise TypeError("grover_operator requires qubits=...")
+        raise TypeError(format_enriched_message("grover_operator requires qubits=...", "circuit_validation"))
     n = len(qubits)
     if n < 1:
-        raise ValueError("grover_operator requires at least 1 qubit")
+        raise ValueError(format_enriched_message("grover_operator requires at least 1 qubit", "circuit_validation"))
 
     fragment = Circuit()
     fragment.add_circuit(oracle)
@@ -216,7 +217,7 @@ def amplitude_estimation_circuit(
 
     if len(args) == 0:
         if oracle is None:
-            raise TypeError("amplitude_estimation_circuit requires an oracle")
+            raise TypeError(format_enriched_message("amplitude_estimation_circuit requires an oracle", "circuit_validation"))
         return _build_qae_fragment(oracle, qubits, eval_qubits, state_prep)
 
     first = args[0]
@@ -236,7 +237,7 @@ def amplitude_estimation_circuit(
         circuit_in.add_circuit(fragment)
         return None
 
-    raise TypeError("amplitude_estimation_circuit: unrecognised call signature")
+    raise TypeError(format_enriched_message("amplitude_estimation_circuit: unrecognised call signature", "circuit_validation"))
 
 
 def _build_qae_fragment(
@@ -246,15 +247,15 @@ def _build_qae_fragment(
     state_prep: Optional[Circuit] = None,
 ) -> Circuit:
     if not isinstance(qubits, list):
-        raise TypeError("qubits must be a list of qubit indices")
+        raise TypeError(format_enriched_message("qubits must be a list of qubit indices", "circuit_validation"))
     if not isinstance(eval_qubits, list):
-        raise TypeError("eval_qubits must be a list of qubit indices")
+        raise TypeError(format_enriched_message("eval_qubits must be a list of qubit indices", "circuit_validation"))
     n_search = len(qubits)
     if n_search < 1:
-        raise ValueError("At least 1 search qubit is required")
+        raise ValueError(format_enriched_message("At least 1 search qubit is required", "circuit_validation"))
     n_eval_qubits = len(eval_qubits)
     if n_eval_qubits < 1:
-        raise ValueError("At least 1 evaluation qubit is required")
+        raise ValueError(format_enriched_message("At least 1 evaluation qubit is required", "circuit_validation"))
 
     fragment = Circuit()
     for q in eval_qubits:

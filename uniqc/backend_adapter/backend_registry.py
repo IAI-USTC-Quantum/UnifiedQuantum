@@ -19,6 +19,8 @@ from uniqc.backend_adapter.backend_cache import get_cached_backends, update_cach
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES, BackendInfo, Platform, QubitTopology
 from uniqc.exceptions import BackendError
 
+from uniqc._error_hints import format_enriched_message
+
 logger = logging.getLogger(__name__)
 
 
@@ -589,8 +591,11 @@ def find_backend(identifier: str) -> BackendInfo:
                     return backend
         available = ", ".join(b.name for b in backends) or "(none)"
         raise ValueError(
-            f"Backend '{name}' not found on platform '{platform.value}'. "
-            f"Available backends: {available}"
+            format_enriched_message(
+                f"Backend '{name}' not found on platform '{platform.value}'. "
+                f"Available backends: {available}",
+                "backend_not_found",
+            )
         )
     except ValueError:
         # Bare name — search all platforms (still case-insensitive).
@@ -605,6 +610,9 @@ def find_backend(identifier: str) -> BackendInfo:
                     if _names_match(candidate, backend.name):
                         return backend
         raise ValueError(
-            f"Backend '{identifier}' not found on any platform. "
-            f"Use 'uniqc backend list' to see available backends."
+            format_enriched_message(
+                f"Backend '{identifier}' not found on any platform. "
+                f"Use 'uniqc backend list' to see available backends.",
+                "backend_not_found",
+            )
         ) from None

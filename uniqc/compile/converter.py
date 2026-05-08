@@ -9,6 +9,8 @@ from uniqc.exceptions import CircuitTranslationError
 from .originir import OriginIR_BaseParser
 from .qasm import OpenQASM2_BaseParser
 
+from uniqc._error_hints import format_enriched_message
+
 def convert_oir_to_qasm(originir_str: str) -> str:
     """
     Convert OriginIR to OpenQASM2.
@@ -18,7 +20,7 @@ def convert_oir_to_qasm(originir_str: str) -> str:
         originir_parser.parse(originir_str)
         return originir_parser.to_qasm()
     except Exception as e:
-        raise CircuitTranslationError(f"Failed to convert OriginIR to OpenQASM2: {e}")
+        raise CircuitTranslationError(format_enriched_message(f"Failed to convert OriginIR to OpenQASM2: {e}", "compilation"))
 
 def convert_qasm_to_oir(qasm_str: str) -> str:
     """
@@ -29,4 +31,4 @@ def convert_qasm_to_oir(qasm_str: str) -> str:
         qasm_parser.parse(qasm_str)
         return qasm_parser.to_originir()
     except Exception as e:
-        raise CircuitTranslationError(f"Failed to convert OpenQASM2 to OriginIR: {e}")
+        raise CircuitTranslationError(format_enriched_message(f"Failed to convert OpenQASM2 to OriginIR: {e}", "compilation"))

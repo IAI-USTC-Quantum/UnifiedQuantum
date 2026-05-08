@@ -5,6 +5,7 @@ __all__ = ["basis_state"]
 from typing import List, Optional
 
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def basis_state(
@@ -35,7 +36,7 @@ def basis_state(
         >>> basis_state(c, state=5, qubits=[0, 1, 2])  # ``|101>``
     """
     if state < 0:
-        raise ValueError(f"state must be non-negative, got {state}")
+        raise ValueError(format_enriched_message(f"state must be non-negative, got {state}", "circuit_validation"))
 
     n_bits = max(1, state.bit_length())
     if qubits is None:

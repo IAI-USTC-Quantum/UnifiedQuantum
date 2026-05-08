@@ -53,6 +53,8 @@ from uniqc.backend_adapter.task.adapters import (
     QuantumAdapter,
 )
 
+from uniqc._error_hints import format_enriched_message
+
 # -----------------------------------------------------------------------------
 # Cache Configuration
 # -----------------------------------------------------------------------------
@@ -780,7 +782,10 @@ def get_backend(
     if lookup_name not in BACKENDS:
         available = ", ".join(BACKENDS.keys())
         raise ValueError(
-            f"Unknown backend '{name}'. Available backends: {available}"
+            format_enriched_message(
+                f"Unknown backend '{name}'. Available backends: {available}",
+                "backend_not_found",
+            )
         )
 
     backend_class = BACKENDS[lookup_name]
@@ -868,20 +873,29 @@ def register_backend(
     """
     if name in BACKENDS and not allow_override:
         raise ValueError(
-            f"Backend '{name}' is already registered. "
-            "Use allow_override=True to replace it."
+            format_enriched_message(
+                f"Backend '{name}' is already registered. "
+                "Use allow_override=True to replace it.",
+                "backend_not_found",
+            )
         )
 
     # Validate the backend class
     if not issubclass(backend_class, QuantumBackend):
         raise TypeError(
-            f"Backend class must be a subclass of QuantumBackend, "
-            f"got {type(backend_class)}"
+            format_enriched_message(
+                f"Backend class must be a subclass of QuantumBackend, "
+                f"got {type(backend_class)}",
+                "backend_not_found",
+            )
         )
 
     if not backend_class.platform:
         raise ValueError(
-            f"Backend class {backend_class.__name__} must define a platform attribute"
+            format_enriched_message(
+                f"Backend class {backend_class.__name__} must define a platform attribute",
+                "backend_not_found",
+            )
         )
 
     BACKENDS[name] = backend_class
@@ -897,7 +911,7 @@ def unregister_backend(name: str) -> None:
         ValueError: If the backend is not registered.
     """
     if name not in BACKENDS:
-        raise ValueError(f"Backend '{name}' is not registered")
+        raise ValueError(format_enriched_message(f"Backend '{name}' is not registered", "backend_not_found"))
 
     del BACKENDS[name]
 

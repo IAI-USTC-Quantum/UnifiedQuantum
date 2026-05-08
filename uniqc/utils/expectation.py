@@ -6,6 +6,8 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 
+from uniqc._error_hints import format_enriched_message
+
 
 def _calculate_expectation_dict(
     measured_result: Dict[str, float],
@@ -16,7 +18,7 @@ def _calculate_expectation_dict(
     for result in measured_result:
         if len(result) != nqubit:
             raise ValueError(
-                "The Hamiltonian must have the same size with the measured result."
+                format_enriched_message("The Hamiltonian must have the same size with the measured result.", "measurement")
             )
         p = measured_result[result]
         for i in range(nqubit):
@@ -34,7 +36,7 @@ def _calculate_expectation_list(
     exp = 0.0
     if len(measured_result) != 2**nqubit:
         raise ValueError(
-            "The Hamiltonian must have the same size with the measured result."
+            format_enriched_message("The Hamiltonian must have the same size with the measured result.", "measurement")
         )
     for j, p in enumerate(measured_result):
         for i in range(nqubit):
@@ -94,13 +96,13 @@ def calculate_expectation(
 
     if not isinstance(hamiltonian, str):
         raise ValueError(
-            "The Hamiltonian input must be a str (only containing Z or I or z or i)."
+            format_enriched_message("The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement")
         )
 
     for h_char in hamiltonian:
         if h_char not in ("Z", "z", "I", "i"):
             raise ValueError(
-                "The Hamiltonian input must be a str (only containing Z or I or z or i)."
+                format_enriched_message("The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement")
             )
 
     nqubit = len(hamiltonian)
@@ -110,7 +112,7 @@ def calculate_expectation(
     elif isinstance(measured_result, list):
         return _calculate_expectation_list(measured_result, hamiltonian, nqubit)
     else:
-        raise ValueError("measured_result must be a Dict or a List.")
+        raise ValueError(format_enriched_message("measured_result must be a Dict or a List.", "measurement"))
 
 
 def calculate_multi_basis_expectation(

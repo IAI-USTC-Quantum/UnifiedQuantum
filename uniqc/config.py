@@ -33,6 +33,8 @@ from typing import Any
 
 import yaml
 
+from uniqc._error_hints import format_enriched_message
+
 # ---------------------------------------------------------------------------
 # Top-level symbols (defined here so that uniqc.backend_adapter.config can
 # import them and both modules reference the same objects after patching)
@@ -118,9 +120,9 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
             return DEFAULT_CONFIG.copy()
         return config
     except yaml.YAMLError as e:
-        raise ConfigError(f"Failed to parse YAML configuration: {e}") from e
+        raise ConfigError(format_enriched_message(f"Failed to parse YAML configuration: {e}", "config")) from e
     except OSError as e:
-        raise ConfigError(f"Failed to read configuration file: {e}") from e
+        raise ConfigError(format_enriched_message(f"Failed to read configuration file: {e}", "config")) from e
 
 
 def save_config(config: dict[str, Any], config_path: str | Path | None = None) -> None:
@@ -137,7 +139,7 @@ def save_config(config: dict[str, Any], config_path: str | Path | None = None) -
                 sort_keys=False,
             )
     except OSError as e:
-        raise ConfigError(f"Failed to write configuration file: {e}") from e
+        raise ConfigError(format_enriched_message(f"Failed to write configuration file: {e}", "config")) from e
 
 
 def get_platform_config(
@@ -147,23 +149,32 @@ def get_platform_config(
 ) -> dict[str, Any]:
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
-            f"Unsupported platform: {platform_name}. "
-            f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}"
+            format_enriched_message(
+                f"Unsupported platform: {platform_name}. "
+                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                "config",
+            )
         )
 
     config = load_config(config_path)
 
     if profile not in config:
         raise ProfileNotFoundError(
-            f"Profile '{profile}' not found in configuration. "
-            f"Available profiles: {', '.join(config.keys())}"
+            format_enriched_message(
+                f"Profile '{profile}' not found in configuration. "
+                f"Available profiles: {', '.join(config.keys())}",
+                "config",
+            )
         )
 
     profile_config = config[profile]
 
     if platform_name not in profile_config:
         raise ConfigError(
-            f"Platform '{platform_name}' not found in profile '{profile}'"
+            format_enriched_message(
+                f"Platform '{platform_name}' not found in profile '{profile}'",
+                "config",
+            )
         )
 
     return profile_config[platform_name]
@@ -264,8 +275,11 @@ def update_platform_config(
 ) -> None:
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
-            f"Unsupported platform: {platform_name}. "
-            f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}"
+            format_enriched_message(
+                f"Unsupported platform: {platform_name}. "
+                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                "config",
+            )
         )
 
     config = load_config(config_path)
@@ -297,8 +311,11 @@ def set_active_profile(
 
     if profile not in config:
         raise ProfileNotFoundError(
-            f"Profile '{profile}' not found in configuration. "
-            f"Available profiles: {', '.join(k for k in config if k not in META_KEYS)}"
+            format_enriched_message(
+                f"Profile '{profile}' not found in configuration. "
+                f"Available profiles: {', '.join(k for k in config if k not in META_KEYS)}",
+                "config",
+            )
         )
 
     config["active_profile"] = profile
@@ -364,8 +381,11 @@ def load_originq_config() -> dict[str, Any]:
         }
 
     raise ImportError(
-        "OriginQ Cloud config not found. "
-        "Run `uniqc config set originq.token <TOKEN>` or edit ~/.uniqc/config.yaml."
+        format_enriched_message(
+            "OriginQ Cloud config not found. "
+            "Run `uniqc config set originq.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
     )
 
 
@@ -377,8 +397,11 @@ def load_quafu_config() -> dict[str, Any]:
         return {"api_token": api_token}
 
     raise ImportError(
-        "Quafu config not found. "
-        "Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml."
+        format_enriched_message(
+            "Quafu config not found. "
+            "Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
     )
 
 
@@ -390,8 +413,11 @@ def load_quark_config() -> dict[str, Any]:
         return {"api_token": api_token}
 
     raise ImportError(
-        "QuarkStudio config not found. "
-        "Run `uniqc config set quark.QUARK_API_KEY <TOKEN>` or edit ~/.uniqc/config.yaml."
+        format_enriched_message(
+            "QuarkStudio config not found. "
+            "Run `uniqc config set quark.QUARK_API_KEY <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
     )
 
 
@@ -403,8 +429,11 @@ def load_ibm_config() -> dict[str, Any]:
         return {"api_token": api_token}
 
     raise ImportError(
-        "IBM Quantum config not found. "
-        "Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml."
+        format_enriched_message(
+            "IBM Quantum config not found. "
+            "Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
     )
 
 

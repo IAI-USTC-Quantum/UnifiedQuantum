@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 from itertools import combinations
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _single_excitation(
@@ -105,7 +106,7 @@ def uccsd_ansatz(
     """
     if n_electrons > n_qubits:
         raise ValueError(
-            f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})"
+            format_enriched_message(f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})", "circuit_validation")
         )
 
     if qubits is None:
@@ -127,9 +128,9 @@ def uccsd_ansatz(
         params = np.asarray(params)
         if len(params) != n_params:
             raise ValueError(
-                f"Expected {n_params} parameters "
+                format_enriched_message(f"Expected {n_params} parameters "
                 f"({n_singles} singles + {n_doubles} doubles), "
-                f"got {len(params)}"
+                f"got {len(params)}", "circuit_validation")
             )
 
     circuit = Circuit()

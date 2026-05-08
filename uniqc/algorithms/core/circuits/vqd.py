@@ -8,6 +8,7 @@ from typing import List, Optional
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _hea_ansatz(
@@ -42,8 +43,8 @@ def _hea_ansatz(
     expected = n_qubits * n_layers
     if len(params) != expected:
         raise ValueError(
-            f"Expected {expected} parameters (n_qubits={n_qubits} × "
-            f"n_layers={n_layers}), got {len(params)}"
+            format_enriched_message(f"Expected {expected} parameters (n_qubits={n_qubits} × "
+            f"n_layers={n_layers}), got {len(params)}", "circuit_validation")
         )
 
     idx = 0
@@ -74,7 +75,7 @@ def vqd_ansatz(
         qubits = list(range(n_qubits))
     if len(prev_states) == 0:
         raise ValueError(
-            "prev_states is empty. Use VQE (not VQD) for the ground state."
+            format_enriched_message("prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation")
         )
     fragment = Circuit()
     _hea_ansatz(fragment, ansatz_params, n_layers, qubits)
@@ -119,7 +120,7 @@ def vqd_circuit(
             qubits = list(range(circuit_in.qubit_num))
         if not prev_states:
             raise ValueError(
-                "prev_states is empty. Use VQE (not VQD) for the ground state."
+                format_enriched_message("prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation")
             )
         _hea_ansatz(circuit_in, ansatz_params, n_layers, qubits)
         return None
@@ -130,9 +131,9 @@ def vqd_circuit(
     elif qubits is not None:
         n_qubits = max(qubits) + 1
     else:
-        raise TypeError("vqd_circuit requires n_qubits as first positional arg")
+        raise TypeError(format_enriched_message("vqd_circuit requires n_qubits as first positional arg", "circuit_validation"))
     if ansatz_params is None or prev_states is None:
-        raise TypeError("vqd_circuit requires ansatz_params and prev_states")
+        raise TypeError(format_enriched_message("vqd_circuit requires ansatz_params and prev_states", "circuit_validation"))
     return vqd_ansatz(
         n_qubits, ansatz_params, prev_states,
         qubits=qubits, penalty=penalty, n_layers=n_layers,
@@ -184,7 +185,7 @@ def vqd_overlap_circuit(
     n = int(np.log2(dim))
     if 2**n != dim:
         raise ValueError(
-            f"prev_state length {dim} is not a power of 2."
+            format_enriched_message(f"prev_state length {dim} is not a power of 2.", "circuit_validation")
         )
 
     if qubits is None:
@@ -244,13 +245,13 @@ def _prepare_state(
     dim = len(state)
     if dim != 2**n:
         raise ValueError(
-            f"State vector length {dim} does not match {n} qubits (expected {2**n})."
+            format_enriched_message(f"State vector length {dim} does not match {n} qubits (expected {2**n}).", "circuit_validation")
         )
 
     # Normalise
     norm = np.linalg.norm(state)
     if norm == 0:
-        raise ValueError("State vector is zero.")
+        raise ValueError(format_enriched_message("State vector is zero.", "circuit_validation"))
     state = state / norm
 
     # Use state preparation via multiplexed Ry rotations (Schmidt decomposition)

@@ -17,6 +17,7 @@ import math
 
 from uniqc.circuit_builder import Circuit
 from uniqc.algorithms._compat import dispatch_circuit_fragment
+from uniqc._error_hints import format_enriched_message
 
 
 def _build_qft_fragment(
@@ -31,7 +32,7 @@ def _build_qft_fragment(
 
     n = len(qubits)
     if n < 1:
-        raise ValueError("qft_circuit requires at least 1 qubit")
+        raise ValueError(format_enriched_message("qft_circuit requires at least 1 qubit", "circuit_validation"))
 
     fragment = Circuit()
     for j in range(n):
