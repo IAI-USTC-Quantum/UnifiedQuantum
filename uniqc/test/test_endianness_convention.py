@@ -109,7 +109,9 @@ def test_dummy_originq_chip_endianness(backend):
 
     try:
         uid = submit_batch([_probe_circuit()], backend=backend, shots=2048)
-    except (ValueError, RuntimeError) as exc:  # missing chip cache / sdk
+    except (ValueError, RuntimeError, ImportError) as exc:
+        # ImportError: OriginQ adapter requires originq.token in config to
+        # build the dummy chip wrapper (CI has no creds).
         pytest.skip(f"{backend} unavailable in this environment: {exc}")
     info = query_task(uid)
     if info.status != "success":
