@@ -132,9 +132,9 @@ ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
 def _get_adapter(backend_name: str) -> CircuitAdapter:
     """Get the appropriate circuit adapter for a backend.
 
-    Accepts both bare platform names (``'originq'``) and ``'<platform>:<chip>'``
-    (``'originq:WK_C180'``) so that user code can pass through the backend
-    string used in :func:`submit_task` without losing information.
+    Accepts both bare platform ids (``"originq"``) and fully-qualified
+    ``"provider:chip"`` ids (``"originq:WK_C180"``) — the chip suffix is
+    stripped before looking up the adapter class.
 
     Args:
         backend_name: The platform name (e.g. ``'originq'``) or a
@@ -146,12 +146,12 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
     Raises:
         BackendNotFoundError: If no adapter exists for the backend.
     """
-    platform = backend_name.split(":", 1)[0] if ":" in backend_name else backend_name
-    if platform not in ADAPTER_MAP:
+    platform_key = backend_name.split(":", 1)[0] if ":" in backend_name else backend_name
+    if platform_key not in ADAPTER_MAP:
         available = ", ".join(ADAPTER_MAP.keys())
         if ":" in backend_name:
             hint = (
-                f" Did you mean `backend='{platform}', backend_name="
+                f" Did you mean `backend='{platform_key}', backend_name="
                 f"'{backend_name.split(':', 1)[1]}'`?"
             )
         else:
@@ -160,7 +160,119 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
             f"No circuit adapter for backend '{backend_name}'. "
             f"Available adapters: {available}.{hint}"
         )
-    return ADAPTER_MAP[platform]()
+    return ADAPTER_MAP[platform_key]()
+
+
+# Per-platform kwarg key used to identify the target chip / backend on the
+# adapter. Used both for auto-injecting the chip from a "provider:chip"
+# backend id, and for back-resolving the chip name when the user passes the
+# legacy bare ``backend='originq'`` form together with a chip kwarg.
+_PLATFORM_CHIP_KWARG: dict[str, str] = {
+    "originq": "backend_name",
+    "quafu": "chip_id",
+    "quark": "chip_id",
+    "ibm": "chip_id",
+}
+
+
+def _chip_from_kwargs(platform: str, kwargs: dict[str, Any]) -> str | None:
+    """Return the chip id implied by ``kwargs`` for ``platform``, if any.
+
+    Accepts the canonical key for the platform plus a few common aliases that
+    appear in older docs/examples (``backend_name``/``chip_id``/``chip``).
+    """
+    for key in (_PLATFORM_CHIP_KWARG.get(platform, ""), "backend_name", "chip_id", "chip"):
+        if not key:
+            continue
+        value = kwargs.get(key)
+        if value:
+            return str(value)
+    return None
+
+
+def _split_backend_id(backend: str) -> tuple[str, str | None]:
+    """Split a backend id into ``(platform_key, chip_or_None)``.
+
+    ``"dummy"`` and ``"dummy:..."`` are returned as platform-only — the dummy
+    routing path handles its own sub-identifier parsing.
+    """
+    if backend == "dummy" or backend.startswith("dummy:"):
+        return "dummy", None
+    if ":" in backend:
+        platform, chip = backend.split(":", 1)
+        chip = chip.strip()
+        return platform.strip(), chip or None
+    return backend.strip(), None
+
+
+def _inject_chip_kwarg(platform: str, chip: str, kwargs: dict[str, Any]) -> None:
+    """If the platform expects a chip kwarg and the caller didn't pass one,
+    inject ``chip`` under the canonical key.
+
+    User-supplied kwargs always win — we never overwrite an explicit value.
+    """
+    canonical_key = _PLATFORM_CHIP_KWARG.get(platform)
+    if not canonical_key:
+        return
+    if _chip_from_kwargs(platform, kwargs) is not None:
+        return
+    kwargs[canonical_key] = chip
+
+
+def _require_qualified_backend(backend: str, kwargs: dict[str, Any]) -> str:
+    """Enforce the ``provider:chip`` backend format for cloud submissions.
+
+    ``submit_task`` / ``submit_batch`` require a chip name in addition to a
+    provider so that pre-submission validation can resolve the right
+    ``BackendInfo`` (basis gates + topology). This helper accepts three forms
+    and returns a normalised ``"platform:chip"`` id:
+
+    * ``"provider:chip"``                 — used as-is
+    * ``"provider"`` + ``chip_kwarg``     — combined into ``"provider:chip"``
+      (legacy form that historic docs/tests use; kept for backward compat)
+    * ``"provider"`` alone                — rejected with a helpful error that
+      lists known chips from the local backend cache.
+
+    ``dummy``/``dummy:*`` ids and unknown platforms are returned unchanged so
+    that downstream code can produce its own error messages.
+    """
+    platform, chip = _split_backend_id(backend)
+
+    # Dummy and unknown platforms: leave for downstream handlers.
+    if platform == "dummy" or platform not in _PLATFORM_CHIP_KWARG:
+        return backend
+
+    if chip:
+        # Already qualified — also mirror into kwargs so adapters that read
+        # ``backend_name``/``chip_id`` see the same value.
+        _inject_chip_kwarg(platform, chip, kwargs)
+        return backend
+
+    legacy_chip = _chip_from_kwargs(platform, kwargs)
+    if legacy_chip:
+        return f"{platform}:{legacy_chip}"
+
+    # Truly bare provider — surface a helpful error pointing at known chips.
+    suggestions: list[str] = []
+    try:
+        from uniqc.backend_adapter.backend_cache import get_cached_backends
+        from uniqc.backend_adapter.backend_info import Platform
+
+        cached = get_cached_backends(Platform(platform))
+        suggestions = [f"{platform}:{entry.name}" for entry in cached][:6]
+    except Exception:
+        suggestions = []
+
+    suggestion_msg = (
+        f" Known chips in cache: {', '.join(suggestions)}."
+        if suggestions
+        else f" Run `uniqc backend list -p {platform}` to discover available chips."
+    )
+    raise BackendNotFoundError(
+        f"Backend '{backend}' is missing a chip name. submit_task() requires "
+        f"the canonical 'provider:chip-name' form, e.g. '{platform}:<CHIP>'."
+        f"{suggestion_msg}"
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -489,7 +601,9 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     caller may have authentication issues we should surface elsewhere.
 
     Honours the per-call hint ``kwargs['backend_info']`` if the caller
-    already resolved it.
+    already resolved it. Chip-name lookup is case-insensitive so that
+    ``originq:wk_c180`` and ``originq:WK_C180`` both resolve to the same
+    cached entry.
     """
     explicit = kwargs.get("backend_info")
     if explicit is not None:
@@ -500,7 +614,20 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
         from uniqc.backend_adapter.backend_cache import get_cached_backends, is_stale
         from uniqc.backend_adapter.backend_info import Platform, parse_backend_id
 
-        platform, name = parse_backend_id(backend)
+        try:
+            platform, name = parse_backend_id(backend)
+        except ValueError:
+            # Bare 'platform' form — try to combine with a chip kwarg so we
+            # can still resolve the BackendInfo for legacy callers.
+            platform_key = backend.split(":", 1)[0]
+            try:
+                platform = Platform(platform_key)
+            except ValueError:
+                return None
+            chip = _chip_from_kwargs(platform_key, kwargs)
+            if not chip:
+                return None
+            name = chip
     except Exception:
         return None
     if platform == Platform.DUMMY:
@@ -510,8 +637,9 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     except Exception:
         return None
     fresh = not is_stale(platform.value)
+    name_ci = name.casefold()
     for entry in cached:
-        if entry.name == name:
+        if entry.name == name or entry.name.casefold() == name_ci:
             # Annotate freshness in extra so callers / reports can react.
             if not fresh:
                 # Frozen dataclass; ship a copy with a warning marker.
@@ -780,8 +908,15 @@ def submit_task(
 
     Args:
         circuit: The UnifiedQuantum Circuit to submit.
-        backend: The backend name (e.g., ``'originq'``, ``'originq:WK_C180'``,
-            ``'quafu'``, ``'ibm'``, ``'dummy'``, ``'dummy:originq:WK_C180'``).
+        backend: Backend identifier in the canonical ``'provider:chip-name'``
+            format (e.g. ``'originq:WK_C180'``, ``'quafu:ScQ-P10'``,
+            ``'ibm:ibm_brisbane'``). Cloud submissions reject the bare
+            ``'provider'`` form (e.g. ``'originq'``) and surface the list
+            of cached chips for that provider — call
+            ``uniqc.list_backends()`` or run ``uniqc backend list -p
+            originq`` to discover available chips. Dummy backends use
+            ``'dummy'`` or ``'dummy:<provider>:<chip>'`` and are exempt
+            from the strict format check.
         shots: Number of measurement shots.
         metadata: Optional metadata to store with the task.
         options: Optional typed backend options. Accepts a
@@ -811,23 +946,41 @@ def submit_task(
         chip_id: Quafu / IBM chip ID. Required for full validation on those
             platforms.
         **kwargs: Additional backend-specific parameters passed through to
-            the underlying adapter (e.g. ``measurement_amend``,
-            ``available_qubits``, ``noise_model``).
+            the underlying adapter. Common implicit / hidden defaults:
+
+            - ``skip_validation`` (default ``False``): bypass the offline
+              IR-language compatibility check. Use sparingly — most
+              validation failures are real bugs.
+            - For Quafu: ``chip_id``, ``auto_mapping``
+            - For OriginQ: ``backend_name`` (e.g. ``'WK_C180'``),
+              ``measurement_amend``
+            - For dummy: ``chip_characterization``, ``noise_model``,
+              ``available_qubits``, ``available_topology``
 
     Returns:
         The task ID assigned by the backend.
 
     Raises:
-        BackendNotFoundError: If the backend is not recognized.
+        BackendNotFoundError: If the backend identifier is missing a chip
+            name (bare ``'provider'``) or is otherwise unrecognised.
+        BackendNotAvailableError: If the backend is not available.
         UnsupportedGateError: If the circuit uses gates that cannot be
             expressed in the backend's IR language (hard block — never
             skippable, no amount of local/cloud compile can help).
+        AuthenticationError: If authentication fails.
+        InsufficientCreditsError: If account has insufficient credits.
+        QuotaExceededError: If usage quota is exceeded.
+        NetworkError: If a network error occurs.
 
     Example:
         >>> circuit = Circuit()
         >>> circuit.h(0)
-        >>> circuit.measure(0)
+        >>> circuit.cnot(0, 1)
+        >>> circuit.measure(0, 1)
+        >>> # Canonical form (preferred):
         >>> task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
+        >>> # Legacy form (still accepted, normalised internally):
+        >>> task_id = submit_task(circuit, backend='originq', backend_name='WK_C180', shots=1000)
         >>> # Heavier local compile, no cloud-side recompile:
         >>> task_id = submit_task(
         ...     circuit, backend='originq:WK_C180', shots=1000,
@@ -875,6 +1028,11 @@ def submit_task(
         return _submit_dummy(circuit, backend, shots=shots, metadata=metadata,
                              local_compile=local_compile,
                              uniqc_task_id=uniqc_task_id, **kwargs)
+
+    # Enforce 'provider:chip' canonical form for cloud submissions and inject
+    # the chip into adapter kwargs so downstream calls don't fall back to a
+    # default chip silently.
+    backend = _require_qualified_backend(backend, kwargs)
 
     # Pre-submission validation + optional local compile.
     circuit, prep_extras = _prepare_circuit_for_submission(
@@ -1159,6 +1317,10 @@ def submit_batch(
         if return_platform_ids:
             return [s.platform_task_id for s in _store().get_shards(result_id)]
         return result_id
+
+    # Enforce 'provider:chip' canonical form for cloud submissions and inject
+    # the chip into adapter kwargs.
+    backend = _require_qualified_backend(backend, kwargs)
 
     # Pre-submission validation for each circuit; local-compile any that fail.
     prepared: list[Circuit] = []
