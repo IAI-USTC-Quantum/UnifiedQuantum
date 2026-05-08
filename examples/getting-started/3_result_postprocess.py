@@ -39,10 +39,10 @@ def demo_3():
     circuit = build_circuit()
 
     # Submit task with dummy mode
-    task_id = submit_task(circuit, backend='originq', shots=1000, dummy=True)
+    task_id = submit_task(circuit, backend='dummy', shots=1000)
 
     # Wait for result
-    result = wait_for_result(task_id, backend='originq', timeout=60)
+    result = wait_for_result(task_id, backend='dummy', timeout=60)
 
     if result:
         print(f"Counts: {result.get('counts', {})}")

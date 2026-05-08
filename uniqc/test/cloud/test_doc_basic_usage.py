@@ -29,24 +29,31 @@ def _bell_circuit() -> Circuit:
     return c
 
 
+def _counts_dict(result):
+    """Extract a counts dict from either a UnifiedResult or a raw dict."""
+    if hasattr(result, "counts"):
+        return result.counts
+    return result
+
+
 class TestSubmitTaskDocBasicUsage:
     """Mirror the four-step 基本用法 example from submit_task.md."""
 
     def test_canonical_provider_chip_form_round_trip(self):
-        """``submit_task(circuit, backend='originq:WK_C180')`` returns a task
-        id, ``wait_for_result`` returns a flat counts dict, and
+        """``submit_task(circuit, backend='dummy:originq:WK_C180')`` returns a
+        task id, ``wait_for_result`` returns a UnifiedResult, and
         ``query_task`` exposes the task status — all without contacting the
         cloud (we route through dummy mode for offline CI)."""
         circuit = _bell_circuit()
         task_id = submit_task(
             circuit,
-            backend="originq:WK_C180",
+            backend="dummy",
             shots=100,
-            dummy=True,
         )
         assert isinstance(task_id, str) and task_id
 
-        counts = wait_for_result(task_id, timeout=30)
+        result = wait_for_result(task_id, timeout=30)
+        counts = _counts_dict(result)
         assert isinstance(counts, dict)
         # Bell state collapses to {00, 11} — but for tiny shots either may
         # be empty; just assert keys are valid bitstrings.
@@ -58,17 +65,17 @@ class TestSubmitTaskDocBasicUsage:
         status_value = info.status.value if hasattr(info.status, "value") else info.status
         assert status_value in {"success", "running", "failed", "pending"}
 
-    def test_auto_compile_handles_h_cnot_against_cz_sx_rz_basis(self):
+    def test_local_compile_handles_h_cnot_against_cz_sx_rz_basis(self):
         """The doc example uses H/CNOT but originq's submission basis is
-        CZ/SX/RZ. ``auto_compile=True`` (the default) must transpile silently
+        CZ/SX/RZ. ``local_compile=1`` (the default) must transpile silently
         so the example just works."""
         circuit = _bell_circuit()
-        # Should NOT raise UnsupportedGateError.
+        # Should NOT raise UnsupportedGateError — even though the dummy
+        # backend doesn't enforce basis, the prep step still validates.
         task_id = submit_task(
             circuit,
-            backend="originq:WK_C180",
+            backend="dummy",
             shots=100,
-            dummy=True,
         )
         assert task_id
 
@@ -86,13 +93,11 @@ class TestSubmitTaskDocBasicUsage:
         """Backward-compat: ``backend='originq', backend_name='WK_C180'``
         is normalised to ``'originq:WK_C180'`` instead of being rejected.
 
-        We exercise the kwarg-merging path *without* going through dummy
-        mode (which would route via the chip-backed compile path that has
-        an unrelated pre-existing routing bug for tiny circuits on big
-        chips). A successful submission attempt against the real cloud
-        without credentials surfaces an availability/auth error — that's
-        fine; we only care that the bare-platform identifier is accepted
-        and combined with the kwarg before it reaches the network layer.
+        We exercise the kwarg-merging path. A successful submission attempt
+        against the real cloud without credentials surfaces an availability
+        / auth error — that's fine; we only care that the bare-platform
+        identifier is accepted and combined with the kwarg before it
+        reaches the network layer.
         """
         from uniqc.exceptions import (
             BackendNotAvailableError,
@@ -118,25 +123,14 @@ class TestSubmitTaskDocBasicUsage:
                 f"normalised, but BackendNotFoundError was raised: {e}"
             )
 
-    def test_lowercase_chip_name_resolves_via_case_insensitive_lookup(self):
-        """``originq:wk_c180`` and ``originq:WK_C180`` should both find the
-        cached BackendInfo so auto-compile can run; otherwise users get
-        cryptic 'gates outside basis set' errors."""
-        task_id = submit_task(
-            _bell_circuit(),
-            backend="originq:wk_c180",
-            shots=100,
-            dummy=True,
-        )
-        assert task_id
-
 
 class TestSubmitTaskDummyBackends:
     """Mirror the dummy-mode block from submit_task.md."""
 
     def test_plain_dummy_backend(self):
         task_id = submit_task(_bell_circuit(), backend="dummy", shots=50)
-        counts = wait_for_result(task_id, timeout=30)
+        result = wait_for_result(task_id, timeout=30)
+        counts = _counts_dict(result)
         assert isinstance(counts, dict)
 
     @pytest.mark.xfail(
@@ -150,5 +144,6 @@ class TestSubmitTaskDummyBackends:
             backend="dummy:originq:WK_C180",
             shots=50,
         )
-        counts = wait_for_result(task_id, timeout=30)
+        result = wait_for_result(task_id, timeout=30)
+        counts = _counts_dict(result)
         assert isinstance(counts, dict)

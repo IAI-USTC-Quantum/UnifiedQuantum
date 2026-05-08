@@ -63,66 +63,65 @@ def _scs(circuit: Circuit, qubits: List[int], n: int, k: int) -> None:
         _gate_ii_l(circuit, qubits[k - l], qubits[k - l + 1], qubits[k], l, n)
 
 
-def dicke_state_circuit(
-    circuit: Circuit,
-    k: int,
+def _build_dicke_fragment(
+    *,
+    n_qubits: int,
     qubits: Optional[List[int]] = None,
-) -> None:
-    r"""Prepare the Dicke state :math:`|D(n,k)\rangle`.
-
-    The Dicke state :math:`|D(n,k)\rangle` is the equal superposition of
-    all :math:`\binom{n}{k}` computational basis states with exactly *k*
-    qubits in :math:`|1\rangle`:
-
-    .. math::
-
-        |D(n,k)\rangle = \frac{1}{\sqrt{\binom{n}{k}}} \sum_{x \in \{0,1\}^n, |x|=k} |x\rangle
-
-    This implementation uses the **SCUC** (Sequential Conditional Unitary
-    Cascade) algorithm from Bärtschi & Eidenbenz (2019), built from CNOT,
-    CRY, and Toffoli gates in :math:`O(nk)` depth.
-
-    Algorithm outline:
-      1. Initialize the **last** *k* qubits to :math:`|1\rangle` (X gates).
-      2. first_block: for l = n, n-1, …, k+1 apply SCS_{l,k} on the first
-         l qubits.
-      3. second_block: for l = k, k-1, …, 2 apply SCS_{l,l-1} on the first
-         l qubits.
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        k: Number of excitations (``1``s) in the target Dicke state.
-            Must satisfy ``1 <= k <= n``.
-        qubits: Qubit indices to use.  ``None`` means all qubits of
-            *circuit* (``list(range(circuit.qubit_num))``).  Must contain
-            at least *k* qubits.
-
-    Raises:
-        ValueError: If *k* is not in ``[1, n]``.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import dicke_state_circuit
-        >>> c = Circuit()
-        >>> dicke_state_circuit(c, k=2, qubits=[0, 1, 2, 3])
-    """
+    k: int = 1,
+) -> Circuit:
     if qubits is None:
-        qubits = list(range(circuit.qubit_num))
-
+        qubits = list(range(n_qubits))
     n = len(qubits)
-
     if k < 1 or k > n:
         raise ValueError(f"k must satisfy 1 <= k <= n (got k={k}, n={n})")
 
-    # Step 1: Initialize last k qubits to |1⟩
-    for q in qubits[n - k:]:
-        circuit.x(q)
+    fragment = Circuit()
+    # Use the verified state-vector-then-prepare implementation
+    from uniqc.algorithms.core.state_preparation.dicke_state import (
+        dicke_state as _dicke_state_reference,
+    )
+    _dicke_state_reference(fragment, qubits=qubits, k=k)
+    return fragment
 
-    # Step 2: first_block — propagate excitations leftward
-    # Each SCS_{l,k} unit uses exactly k+1 qubits: the LAST k+1 of the first l.
-    for l in range(n, k, -1):
-        _scs(circuit, qubits[l - k - 1 : l], l, k)
 
-    # Step 3: second_block — balance excitations within the first k qubits
-    for l in range(k, 1, -1):
-        _scs(circuit, qubits[:l], l, l - 1)
+def dicke_state_circuit(
+    first_arg=None,
+    k: int = 1,
+    qubits: Optional[List[int]] = None,
+) -> Optional[Circuit]:
+    r"""Build (or apply) a Dicke-state preparation fragment :math:`|D(n,k)\rangle`.
+
+    Two calling conventions:
+
+    .. code-block:: python
+
+        # Fragment style (recommended):
+        c = dicke_state_circuit(4, k=2)                  # returns Circuit
+
+        # Legacy in-place style (deprecated):
+        c = Circuit()
+        dicke_state_circuit(c, k=2, qubits=[0, 1, 2, 3])
+
+    Args:
+        first_arg: Either ``n_qubits: int`` (fragment) or ``circuit: Circuit``
+            (deprecated).
+        k: Number of excitations.
+        qubits: Qubit indices to use.
+
+    Returns:
+        Fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+    """
+    from uniqc.algorithms._compat import dispatch_circuit_fragment
+
+    return dispatch_circuit_fragment(
+        name="dicke_state_circuit",
+        fragment_builder=_build_dicke_fragment,
+        first_arg=first_arg,
+        legacy_qubits=qubits,
+        extra_kwargs={"k": k},
+    )
+
+
+def dicke_state_example() -> Circuit:
+    """Return a 4-qubit ``|D(4,2)>`` Dicke state circuit for tests/docs."""
+    return dicke_state_circuit(4, k=2)

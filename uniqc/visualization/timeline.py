@@ -42,6 +42,9 @@ _DEFAULT_BASIS_GATES = ["cz", "sx", "rz"]
 class TimelineDurationError(ValueError):
     """Raised when a logical circuit cannot be scheduled without durations."""
 
+# Re-export from central module (local name kept for backward compat within this file)
+from uniqc.exceptions import TimelineDurationError as TimelineDurationError  # noqa: F401, E501
+
 
 @dataclass(frozen=True, slots=True)
 class TimelineGate:
@@ -136,6 +139,18 @@ def schedule_circuit(
     unit: str = "ns",
 ) -> TimelineSchedule:
     """Schedule a compiled circuit by left-compacting gates on qubit resources.
+
+    .. important::
+       Whenever ``compile_to_basis=True`` (the default), this function calls
+       :func:`uniqc.compile.compile`, which **requires** the ``[qiskit]`` extra:
+       ``pip install "unified-quantum[qiskit]"``.  There is no native-only
+       bypass: even if the input circuit already uses only chip-native gates
+       (e.g. CZ/SX/RZ), ``schedule_circuit`` will still call ``compile()`` to
+       collect timing data unless every entry already carries an explicit
+       ``start`` time.  To skip ``compile()`` entirely you must pass pulse /
+       timeline data where every entry has ``start_time`` set, and pass
+       ``compile_to_basis=False`` (otherwise ``TimelineDurationError`` is
+       raised).
 
     Parameters
     ----------

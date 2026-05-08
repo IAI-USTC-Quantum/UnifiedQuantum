@@ -9,3 +9,4 @@ nbsphinx
 numpy
 setuptools_scm
 intersphinx-registry
+sphinx-autoapi

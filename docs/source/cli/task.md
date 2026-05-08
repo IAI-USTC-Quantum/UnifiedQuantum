@@ -47,8 +47,11 @@ uniqc task show TASK_ID --format json
 ## 清理任务缓存
 
 ```bash
-# 清理已完成的任务
-uniqc task clear --status completed
+# 清理已成功完成的任务
+uniqc task clear --status success
+
+# 也可以按其他状态过滤（valid: pending / running / success / failed）
+uniqc task clear --status failed
 
 # 清理所有缓存（需确认）
 uniqc task clear

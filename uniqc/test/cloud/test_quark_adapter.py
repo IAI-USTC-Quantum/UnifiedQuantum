@@ -96,7 +96,14 @@ def test_list_backends_from_status_payload():
 
     backends = adapter.list_backends()
 
-    assert backends == [
+    # list_backends() may enrich entries with optional chip-info fields
+    # (num_qubits / topology / valid_gates / backend_info_available) when
+    # quarkcircuit is installed. Check the core fields explicitly.
+    assert len(backends) == 3
+    core = [
+        {k: b[k] for k in ("name", "status", "task_in_queue")} for b in backends
+    ]
+    assert core == [
         {"name": "Baihua", "status": "available", "task_in_queue": 0},
         {"name": "Miaofeng", "status": "unavailable", "task_in_queue": "Offline"},
         {"name": "Haituo", "status": "maintenance", "task_in_queue": "Calibrating"},

@@ -17,6 +17,22 @@ if TYPE_CHECKING:
 __all__ = ["ReadoutEM"]
 
 
+def _outcome_to_int(outcome: Any) -> int:
+    """Normalize a count/prob dict key to an int outcome.
+
+    Accepts ``int``, ``str`` of ``0``/``1`` characters (interpreted in
+    binary), or anything else convertible by ``int()``.
+    """
+    if isinstance(outcome, int):
+        return outcome
+    if isinstance(outcome, str):
+        s = outcome.strip()
+        if s and all(c in "01" for c in s):
+            return int(s, 2)
+        return int(s)
+    return int(outcome)
+
+
 class ReadoutEM:
     """Unified readout error mitigator.
 
@@ -55,6 +71,50 @@ class ReadoutEM:
         )
         # Cache of loaded M3Mitigator instances: (qubit_ident) → M3Mitigator
         self._mitigators: dict[str, Any] = {}
+
+    def apply(self, result: Any, measured_qubits: list[int] | None = None) -> Any:
+        """Apply readout mitigation to a :class:`UnifiedResult`.
+
+        Pipeline-style API: returns a new :class:`UnifiedResult` ready to be
+        consumed by the rest of uniqc. ``measured_qubits`` defaults to
+        ``list(range(width))`` inferred from the bitstring length.
+        """
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        if not isinstance(result, UnifiedResult):
+            raise TypeError(
+                "ReadoutEM.apply expects a UnifiedResult; "
+                f"got {type(result).__name__}."
+            )
+
+        if not result.counts:
+            return result
+
+        width = max(len(b) for b in result.counts.keys())
+        if measured_qubits is None:
+            measured_qubits = list(range(width))
+
+        counts_int = {int(b, 2): int(c) for b, c in result.counts.items()}
+        mitigated = self.mitigate_counts(counts_int, measured_qubits)
+
+        new_counts: dict[str, int] = {}
+        for outcome, value in mitigated.items():
+            new_counts[format(outcome, f"0{width}b")] = int(round(value))
+
+        total = sum(new_counts.values()) or 1
+        new_probs = {k: v / total for k, v in new_counts.items()}
+
+        return UnifiedResult(
+            counts=new_counts,
+            probabilities=new_probs,
+            shots=result.shots,
+            platform=result.platform,
+            task_id=result.task_id,
+            backend_name=result.backend_name,
+            execution_time=result.execution_time,
+            raw_result=result,
+            error_message=result.error_message,
+        )
 
     def mitigate_counts(
         self,
@@ -98,9 +158,9 @@ class ReadoutEM:
         Returns:
             Dict mapping outcome (int) → corrected probability.
         """
-        # Normalize string keys to int
+        # Normalize string keys to int (bitstrings interpreted in binary)
         if probs and isinstance(next(iter(probs)), str):
-            probs = {int(k): v for k, v in probs.items()}
+            probs = {_outcome_to_int(k): v for k, v in probs.items()}
         n = len(measured_qubits)
         if n == 1:
             return self._mitigate_probs_1q(probs, measured_qubits[0])
@@ -185,7 +245,7 @@ class ReadoutEM:
         This is an approximation: each qubit is corrected independently
         using its 1-qubit confusion matrix, applied in order.
         """
-        result = {int(k): float(v) for k, v in counts.items()}
+        result = {_outcome_to_int(k): float(v) for k, v in counts.items()}
         for bit_position, q in enumerate(qubits):
             result = self._apply_1q_matrix(result, q, bit_position, len(qubits))
         return result
@@ -194,7 +254,7 @@ class ReadoutEM:
         self, probs: dict[int, float], qubits: list[int]
     ) -> dict[int, float]:
         """Apply per-qubit readout EM sequentially to probabilities."""
-        result = {int(k): float(v) for k, v in probs.items()}
+        result = {_outcome_to_int(k): float(v) for k, v in probs.items()}
         for bit_position, q in enumerate(qubits):
             result = self._apply_1q_matrix_probs(result, q, bit_position, len(qubits))
         return result
@@ -211,9 +271,13 @@ class ReadoutEM:
         This marginalizes over all other qubits and applies the 1q correction.
         """
         mit = self._get_mitigator_1q(qubit)
-        # Get the 1q confusion matrix
+        # Get the 1q confusion matrix (works with both dict and dataclass)
         cal = mit.calibration_result
-        C = np.array(cal["confusion_matrix"])  # 2x2: [p(meas|prep)]
+        if hasattr(cal, "confusion_matrix"):
+            cm = cal.confusion_matrix
+        else:
+            cm = cal["confusion_matrix"]
+        C = np.array(cm)  # 2x2: [p(meas|prep)]
 
         if n_total is None:
             max_outcome = max(counts.keys()) if counts else 0
@@ -244,7 +308,7 @@ class ReadoutEM:
 
         n_obs = np.zeros(n)
         for outcome, cnt in counts.items():
-            n_obs[int(outcome)] = float(cnt)
+            n_obs[_outcome_to_int(outcome)] = float(cnt)
 
         n_corr = full_C @ n_obs
         n_corr = np.clip(n_corr, 0, None)

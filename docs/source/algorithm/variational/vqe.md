@@ -34,8 +34,8 @@ $$\langle\psi(\boldsymbol{\theta})|H|\psi(\boldsymbol{\theta})\rangle
 
 | 组件 | 模块 | 功能 |
 |------|------|------|
-| `uccsd_ansatz` | `algorithmics.ansatz` | 参数化试探态 |
-| `pauli_expectation` | `algorithmics.measurement` | 能量测量 |
+| `uccsd_ansatz` | `uniqc.algorithms.core.ansatz` | 参数化试探态 |
+| `pauli_expectation` | `uniqc.algorithms.core.measurement` | 能量测量 |
 | `OriginIR_Simulator` | `simulator` | 态矢量模拟 |
 
 ### H₂ 分子

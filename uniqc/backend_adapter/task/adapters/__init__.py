@@ -19,7 +19,6 @@ __all__ = [
     "QuantumAdapter",
     "DryRunResult",
     "OriginQAdapter",
-    "BackendUnavailableError",
     "QuafuAdapter",
     "QuarkAdapter",
     "QiskitAdapter",
@@ -39,7 +38,7 @@ from uniqc.backend_adapter.task.adapters.base import (
     QuantumAdapter,
 )
 from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
-from uniqc.backend_adapter.task.adapters.originq_adapter import BackendUnavailableError, OriginQAdapter
+from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
 from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter

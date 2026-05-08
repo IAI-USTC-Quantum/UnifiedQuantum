@@ -78,7 +78,7 @@ def _wait_for_result(task_id: str, platform: str | None, timeout: float) -> dict
     """Wait for task result."""
     from uniqc.backend_adapter.task_manager import wait_for_result
 
-    return wait_for_result(task_id, backend=platform, timeout=timeout)
+    return wait_for_result(task_id, timeout=timeout)
 
 
 def _print_result_table(task_id: str, result_data: dict | list) -> None:

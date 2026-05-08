@@ -1,155 +1,168 @@
-"""Entangled state preparation circuits: GHZ, W, and Cluster states."""
+"""Entangled state preparation circuits: GHZ, W, and Cluster states.
+
+All three follow the *circuit fragment* design (see
+:doc:`/guide/algorithm_design`). The canonical APIs are:
+
+- ``ghz_state_circuit(n_qubits, qubits=None) -> Circuit``
+- ``w_state_circuit(n_qubits, qubits=None) -> Circuit``
+- ``cluster_state_circuit(n_qubits, qubits=None, edges=None) -> Circuit``
+
+The shorter names ``ghz_state``, ``w_state`` and ``cluster_state`` are
+preserved as dual-mode dispatchers: pass an integer to get a fresh fragment;
+pass an existing ``Circuit`` (deprecated) to mutate it in place.
+"""
 
 __all__ = [
     "ghz_state",
     "w_state",
     "cluster_state",
+    "ghz_state_circuit",
+    "w_state_circuit",
+    "cluster_state_circuit",
 ]
 
 from typing import List, Optional, Tuple
 
 from uniqc.circuit_builder import Circuit
+from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc.algorithms.core.circuits.dicke_state import dicke_state_circuit
 
 
-def ghz_state(
-    circuit: Circuit,
-    qubits: Optional[List[int]] = None,
-) -> None:
-    r"""Prepare a GHZ (Greenberger–Horne–Zeilinger) state.
-
-    Produces the state:
-
-    .. math::
-
-        \frac{1}{\sqrt{2}}(|00\ldots0\rangle + |11\ldots1\rangle)
-
-    Implementation:
-
-    1. Hadamard on the first qubit: :math:`\frac{1}{\sqrt{2}}(|0\rangle + |1\rangle)`
-    2. Chain of CNOT gates: ``CNOT(q[0], q[1])``, ``CNOT(q[1], q[2])``, ...
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        qubits: Qubit indices. ``None`` means all qubits of *circuit*.
-
-    Raises:
-        ValueError: Fewer than 2 qubits.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import ghz_state
-        >>> c = Circuit(3)
-        >>> ghz_state(c)
-    """
+def _build_ghz_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
     if qubits is None:
-        qubits = list(range(circuit.qubit_num))
-
-    n = len(qubits)
-    if n < 2:
+        qubits = list(range(n_qubits))
+    if len(qubits) < 2:
         raise ValueError("ghz_state requires at least 2 qubits")
+    fragment = Circuit()
+    fragment.h(qubits[0])
+    for i in range(len(qubits) - 1):
+        fragment.cnot(qubits[i], qubits[i + 1])
+    return fragment
 
-    circuit.h(qubits[0])
-    for i in range(n - 1):
-        circuit.cnot(qubits[i], qubits[i + 1])
 
+def ghz_state(first_arg=None, qubits: Optional[List[int]] = None):
+    r"""Prepare a GHZ state :math:`(|0\ldots0\rangle + |1\ldots1\rangle)/\sqrt 2`.
 
-def w_state(
-    circuit: Circuit,
-    qubits: Optional[List[int]] = None,
-) -> None:
-    r"""Prepare a W state.
+    Two calling conventions:
 
-    Produces the state:
+    .. code-block:: python
 
-    .. math::
+        # Fragment style (recommended):
+        c = ghz_state(3)                         # returns Circuit
+        c = ghz_state(3, qubits=[1, 2, 4])       # use offset qubits
 
-        \frac{1}{\sqrt{n}}(|10\ldots0\rangle + |01\ldots0\rangle +
-        \ldots + |00\ldots1\rangle)
-
-    Implemented as a Dicke state :math:`|D(n,1)\rangle` (equal superposition
-    of all single-excitation computational basis states) via
-    :func:`dicke_state_circuit` with ``k=1``.
+        # Legacy in-place style (deprecated):
+        c = Circuit(3)
+        ghz_state(c)                             # mutates c in place
 
     Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        qubits: Qubit indices. ``None`` means all qubits of *circuit*.
+        first_arg: Either an integer ``n_qubits`` (fragment mode) or a
+            :class:`Circuit` (deprecated in-place mode).
+        qubits: Qubit indices.
 
-    Raises:
-        ValueError: Fewer than 2 qubits.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import w_state
-        >>> c = Circuit(4)
-        >>> w_state(c)
+    Returns:
+        A fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
     """
-    if qubits is None:
-        qubits = list(range(circuit.qubit_num))
+    return dispatch_circuit_fragment(
+        name="ghz_state",
+        fragment_builder=_build_ghz_fragment,
+        first_arg=first_arg,
+        legacy_qubits=qubits,
+    )
 
+
+def ghz_state_circuit(n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+    """Fragment-style alias of :func:`ghz_state` (always returns a fresh ``Circuit``)."""
+    return _build_ghz_fragment(n_qubits=n_qubits, qubits=qubits)
+
+
+def _build_w_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+    if qubits is None:
+        qubits = list(range(n_qubits))
     if len(qubits) < 2:
         raise ValueError("w_state requires at least 2 qubits")
+    # Build a fresh circuit and use the (already-fragment-style)
+    # ``dicke_state_circuit`` to populate it with k=1.
+    fragment = Circuit()
+    dicke_state_circuit(fragment, k=1, qubits=qubits)  # legacy in-place; safe on fragment
+    return fragment
 
-    dicke_state_circuit(circuit, k=1, qubits=qubits)
+
+def w_state(first_arg=None, qubits: Optional[List[int]] = None):
+    r"""Prepare a W state — equal superposition of single-excitation basis states.
+
+    See :func:`ghz_state` for the dual-mode signature contract.
+    """
+    return dispatch_circuit_fragment(
+        name="w_state",
+        fragment_builder=_build_w_fragment,
+        first_arg=first_arg,
+        legacy_qubits=qubits,
+    )
 
 
-def cluster_state(
-    circuit: Circuit,
+def w_state_circuit(n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+    """Fragment-style alias of :func:`w_state`."""
+    return _build_w_fragment(n_qubits=n_qubits, qubits=qubits)
+
+
+def _build_cluster_fragment(
+    *,
+    n_qubits: int,
     qubits: Optional[List[int]] = None,
     edges: Optional[List[Tuple[int, int]]] = None,
-) -> None:
-    r"""Prepare a cluster state (graph state).
-
-    A cluster state is prepared by:
-
-    1. Applying Hadamard to all qubits: :math:`H^{\otimes n}`
-    2. Applying CZ (controlled-Z) on each edge of the graph
-
-    The resulting state is:
-
-    .. math::
-
-        \frac{1}{\sqrt{2^n}} \sum_{x \in \{0,1\}^n} (-1)^{\sum_{(i,j) \in E}
-        x_i x_j} |x\rangle
-
-    Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        qubits: Qubit indices. ``None`` means all qubits of *circuit*.
-        edges: List of (source, target) pairs defining the entanglement graph.
-            Indices refer to positions in *qubits*. ``None`` uses a linear
-            nearest-neighbor chain: ``(0,1), (1,2), (2,3), ...``.
-
-    Raises:
-        ValueError: Fewer than 1 qubit.
-
-    Example:
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.circuits import cluster_state
-        >>> c = Circuit(4)
-        >>> cluster_state(c)  # linear chain
-        >>> # Custom graph (square)
-        >>> c2 = Circuit(4)
-        >>> cluster_state(c2, edges=[(0,1), (1,2), (2,3), (3,0)])
-    """
+) -> Circuit:
     if qubits is None:
-        qubits = list(range(circuit.qubit_num))
-
+        qubits = list(range(n_qubits))
     n = len(qubits)
     if n < 1:
         raise ValueError("cluster_state requires at least 1 qubit")
-
-    # Step 1: Hadamard on all qubits
+    fragment = Circuit()
     for q in qubits:
-        circuit.h(q)
-
-    # Step 2: CZ on each edge
+        fragment.h(q)
     if edges is None:
-        # Linear chain
         edges = [(i, i + 1) for i in range(n - 1)]
-
     for src_idx, tgt_idx in edges:
         if src_idx >= n or tgt_idx >= n:
             raise ValueError(
                 f"Edge ({src_idx}, {tgt_idx}) out of range for {n} qubits"
             )
-        circuit.cz(qubits[src_idx], qubits[tgt_idx])
+        fragment.cz(qubits[src_idx], qubits[tgt_idx])
+    return fragment
+
+
+def cluster_state(
+    first_arg=None,
+    qubits: Optional[List[int]] = None,
+    edges: Optional[List[Tuple[int, int]]] = None,
+):
+    r"""Prepare a cluster (graph) state via :math:`H^{\otimes n}` + CZ on each edge.
+
+    See :func:`ghz_state` for the dual-mode signature contract. ``edges``
+    defaults to a linear nearest-neighbour chain.
+    """
+    return dispatch_circuit_fragment(
+        name="cluster_state",
+        fragment_builder=_build_cluster_fragment,
+        first_arg=first_arg,
+        legacy_qubits=qubits,
+        extra_kwargs={"edges": edges},
+    )
+
+
+def cluster_state_circuit(
+    n_qubits: int,
+    qubits: Optional[List[int]] = None,
+    edges: Optional[List[Tuple[int, int]]] = None,
+) -> Circuit:
+    """Fragment-style alias of :func:`cluster_state`."""
+    return _build_cluster_fragment(n_qubits=n_qubits, qubits=qubits, edges=edges)
+
+
+def entangled_states_example() -> dict:
+    """Return a dict ``{ 'ghz': Circuit, 'w': Circuit, 'cluster': Circuit }`` for tests/docs."""
+    return {
+        "ghz": ghz_state_circuit(3),
+        "w": w_state_circuit(3),
+        "cluster": cluster_state_circuit(4),
+    }

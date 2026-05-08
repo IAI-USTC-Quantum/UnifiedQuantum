@@ -8,13 +8,14 @@ Installation:
 
 from __future__ import annotations
 
-__all__ = ["BackendUnavailableError", "OriginQAdapter"]
+__all__ = ["OriginQAdapter"]
 
 import time
 import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES
+from uniqc.exceptions import BackendNotAvailableError
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -31,23 +32,41 @@ def _avg(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
-class BackendUnavailableError(RuntimeError):
-    """Raised when a hardware backend is currently unavailable.
+# OriginQ's pyqpanda3 OriginIR parser does not currently accept ``SX`` /
+# ``SX.dagger`` tokens even though the platform's basis gate set advertises
+# SX. Rewrite them to the equivalent ``RX(±π/2)`` form before submission.
+#
+# SX            = RX( π/2)   (up to a global phase, irrelevant for sampling)
+# SX.dagger     = RX(-π/2)
+import re as _re
+_SX_PI_OVER_2 = "1.5707963267948966"
+_NEG_SX_PI_OVER_2 = "-1.5707963267948966"
+_SX_DAGGER_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*\.\s*dagger\s*$", _re.IGNORECASE)
+_SX_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*$", _re.IGNORECASE)
 
-    Hardware backends may become unavailable due to maintenance, queue
-    congestion, or other operational reasons. Use
-    ``OriginQAdapter.get_available_backends()`` to enumerate backends that
-    can currently accept jobs.
+
+def _rewrite_sx_to_rx(originir: str) -> str:
+    """Rewrite ``SX q[i]`` → ``RX q[i],(π/2)`` and ``SX q[i].dagger`` → ``RX q[i],(-π/2)``.
+
+    OriginQ's remote pyqpanda3 parser rejects the bare ``SX`` token even
+    though the platform basis gate set lists SX. Substituting with the
+    equivalent ``RX(±π/2)`` form keeps the transpiled circuit compatible
+    with the cloud parser.
     """
-
-    def __init__(self, backend_name: str) -> None:
-        self.backend_name = backend_name
-        available = None  # filled by caller
-        msg = (
-            f"Hardware backend '{backend_name}' is currently unavailable. "
-            f"To see available backends, run: uniqc backend list --info"
-        )
-        super().__init__(msg)
+    if "SX" not in originir:
+        return originir
+    out_lines = []
+    for line in originir.splitlines():
+        m = _SX_DAGGER_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_NEG_SX_PI_OVER_2})")
+            continue
+        m = _SX_RE.match(line)
+        if m:
+            out_lines.append(f"{m.group(1)}RX {m.group(2)},({_SX_PI_OVER_2})")
+            continue
+        out_lines.append(line)
+    return "\n".join(out_lines) + ("\n" if originir.endswith("\n") else "")
 
 
 class OriginQAdapter(QuantumAdapter):
@@ -62,6 +81,18 @@ class OriginQAdapter(QuantumAdapter):
     """
 
     name = "originq"
+
+    @property
+    def max_native_batch_size(self) -> int:
+        """OriginQ native batch limit, taken from ``originq.task_group_size``.
+
+        Configurable via ``~/.uniqc/uniqc.yml``. Default ``200``. uniqc
+        slices any user batch larger than this into multiple platform
+        jobs (one shard per slice) and aggregates the results
+        transparently behind a single ``uqt_*`` task id.
+        """
+        # ``int(...)`` defends against config returning a string.
+        return int(self._task_group_size or 200)
 
     def __init__(self, backend_name: str | None = None) -> None:
         """Initialize the OriginQ adapter.
@@ -248,7 +279,7 @@ class OriginQAdapter(QuantumAdapter):
         return [b for b in all_backends if b["available"]]
 
     def _validate_backend(self, backend_name: str) -> None:
-        """Raise BackendUnavailableError if a hardware backend is not available.
+        """Raise BackendNotAvailableError if a hardware backend is not available.
 
         Simulator backends are always considered available.
 
@@ -256,7 +287,7 @@ class OriginQAdapter(QuantumAdapter):
             backend_name: Backend name to validate.
 
         Raises:
-            BackendUnavailableError: If the backend is a hardware backend
+            BackendNotAvailableError: If the backend is a hardware backend
                 but is currently unavailable.
         """
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
@@ -265,7 +296,10 @@ class OriginQAdapter(QuantumAdapter):
         cached_available = self._backend_avail_cache.get(backend_name)
         if cached_available is not None:
             if not cached_available:
-                raise BackendUnavailableError(backend_name)
+                raise BackendNotAvailableError(
+                    f"Hardware backend '{backend_name}' is currently unavailable. "
+                    f"To see available backends, run: uniqc backend list --info"
+                )
             return
 
         all_backends = self.list_backends()
@@ -273,7 +307,10 @@ class OriginQAdapter(QuantumAdapter):
             if b["name"] == backend_name:
                 self._backend_avail_cache[backend_name] = bool(b["available"])
                 if not b["available"]:
-                    raise BackendUnavailableError(backend_name)
+                    raise BackendNotAvailableError(
+                        f"Hardware backend '{backend_name}' is currently unavailable. "
+                        f"To see available backends, run: uniqc backend list --info"
+                    )
                 return
 
         # Backend name not found at all — let submit() fail naturally
@@ -296,7 +333,7 @@ class OriginQAdapter(QuantumAdapter):
             QProg object for pyqpanda3.
         """
         self._ensure_imports()
-        return self._convert_originir(originir)
+        return self._convert_originir(_rewrite_sx_to_rx(originir))
 
     # -------------------------------------------------------------------------
     # Task submission
@@ -376,19 +413,37 @@ class OriginQAdapter(QuantumAdapter):
         job = backend.run(qprog, shots=shots)
         return job.job_id()
 
-    def submit_batch(self, circuits: list[str], *, shots: int = 1000, **kwargs: Any) -> str | list[str]:
-        """Submit circuits as a group.
+    def submit_batch(
+        self,
+        circuits: list[str],
+        *,
+        shots: int = 1000,
+        native_batch: bool = True,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Submit a batch of circuits.
 
-        Note: pyqpanda3 handles batch submission internally. This method
-        submits circuits sequentially if needed for grouping.
+        OriginQ Cloud (pyqpanda3) supports a *native* batch mode where many
+        circuits are scheduled under a single ``job_id`` via
+        ``QCloudBackend.run_instruction([instr1, instr2, ...], shots, options)``.
+        That single job spends only one position in the queue, so a 100-circuit
+        batch can be tens of times faster end-to-end than submitting 100 jobs.
 
         Args:
             circuits: List of OriginIR format circuit strings.
-            shots: Number of measurement shots.
-            **kwargs: Additional options (see submit()).
+            shots: Number of measurement shots applied to every circuit.
+            native_batch: When ``True`` (default) on a hardware chip backend,
+                use pyqpanda3's native batch (returns a single ``job_id`` packed
+                in a one-element list). When ``False``, submit each circuit
+                individually (returns one ``job_id`` per circuit, preserving
+                the legacy 0.0.11 behaviour).
+            **kwargs: Additional options (see :meth:`submit`).
 
         Returns:
-            Single task ID or list of task IDs if split into groups.
+            * ``[batch_job_id]`` — single-element list when native batch is
+              used (one queue position, one task ID for the whole batch).
+            * ``[id_0, id_1, ...]`` — N-element list when ``native_batch=False``
+              or for simulator backends that do not support native batching.
         """
         self._ensure_imports()
 
@@ -398,6 +453,8 @@ class OriginQAdapter(QuantumAdapter):
         self._validate_backend(backend_name)
 
         # Simulator backends use the same QCloudBackend.run() API as hardware
+        # but pyqpanda3 simulators don't expose run_instruction() reliably for
+        # batch — keep the per-circuit fallback there.
         if backend_name in ORIGINQ_SIMULATOR_NAMES:
             return self._submit_batch_simulator(backend_name, circuits, shots=shots)
 
@@ -419,10 +476,20 @@ class OriginQAdapter(QuantumAdapter):
             optimization=circuit_optimize,
         )
 
-        # pyqpanda3 accepts a list of QProg objects, but OriginQ hardware returns
-        # only one counts dict for that grouped job on WK_C180. XEB needs one
-        # result per circuit, so submit all circuits eagerly as independent jobs
-        # and let query_batch poll the returned IDs together.
+        if native_batch and len(circuits) > 1:
+            # pyqpanda3 supports native batch submission via the
+            # ``backend.run(list[QProg], shots, options)`` overload — all
+            # circuits share a single ``job_id`` and one queue position.
+            # ``QCloudResult.get_counts_list()`` then returns one counts
+            # dict per circuit, in submission order. This is the recommended
+            # path for high-throughput workflows like XEB.
+            qprogs = [self.translate_circuit(circuit) for circuit in circuits]
+            job = backend.run(qprogs, shots, options)
+            job_id = job.job_id()
+            self._batch_job_sizes[job_id] = (len(circuits), shots)
+            return [job_id]
+
+        # Legacy / opt-out path: submit each circuit independently.
         task_ids: list[str] = []
         for circuit in circuits:
             qprog = self.translate_circuit(circuit)
@@ -488,10 +555,23 @@ class OriginQAdapter(QuantumAdapter):
         qr = job.query()
         status_name = qr.job_status().name
         error_msg = qr.error_message()
-        counts = qr.get_counts()
         batch_info = self._batch_job_sizes.get(taskid)
         expected_batch_size = batch_info[0] if batch_info is not None else None
         batch_shots = batch_info[1] if batch_info is not None else None
+
+        # For native batch jobs prefer ``get_counts_list()`` so each circuit's
+        # distribution is preserved. Fall back to ``get_counts()`` for single
+        # jobs or if pyqpanda3 returns nothing list-shaped.
+        counts: Any = None
+        if expected_batch_size is not None and expected_batch_size > 1:
+            try:
+                counts_list = qr.get_counts_list()
+            except Exception:
+                counts_list = None
+            if counts_list:
+                counts = counts_list
+        if counts is None:
+            counts = qr.get_counts()
 
         if status_name == "FINISHED":
             return {

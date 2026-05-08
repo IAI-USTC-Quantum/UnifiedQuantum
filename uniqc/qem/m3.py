@@ -12,13 +12,18 @@ from typing import Any
 
 import numpy as np
 
+from uniqc.exceptions import StaleCalibrationError  # noqa: F401 — re-export
+
 __all__ = ["M3Mitigator", "StaleCalibrationError"]
 
 
-class StaleCalibrationError(Exception):
-    """Raised when the calibration data is older than the requested TTL."""
-
-    pass
+def _get_field(cal: Any, name: str) -> Any:
+    """Read ``name`` from ``cal`` whether it is a dataclass or a dict."""
+    if cal is None:
+        raise ValueError("calibration result is None")
+    if hasattr(cal, name):
+        return getattr(cal, name)
+    return cal[name]
 
 
 class M3Mitigator:
@@ -52,6 +57,13 @@ class M3Mitigator:
     ) -> None:
         if calibration_result is not None:
             self._cal = calibration_result
+            calibrated_at = ""
+            try:
+                calibrated_at = _get_field(calibration_result, "calibrated_at")
+            except (KeyError, AttributeError):
+                calibrated_at = ""
+            if calibrated_at and max_age_hours is not None:
+                self._check_age(calibrated_at, max_age_hours)
         elif cache_path is not None:
             self._cal = self._load_from_path(cache_path, max_age_hours)
         else:
@@ -73,6 +85,64 @@ class M3Mitigator:
             )
         return self._cal
 
+    def apply(self, result: Any) -> Any:
+        """Apply mitigation to a :class:`UnifiedResult` and return a new one.
+
+        This is the recommended pipeline-style API: call ``M3Mitigator(...).apply(result)``
+        and feed the returned object straight back into any uniqc workflow that
+        expects a :class:`UnifiedResult`.
+
+        Args:
+            result: A :class:`uniqc.backend_adapter.task.result_types.UnifiedResult`
+                produced by ``submit_task``/``wait_for_result``/``simulate``.
+
+        Returns:
+            A new ``UnifiedResult`` whose ``counts``/``probabilities`` are
+            mitigated. ``shots``, ``platform``, ``task_id`` and metadata are
+            preserved; the original is kept as ``raw_result``.
+        """
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        if not isinstance(result, UnifiedResult):
+            raise TypeError(
+                "M3Mitigator.apply expects a UnifiedResult; "
+                f"got {type(result).__name__}. Use mitigate_counts/mitigate_probabilities "
+                "for raw dict input."
+            )
+
+        # Convert string bitstrings → int and apply mitigation.
+        counts_int: dict[int, int] = {}
+        for bitstring, count in result.counts.items():
+            counts_int[int(bitstring, 2) if isinstance(bitstring, str) else int(bitstring)] = int(count)
+
+        mitigated_int = self.mitigate_counts(counts_int)
+
+        # Round to integer counts and convert back to bitstrings of the same width.
+        if result.counts:
+            width = max(len(b) for b in result.counts.keys())
+        else:
+            width = max(1, int(np.ceil(np.log2(max(1, len(mitigated_int))))))
+
+        new_counts: dict[str, int] = {}
+        for outcome, value in mitigated_int.items():
+            key = format(outcome, f"0{width}b")
+            new_counts[key] = int(round(value))
+
+        total = sum(new_counts.values()) or 1
+        new_probs = {k: v / total for k, v in new_counts.items()}
+
+        return UnifiedResult(
+            counts=new_counts,
+            probabilities=new_probs,
+            shots=result.shots,
+            platform=result.platform,
+            task_id=result.task_id,
+            backend_name=result.backend_name,
+            execution_time=result.execution_time,
+            raw_result=result,
+            error_message=result.error_message,
+        )
+
     def mitigate_counts(
         self, counts: dict[int, int]
     ) -> dict[int, float]:
@@ -88,7 +158,7 @@ class M3Mitigator:
             Dict mapping outcome → corrected count (float, preserved total).
         """
         cal = self.calibration_result
-        C = np.array(cal["confusion_matrix"])
+        C = np.array(_get_field(cal, "confusion_matrix"))
         n = len(C)
 
         # Build observed vector
@@ -129,7 +199,7 @@ class M3Mitigator:
             Dict mapping outcome (int) → corrected probability.
         """
         cal = self.calibration_result
-        C = np.array(cal["confusion_matrix"])
+        C = np.array(_get_field(cal, "confusion_matrix"))
         n = len(C)
 
         p_obs = np.zeros(n)

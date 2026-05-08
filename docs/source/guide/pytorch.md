@@ -40,14 +40,11 @@ from uniqc.torch_adapter import QuantumLayer
 from uniqc import Circuit, Parameter
 from uniqc.simulator import OriginIR_Simulator
 
-# 定义电路模板
-def build_circuit(theta_value):
-    c = Circuit()
-    theta = Parameter("theta")
-    theta.bind(theta_value)
-    c.rx(0, theta.evaluate())
-    c.measure(0)
-    return c
+# 构建参数化电路（参数名会自动从 circuit._parameters 中读取）
+theta = Parameter("theta")
+template = Circuit()
+template.rx(0, theta)
+template.measure(0)
 
 # 定义期望值函数
 def expectation(circuit):
@@ -56,14 +53,14 @@ def expectation(circuit):
     # 计算 <Z> 期望值
     return result.get_expectation([0])
 
-# 创建 QuantumLayer
+# 创建 QuantumLayer（参数名自动从 circuit._parameters 提取，无需再传 param_names）
 layer = QuantumLayer(
-    circuit_template=build_circuit,
+    circuit=template,
     expectation_fn=expectation,
-    param_names=["theta"],
-    shift=0.5
 )
 ```
+
+> 参数名会自动从 `circuit._parameters` 中读取，因此不再需要显式传入 `param_names`。
 
 ### 在模型中使用
 
@@ -107,15 +104,14 @@ QuantumLayer 使用 parameter-shift 规则计算量子参数的梯度：
 
 $$\frac{\partial f(\theta)}{\partial \theta} = \frac{f(\theta + s) - f(\theta - s)}{2s}$$
 
-其中 $s$ 是 shift 参数（默认 0.5）。
+其中 $s$ 是 shift 参数（默认 $\pi/2$）。
 
 ### 自定义 shift 值
 
 ```python
 layer = QuantumLayer(
-    circuit_template=build_circuit,
+    circuit=template,
     expectation_fn=expectation,
-    param_names=["theta"],
     shift=0.25  # 自定义 shift 值
 )
 ```
@@ -125,23 +121,19 @@ layer = QuantumLayer(
 对于有多个参数的电路：
 
 ```python
-def build_multi_param(params):
-    c = Circuit()
-    theta = Parameter("theta")
-    phi = Parameter("phi")
-    theta.bind(params[0])
-    phi.bind(params[1])
-    c.rx(0, theta.evaluate())
-    c.ry(1, phi.evaluate())
-    c.cnot(0, 1)
-    c.measure(0, 1)
-    return c
+theta = Parameter("theta")
+phi = Parameter("phi")
+
+multi_template = Circuit()
+multi_template.rx(0, theta)
+multi_template.ry(1, phi)
+multi_template.cnot(0, 1)
+multi_template.measure(0, 1)
 
 layer = QuantumLayer(
-    circuit_template=build_multi_param,
+    circuit=multi_template,
     expectation_fn=expectation,
-    param_names=["theta", "phi"],
-    shift=0.5
+    n_outputs=1,
 )
 ```
 
@@ -170,39 +162,33 @@ def hamiltonian_expectation(circuit):
     return exp_z0 + exp_z1
 
 # 定义 ansatz
-def ansatz(params):
-    c = Circuit()
-    theta = Parameter("theta")
-    theta.bind(params[0])
-    
-    # 初始化
-    c.h(0)
-    c.h(1)
-    
-    # 变分层
-    c.cnot(0, 1)
-    c.rz(1, theta.evaluate())
-    
-    c.measure(0, 1)
-    return c
+theta = Parameter("theta")
+ansatz_circuit = Circuit()
+
+# 初始化
+ansatz_circuit.h(0)
+ansatz_circuit.h(1)
+
+# 变分层
+ansatz_circuit.cnot(0, 1)
+ansatz_circuit.rz(1, theta)
+
+ansatz_circuit.measure(0, 1)
 
 # 创建量子层
 vqe_layer = QuantumLayer(
-    circuit_template=ansatz,
+    circuit=ansatz_circuit,
     expectation_fn=hamiltonian_expectation,
-    param_names=["theta"],
-    shift=0.5
 )
 
-# 优化
-param = torch.tensor([0.1], requires_grad=True)
-optimizer = torch.optim.Adam([param], lr=0.1)
+# 优化（QuantumLayer 自己持有可训练参数 self.params）
+optimizer = torch.optim.Adam(vqe_layer.parameters(), lr=0.1)
 
 for epoch in range(50):
     optimizer.zero_grad()
     
     # 前向传播
-    energy = vqe_layer(param)
+    energy = vqe_layer()
     
     # 反向传播
     energy.backward()

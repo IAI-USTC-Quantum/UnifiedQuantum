@@ -107,3 +107,74 @@ def test_dummy_dry_run_enforces_virtual_backend_constraints():
     assert result.success is False
     assert result.backend_name == "dummy:virtual-line-3"
     assert "Available qubits" in (result.error or "")
+
+
+# --- Regression tests for chip-backed dummy relayout (NEW-U1/NEW-U2 hotfix) ---
+
+def _wk_c180_backed_dummy_spec():
+    """Build a chip-backed dummy spec mirroring the user-reported case."""
+    from uniqc.backend_adapter.backend_info import Platform, QubitTopology
+    from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
+    from uniqc.cli.chip_info import (
+        ChipCharacterization,
+        SingleQubitData,
+        TwoQubitData,
+        TwoQubitGateData,
+    )
+
+    # Minimal characterization: chip excludes q[13] (bad) and exposes
+    # safe linear chain {58,68,77,86} plus a separate (0-1) edge.
+    safe = [58, 68, 77, 86]
+    edges = [(58, 68), (68, 77), (77, 86), (0, 1)]
+    chip = ChipCharacterization(
+        platform=Platform.ORIGINQ,
+        chip_name="WK_C180",
+        full_id="originq:WK_C180",
+        available_qubits=tuple(safe + [0, 1]),
+        connectivity=tuple(QubitTopology(a, b) for a, b in edges),
+        single_qubit_data=tuple(
+            SingleQubitData(q, single_gate_fidelity=0.999) for q in safe + [0, 1]
+        ),
+        two_qubit_data=tuple(
+            TwoQubitData(a, b, gates=(TwoQubitGateData(gate="cz", fidelity=0.99),))
+            for a, b in edges
+        ),
+    )
+    return resolve_dummy_backend(
+        "dummy:originq:WK_C180",
+        chip_characterization=chip,
+        allow_fetch=False,
+    )
+
+
+def test_chip_backed_dummy_local_compile_zero_preserves_user_qubits():
+    """local_compile=0 must NOT relayout the user's chosen physical qubits."""
+    from uniqc.backend_adapter.task_manager import _compile_for_chip_backed_dummy
+    from uniqc.circuit_builder import Circuit
+
+    spec = _wk_c180_backed_dummy_spec()
+    c = Circuit(); c.h(58); c.cz(58, 68); c.measure(58); c.measure(68)
+
+    ir, _ = _compile_for_chip_backed_dummy(c, spec, None, local_compile=0)
+    assert "q[58]" in ir and "q[68]" in ir
+    assert "q[13]" not in ir and "q[21]" not in ir
+
+
+def test_chip_backed_dummy_available_qubits_blocks_bad_relayout():
+    """available_qubits must keep the relayout off the chip's bad qubits.
+
+    Even with local_compile>0, the layout pass must respect the user-provided
+    allow-list and never silently land on an excluded qubit (q[13] here).
+    """
+    from uniqc.backend_adapter.task_manager import _compile_for_chip_backed_dummy
+    from uniqc.circuit_builder import Circuit
+
+    spec = _wk_c180_backed_dummy_spec()
+    c = Circuit(); c.h(58); c.cz(58, 68); c.measure(58); c.measure(68)
+
+    ir, _ = _compile_for_chip_backed_dummy(
+        c, spec, None,
+        local_compile=2,
+        available_qubits=[58, 68, 77, 86],
+    )
+    assert "q[13]" not in ir and "q[21]" not in ir

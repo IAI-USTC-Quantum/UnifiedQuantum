@@ -147,6 +147,60 @@ def show(
             )
 
 
+@app.command("shards")
+def shards(
+    task_id: str = typer.Argument(..., help="uniqc task id (uqt_*)"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
+):
+    """Show the platform-task-id mapping (shards) for a uniqc task.
+
+    Each row is one shard: a single submission to the underlying cloud
+    platform. Native-batch shards may cover multiple circuits
+    (``circuit_count > 1``); platforms without native batch use
+    ``circuit_count == 1`` per shard.
+    """
+    from uniqc.backend_adapter.task_manager import get_platform_task_ids
+
+    shards_list = get_platform_task_ids(task_id)
+    if not shards_list:
+        print_info(f"No shards found for task '{task_id}'")
+        return
+
+    if format == "json":
+        print_json([
+            {
+                "uniqc_task_id": s.uniqc_task_id,
+                "shard_index": s.shard_index,
+                "platform_task_id": s.platform_task_id,
+                "backend": s.backend,
+                "circuit_count": s.circuit_count,
+                "sub_index_offset": s.sub_index_offset,
+                "status": s.status,
+                "error_message": s.error_message,
+            }
+            for s in shards_list
+        ])
+        return
+
+    rows = [
+        [
+            str(s.shard_index),
+            s.platform_task_id,
+            s.backend,
+            str(s.circuit_count),
+            str(s.sub_index_offset),
+            s.status,
+            (s.error_message or "")[:60],
+        ]
+        for s in shards_list
+    ]
+    print_table(
+        title=f"Shards for {task_id}",
+        headers=["#", "platform_task_id", "backend", "n", "offset", "status", "error"],
+        rows=rows,
+    )
+
+
 @app.command()
 def clear(
     status: Optional[str] = typer.Option(None, "--status", help="Clear tasks with this status"),
@@ -160,7 +214,7 @@ def clear(
     from uniqc.backend_adapter.task_manager import clear_completed_tasks, clear_cache, list_tasks
 
     if status:
-        count = clear_completed_tasks()
+        count = clear_completed_tasks(status=status)
     else:
         if not force:
             confirm = typer.confirm("Clear all cached tasks?")

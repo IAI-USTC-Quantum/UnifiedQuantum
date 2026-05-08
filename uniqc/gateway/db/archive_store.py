@@ -27,6 +27,9 @@ class ArchiveStore:
     def archive_task(self, task_id: str) -> bool:
         """Move a task from ``tasks`` to ``archived_tasks``.
 
+        Cascades shards to ``archived_task_shards`` first; the task row's
+        ``ON DELETE CASCADE`` would otherwise wipe them silently.
+
         Returns ``True`` if the task existed and was moved.
         """
         with self._store._tx() as conn:
@@ -35,9 +38,23 @@ class ArchiveStore:
             ).fetchone()
             if not row:
                 return False
+            archived_at = datetime.now(timezone.utc).isoformat()
+            # Move shards first so we don't lose them via FK cascade.
+            shard_rows = conn.execute(
+                "SELECT * FROM task_shards WHERE uniqc_task_id = ?",
+                (task_id,),
+            ).fetchall()
+            for srow in shard_rows:
+                scols = list(srow.keys())
+                svalues = [srow[c] for c in scols]
+                splaceholders = ",".join("?" * len(scols))
+                conn.execute(
+                    f"INSERT INTO archived_task_shards ({','.join(scols)}, archived_at) "
+                    f"VALUES ({splaceholders}, ?)",
+                    svalues + [archived_at],
+                )
             cols = list(row.keys())
             values = [row[c] for c in cols]
-            archived_at = datetime.now(timezone.utc).isoformat()
             conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
             placeholders = ",".join("?" * len(cols))
             conn.execute(
@@ -50,7 +67,8 @@ class ArchiveStore:
     def restore_task(self, task_id: str) -> bool:
         """Move a task from ``archived_tasks`` back to ``tasks``.
 
-        Returns ``True`` if the task existed and was restored.
+        Cascades archived shards back to ``task_shards``. Returns
+        ``True`` if the task existed and was restored.
         """
         with self._store._tx() as conn:
             row = conn.execute(
@@ -58,13 +76,30 @@ class ArchiveStore:
             ).fetchone()
             if not row:
                 return False
-            cols = [c for c in row if c != "archived_at"]
+            cols = [c for c in row.keys() if c != "archived_at"]
             values = [row[c] for c in cols]
             conn.execute("DELETE FROM archived_tasks WHERE task_id = ?", (task_id,))
             placeholders = ",".join("?" * len(cols))
             conn.execute(
                 f"INSERT INTO tasks ({','.join(cols)}) VALUES ({placeholders})",
                 values,
+            )
+            # Restore any archived shards.
+            srows = conn.execute(
+                "SELECT * FROM archived_task_shards WHERE uniqc_task_id = ?",
+                (task_id,),
+            ).fetchall()
+            for srow in srows:
+                scols = [c for c in srow.keys() if c != "archived_at"]
+                svalues = [srow[c] for c in scols]
+                splaceholders = ",".join("?" * len(scols))
+                conn.execute(
+                    f"INSERT INTO task_shards ({','.join(scols)}) VALUES ({splaceholders})",
+                    svalues,
+                )
+            conn.execute(
+                "DELETE FROM archived_task_shards WHERE uniqc_task_id = ?",
+                (task_id,),
             )
         return True
 
@@ -116,6 +151,10 @@ class ArchiveStore:
     def delete_archived(self, task_id: str) -> bool:
         """Permanently remove an archived task. Returns ``True`` if it existed."""
         with self._store._tx() as conn:
+            conn.execute(
+                "DELETE FROM archived_task_shards WHERE uniqc_task_id = ?",
+                (task_id,),
+            )
             cur = conn.execute(
                 "DELETE FROM archived_tasks WHERE task_id = ?", (task_id,)
             )

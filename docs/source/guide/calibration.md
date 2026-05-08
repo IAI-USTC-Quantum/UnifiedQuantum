@@ -31,20 +31,25 @@ examples/wk180/        WK180 (OriginQ) 示例
 
 ```python
 from uniqc.calibration.readout import ReadoutCalibrator
+from uniqc.calibration.results import ReadoutCalibrationResult
 from uniqc.backend_adapter.task.adapters import DummyAdapter
 
 # 创建校准器
 adapter = DummyAdapter()
 cal = ReadoutCalibrator(adapter=adapter, shots=1000)
 
-# 单比特校准
+# 单比特校准（返回 ReadoutCalibrationResult dataclass）
 result_1q = cal.calibrate_1q(qubit=0)
-# result_1q["confusion_matrix"]  → 2×2
-# result_1q["assignment_fidelity"]  → 接近 1.0（理想值）
+# 属性式访问
+result_1q.confusion_matrix       # tuple of tuples, 2×2
+result_1q.assignment_fidelity    # 接近 1.0（理想值）
+# dict 式访问（向后兼容）
+result_1q["confusion_matrix"]
+result_1q["assignment_fidelity"]
 
 # 双比特联合校准
 result_2q = cal.calibrate_2q(qubit_u=0, qubit_v=1)
-# result_2q["confusion_matrix"]  → 4×4
+# result_2q.confusion_matrix  → 4×4
 ```
 
 ### CLI

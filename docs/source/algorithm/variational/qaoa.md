@@ -37,7 +37,7 @@ $$|\psi(\boldsymbol{\beta}, \boldsymbol{\gamma})\rangle
 
 | 组件 | 模块 | 功能 |
 |-----------|--------|------|
-| `qaoa_ansatz` | `algorithmics.ansatz` | 参数化 QAOA 电路 |
+| `qaoa_ansatz` | `uniqc.algorithms.core.ansatz` | 参数化 QAOA 电路 |
 | `OriginIR_Simulator` | `simulator` | 态矢量模拟 |
 
 ## 运行示例

@@ -18,11 +18,7 @@ import numpy as np
 from .error_model import ErrorLoader
 from .opcode_simulator import OpcodeSimulator
 from uniqc.circuit_builder.qcircuit import OpcodeType
-
-
-class TopologyError(Exception):
-    """Exception raised when an invalid qubit or topology is used."""
-    pass
+from uniqc.exceptions import TopologyError  # noqa: F401 — re-export
 
 class BaseSimulator:
     """Abstract base class for quantum circuit simulators.
@@ -120,11 +116,13 @@ class BaseSimulator:
             
             if self.available_topology and isinstance(qubit, list):
                 try:
-                    self._check_topology(qubit)         
-                except TopologyError as e:
-                    raise ValueError(f'Error in line {i+1}: \n'
-                                     f'Opcode: {opcode}\n'
-                                     f'Errorinfo: {e}')
+                    self._check_topology(qubit)
+                except TopologyError as exc:
+                    raise TopologyError(
+                        f'Error in line {i+1}: '
+                        f'Opcode: {opcode}, '
+                        f'Original error: {exc}'
+                    ) from exc
             
             if qubit is not None:
                 if isinstance(qubit, list):

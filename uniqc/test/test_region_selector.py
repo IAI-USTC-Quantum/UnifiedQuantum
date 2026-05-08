@@ -124,6 +124,37 @@ class TestFindBest1DChain:
         result = rs.find_best_1D_chain(4)
         assert 0.0 <= result.estimated_fidelity <= 1.0
 
+    def test_timeout_returns_partial_result(self):
+        """On a large chip with tight timeout, returns best result found so far."""
+        import time
+
+        n = 80
+        # Build a grid-like graph with high connectivity to stress DFS
+        nodes = list(range(n))
+        edges = []
+        for i in range(n):
+            for j in range(i + 1, min(i + 5, n)):
+                edges.append((i, j))
+        chip = _make_chip(nodes, edges)
+        rs = RegionSelector(chip)
+
+        start = time.time()
+        result = rs.find_best_1D_chain(20, max_search_seconds=0.1)
+        elapsed = time.time() - start
+
+        # Should return quickly (within a few seconds, not minutes)
+        assert elapsed < 5.0
+        # Should return something (partial result is acceptable)
+        assert result.chain is not None
+        assert len(result.chain) >= 1
+
+    def test_max_search_seconds_accepted(self):
+        """Parameter max_search_seconds is accepted without error."""
+        chip = _make_chip(list(range(6)), [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)])
+        rs = RegionSelector(chip)
+        result = rs.find_best_1D_chain(3, max_search_seconds=5.0)
+        assert result.chain is not None
+
 
 class TestEstimateCircuitFidelity:
     """Tests for estimate_circuit_fidelity."""

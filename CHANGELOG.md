@@ -7,6 +7,222 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-05-07
+
+### ⚠ BREAKING
+
+- **uniqc-managed task IDs (`uqt_*`)** — `submit_task` / `submit_batch` now
+  always return a single opaque uniqc task id of the form
+  `uqt_<32-hex>` (36 chars total) rather than the underlying platform's
+  raw id. Internally the new `task_shards` table maps each `uqt_*` to
+  one or more platform-issued ids and tracks per-shard status. Migration
+  is automatic — pre-existing rows in the local sqlite cache are
+  upgraded to the new layout on first use (each old row becomes its own
+  `uqt_*` parent + 1 shard, with the original platform id preserved
+  under `metadata.legacy_platform_id`). Querying with a raw platform
+  id still works but emits a `DeprecationWarning` and resolves via the
+  shard index.
+
+  Why: the previous behaviour leaked platform-specific id formats
+  (OriginQ MD5, IBM `cp...` job ids, Quafu UUIDs, dummy `0xabc...`)
+  through every downstream tool; uniqc now exposes one consistent
+  format. It also enables transparent **auto-sharding**: when a batch
+  exceeds an adapter's `max_native_batch_size` (OriginQ default 200 via
+  `originq.task_group_size`, IBM 100), uniqc splits it into multiple
+  cloud submissions, each tracked as a separate shard, while the user
+  still sees one task id.
+
+  Impact: any caller that compared returned task ids against a regex
+  for the old platform format, or that persisted platform ids into its
+  own database, must update to use `uqt_*` ids. To recover the
+  underlying platform ids, call `uniqc.get_platform_task_ids(uid)` (also
+  exposed via `uniqc task shards <uid>` and
+  `GET /api/tasks/{uid}/shards`).
+
+### Added
+
+- `uniqc.get_platform_task_ids(task_id) -> list[TaskShard]` — public API
+  for inspecting the shard mapping behind a `uqt_*` id. Each shard
+  exposes `platform_task_id`, `shard_index`, `circuit_count`,
+  `sub_index_offset`, `status`, `error_message`, `submit_time` and
+  `update_time`.
+- `uniqc task shards <uid>` CLI subcommand (`--format table|json`).
+- `GET /api/tasks/{uniqc_id}/shards` REST endpoint on the gateway.
+- `submit_batch(..., return_platform_ids=True)` opt-in that returns the
+  list of platform ids in submission order (for callers that want both
+  the uniqc id and the per-circuit platform ids; the uniqc id is still
+  the canonical handle for `query_task` / `wait_for_result`).
+- `QuantumAdapter.max_native_batch_size` class attribute (default 1).
+  OriginQ exposes it as a property reading
+  `originq.task_group_size` (default 200); qiskit hard-codes 100.
+- Schema v4 (`task_shards` + `archived_task_shards` tables with FK
+  `ON DELETE CASCADE`) and v5 (legacy-row migration). Schema version is
+  bumped from 2 → 5; the gateway `ArchiveStore.archive_task` /
+  `restore_task` / `delete_archived` paths now cascade shard rows
+  alongside the parent.
+
+### Fixed
+
+- Cloud failure messages from OriginQ are now propagated to
+  `TaskInfo.error_message` (and `TaskShard.error_message`). Previously
+  the adapter nested the error under `result["result"]["error"]`, but
+  `query_task` and friends only inspected `result.get("error")`,
+  silently leaving `error_message=None` on every failed task.
+- Pre-existing bug in `gateway.db.archive_store.ArchiveStore.restore_task`
+  that iterated a sqlite3 `Row` as values instead of keys (made
+  archive→restore round-trip raise `IndexError`).
+
+### Added
+
+- **Native batch submission for OriginQ and IBM** (`uniqc/backend_adapter/task/adapters/originq_adapter.py`, `qiskit_adapter.py`, `uniqc/backend_adapter/task_manager.py`, `uniqc/backend_adapter/backend.py`):
+  `submit_batch(circuits, ..., native_batch=True)` (default) now packs all
+  circuits into a single cloud job — one queue position, one task ID per
+  batch — by routing through pyqpanda3's
+  `QCloudBackend.run(list[QProg], shots, options)` overload for OriginQ
+  and through qiskit-runtime's native `Sampler.run([circuits])` for IBM.
+  `wait_for_result(batch_id)` returns a `list[UnifiedResult]` for native
+  batches, with each child `task_id` formatted as `"{batch_id}#{idx}"`
+  (preserves submission order). Pass `native_batch=False` to fall back to
+  one cloud job per circuit (legacy behaviour). Live-verified on WK_C180
+  for batches of 3 circuits, and end-to-end through `wait_for_result`.
+  This dramatically reduces queueing time for high-throughput workflows
+  like XEB and noise characterization.
+
+## [0.0.11.post1] - 2026-05-07
+
+### Fixed
+
+- **Chip-backed dummy `local_compile=0` honoured + `available_qubits` enforced** (`uniqc/backend_adapter/task_manager.py`, `uniqc/compile/compiler.py`):
+  Previously `dummy:originq:WK_C180` and other chip-backed dummies always
+  ran the qiskit layout pass inside `_compile_for_chip_backed_dummy`,
+  silently re-mapping the user's hand-picked safe qubits onto whatever
+  physical qubits `RegionSelector` chose — including chip qubits the
+  caller had explicitly excluded via `available_qubits` (e.g. q[58]/q[68]
+  silently moved onto the broken q[13]/q[21]). Three coupled fixes:
+  (1) `_compile_for_chip_backed_dummy(...)` now honours `local_compile=0`
+      and passes the source IR through verbatim;
+  (2) when `available_qubits` is forwarded (or recovered from the dummy
+      spec) and the source circuit's actively-touched qubits already lie
+      inside that allow-list, the IR is also passed through verbatim
+      regardless of `local_compile` — the user has chosen the layout and
+      we MUST NOT silently relabel;
+  (3) `compile()` / `compile_with_config()` / `compile_full()` /
+      `_route_with_fidelity()` now accept `available_qubits` and filter
+      both the coupling map and per-qubit/edge fidelity tables before
+      mapping selection, so any genuine relayout cannot land on excluded
+      qubits.
+  `submit_task` / `_submit_dummy` / `submit_batch` / `_submit_batch_dummy`
+  thread `local_compile` and `available_qubits` end-to-end. Regression
+  tests added in `uniqc/test/cloud/test_dummy_backend_design.py`.
+
+## [0.0.11] - 2026-05-07
+
+This is a large release driven by a four-round end-to-end audit of every public
+API and its documentation. Beyond the new MPS simulator, the headline change is
+a sweeping cleanup of variational / state-prep / oracular / measurement
+algorithms into a single "circuit fragment" design, plus a unified
+exception system, a new compile-level model that replaces ad-hoc
+`auto_compile` flags, and substantial cloud-platform reliability fixes.
+
+### Added
+
+#### Simulation
+
+- **MPS simulator** (`uniqc/simulator/mps_simulator.py`): New pure-Python `MPSSimulator` and `MPSConfig` classes implementing an open-boundary, nearest-neighbour matrix-product-state engine with χ-bounded SVD truncation. Supports the OriginIR gate set used by the rest of `uniqc` (`H/X/Y/Z/S/T/SX/RX/RY/RZ/U1/U2/U3/RPhi*` 1q, `CNOT/CZ/SWAP/ISWAP/ECR` 2q, `XX/YY/ZZ/XY/PHASE2Q` parameterised 2q). Public API: `simulate_pmeasure` (≤24 measured qubits), `simulate_shots` (per-site MPS sampling, scales to hundreds of qubits), `simulate_statevector` (≤24 qubits). Exposes `max_bond` and `truncation_errors` for diagnostics. Rejects long-range 2-qubit gates and `CONTROL`/`controlled_by` operations. Does NOT inherit `BaseSimulator`, keeping the C++ runtime out of its dependency closure.
+- **`dummy:mps:linear-N` backend** (`uniqc/backend_adapter/dummy_backend.py`, `dummy_adapter.py`): Resolver now recognises identifiers of the form `dummy:mps:linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]`, which build a noiseless `MPSSimulator` over an open-chain topology. `DummyBackendSpec` gains `simulator_kind` and `simulator_kwargs`; `DummyAdapter` validates that MPS is not combined with `noise_model`/`chip_characterization`, dispatches `simulate_shots` directly, and short-circuits the C++ availability check when `simulator_kind == "mps"`.
+
+#### Circuit & Compiler
+
+- **`Circuit.get_matrix()`** (`uniqc/circuit_builder/matrix.py`): Extracts the unitary matrix representation of a `Circuit` by folding all gate matrices via tensor product and contraction. Supports all standard gates; raises `NotMatrixableError` for gates without a finite unitary (measurement, decoherence channels). Exposed at the top level (A-U2).
+- **`Circuit.draw()`** (`uniqc/circuit_builder/qcircuit.py`): Convenience visualisation helper alongside the existing timeline view (A-U6).
+- **`Circuit.xy(q1, q2, theta)`** parameterised 2q gate.
+- **OpenQASM 2 user `gate def` support** (`uniqc/qasm/qasm2parser.py`): The base parser now recognises user-defined `gate` blocks, recursively inlines custom gate calls during parsing, and supports parameterised, parameter-less, nested, and overriding definitions. Round-trip export of `iswap`, `rphi`, `phase2q`, `xy`, `uu15` etc. into QASM2 now works via auto-generated `gate def` blocks (A-U3).
+- **Compile-level model** (`uniqc/backend_adapter/task/options.py`, `docs/source/guide/compile_levels.md`): Replaces `auto_compile=True/False` with explicit `local_compile` / `cloud_compile` integers (0..3, mirroring the qiskit transpilation level convention). IR-language compatibility is always hard-enforced, separately from the soft `skip_validation` flag (NEW-U2).
+
+#### Algorithms (refactor — see "Changed" for breaking notes)
+
+- **Algorithm fragment design** (`uniqc/algorithms/`, `docs/source/guide/algorithm_design.md`): Variational ansatz factories use the `_ansatz` suffix and return a fresh `Circuit`; state-prep primitives use the `_circuit` suffix and accept `n_qubits`/`qubits`; oracular algorithms accept a `Circuit` (the oracle) as their first argument; measurement primitives become classes (`PauliExpectation`, `StateTomography`, `ClassicalShadow`, `BasisRotationMeasurement`) with `.get_readout_circuits()` and `.execute(backend, *, program_type='qasm', **kwargs)`. Each module also exports a `<name>_example()` helper for docs and smoke tests (C-U1).
+- **`vqd_ansatz`** introduced (`vqd_circuit` retained as deprecated alias).
+- **`qpe_circuit`** (`uniqc/algorithms/core/circuits/qpe.py`): Textbook Quantum Phase Estimation fragment with inverse-QFT, exposed at `uniqc.algorithms.core.circuits` (C-U9).
+- **VQE / QAOA / classical-shadow workflows** (`uniqc/algorithms/workflows/`): End-to-end driver helpers for the most common variational and shadow-tomography pipelines (C-U6).
+- **`pauli_expectation` accepts three forms**: compact `'ZIZ'`, indexed `'Z0Z1'`, and tuple list `[('Z',0),('Z',1)]` (C-U2).
+
+#### Calibration & QEM
+
+- **Calibration module** (`uniqc/calibration/`): Top-level module with `XEBenchmarker`, `ReadoutCalibrator`, and `~/.uniqc/calibration_cache/` storage with ISO-8601 `calibrated_at` timestamps. `CalibrationResult` / `XEBResult` / `ReadoutCalibrationResult` dataclasses with `to_dict()` / `from_dict()` for JSON serialisation. Architecture: calibration writes cache; QEM reads and enforces TTL freshness.
+- **`ReadoutCalibrator.calibrate_1q/2q`** now return `ReadoutCalibrationResult` dataclasses (with backward-compatible `__getitem__`/`__contains__`) instead of bare dicts (E2). Now accept `timeout` / `poll_interval` kwargs (E-U7).
+- **M3Mitigator / ReadoutEM `.apply(UnifiedResult)`** pipeline API for clean end-to-end mitigation (E-U5).
+- **ZNE placeholder** (`uniqc/qem/zne.py`): `NotImplementedError` + `TODO` for follow-up release (E-U4).
+
+#### Cloud & Backend
+
+- **`RegionSelector.from_backend`** convenience constructor (D-U9).
+- **`RegionSelector` time budget + greedy fallback**: `find_best_1D_chain` accepts `max_search_seconds` (default 30s) with deadline checks; on timeout returns the best partial result found (D-U2, D6).
+- **`UnifiedResult` dict-like**: exposes counts via `__getitem__` / `values` / `keys` and a `.raw()` accessor (D1).
+- **`TaskInfo.error_message`** field (D-U10) and **`DryRunResult.error_kind`** (D-U13).
+- **Backend audit visibility**: `fetch_all_backends_with_status()` returns `FetchResult(backends, fetch_failures)`. `audit_backends()` accepts `fetch_failures` and emits `BackendAuditIssue(severity="warning")` for platforms that had credentials but couldn't be fetched (D11).
+- **Top-level export of `XEBenchmarker`** from both `uniqc.calibration` and `uniqc.calibration.xeb` (E-U3).
+- **`F-U3`**: new `docs/source/cli/gateway.md`.
+
+#### Exception system
+
+- **`uniqc/exceptions.py`**: Consolidated 18+ custom exception classes scattered across 8 files into a single hierarchy rooted at `UnifiedQuantumError`. New: `ConfigError` family, `CompilationFailedError`, `CircuitTranslationError`, QASM parser errors, `TopologyError`, `NotMatrixableError`, `TimelineDurationError`, `BackendOptionsError`, `MissingDependencyError` (#76).
+
+### Changed
+
+- **`uniqc.simulator.get_backend` → `get_simulator`** (`get_backend` retained as deprecated wrapper). Signature unified across `get_simulator` / `create_simulator` to `(backend_type, program_type)` (B-U2, B2).
+- **`uniqc.simulator.__init__`** rewritten to re-export `OpcodeSimulator`, `backend_alias`, and all `error_model` classes; cleaned `__all__`; removed `TYPE_CHECKING` leak (B-U1, B-U3, B-U4).
+- **`list_backends()`** returns `list[str]`; the dict-by-platform variant is `list_backends_by_platform()` (D8).
+- **`auto_compile` removed**; replaced by `local_compile` / `cloud_compile` integers (NEW-U2).
+- **`UNIQC_DUMMY` and `UNIQC_SKIP_VALIDATION` env vars removed**: dummy mode is now selected exclusively via the backend prefix (`dummy:...`), and skip-validation via the `skip_validation=True` kwarg (D2, D3).
+- **Hard IR-language compatibility check**: language compatibility (e.g. RPhi gates rejected by QASM2-only platforms) is enforced regardless of `skip_validation`. Gate-set, qubit-count, and topology checks remain skippable (NEW-U2).
+- **`OriginQAdapter.translate_circuit`** transparently rewrites `SX` / `SX.dagger` to `RX(±π/2)` so OriginQ/`pyqpanda3` accepts circuits originally written in the SX basis (NEW-U2.b).
+- **OriginQ backend default** changed from `origin:wuyuan:d5` → `originq:WK_C180` everywhere (CLI, defaults, docs) (D-U5/NEW-U5, D9, D10).
+- **`_get_adapter` accepts `<platform>:<chip>` suffix** with helpful errors otherwise (NEW-U2). `dry_run_task` now uses the same resolver and matches `submit_task` API surface (D-U4).
+- **Case-insensitive backend aliases** (D-U3).
+- **Density-matrix CLI alias** (`density_matrix` → `density_operator_qutip`) normalisation + help text (B-U6).
+- **`Platform.IBM` defaults to `QiskitAdapter`** (`IBMAdapter` is deprecated) (NEW-U7).
+- **`wait_for_result`** drops the now-unused `backend` keyword — task ID alone is sufficient (D-U11).
+- **`state_tomography`** drops the qutip dependency and returns a plain dict (C-U4).
+- **Config validation** warns on unknown platform keys to surface typos (e.g. `tokn` instead of `token`) (F9).
+- **Backend platform fetch** distinguishes "no credentials" (silent skip) from "credentials present but fetch failed" (raises `BackendError` with original cause) (D11).
+- **`save_calibration_result`** writes ISO-8601 with trailing `Z` instead of `+0000` (E-U1).
+- **`always-ai-hints`** alias of `always-ai-hint` is hidden in CLI help (F-U2).
+- **`batch_execute_with_params`** now in `torch_adapter.batch_executor.__all__` (F-U5).
+- **Documentation overhaul**: All guides, CLI pages, and API references aligned with the post-audit surface; `algorithmics.*` references replaced with `uniqc.algorithms.core.*` (C-U8); guide examples use `UnifiedResult` attribute access (`.counts`/`.probabilities`) (D-U1); MPS chi_max default corrected to 64; QuantumLayer constructor + VQE optimizer example fixed (B5-B7, F6-F8). New `docs/source/api_index.md` API landing page; `uniqc_api.rst` now points at the autoapi-generated tree (B-U5).
+
+### Fixed
+
+- **`algorithms.dicke_state` / `w_state`**: produce correct W superposition (C1, C2).
+- **`algorithms.state_tomography`**: fix qutip-fallback dtype, identity element, and Hermitian symmetrisation (C3).
+- **`qem/m3`**: `M3Mitigator` accepts `ReadoutCalibrationResult` and runs freshness check on the calibration_result branch (E1, E5).
+- **`qem/readout_em`**: parse bitstrings as binary in the ≥3-qubit path (E3).
+- **`backend_adapter/region_selector`**: skip self-loops in graph build (D7).
+- **`backend_adapter/task/options`**: `from_kwargs` accepts both dict and `**kwargs`; default `backend_name` updated to `originq:WK_C180`.
+- **`task_manager.wait_for_result`** returns `UnifiedResult | None`; `clear_completed_tasks` accepts a status filter (D1, F1).
+- **Compile pipeline** correctly tracks MEASURE gates with non-contiguous qubit/classical bit registers via a deferred `pending_measurements` buffer.
+- **Exception classes** in `compile/_utils`, `qem/m3`, `task/options` now inherit from `UnifiedQuantumError` + the original parent for cross-catch compatibility (F5).
+- **CLI `task clear --status X`** actually filters by status (F1).
+- **Routing fix** (NEW-U1): routing now uses qiskit `initial_layout` (no OriginIR rewrite); fetches the full chip topology, picks the highest-fidelity edge for 2q jobs and a 1D-chain for >2q jobs.
+- **Backend aggregator** no longer silently drops platforms; `ImportError` and unexpected errors surface as `fetch_failures` (NEW-U4).
+- **TaskInfo + duplicate-measure ban**: circuits with duplicate `MEASURE` on the same qubit are rejected with a clear error (D-U10).
+- **`basis_rotation_measurement`** raises `ValueError` if the input circuit has no `MEASURE` (C-U5).
+- **QiskitAdapter proxy detection** (`uniqc/backend_adapter/task/adapters/qiskit_adapter.py`): Auto-detects system proxy settings when no proxy is configured in the IBM section, enabling IBM Quantum access through corporate proxies.
+
+### Testing
+
+Full test matrix on this release: **1456 passed, 16 skipped** (`pytest -q` against `pyproject` `[all]` extras). Tests added across `test_mps_simulator.py`, `test_calibration_*`, `test_quark_adapter.py`, algorithm-fragment regression tests, and `test_compile_levels.py`.
+
+### Migration notes
+
+- Replace `from uniqc.algorithmics import ...` with `from uniqc.algorithms.core import ...`.
+- Replace `auto_compile=True/False` with `local_compile=<int>` and/or `cloud_compile=<int>` (see `docs/source/guide/compile_levels.md`).
+- Replace `submit_task(..., backend='origin:wuyuan:d5')` with `submit_task(..., backend='originq:WK_C180')`.
+- `wait_for_result(task_id, backend='originq')` → `wait_for_result(task_id)`.
+- `simulator.get_backend(...)` → `simulator.get_simulator(backend_type, program_type)`.
+- `os.environ['UNIQC_DUMMY']` / `UNIQC_SKIP_VALIDATION` → use `backend='dummy:...'` / `skip_validation=True` kwarg.
+- `vqd_circuit(...)` → `vqd_ansatz(...)` (old name still works with `DeprecationWarning`).
+
 ## [0.0.10] - 2026-05-05
 
 ### Added

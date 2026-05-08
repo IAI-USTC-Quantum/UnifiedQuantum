@@ -109,6 +109,67 @@ class RegionSelector:
         self._build_graph()
 
     # -------------------------------------------------------------------------
+    # Convenience constructors
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def from_backend(cls, backend: str) -> "RegionSelector":
+        """Construct a RegionSelector from a backend identifier string.
+
+        This is a convenience wrapper that fetches the chip characterization
+        for the named backend and feeds it to the constructor — equivalent
+        to::
+
+            chip = OriginQAdapter().get_chip_characterization("WK_C180")
+            selector = RegionSelector(chip)
+
+        Parameters
+        ----------
+        backend : str
+            Backend identifier in the canonical
+            ``"<platform>:<chip>"`` form, e.g. ``"originq:WK_C180"`` or
+            ``"originq:wk_c180"`` (case-insensitive on the chip name).
+            Bare ``"<chip>"`` is interpreted as ``"originq:<chip>"`` for
+            convenience.
+
+        Returns
+        -------
+        RegionSelector
+            Selector pre-populated with the chip's connectivity and
+            fidelity data.
+
+        Raises
+        ------
+        ValueError
+            If the backend string is malformed or the platform is unknown.
+        """
+        if not backend:
+            raise ValueError("backend identifier must be a non-empty string")
+
+        if ":" in backend:
+            platform, chip = backend.split(":", 1)
+        else:
+            # Bare chip name — assume OriginQ for convenience.
+            platform, chip = "originq", backend
+
+        platform = platform.strip().lower()
+        chip = chip.strip()
+
+        if platform == "originq":
+            from uniqc.backend_adapter.task.adapters.originq_adapter import (
+                OriginQAdapter,
+            )
+
+            adapter = OriginQAdapter()
+            chip_data = adapter.get_chip_characterization(chip)
+        else:
+            raise ValueError(
+                f"RegionSelector.from_backend currently only supports the "
+                f"'originq' platform; got '{platform}'."
+            )
+        return cls(chip_data)
+
+    # -------------------------------------------------------------------------
     # Graph building
     # -------------------------------------------------------------------------
 
@@ -121,6 +182,8 @@ class RegionSelector:
 
         # Two-qubit fidelity map: undirected edge -> best gate fidelity
         for tq_data in self._chip.two_qubit_data:
+            if tq_data.qubit_u == tq_data.qubit_v:
+                continue  # skip self-loops which are not real two-qubit edges
             for gate in tq_data.gates:
                 if gate.fidelity is not None:
                     edge = tuple(sorted((tq_data.qubit_u, tq_data.qubit_v)))
@@ -134,11 +197,15 @@ class RegionSelector:
 
         for edge_topo in self._chip.connectivity:
             u, v = edge_topo.u, edge_topo.v
+            if u == v:
+                continue
             undirected[u].add(v)
             undirected[v].add(u)
 
         for edge_topo in self._chip.connectivity:
             u, v = edge_topo.u, edge_topo.v
+            if u == v:
+                continue
             edge = tuple(sorted((u, v)))
             fid = self._tq_fid.get(edge, _DEFAULT_FIDELITY)
             weight = 1.0 - fid  # lower weight = better
@@ -155,25 +222,21 @@ class RegionSelector:
         self,
         length: int,
         start: int | None = None,
+        max_search_seconds: float = 10.0,
     ) -> ChainSearchResult:
         """Find the highest-fidelity linear chain of connected qubits.
 
         **Algorithm:**
 
-        1. **Greedy phase.** Starting from ``start`` (or the qubit with the
-           highest single-gate fidelity if not specified), repeatedly extend
-           the chain by picking the neighbour with the highest two-qubit gate
-           fidelity. Stop when the chain reaches ``length`` or no unvisited
-           neighbours exist.
-
-        2. **Backtracking phase.** If greedy fails to reach the desired length,
-           perform a bounded DFS search from each candidate starting qubit.
-           The search explores paths up to depth ``length`` and returns the
-           path with the highest cumulative fidelity product, with alpha-beta
-           pruning to bound search time.
-
-        3. **Partial result.** If no chain of exactly ``length`` exists, return
-           the best shorter chain found.
+        1. **DFS phase.** From each candidate starting qubit, run a DFS to
+           find the lexicographically-first path of the requested ``length``,
+           pruning branches that cannot beat the current best.
+        2. **Backtracking phase.** If no candidate produced an exact-length
+           chain via DFS, run a deeper backtracking search.
+        3. **Pure-greedy fallback.** If the time budget runs out (or DFS still
+           did not find an exact-length chain), pick a chain by repeatedly
+           extending into the highest-fidelity neighbour. This is O(length ·
+           degree) and always returns within the budget.
 
         The fidelity of a chain q0-q1-...-q_{n-1} is::
 
@@ -186,6 +249,11 @@ class RegionSelector:
         start :
             Physical qubit index to start the chain from. If ``None``,
             the qubit with the highest single-gate fidelity is used.
+        max_search_seconds :
+            Total wall-clock budget for the DFS + backtracking phases. When
+            the budget is exhausted, the search returns the best chain found
+            via the pure-greedy fallback (never blocks beyond the budget).
+            Default: 10 seconds.
 
         Returns
         -------
@@ -204,6 +272,7 @@ class RegionSelector:
             return ChainSearchResult(chain=None, estimated_fidelity=None, num_swaps=0)
 
         available = set(self._chip.available_qubits)
+        deadline = time.time() + max_search_seconds
 
         # Determine candidate starting qubits
         if start is not None:
@@ -219,31 +288,61 @@ class RegionSelector:
             if not candidates:
                 candidates = list(available)
 
-        # --- Greedy expansion ---
-        for start_q in candidates:
-            chain, fidelity, swaps = self._greedy_chain_expand(start_q, length, available)
-            if chain is not None and len(chain) == length:
-                return ChainSearchResult(chain=chain, estimated_fidelity=fidelity, num_swaps=swaps)
+        best_partial_chain: list[int] = []
+        best_partial_fid = 0.0
 
-        # --- Backtracking DFS search ---
-        for start_q in candidates:
-            result = self._backtrack_chain(start_q, length, available)
-            if result[0] is not None and len(result[0]) == length:
-                return ChainSearchResult(chain=result[0], estimated_fidelity=result[1], num_swaps=result[2])
-
-        # --- Return best partial chain (longest; highest-fidelity on tie) ---
-        best_chain: list[int] = []
-        best_fid = 0.0
-        for start_q in candidates:
-            chain, fidelity, _ = self._greedy_chain_expand(start_q, length, available)
-            if chain is not None and (
-                len(chain) > len(best_chain) or (len(chain) == len(best_chain) and fidelity > best_fid)
+        def _track_partial(chain: list[int], fid: float) -> None:
+            nonlocal best_partial_chain, best_partial_fid
+            if chain and (
+                len(chain) > len(best_partial_chain)
+                or (len(chain) == len(best_partial_chain) and fid > best_partial_fid)
             ):
-                best_fid = fidelity
-                best_chain = chain
+                best_partial_chain = chain
+                best_partial_fid = fid
 
-        if best_chain:
-            return ChainSearchResult(chain=best_chain, estimated_fidelity=best_fid, num_swaps=0)
+        # --- DFS expansion (deadline-checked) ---
+        for start_q in candidates:
+            if time.time() > deadline:
+                break
+            chain, fidelity, swaps = self._greedy_chain_expand(
+                start_q, length, available, deadline=deadline
+            )
+            _track_partial(chain, fidelity)
+            if chain is not None and len(chain) == length:
+                return ChainSearchResult(
+                    chain=chain, estimated_fidelity=fidelity, num_swaps=swaps
+                )
+
+        # --- Backtracking DFS search (deadline-checked) ---
+        for start_q in candidates:
+            if time.time() > deadline:
+                break
+            result = self._backtrack_chain(
+                start_q, length, available, deadline=deadline
+            )
+            _track_partial(result[0], result[1])
+            if result[0] is not None and len(result[0]) == length:
+                return ChainSearchResult(
+                    chain=result[0], estimated_fidelity=result[1], num_swaps=result[2]
+                )
+
+        # --- Pure-greedy fallback (always returns within budget) ---
+        # Picks each next qubit as the highest-fidelity unvisited neighbour
+        # of the current chain tail. O(length · max_degree).
+        for start_q in candidates:
+            chain, fidelity = self._pure_greedy_chain(start_q, length, available)
+            _track_partial(chain, fidelity)
+            if len(chain) == length:
+                return ChainSearchResult(
+                    chain=chain, estimated_fidelity=fidelity, num_swaps=0
+                )
+
+        if best_partial_chain:
+            return ChainSearchResult(
+                chain=best_partial_chain,
+                estimated_fidelity=best_partial_fid,
+                num_swaps=0,
+            )
         return ChainSearchResult(chain=None, estimated_fidelity=None, num_swaps=0)
 
     def find_best_2D_from_circuit(  # noqa: N802
@@ -450,6 +549,7 @@ class RegionSelector:
         start: int,
         length: int,
         available: set[int],
+        deadline: float | None = None,
     ) -> tuple[list[int], float, int]:
         """Find a simple path of exactly ``length`` qubits from ``start``.
 
@@ -457,7 +557,9 @@ class RegionSelector:
         the first path that reaches exactly ``length`` qubits. This gives the
         lexicographically-first path of the target length.
 
-        If no exact-length path exists, returns the longest path found.
+        If ``deadline`` is exceeded mid-search the best path found so far is
+        returned. If no exact-length path exists, returns the longest path
+        found.
 
         Returns (path, cumulative_fidelity, num_swaps).
         """
@@ -468,9 +570,18 @@ class RegionSelector:
         best_path: list[int] = []
         best_fid = 0.0
         best_len = 0
+        timed_out = False
 
         def dfs(current: int, path: list[int], visited: set[int], fid: float) -> None:
-            nonlocal best_path, best_fid, best_len
+            nonlocal best_path, best_fid, best_len, timed_out
+
+            if timed_out:
+                return
+            # Cheap deadline check (every 4 levels) to keep DFS bounded on
+            # high-degree chips where the search tree is huge.
+            if deadline is not None and len(path) % 4 == 0 and time.time() > deadline:
+                timed_out = True
+                return
 
             # Update best: prefer longer paths; on tie, prefer higher fidelity
             if len(path) > best_len or (len(path) == best_len and fid > best_fid):
@@ -485,6 +596,8 @@ class RegionSelector:
 
             # Explore neighbors in sorted order for lexicographic ordering
             for v in sorted(self._undirected_adj.get(current, set()) & available - visited):
+                if timed_out:
+                    return
                 edge_fid = self._tq_fid.get(tuple(sorted((current, v))), _DEFAULT_FIDELITY)
                 path.append(v)
                 visited.add(v)
@@ -509,11 +622,50 @@ class RegionSelector:
 
         return best_path, best_fid, 0
 
+    def _pure_greedy_chain(
+        self,
+        start: int,
+        length: int,
+        available: set[int],
+    ) -> tuple[list[int], float]:
+        """Pure-greedy chain extension. O(length · max_degree), no backtracking.
+
+        Used as the timeout fallback in :meth:`find_best_1D_chain`. At every
+        step it picks the unvisited neighbour with the highest 2q gate
+        fidelity. Stops when the chain reaches ``length`` or no unvisited
+        neighbour exists.
+        """
+        if start not in available:
+            return [], 0.0
+        chain = [start]
+        visited = {start}
+        fid = self._sq_fid.get(start, _DEFAULT_FIDELITY)
+        while len(chain) < length:
+            current = chain[-1]
+            neighbours = self._undirected_adj.get(current, set()) & available - visited
+            if not neighbours:
+                break
+            # Pick the neighbour with the highest 2q gate fidelity (deterministic
+            # tiebreak by qubit index).
+            best_v = max(
+                neighbours,
+                key=lambda v: (
+                    self._tq_fid.get(tuple(sorted((current, v))), _DEFAULT_FIDELITY),
+                    -v,
+                ),
+            )
+            edge_fid = self._tq_fid.get(tuple(sorted((current, best_v))), _DEFAULT_FIDELITY)
+            chain.append(best_v)
+            visited.add(best_v)
+            fid *= edge_fid
+        return chain, fid
+
     def _backtrack_chain(
         self,
         start: int,
         length: int,
         available: set[int],
+        deadline: float | None = None,
     ) -> tuple[list[int], float, int]:
         """DFS backtracking search for a chain of exactly ``length`` qubits.
 
@@ -527,6 +679,7 @@ class RegionSelector:
         best_fid = 0.0
         best_len = 0
         found_exact_len = False
+        timed_out = False
 
         # Separate tracking for exact-length paths only:
         # When found_exact_len=True, best_path may be updated by later DFS branches
@@ -536,8 +689,16 @@ class RegionSelector:
         best_exact_fid = 0.0
 
         def dfs(current: int, path: list[int], visited: set[int], fid: float) -> None:
-            nonlocal best_path, best_fid, best_len, found_exact_len
+            nonlocal best_path, best_fid, best_len, found_exact_len, timed_out
             nonlocal best_exact_path, best_exact_fid
+
+            if timed_out:
+                return
+
+            # Deadline check (every few levels to reduce syscall overhead)
+            if deadline is not None and len(path) % 4 == 0 and time.time() > deadline:
+                timed_out = True
+                return
 
             # Update global best (any length)
             if len(path) > best_len or (len(path) == best_len and fid > best_fid):
@@ -563,6 +724,8 @@ class RegionSelector:
                 return
 
             for v in sorted(self._undirected_adj.get(current, set()) & available - visited):
+                if timed_out:
+                    return
                 edge_fid = self._tq_fid.get(tuple(sorted((current, v))), _DEFAULT_FIDELITY)
                 path.append(v)
                 visited.add(v)

@@ -16,7 +16,7 @@ import numpy as np
 if TYPE_CHECKING:
     from uniqc.circuit_builder import Circuit
 
-__all__ = ["batch_execute"]
+__all__ = ["batch_execute", "batch_execute_with_params"]
 
 
 def batch_execute(

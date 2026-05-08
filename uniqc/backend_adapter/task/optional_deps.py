@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import importlib
 
+from uniqc.exceptions import MissingDependencyError  # noqa: F401 — re-export
+
 __all__ = [
     "MissingDependencyError",
     "require",
@@ -40,34 +42,6 @@ __all__ = [
     "QUTIP_AVAILABLE",
     "SIMULATION_AVAILABLE",
 ]
-
-
-class MissingDependencyError(ImportError):
-    """Raised when an optional dependency is not installed.
-
-    Provides a clear error message indicating which package is missing
-    and, when available, how to install or rebuild the required support.
-
-    Attributes:
-        package: The name of the missing package.
-        extra: The pip extras name to install the package, if applicable.
-        install_hint: An explicit install or recovery hint, if applicable.
-    """
-
-    def __init__(self, package: str, extra: str | None = None, install_hint: str | None = None) -> None:
-        self.package = package
-        self.extra = extra
-        self.install_hint = install_hint
-        if install_hint is not None:
-            msg = f"Package '{package}' is required for this feature. {install_hint}"
-        elif extra is not None:
-            msg = (
-                f"Package '{package}' is required for this feature. "
-                f"Install it with: pip install unified-quantum[{extra}]"
-            )
-        else:
-            msg = f"Package '{package}' is required for this feature."
-        super().__init__(msg)
 
 
 def require(name: str, extra: str):

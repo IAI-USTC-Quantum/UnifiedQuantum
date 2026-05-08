@@ -90,9 +90,22 @@ class QuantumAdapter(abc.ABC):
 
     Subclass this for each backend (originq_cloud, quafu, ibm, ...).
     Each adapter is instantiated once per task module and reused.
+
+    Class attributes:
+        name: Adapter identifier.
+        max_native_batch_size: Maximum number of circuits the adapter
+            can pack into a single platform-side job. uniqc relies on
+            this to auto-shard oversized batches; see
+            :func:`uniqc.backend_adapter.task_manager.submit_batch`. The
+            base default is ``1`` (no native batching, one platform job
+            per circuit). Adapters that natively support grouped
+            submission override this — see :class:`OriginQAdapter`
+            (``200``, configurable via ``originq.task_group_size``) and
+            :class:`QiskitAdapter` (``100``).
     """
 
     name: str = "base"
+    max_native_batch_size: int = 1
 
     # -------------------------------------------------------------------------
     # Circuit translation

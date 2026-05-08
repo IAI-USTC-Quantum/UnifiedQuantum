@@ -21,6 +21,8 @@ from .qasm_spec import available_qasm_gates
 __all__ = [
     "OriginIR_QASM2_dict",
     "QASM2_OriginIR_dict",
+    "QASM2_CUSTOM_GATE_DEFS",
+    "collect_qasm2_custom_gates",
     "direct_mapping_qasm2_to_oir",
     "get_opcode_from_QASM2",
     "get_QASM2_from_opcode",
@@ -52,7 +54,106 @@ qasm2_oir_mapping = {
     ("rxx", "XX"),
     ("ryy", "YY"),
     ("rzz", "ZZ"),
+    ("iswap", "ISWAP"),
+    ("rphi", "RPhi"),
+    ("phase2q", "PHASE2Q"),
+    ("xy", "XY"),
+    ("uu15", "UU15"),
 }
+
+# QASM 2.0 ``gate`` definitions for OriginIR-native gates that have no qelib1.inc
+# equivalent.  When a circuit emits any of these names, the corresponding
+# ``gate ... { ... }`` block is prepended to the QASM header so that downstream
+# parsers (including uniqc's own qasm parser, see compile/qasm/qasm_base_parser.py)
+# can consume the resulting QASM 2.0 source.
+QASM2_CUSTOM_GATE_DEFS = {
+    # ``ryy`` is not in the strict OpenQASM 2.0 ``qelib1.inc`` shipped with
+    # Qiskit but several backends rely on it; we always emit a definition
+    # alongside the gates that depend on it (xy, uu15) so that strict parsers
+    # accept the output.
+    "ryy": (
+        "gate ryy(theta) a, b {\n"
+        "  rx(pi/2) a;\n"
+        "  rx(pi/2) b;\n"
+        "  rzz(theta) a, b;\n"
+        "  rx(-pi/2) a;\n"
+        "  rx(-pi/2) b;\n"
+        "}"
+    ),
+    # iSWAP: |01> ↔ |10> with +i phase.
+    "iswap": (
+        "gate iswap a, b {\n"
+        "  s a;\n"
+        "  s b;\n"
+        "  h a;\n"
+        "  cx a, b;\n"
+        "  cx b, a;\n"
+        "  h b;\n"
+        "}"
+    ),
+    # RPHI(theta, phi) = Rz(phi) Rx(theta) Rz(-phi) on a single qubit.
+    "rphi": (
+        "gate rphi(theta, phi) a {\n"
+        "  rz(-phi) a;\n"
+        "  rx(theta) a;\n"
+        "  rz(phi) a;\n"
+        "}"
+    ),
+    # PHASE2Q(theta1, theta2, theta_zz):
+    #   diag(1, exp(i*theta1), exp(i*theta2), exp(i*(theta1 + theta2 + theta_zz))).
+    # First listed qubit is the LSB (matches OriginIR convention).
+    "phase2q": (
+        "gate phase2q(theta1, theta2, theta_zz) a, b {\n"
+        "  u1(theta1) a;\n"
+        "  u1(theta2) b;\n"
+        "  cu1(theta_zz) a, b;\n"
+        "}"
+    ),
+    # XY(theta) = exp(+i*theta/4 * (XX + YY)) (preserves |00> and |11>).
+    # Equivalent to rxx(-theta/2)·ryy(-theta/2) since [XX, YY] = 0.
+    "xy": (
+        "gate xy(theta) a, b {\n"
+        "  rxx(-theta/2) a, b;\n"
+        "  ryy(-theta/2) a, b;\n"
+        "}"
+    ),
+    # UU15 (KAK form): u3 ⊗ u3 ; xx · yy · zz ; u3 ⊗ u3 — 15 angles total.
+    "uu15": (
+        "gate uu15(a0, a1, a2, b0, b1, b2, txx, tyy, tzz, "
+        "c0, c1, c2, d0, d1, d2) a, b {\n"
+        "  u3(a0, a1, a2) a;\n"
+        "  u3(b0, b1, b2) b;\n"
+        "  rxx(txx) a, b;\n"
+        "  ryy(tyy) a, b;\n"
+        "  rzz(tzz) a, b;\n"
+        "  u3(c0, c1, c2) a;\n"
+        "  u3(d0, d1, d2) b;\n"
+        "}"
+    ),
+}
+
+
+def collect_qasm2_custom_gates(opcode_list) -> list[str]:
+    """Return the deterministic list of custom gate names this opcode list needs.
+
+    Used by :class:`Circuit` to prepend only the required ``gate`` definitions
+    to QASM 2.0 output (rather than always emitting all of them).  When ``xy``
+    or ``uu15`` are present we additionally emit ``ryy`` first because their
+    definitions reference it and ``qelib1.inc`` does not.
+    """
+    needed: list[str] = []
+    seen: set[str] = set()
+    for opcode in opcode_list:
+        name = opcode[0]
+        qasm_name = OriginIR_QASM2_dict.get(name)
+        if qasm_name in QASM2_CUSTOM_GATE_DEFS and qasm_name not in seen and qasm_name != "ryy":
+            seen.add(qasm_name)
+            needed.append(qasm_name)
+    if any(g in seen for g in ("xy", "uu15", "yy")) or any(opc[0] == "YY" for opc in opcode_list):
+        if "ryy" not in seen:
+            needed.insert(0, "ryy")
+            seen.add("ryy")
+    return needed
 
 # direct mapping from OriginIR opcode to QASM2 operation
 QASM2_OriginIR_dict = {qasm: oir for (qasm, oir) in qasm2_oir_mapping}
@@ -148,6 +249,17 @@ def get_opcode_from_QASM2(operation, qubits, cbits, parameters):
         return ("YY", qubits, cbits, parameters, False, None)
     elif operation == "rzz":
         return ("ZZ", qubits, cbits, parameters, False, None)
+    # Origin-native gates emitted via QASM2_CUSTOM_GATE_DEFS
+    elif operation == "iswap":
+        return ("ISWAP", qubits, cbits, parameters, False, None)
+    elif operation == "rphi":
+        return ("RPhi", qubits, cbits, parameters, False, None)
+    elif operation == "phase2q":
+        return ("PHASE2Q", qubits, cbits, parameters, False, None)
+    elif operation == "xy":
+        return ("XY", qubits, cbits, parameters, False, None)
+    elif operation == "uu15":
+        return ("UU15", qubits, cbits, parameters, False, None)
     elif operation == "cu1":
         return ("U1", qubits[1], cbits, parameters, False, [qubits[0]])
     elif operation == "crx":

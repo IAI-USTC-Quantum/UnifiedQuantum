@@ -71,20 +71,20 @@ def run_test_transpile_originir():
 @uniq_test('Test Transpiler Qiskit: Error Handling')
 def run_test_qiskit_error_handling():
     """Test error handling."""
-    from uniqc.compile._utils import CompilationFailedException
+    from uniqc.compile._utils import CompilationFailedError
     from uniqc.compile.qiskit_transpiler import transpile_qasm
 
     # Test invalid optimization level
     try:
         transpile_qasm("OPENQASM 2.0; qreg q[1];", optimization_level=5)
         raise AssertionError("Should have raised ValueError")
-    except (CompilationFailedException, ValueError) as e:
+    except (CompilationFailedError, ValueError) as e:
         print(f"Caught expected error for invalid optimization level: {e}")
 
     # Test invalid QASM
     try:
         transpile_qasm("INVALID QASM")
-    except CompilationFailedException as e:
+    except CompilationFailedError as e:
         print(f"Caught expected error for invalid QASM: {e}")
 
 

@@ -73,7 +73,7 @@ task_id = submit_task(
 
 # 等待结果（阻塞直到完成）
 result = wait_for_result(task_id, backend='originq', timeout=300)
-print(result['counts'])
+print(result.counts)
 ```
 
 ## 核心 API {#guide-task-manager-core-api}
@@ -194,25 +194,16 @@ clear_cache()
 
 ## Dummy 模式 {#guide-task-manager-dummy-mode}
 
-### 环境变量控制
-
-设置 `UNIQC_DUMMY` 环境变量可以全局启用本地模拟：
-
-```bash
-# 启用 Dummy 模式
-export UNIQC_DUMMY=true
-
-# 或
-export UNIQC_DUMMY=1
-```
-
-### 检查 Dummy 模式
+通过 backend 名称前缀 ``dummy`` 激活本地模拟：
 
 ```python
-from uniqc import is_dummy_mode
+from uniqc import submit_task
 
-if is_dummy_mode():
-    print("Running in dummy mode - tasks will be simulated locally")
+# 默认 dummy 模拟
+task_id = submit_task(circuit, backend='dummy')
+
+# 带 chip 特征的 dummy 模拟
+task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
 ```
 
 ### 使用 DummyBackend

@@ -14,9 +14,9 @@ from qiskit.qasm2 import dumps as qasm2_dumps
 from qiskit.qasm2 import LEGACY_CUSTOM_INSTRUCTIONS
 
 if __name__ == "__main__":
-    from _utils import CompilationFailedException
+    from _utils import CompilationFailedError
 else:
-    from ._utils import CompilationFailedException
+    from ._utils import CompilationFailedError
 
 from typing import List, Tuple, Union, Optional
 from .converter import convert_qasm_to_oir, convert_oir_to_qasm
@@ -26,6 +26,7 @@ def transpile_qasm(
     topology: List[Union[List[int], Tuple[int, int]]] = None,
     optimization_level: int = 1,
     basis_gates: Optional[List[str]] = None,
+    initial_layout: Optional[List[int]] = None,
 ) -> List[str]:
     """
     使用指定的拓扑、基本门和优化级别编译一组OPENQASM 2.0线路字符串。
@@ -74,7 +75,7 @@ def transpile_qasm(
                 circuit = qasm2_loads(qasm_str, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS)
                 circuits.append(circuit)
             except Exception as e:
-                raise CompilationFailedException(f"Error loading QASM string at index {i}: {e}")
+                raise CompilationFailedError(f"Error loading QASM string at index {i}: {e}")
 
         if not circuits:
             print("Warning: No valid circuits were loaded.")
@@ -84,7 +85,8 @@ def transpile_qasm(
             circuits,
             coupling_map=coupling_map,
             basis_gates=basis_gates,
-            optimization_level=optimization_level
+            optimization_level=optimization_level,
+            initial_layout=initial_layout,
         )
 
         output_qasm_strings = []
@@ -93,21 +95,21 @@ def transpile_qasm(
                 output_qasm = qasm2_dumps(transpiled_circuit)
                 output_qasm_strings.append(output_qasm)
             except Exception as e:
-                raise CompilationFailedException(f"Error dumping transpiled circuit at index {i} to QASM: {e}")
+                raise CompilationFailedError(f"Error dumping transpiled circuit at index {i} to QASM: {e}")
 
         if single_circuit:
             return output_qasm_strings[0]
         else:
             return output_qasm_strings
 
-    except CompilationFailedException as e:
+    except CompilationFailedError as e:
         raise e
     except ImportError:
-        raise CompilationFailedException("Error: Qiskit is not installed. Please install it using 'pip install qiskit'")
+        raise CompilationFailedError("Error: Qiskit is not installed. Please install it using 'pip install qiskit'")
     except qiskit.exceptions.QiskitError as e:
-        raise CompilationFailedException(f"An error occurred during Qiskit operation: {e}")
+        raise CompilationFailedError(f"An error occurred during Qiskit operation: {e}")
     except Exception as e:
-        raise CompilationFailedException(f"An unexpected error occurred: {e}")
+        raise CompilationFailedError(f"An unexpected error occurred: {e}")
 
 def transpile_originir(
         originir_strings: List[str],

@@ -117,6 +117,7 @@ docs = [
     "nbsphinx",
     "setuptools_scm",
     "intersphinx-registry",
+    "sphinx-autoapi",
 ]
 
 [tool.setuptools_scm]

@@ -22,7 +22,7 @@ class TestOriginQOptions:
     def test_defaults(self):
         opts = OriginQOptions()
         assert opts.platform == Platform.ORIGINQ
-        assert opts.backend_name == "origin:wuyuan:d5"
+        assert opts.backend_name == "originq:WK_C180"
         assert opts.circuit_optimize is True
         assert opts.measurement_amend is False
         assert opts.auto_mapping is False
@@ -199,7 +199,7 @@ class TestBackendOptionsFactory:
     def test_create_default(self):
         opts = BackendOptionsFactory.create_default("originq")
         assert isinstance(opts, OriginQOptions)
-        assert opts.backend_name == "origin:wuyuan:d5"
+        assert opts.backend_name == "originq:WK_C180"
 
     def test_create_default_quark(self):
         opts = BackendOptionsFactory.create_default("quark")

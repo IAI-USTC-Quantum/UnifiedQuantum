@@ -74,7 +74,7 @@ default:
 
 ### 基本用法
 
-> 完整 API 文档与所有可选参数（`auto_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](#guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
+> 完整 API 文档与所有可选参数（`local_compile`、`cloud_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](#guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
 
 ```python
 from uniqc import Circuit, submit_task, wait_for_result, query_task
@@ -91,18 +91,19 @@ circuit.measure(0, 1)
 # （或其它平台名）会报错并提示当前缓存中的 chip 列表。可用的 chip 列表
 # 通过 `uniqc backend list -p originq` 或 `uniqc.list_backends()` 查询。
 #
-# 默认开启 auto_compile=True：UnifiedQuantum 会先做离线 compatibility 检查，
+# 默认 local_compile=1：UnifiedQuantum 会先做离线 compatibility 检查，
 # 若使用了非 basis 门（如 H/CNOT），会自动 transpile 到目标芯片的 basis
 # 门集（CZ/SX/RZ）和拓扑后再提交，因此你不需要手动 compile() 才能提交。
 task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 print(f"Task ID: {task_id}")
 
-# 3. 等待结果（直接返回 counts 字典；超时返回 None，失败抛 TaskFailedError）
-counts = wait_for_result(task_id, backend='originq:WK_C180', timeout=300)
-print(f"Counts: {counts}")  # 形如 {'00': 512, '11': 488}
+# 3. 等待结果（返回 UnifiedResult；超时抛 TaskTimeoutError，失败抛 TaskFailedError）
+result = wait_for_result(task_id, timeout=300)
+print(f"Counts: {result.counts}")          # {'00': 512, '11': 488}
+print(f"Probabilities: {result.probabilities}")
 
 # 4. 查询任务状态
-info = query_task(task_id, backend='originq:WK_C180')
+info = query_task(task_id)
 print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 ```
 
@@ -161,8 +162,11 @@ clear_cache()
 ```python
 from uniqc import backend
 
-# 列出所有可用后端
-backends = backend.list_backends()
+# 列出所有已注册后端名称
+names = backend.list_backends()  # ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+
+# 获取详细状态信息
+backends = backend.list_backends_by_platform()
 for name, info in backends.items():
     print(f"{name}: available={info['available']}")
 
@@ -173,31 +177,22 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 
 ## Dummy 模式（本地模拟） {#guide-submit-task-dummy}
 
-Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。新代码推荐直接使用显式 backend id。
+Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。通过 backend 名称前缀 ``dummy`` 激活。
 
 ### 启用方式
 
-```bash
-# 方式一：环境变量
-export UNIQC_DUMMY=true
-```
-
 ```python
-# 方式二：代码中设置
-import os
-os.environ['UNIQC_DUMMY'] = 'true'
-
 from uniqc import submit_task, wait_for_result
 
-# 现在所有提交都会使用本地 dummy 模拟
-task_id = submit_task(circuit, backend='originq', shots=1000)
+# 默认 dummy 模拟
+task_id = submit_task(circuit, backend='dummy')
 result = wait_for_result(task_id)
-```
 
-```python
-# 方式三：使用本地 dummy 后端（推荐）
-task_id = submit_task(circuit, backend='dummy')  # 无约束、无噪声
-line_task = submit_task(circuit, backend='dummy:virtual-line-3')  # 线性 3q 拓扑、无噪声
+# 带 chip 特征的 dummy 模拟
+task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
+
+# 线性拓扑 dummy
+line_task = submit_task(circuit, backend='dummy:virtual-line-3')
 grid_task = submit_task(circuit, backend='dummy:virtual-grid-2x2')  # 2x2 网格、无噪声
 noisy_task = submit_task(circuit, backend='dummy:originq:WK_C180')  # 真实 backend compile/transpile + 本地含噪执行
 ```
@@ -238,21 +233,23 @@ print(f"Submitted {len(task_ids)} tasks")
 
 ### 返回值结构
 
-`wait_for_result(task_id, ...)` 直接返回扁平的 counts 字典（所有适配器都规范化为这一格式）。批量任务返回 list of counts dict。
+`wait_for_result(task_id, ...)` 返回 :class:`UnifiedResult`（dict-like，统一接口）；
+原生批量任务（`submit_batch(..., native_batch=True)`）返回 `list[UnifiedResult]`。
 
 ```python
-counts = wait_for_result(task_id, backend='originq:WK_C180')
-print(counts)  # {'00': 512, '11': 488}
+result = wait_for_result(task_id)
 
-# 计算期望值（先把 counts 转为概率分布）
+# 访问测量结果
+print(result.counts)         # {'00': 512, '11': 488}
+print(result.probabilities)  # {'00': 0.512, '11': 0.488}
+print(result['00'])          # dict-like 访问也可
+print(result.raw())          # 原始平台 payload
+
+# 计算期望值
 from uniqc import calculate_expectation
-total = sum(counts.values())
-probs = {k: v / total for k, v in counts.items()}
-exp_zz = calculate_expectation(probs, 'ZZ')
+exp_zz = calculate_expectation(result.probabilities, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
-
-如果你想拿到带元数据的结果对象（`UnifiedResult` 包含 `counts`/`probabilities`/`shots`/`platform` 等字段），可以通过 `query_task(task_id).result` 获取由适配器写入的原始 dict，或在 dummy 路径中直接调用 `DummyAdapter.query()` 拿到 `unified_result` 字段。
 
 ### 平台特定后端参数
 
@@ -316,13 +313,11 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 
 | 参数 / 环境变量 | 默认值 | 作用 |
 |------|--------|------|
-| `auto_compile` (kwarg) | `True` | 校验失败时是否自动 transpile 到目标芯片的 basis 门集和拓扑后再提交。设 `False` 则失败时直接抛 `UnsupportedGateError`。 |
+| `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 `docs/source/compile/compile_levels.md`。 |
+| `cloud_compile` (kwarg) | `1` | 转发给适配器的云端编译强度。`0` 关闭云端编译（如 OriginQ 适配器会收到 `circuit_optimize=False`），`>0` 开启；支持精细控制的适配器可直接读取 1/2/3。 |
 | `skip_validation` (kwarg) | `False` | 完全跳过离线 compatibility 检查（不推荐，会让已知会被云端拒绝的线路也走到网络层）。 |
 | `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `QuafuOptions` / `IBMOptions` 等）。 |
 | `metadata` (kwarg) | `None` | 写入本地 task 缓存的附加元数据；后续可通过 `query_task(...).metadata` 取回。 |
-| `dummy` (kwarg) | `None` | **已弃用**。请改用 `backend='dummy'` 或 `backend='dummy:<provider>:<chip>'`。 |
 | `backend_name` / `chip_id` (kwarg) | — | 旧式写法，把 chip 名以独立 kwarg 形式传入。新代码直接写在 `backend='provider:chip'` 即可，旧写法会被自动归一。 |
-| `UNIQC_DUMMY` (env) | `false` | 全局 dummy 模式开关；为 true 时所有非 dummy 提交都会被路由到本地 dummy 适配器。 |
-| `UNIQC_SKIP_VALIDATION` (env) | `false` | 全局跳过离线校验；与 `skip_validation=True` 等价。 |
 
 > 文档版本与代码同步保证：基本用法示例由 `uniqc/test/cloud/test_doc_basic_usage.py` 自动跑测，文档写错或代码行为漂移时 CI 会失败；如果你发现新的 doc 示例无法运行，请同步加一条对应测试。

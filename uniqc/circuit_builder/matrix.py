@@ -10,10 +10,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from uniqc.circuit_builder.qcircuit import Circuit
-
-
-class NotMatrixableError(NotImplementedError):
-    """Raised when an opcode has no finite unitary matrix representation."""
+from uniqc.exceptions import NotMatrixableError  # noqa: F401 — re-export
 
 
 _I = np.eye(2, dtype=np.complex128)

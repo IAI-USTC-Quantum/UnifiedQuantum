@@ -336,3 +336,50 @@ def shadow_expectation(
         estimates.append(prefactor * born_ev)
 
     return float(np.mean(estimates))
+
+
+__all__ = list(set(globals().get("__all__", []) + [
+    "classical_shadow", "shadow_expectation",
+    "ClassicalShadow", "classical_shadow_example",
+]))
+
+
+class ClassicalShadow:
+    """Class-based interface for classical-shadow tomography.
+
+    The constructor takes a *clean* state-preparation circuit (no measurements).
+    """
+
+    def __init__(
+        self,
+        circuit: Circuit,
+        qubits: "list[int] | None" = None,
+        shots: int = 4096,
+        n_shadow: "int | None" = None,
+    ) -> None:
+        self.circuit = circuit.copy()
+        self.qubits = qubits
+        self.shots = shots
+        self.n_shadow = n_shadow
+
+    def get_readout_circuits(self):
+        """Snapshots are random; this is a no-op stub returning an empty list."""
+        return []
+
+    def execute(self, backend="statevector", *, program_type="qasm", **kwargs):
+        """Run classical-shadow tomography and return the snapshot list."""
+        measured = self.circuit.copy()
+        n = measured.max_qubit + 1
+        for q in range(n):
+            measured.measure(q)
+        return classical_shadow(
+            measured, qubits=self.qubits, shots=self.shots, n_shadow=self.n_shadow
+        )
+
+
+def classical_shadow_example():
+    """Tiny classical-shadow demo on a 2-qubit Bell state."""
+    c = Circuit()
+    c.h(0)
+    c.cx(0, 1)
+    return ClassicalShadow(c, shots=64).execute()

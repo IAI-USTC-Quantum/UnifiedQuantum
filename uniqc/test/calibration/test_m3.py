@@ -131,3 +131,27 @@ class TestM3MitigatorWithRealMatrix:
         assert total == pytest.approx(1000.0, rel=0.001)
         # Corrected counts should be closer to [1000, 0]
         assert corrected[0] > corrected[1]
+
+
+class TestM3WithDataclass:
+    """Test M3Mitigator with ReadoutCalibrationResult dataclass input."""
+
+    def test_dataclass_calibration_result(self):
+        """M3Mitigator should accept ReadoutCalibrationResult directly."""
+        from uniqc.calibration.results import ReadoutCalibrationResult
+
+        result = ReadoutCalibrationResult(
+            calibrated_at=datetime.now(timezone.utc).isoformat(),
+            backend="dummy",
+            type="readout_1q",
+            qubit=0,
+            confusion_matrix=((0.9, 0.2), (0.1, 0.8)),
+            assignment_fidelity=0.85,
+        )
+        mit = M3Mitigator(calibration_result=result, max_age_hours=24.0)
+        counts = {0: 500, 1: 500}
+        corrected = mit.mitigate_counts(counts)
+        total = sum(corrected.values())
+        assert total == pytest.approx(1000.0)
+        assert 0 <= corrected[0] <= 1000
+        assert 0 <= corrected[1] <= 1000

@@ -12,7 +12,7 @@ Usage::
     backend = get_backend('originq')
 
     # List all available backends
-    available = list_backends()
+    available = list_backends_by_platform()
 
     # Submit a circuit
     task_id = backend.submit(circuit, shots=1000)
@@ -32,6 +32,7 @@ __all__ = [
     "DummyBackend",
     "get_backend",
     "list_backends",
+    "list_backends_by_platform",
     "BACKENDS",
 ]
 
@@ -612,7 +613,7 @@ class DummyBackend(QuantumBackend):
         task_id = backend.submit(circuit, shots=1000)
 
         # With explicit chip_id (fetches from OriginQ)
-        backend = get_backend("dummy", config={"chip_id": "origin:wuyuan:d5"})
+        backend = get_backend("dummy", config={"chip_id": "WK_C180"})
 
         # Noiseless (perfect simulator)
         backend = get_backend("dummy")
@@ -623,7 +624,7 @@ class DummyBackend(QuantumBackend):
             calibration data. The backend converts T1/T2, gate fidelities, and
             readout errors into realistic noise parameters automatically.
         chip_id:
-            OriginQ chip identifier (e.g. ``"origin:wuyuan:d5"``). When set,
+            OriginQ chip identifier (e.g. ``"WK_C180"``). When set,
             the backend fetches the chip characterization from OriginQ and
             uses it to configure noise. Cannot be used together with
             ``chip_characterization``.
@@ -801,8 +802,8 @@ def get_backend(
     )
 
 
-def list_backends() -> dict[str, dict[str, Any]]:
-    """List all available backends and their status.
+def list_backends_by_platform() -> dict[str, dict[str, Any]]:
+    """List all backends grouped by platform with detailed status.
 
     Returns:
         A dictionary mapping backend names to their information, e.g.::
@@ -814,7 +815,7 @@ def list_backends() -> dict[str, dict[str, Any]]:
             }
 
     Example:
-        >>> backends = list_backends()
+        >>> backends = list_backends_by_platform()
         >>> for name, info in backends.items():
         ...     print(f"{name}: {'available' if info['available'] else 'unavailable'}")
     """
@@ -826,6 +827,20 @@ def list_backends() -> dict[str, dict[str, Any]]:
             "class": backend_class.__name__,
         }
     return result
+
+
+def list_backends() -> list[str]:
+    """Return a flat list of registered backend names.
+
+    Returns:
+        Sorted list of backend name strings, e.g.
+        ``['ibm', 'originq', 'quafu', 'quark']``.
+
+    Example:
+        >>> list_backends()
+        ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+    """
+    return sorted(BACKENDS.keys())
 
 
 def register_backend(

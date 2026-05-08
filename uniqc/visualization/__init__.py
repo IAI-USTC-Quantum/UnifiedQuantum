@@ -19,6 +19,7 @@ __all__ = [
     "TimelineSchedule",
     "circuit_to_html",
     "create_time_line_table",
+    "draw",
     "draw_html",
     "format_result",
     "plot_distribution",
