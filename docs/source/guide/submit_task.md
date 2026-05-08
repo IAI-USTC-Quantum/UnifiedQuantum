@@ -74,6 +74,8 @@ default:
 
 ### 基本用法
 
+> 完整 API 文档与所有可选参数（`auto_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](#guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
+
 ```python
 from uniqc import Circuit, submit_task, wait_for_result, query_task
 
@@ -84,32 +86,51 @@ circuit.cnot(0, 1)
 circuit.measure(0, 1)
 
 # 2. 提交任务
-task_id = submit_task(circuit, backend='originq', shots=1000)
+#
+# backend 参数必须使用 'provider:chip-name' 的规范格式。仅传 'originq'
+# （或其它平台名）会报错并提示当前缓存中的 chip 列表。可用的 chip 列表
+# 通过 `uniqc backend list -p originq` 或 `uniqc.list_backends()` 查询。
+#
+# 默认开启 auto_compile=True：UnifiedQuantum 会先做离线 compatibility 检查，
+# 若使用了非 basis 门（如 H/CNOT），会自动 transpile 到目标芯片的 basis
+# 门集（CZ/SX/RZ）和拓扑后再提交，因此你不需要手动 compile() 才能提交。
+task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 print(f"Task ID: {task_id}")
 
-# 3. 等待结果
-result = wait_for_result(task_id, backend='originq', timeout=300)
-print(f"Counts: {result['counts']}")
-print(f"Probabilities: {result['probabilities']}")
+# 3. 等待结果（直接返回 counts 字典；超时返回 None，失败抛 TaskFailedError）
+counts = wait_for_result(task_id, backend='originq:WK_C180', timeout=300)
+print(f"Counts: {counts}")  # 形如 {'00': 512, '11': 488}
 
 # 4. 查询任务状态
-info = query_task(task_id, backend='originq')
-print(info.status)  # 'running', 'success', 'failed'
+info = query_task(task_id, backend='originq:WK_C180')
+print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 ```
+
+> **关于 `backend` 字符串的强校验（自 0.0.12 起）**：`submit_task()` /
+> `submit_batch()` 要求 `backend` 满足 `provider:chip-name` 规范格式
+> （如 `originq:WK_C180`、`quafu:ScQ-P10`、`ibm:ibm_brisbane`）。仅传裸平台名
+> （`'originq'`）会被拒绝，错误信息会列出本地缓存里能用的 chip。需要先
+> 通过 `uniqc auth login` / `uniqc config set <provider>.token …` 配好 API key，
+> 然后用 `uniqc backend list -p originq` 拉一遍 backend 列表，再选一个
+> chip 提交。
+>
+> 旧的 `submit_task(circuit, backend='originq', backend_name='WK_C180')`
+> 写法仍可工作（会被自动归一为 `originq:WK_C180`），但新代码请直接用
+> 规范格式。
 
 ### 平台选择
 
-切换不同平台只需更改 `backend` 参数：
+切换不同平台只需更改 `backend` 参数（保持 `provider:chip-name` 规范格式）：
 
 ```python
 # OriginQ Cloud
-task_id = submit_task(circuit, backend='originq', shots=1000)
+task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 
 # Quafu（需要 pip install unified-quantum[quafu]）
-task_id = submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P10')
+task_id = submit_task(circuit, backend='quafu:ScQ-P10', shots=1000)
 
 # IBM Quantum（需要 pip install unified-quantum[qiskit]）
-task_id = submit_task(circuit, backend='ibm', shots=1000)
+task_id = submit_task(circuit, backend='ibm:ibm_brisbane', shots=1000)
 ```
 
 > **Quafu deprecated 说明**：`unified-quantum[all]` 不包含 Quafu/`pyquafu`。旧 `pyquafu` SDK 依赖 `numpy<2`，单独安装 `[quafu]` 可能导致环境降级。该平台路径后续不保证代码一致性和完整性，支持可能随时停止。
@@ -181,6 +202,9 @@ grid_task = submit_task(circuit, backend='dummy:virtual-grid-2x2')  # 2x2 网格
 noisy_task = submit_task(circuit, backend='dummy:originq:WK_C180')  # 真实 backend compile/transpile + 本地含噪执行
 ```
 
+> **注意**：`backend='dummy:*'` 系列以及 `dummy=True` 的提交不会触发"必须带 chip"
+> 的规范格式校验——dummy 路径只用于本地验证，由 dummy 适配器自行处理子标识符。
+
 > **弃用警告**：`dummy=True` 参数已弃用，请改用 `backend='dummy'`。如果你想模拟某个真实芯片，请使用 `backend='dummy:<platform>:<backend>'`，例如 `backend='dummy:originq:WK_C180'`。这一类 chip-backed dummy 是规则型写法，不会出现在 backend 列表中。
 
 ### Dummy 模式适用场景
@@ -206,39 +230,38 @@ for i in range(10):
     circuits.append(c)
 
 # 批量提交
-task_ids = submit_batch(circuits, backend='originq', shots=1000)
+task_ids = submit_batch(circuits, backend='originq:WK_C180', shots=1000)
 print(f"Submitted {len(task_ids)} tasks")
 ```
 
 ## 结果处理
 
-### UnifiedResult 类型
+### 返回值结构
 
-任务结果统一为 `UnifiedResult` 格式：
+`wait_for_result(task_id, ...)` 直接返回扁平的 counts 字典（所有适配器都规范化为这一格式）。批量任务返回 list of counts dict。
 
 ```python
-from uniqc import UnifiedResult
+counts = wait_for_result(task_id, backend='originq:WK_C180')
+print(counts)  # {'00': 512, '11': 488}
 
-result = wait_for_result(task_id, backend='originq')
-
-# 访问测量结果
-print(result['counts'])         # {'00': 512, '11': 488}
-print(result['probabilities'])  # {'00': 0.512, '11': 0.488}
-
-# 计算期望值
+# 计算期望值（先把 counts 转为概率分布）
 from uniqc import calculate_expectation
-exp_zz = calculate_expectation(result['probabilities'], 'ZZ')
+total = sum(counts.values())
+probs = {k: v / total for k, v in counts.items()}
+exp_zz = calculate_expectation(probs, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
+
+如果你想拿到带元数据的结果对象（`UnifiedResult` 包含 `counts`/`probabilities`/`shots`/`platform` 等字段），可以通过 `query_task(task_id).result` 获取由适配器写入的原始 dict，或在 dummy 路径中直接调用 `DummyAdapter.query()` 拿到 `unified_result` 字段。
 
 ### 平台特定后端参数
 
 ```python
 # Quafu: 指定芯片
-task_id = submit_task(circuit, backend='quafu', chip_id='ScQ-P10', auto_mapping=True)
+task_id = submit_task(circuit, backend='quafu:ScQ-P10', auto_mapping=True)
 
 # OriginQ: 指定芯片和优化选项
-task_id = submit_task(circuit, backend='originq', chip_id='...', circuit_optimize=True)
+task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 ```
 
 ## 平台选择说明 {#guide-submit-task-platform-selection}
@@ -270,3 +293,36 @@ task_id = submit_task(circuit, backend='originq', chip_id='...', circuit_optimiz
   - {mod}`uniqc.backend_adapter.backend`
   - {mod}`uniqc.backend_adapter.task.adapters`
   - {mod}`uniqc.backend_adapter.task.normalizers`
+
+## 完整 API 参考 {#guide-submit-task-api-reference}
+
+下面把 `submit_task` 的完整签名 / 默认参数 / 隐藏 kwargs 全部展开列出，避免你必须跳到独立 API 文档去查。`submit_batch` 接受同样的 kwargs，只是把 `circuit` 换成 `circuits: list[Circuit]`，并返回 `list[str]`。
+
+```{eval-rst}
+.. autofunction:: uniqc.backend_adapter.task_manager.submit_task
+   :noindex:
+
+.. autofunction:: uniqc.backend_adapter.task_manager.submit_batch
+   :noindex:
+
+.. autofunction:: uniqc.backend_adapter.task_manager.wait_for_result
+   :noindex:
+
+.. autofunction:: uniqc.backend_adapter.task_manager.query_task
+   :noindex:
+```
+
+### 关键隐式参数速查
+
+| 参数 / 环境变量 | 默认值 | 作用 |
+|------|--------|------|
+| `auto_compile` (kwarg) | `True` | 校验失败时是否自动 transpile 到目标芯片的 basis 门集和拓扑后再提交。设 `False` 则失败时直接抛 `UnsupportedGateError`。 |
+| `skip_validation` (kwarg) | `False` | 完全跳过离线 compatibility 检查（不推荐，会让已知会被云端拒绝的线路也走到网络层）。 |
+| `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `QuafuOptions` / `IBMOptions` 等）。 |
+| `metadata` (kwarg) | `None` | 写入本地 task 缓存的附加元数据；后续可通过 `query_task(...).metadata` 取回。 |
+| `dummy` (kwarg) | `None` | **已弃用**。请改用 `backend='dummy'` 或 `backend='dummy:<provider>:<chip>'`。 |
+| `backend_name` / `chip_id` (kwarg) | — | 旧式写法，把 chip 名以独立 kwarg 形式传入。新代码直接写在 `backend='provider:chip'` 即可，旧写法会被自动归一。 |
+| `UNIQC_DUMMY` (env) | `false` | 全局 dummy 模式开关；为 true 时所有非 dummy 提交都会被路由到本地 dummy 适配器。 |
+| `UNIQC_SKIP_VALIDATION` (env) | `false` | 全局跳过离线校验；与 `skip_validation=True` 等价。 |
+
+> 文档版本与代码同步保证：基本用法示例由 `uniqc/test/cloud/test_doc_basic_usage.py` 自动跑测，文档写错或代码行为漂移时 CI 会失败；如果你发现新的 doc 示例无法运行，请同步加一条对应测试。
