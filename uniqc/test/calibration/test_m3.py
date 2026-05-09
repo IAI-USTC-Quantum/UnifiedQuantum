@@ -13,7 +13,7 @@ from uniqc.qem import M3Mitigator, StaleCalibrationError
 def _write_cache(path, calibrated_at: str) -> None:
     data = {
         "calibrated_at": calibrated_at,
-        "backend": "dummy",
+        "backend": "dummy:local:simulator",
         "type": "readout_1q",
         "qubit": 0,
         "confusion_matrix": [[1.0, 0.0], [0.0, 1.0]],
@@ -42,7 +42,7 @@ class TestM3Mitigation:
         # Asymmetric confusion: P(0|1) = 0.2, P(1|0) = 0.1
         data = {
             "calibrated_at": datetime.now(timezone.utc).isoformat(),
-            "backend": "dummy",
+            "backend": "dummy:local:simulator",
             "type": "readout_1q",
             "qubit": 0,
             "confusion_matrix": [
@@ -111,7 +111,7 @@ class TestM3MitigatorWithRealMatrix:
         # Realistic: P(0|0)=0.98, P(1|1)=0.96, P(0|1)=0.04, P(1|0)=0.02
         data = {
             "calibrated_at": datetime.now(timezone.utc).isoformat(),
-            "backend": "dummy",
+            "backend": "dummy:local:simulator",
             "type": "readout_1q",
             "qubit": 0,
             "confusion_matrix": [
@@ -142,7 +142,7 @@ class TestM3WithDataclass:
 
         result = ReadoutCalibrationResult(
             calibrated_at=datetime.now(timezone.utc).isoformat(),
-            backend="dummy",
+            backend="dummy:local:simulator",
             type="readout_1q",
             qubit=0,
             confusion_matrix=((0.9, 0.2), (0.1, 0.8)),

@@ -76,7 +76,7 @@ uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
 uniqc result <task_id>
 ```
 
-`dummy` 表示无约束、无噪声本地虚拟机；`dummy:virtual-line-N` / `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束的无噪声本地 backend；`dummy:<platform>:<backend>` 表示先按真实 backend compile/transpile，再用真实芯片标定数据在本地含噪执行。
+`dummy` 表示无约束、无噪声本地虚拟机；`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` 表示带虚拟拓扑约束的无噪声本地 backend；`dummy:<platform>:<backend>` 表示先按真实 backend compile/transpile，再用真实芯片标定数据在本地含噪执行。
 
 ---
 

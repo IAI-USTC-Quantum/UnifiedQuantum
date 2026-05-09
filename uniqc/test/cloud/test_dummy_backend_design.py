@@ -8,20 +8,28 @@ import pytest
 def test_resolve_unconstrained_dummy():
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy", allow_fetch=False)
+    spec = resolve_dummy_backend("dummy:local:simulator", allow_fetch=False)
 
-    assert spec.identifier == "dummy"
+    assert spec.identifier == "dummy:local:simulator"
     assert spec.available_qubits is None
     assert spec.available_topology is None
     assert spec.noise_source == "none"
 
 
+def test_resolve_bare_dummy_rejected():
+    from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
+
+    for legacy in ("dummy", "dummy:local"):
+        with pytest.raises(ValueError, match="not allowed"):
+            resolve_dummy_backend(legacy, allow_fetch=False)
+
+
 def test_resolve_virtual_line_topology():
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy:virtual-line-3", allow_fetch=False)
+    spec = resolve_dummy_backend("dummy:local:virtual-line-3", allow_fetch=False)
 
-    assert spec.identifier == "dummy:virtual-line-3"
+    assert spec.identifier == "dummy:local:virtual-line-3"
     assert spec.available_qubits == [0, 1, 2]
     assert spec.available_topology == [[0, 1], [1, 2]]
     assert spec.noise_source == "none"
@@ -30,9 +38,9 @@ def test_resolve_virtual_line_topology():
 def test_resolve_virtual_grid_topology():
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy:virtual-grid-2x2", allow_fetch=False)
+    spec = resolve_dummy_backend("dummy:local:virtual-grid-2x2", allow_fetch=False)
 
-    assert spec.identifier == "dummy:virtual-grid-2x2"
+    assert spec.identifier == "dummy:local:virtual-grid-2x2"
     assert spec.available_qubits == [0, 1, 2, 3]
     assert sorted(spec.available_topology) == [[0, 1], [0, 2], [1, 3], [2, 3]]
 
@@ -69,9 +77,9 @@ def test_builtin_dummy_backend_infos_include_virtual_fixtures():
 
     ids = {b.full_id() for b in list_dummy_backend_infos()}
 
-    assert "dummy" in ids
-    assert "dummy:virtual-line-3" in ids
-    assert "dummy:virtual-grid-2x2" in ids
+    assert "dummy:local:simulator" in ids
+    assert "dummy:local:virtual-line-3" in ids
+    assert "dummy:local:virtual-grid-2x2" in ids
     assert all(not backend_id.startswith("dummy:originq:") for backend_id in ids)
 
 
@@ -81,9 +89,9 @@ def test_dummy_task_id_includes_backend_identity():
 
     circuit = "QINIT 2\nCREG 2\nH q[0]\nCNOT q[0],q[1]\nMEASURE q[0], c[0]"
 
-    ideal = DummyAdapter(backend_id="dummy")
+    ideal = DummyAdapter(backend_id="dummy:local:simulator")
     line = DummyAdapter(
-        backend_id="dummy:virtual-line-3",
+        backend_id="dummy:local:virtual-line-3",
         available_qubits=[0, 1, 2],
         available_topology=[[0, 1], [1, 2]],
     )
@@ -97,7 +105,7 @@ def test_dummy_dry_run_enforces_virtual_backend_constraints():
 
     circuit = "QINIT 4\nCREG 4\nH q[0]\nCNOT q[0], q[3]\nMEASURE q[0], c[0]"
     line = DummyAdapter(
-        backend_id="dummy:virtual-line-3",
+        backend_id="dummy:local:virtual-line-3",
         available_qubits=[0, 1, 2],
         available_topology=[[0, 1], [1, 2]],
     )
@@ -105,7 +113,7 @@ def test_dummy_dry_run_enforces_virtual_backend_constraints():
     result = line.dry_run(circuit, shots=10)
 
     assert result.success is False
-    assert result.backend_name == "dummy:virtual-line-3"
+    assert result.backend_name == "dummy:local:virtual-line-3"
     assert "Available qubits" in (result.error or "")
 
 

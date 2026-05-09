@@ -1,4 +1,4 @@
-"""Tests for the MPS simulator and ``dummy:mps:linear-N`` backend wiring."""
+"""Tests for the MPS simulator and ``dummy:local:mps-linear-N`` backend wiring."""
 
 from __future__ import annotations
 
@@ -150,14 +150,14 @@ def test_shots_scales_to_large_n():
 
 
 # ---------------------------------------------------------------------------
-# dummy:mps:linear-N backend wiring
+# dummy:local:mps-linear-N backend wiring
 # ---------------------------------------------------------------------------
 
 
 def test_resolve_dummy_mps_basic():
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy:mps:linear-5")
+    spec = resolve_dummy_backend("dummy:local:mps-linear-5")
     assert spec.simulator_kind == "mps"
     assert spec.available_qubits == [0, 1, 2, 3, 4]
     assert spec.available_topology == [[0, 1], [1, 2], [2, 3], [3, 4]]
@@ -167,7 +167,7 @@ def test_resolve_dummy_mps_basic():
 def test_resolve_dummy_mps_with_kwargs():
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy:mps:linear-3:chi=16:cutoff=1e-8:seed=7")
+    spec = resolve_dummy_backend("dummy:local:mps-linear-3:chi=16:cutoff=1e-8:seed=7")
     assert spec.simulator_kind == "mps"
     assert spec.simulator_kwargs == {
         "chi_max": 16,
@@ -188,7 +188,7 @@ def test_dummy_mps_submit_roundtrip():
     for q in range(4):
         c.measure(q)
 
-    task = submit_task(c, backend="dummy:mps:linear-4", shots=400)
+    task = submit_task(c, backend="dummy:local:mps-linear-4", shots=400)
     res = wait_for_result(task, timeout=30)
 
     # Result is a UnifiedResult that exposes counts dict-like.
@@ -215,7 +215,7 @@ def test_dummy_mps_long_range_rejected_at_submit():
     c.measure(0)
     c.measure(2)
 
-    task = submit_task(c, backend="dummy:mps:linear-4", shots=100)
+    task = submit_task(c, backend="dummy:local:mps-linear-4", shots=100)
     with pytest.raises(TaskFailedError):
         wait_for_result(task, timeout=30)
 
@@ -225,7 +225,7 @@ def test_dummy_mps_chi_propagates():
     from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 
-    kw = dummy_adapter_kwargs("dummy:mps:linear-4:chi=1")
+    kw = dummy_adapter_kwargs("dummy:local:mps-linear-4:chi=1")
     adapter = DummyAdapter(**kw)
     sim = adapter._build_simulator()
     assert sim.config.chi_max == 1

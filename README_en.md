@@ -76,7 +76,7 @@ uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
 uniqc result <task_id>
 ```
 
-`dummy` is an unconstrained noiseless local simulator; `dummy:virtual-line-N` / `dummy:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise.
+`dummy` is an unconstrained noiseless local simulator; `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise.
 
 ---
 

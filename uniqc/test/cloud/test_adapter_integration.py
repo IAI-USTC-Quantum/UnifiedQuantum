@@ -48,6 +48,7 @@ MEASURE q[2], c[2]
 
 
 @pytest.mark.cloud
+@pytest.mark.requires_quafu
 class RunTestQuafuAdapterReal:
     """End-to-end tests for QuafuAdapter with real credentials."""
 

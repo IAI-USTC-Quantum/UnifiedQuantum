@@ -22,8 +22,7 @@ from uniqc.backend_adapter.preflight import (
 class TestParseBackendTarget:
     def test_local_aliases(self):
         for alias in (
-            "local", "local:simulator", "dummy", "dummy:local",
-            "dummy:local:simulator",
+            "local", "local:simulator", "dummy:local:simulator",
         ):
             t = parse_backend_target(alias)
             assert t.kind == "local"
@@ -31,20 +30,33 @@ class TestParseBackendTarget:
             assert t.chip_name is None
             assert not t.needs_provider_sdk
 
+    def test_bare_dummy_rejected(self):
+        for alias in ("dummy", "dummy:local"):
+            with pytest.raises(ValueError, match="not allowed"):
+                parse_backend_target(alias)
+
     def test_local_topology(self):
         t = parse_backend_target("dummy:local:virtual-line-5")
         assert t.kind == "local_topology"
         assert t.topology_spec == "virtual-line-5"
 
-    def test_local_topology_legacy(self):
-        # Legacy 'dummy:virtual-line-N' (no :local: in the middle) still parses.
-        t = parse_backend_target("dummy:virtual-line-5")
-        assert t.kind == "local_topology"
+    def test_local_topology_legacy_rejected(self):
+        # Legacy 'dummy:virtual-line-N' (no :local:) is now rejected
+        # with a hint pointing at the canonical form.
+        with pytest.raises(ValueError, match="dummy:local:virtual-line-5"):
+            parse_backend_target("dummy:virtual-line-5")
 
     def test_local_mps(self):
-        t = parse_backend_target("dummy:local:mps:linear-8:chi=16")
+        t = parse_backend_target("dummy:local:mps-linear-8:chi=16")
         assert t.kind == "local_mps"
-        assert "mps:linear-8" in t.topology_spec
+        assert "mps-linear-8" in t.topology_spec
+
+    def test_legacy_mps_colon_rejected(self):
+        # 'mps:linear-N' (colon) is the old form; should be rejected with hint.
+        with pytest.raises(ValueError, match="mps-linear-8"):
+            parse_backend_target("dummy:local:mps:linear-8")
+        with pytest.raises(ValueError, match="dummy:local:mps-linear-8"):
+            parse_backend_target("dummy:mps:linear-8")
 
     def test_dummy_provider(self):
         t = parse_backend_target("dummy:originq:WK_C180")

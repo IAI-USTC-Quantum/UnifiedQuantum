@@ -72,11 +72,11 @@ circuit.h(0)
 circuit.measure(0)
 
 # 无约束、无噪声的本地虚拟机
-task_id = submit_task(circuit, backend="dummy", shots=1000)
+task_id = submit_task(circuit, backend="dummy:local:simulator", shots=1000)
 result = wait_for_result(task_id)
 
 # 有拓扑约束但无噪声的本地虚拟芯片
-line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
+line_task = submit_task(circuit, backend="dummy:local:virtual-line-3", shots=1000)
 
 # 针对真实 backend 标定数据的本地含噪仿真
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
@@ -85,8 +85,8 @@ noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 dummy backend 的编号语义固定为：
 
 - `dummy`：无约束、无噪声虚拟机，适合快速功能测试。
-- `dummy:virtual-line-N`：`N` 比特线性拓扑，无噪声，例如 `dummy:virtual-line-3`。
-- `dummy:virtual-grid-RxC`：`R*C` 比特网格拓扑，无噪声，例如 `dummy:virtual-grid-2x2`。
+- `dummy:local:virtual-line-N`：`N` 比特线性拓扑，无噪声，例如 `dummy:local:virtual-line-3`。
+- `dummy:local:virtual-grid-RxC`：`R*C` 比特网格拓扑，无噪声，例如 `dummy:local:virtual-grid-2x2`。
 - `dummy:<platform>:<backend>`：复用指定真实 backend 的芯片拓扑和标定数据做本地含噪仿真，例如 `dummy:originq:WK_C180`。使用前需要已有 chip characterization 缓存，或在可访问云平台时由适配器拉取。
 
 `dummy:<platform>:<backend>` 是提交规则，不是一个需要预先注册或枚举出来的 backend；它不会作为独立卡片出现在 `uniqc backend list` 或 Gateway WebUI 的 backend 列表里。提交时 UnifiedQuantum 会先按真实 backend 的拓扑和门集执行 compile/transpile，保存编译后线路，再交给本地 dummy 含噪模拟器执行。

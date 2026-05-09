@@ -56,24 +56,24 @@ probs = sim.simulate_pmeasure(c.originir)   # ≤ 24 measured qubit
 
 ## 通过 dummy 后端调用
 
-跟 `dummy:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 `submit_task` / `wait_for_result` 流水线：
+跟 `dummy:local:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 `submit_task` / `wait_for_result` 流水线：
 
 ```python
 from uniqc.backend_adapter.task_manager import submit_task, wait_for_result
 
-task = submit_task(circuit, backend="dummy:mps:linear-32:chi=64:cutoff=1e-10", shots=500)
+task = submit_task(circuit, backend="dummy:local:mps-linear-32:chi=64:cutoff=1e-10", shots=500)
 result = wait_for_result(task, timeout=60)
 ```
 
 Backend identifier 语法：
 
 ```
-dummy:mps:linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]
+dummy:local:mps-linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]
 ```
 
 * `linear-N` 给出比特数与拓扑（`[[0,1],[1,2],...,[N-2,N-1]]`），dry-run 阶段会拒绝跨距 ≠ 1 的双比特门
 * `chi`、`cutoff`、`seed` 三个 kwarg 会被转发到 `MPSConfig`
-* 与 `dummy:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 `OriginIR_NoisySimulator`
+* 与 `dummy:local:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 `OriginIR_NoisySimulator`
 
 ## OriginIR 门集
 

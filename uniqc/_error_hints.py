@@ -93,7 +93,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         "troubleshooting": [
             "Top up your account on the platform's web portal",
             "Wait and retry if rate-limited",
-            "Use dummy mode for testing: backend='dummy'",
+            "Use dummy mode for testing: backend='dummy:local:simulator'",
         ],
     },
     "network": {

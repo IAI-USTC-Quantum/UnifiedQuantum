@@ -102,7 +102,7 @@ from uniqc.qem import M3Mitigator
 m3 = M3Mitigator(
     cache_path="/path/to/calibration.json",
     max_age_hours=24.0,       # 超过 24h 抛出 StaleCalibrationError
-    backend="dummy",
+    backend="dummy:local:simulator",
     qubit=0
 )
 ```
@@ -338,7 +338,7 @@ from uniqc.calibration.results import (
 
 # 查找 24h 内有效的校准结果
 paths = find_cached_results(
-    backend="dummy",
+    backend="dummy:local:simulator",
     result_type="readout_1q",
     max_age_hours=24.0,
 )
@@ -445,7 +445,7 @@ adapter = DummyAdapter(chip_characterization=chip_char)
 - **双比特门**：由 `TwoQubitGateData.fidelity` 推导的去极化噪声
 - **读出误差**：由 `readout_fidelity_0/1` 构建的混淆矩阵
 
-> **注意**：`backend="dummy"` 表示理想（无噪声、无约束）模拟；`dummy:<platform>:<backend>` 才表示复用真实 backend 的拓扑和标定数据。后者是规则型写法，不会作为独立 backend 列表项展示。
+> **注意**：`backend="dummy:local:simulator"` 表示理想（无噪声、无约束）模拟；`dummy:<platform>:<backend>` 才表示复用真实 backend 的拓扑和标定数据。后者是规则型写法，不会作为独立 backend 列表项展示。
 
 ### XEB 电路的可复现性
 

@@ -356,7 +356,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             """
             # 04. Python API 提交、取回与可视化
 
-            使用 `submit_task(backend="dummy:local:simulator")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。`backend="dummy:local:simulator"` 表示无约束、无噪声；需要虚拟拓扑时使用 `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`，需要真实芯片噪声时使用 `dummy:<platform>:<backend>`。
+            使用 `submit_task(backend="dummy:local:simulator")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。`backend="dummy:local:simulator"` 表示无约束、无噪声；需要虚拟拓扑时使用 `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`，需要真实芯片噪声时使用 `dummy:<platform>:<backend>`。
             """
         ),
         code(COMMON_IMPORTS),
@@ -670,7 +670,7 @@ INDEX = """# 最佳实践
 
 最佳实践章节由一组已经执行过的 notebooks 组成。它们不是 CI，而是发布前的“可验证路径检查”：维护者通过重跑这些案例，确认用户从配置、构建线路、选择后端、提交任务、获取结果、可视化，到变分线路、Torch 集成、Calibration + QEM 的主路径仍然有效。
 
-当前 dummy backend 的推荐写法是显式 backend id：`dummy` 表示无约束、无噪声；`dummy:virtual-line-N` / `dummy:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声；`dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行。最后一种是规则型写法，不会作为独立 backend 列表项展示。
+当前 dummy backend 的推荐写法是显式 backend id：`dummy` 表示无约束、无噪声；`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` 表示带虚拟拓扑约束但无噪声；`dummy:<platform>:<backend>` 表示复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行。最后一种是规则型写法，不会作为独立 backend 列表项展示。
 
 ## 覆盖矩阵
 

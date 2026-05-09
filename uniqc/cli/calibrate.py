@@ -67,11 +67,12 @@ def xeb_cmd(
         help="OriginIR file path — required when --pattern circuit is set.",
     ),
     backend: str = typer.Option(
-        "dummy", "--backend", "-b",
+        "dummy:local:simulator", "--backend", "-b",
         help=(
-            "Backend name. 'dummy' runs local noisy simulation. "
-            "When a ChipCharacterization is available (e.g. via OriginQAdapter), "
-            "DummyAdapter injects per-qubit and per-pair gate fidelities into the noisy simulator."
+            "Backend name. 'dummy:local:simulator' runs unconstrained local "
+            "simulation. 'dummy:originq:<chip>' runs noisy local simulation "
+            "with per-qubit/per-pair fidelities loaded from the chip cache. "
+            "Use '<provider>:<chip>' for real-hardware submission."
         ),
     ),
     output: str | None = typer.Option(
@@ -135,7 +136,7 @@ def xeb_cmd(
 
         adapter_kwargs: dict[str, Any] = {}
         chip_char = None
-        if backend == "dummy":
+        if backend in ("dummy", "dummy:local", "dummy:local:simulator"):
             adapter = DummyAdapter()
         elif backend.startswith("origin"):
             # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
@@ -228,8 +229,8 @@ def readout_cmd(
              "Higher shots → more accurate confusion matrix.",
     ),
     backend: str = typer.Option(
-        "dummy", "--backend", "-b",
-        help="Backend name ('dummy' for local simulation).",
+        "dummy:local:simulator", "--backend", "-b",
+        help="Backend name ('dummy:local:simulator' for local simulation).",
     ),
     output: str | None = typer.Option(
         None, "--output", "-o",
@@ -254,7 +255,7 @@ def readout_cmd(
 
     print_info(f"Readout calibration on backend={backend}")
 
-    if backend == "dummy":
+    if backend in ("dummy", "dummy:local", "dummy:local:simulator"):
         adapter = DummyAdapter()
     elif backend.startswith("origin"):
         chip = backend.split(":", 1)[1] if ":" in backend else backend

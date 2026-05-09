@@ -204,7 +204,7 @@ clear_cache()
 from uniqc import submit_task
 
 # 默认 dummy 模拟
-task_id = submit_task(circuit, backend='dummy')
+task_id = submit_task(circuit, backend='dummy:local:simulator')
 
 # 带 chip 特征的 dummy 模拟
 task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
@@ -218,10 +218,10 @@ task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
 from uniqc import submit_task, wait_for_result
 
 # 无约束、无噪声
-task_id = submit_task(circuit, backend="dummy", shots=1000)
+task_id = submit_task(circuit, backend="dummy:local:simulator", shots=1000)
 
 # 指定虚拟拓扑，仍然无噪声
-line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
+line_task = submit_task(circuit, backend="dummy:local:virtual-line-3", shots=1000)
 
 # 复用真实 backend 拓扑和标定数据，先 compile/transpile，再本地含噪执行
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)

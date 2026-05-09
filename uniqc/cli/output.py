@@ -289,9 +289,36 @@ def print_table(
     console.print(table)
 
 
-def print_json(data: dict[str, Any] | list[Any]) -> None:
-    """Print data as JSON to stdout."""
-    console.print(json.dumps(data, indent=2, ensure_ascii=False))
+def print_json(data: Any) -> None:
+    """Print data as JSON to stdout.
+
+    Handles ``UnifiedResult`` (and lists of) by calling ``to_json_dict``,
+    plain dataclasses by ``dataclasses.asdict``, sets/tuples by converting
+    to lists, and ``Path`` by ``str``. Falls back to ``repr`` for anything
+    else so we never crash on a non-serializable object inside a result tree.
+    """
+    import dataclasses as _dc
+    from pathlib import Path as _Path
+
+    from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+    def _default(obj: Any) -> Any:
+        if isinstance(obj, UnifiedResult):
+            return obj.to_json_dict()
+        if _dc.is_dataclass(obj) and not isinstance(obj, type):
+            return _dc.asdict(obj)
+        if isinstance(obj, (set, frozenset, tuple)):
+            return list(obj)
+        if isinstance(obj, _Path):
+            return str(obj)
+        if isinstance(obj, bytes):
+            try:
+                return obj.decode("utf-8")
+            except UnicodeDecodeError:
+                return obj.hex()
+        return repr(obj)
+
+    console.print(json.dumps(data, indent=2, ensure_ascii=False, default=_default))
 
 
 def print_error(message: str) -> None:

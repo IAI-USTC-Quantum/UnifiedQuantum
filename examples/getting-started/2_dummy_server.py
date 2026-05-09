@@ -48,14 +48,14 @@ def demo_2():
     # This works without any real cloud platform configuration
     task_id = submit_task(
         circuit,
-        backend='dummy',
+        backend='dummy:local:simulator',
         shots=1000,
     )
 
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
-    result = wait_for_result(task_id, backend='dummy', timeout=60)
+    result = wait_for_result(task_id, backend='dummy:local:simulator', timeout=60)
 
     if result:
         print(f"Status: success")
@@ -65,7 +65,7 @@ def demo_2():
         print("Task did not complete")
 
     # Query task status
-    task_info = query_task(task_id, backend='dummy')
+    task_info = query_task(task_id, backend='dummy:local:simulator')
     print(f"Task status: {task_info.status}")
 
 

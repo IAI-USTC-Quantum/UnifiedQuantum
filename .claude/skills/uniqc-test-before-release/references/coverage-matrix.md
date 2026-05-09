@@ -6,7 +6,7 @@ Use this checklist when generating the detailed execution plan and final report.
 |---|---|---|
 | Install | `uv sync --all-extras --group dev --group docs --upgrade`; package import; CLI entry present | maintained extra cannot resolve; `uniqc` command missing |
 | Python API | `Circuit`, top-level imports, compile/transpile, simulator, task manager | recommended import path broken; compile produces invalid circuit |
-| Dummy backends | `dummy`, `dummy:virtual-line-N`, `dummy:virtual-grid-RxC`, `dummy:<platform>:<backend>` | chip-backed dummy listed as enumerable backend; topology constraints ignored |
+| Dummy backends | `dummy`, `dummy:local:virtual-line-N`, `dummy:local:virtual-grid-RxC`, `dummy:<platform>:<backend>` | chip-backed dummy listed as enumerable backend; topology constraints ignored |
 | CLI | root help, subcommand help, simulate, submit, result, config, task, backend, calibrate, gateway, `--ai-hint(s)`, `config always-ai-hint` | docs command missing from help; nonexistent `workflow` command tested as real CLI; `python -m uniqc.cli` broken |
 | Best practices | regenerate notebooks; inspect all `docs/source/best_practices/*.ipynb`; build docs | notebook execution failure; stale outputs; docs contradict behavior |
 | Docs alignment | CLI help vs docs; pyproject scripts vs docs; deprecated imports scan | docs recommend removed command/API; config path mismatch |

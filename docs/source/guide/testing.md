@@ -69,7 +69,7 @@ pytest uniqc/test/ -v --real-cloud-test
 | **transpiler** | `test_transpile.py` | 单元测试 | `plot_time_line` 脉冲序列可视化正确性 |
 | **analyzer** | `test_result_adapter.py` | 单元测试 | 结果适配器工具函数基本验证 |
 | **circuit_builder** | `test_general.py` | 集成测试 | 电路构建基本功能（iswap 等特殊门操作） |
-| **demos** | `test_demos.py` | 集成测试 | 示例代码（`backend='dummy'` 模式）端到端运行验证 |
+| **demos** | `test_demos.py` | 集成测试 | 示例代码（`backend='dummy:local:simulator'` 模式）端到端运行验证 |
 
 ### 各测试文件详细说明
 
@@ -145,7 +145,7 @@ QASMBench 基准测试兼容性：
 
 示例端到端测试：
 
-- Dummy 模式（`submit_task(..., backend='dummy')`）的完整工作流：创建配置 → 构建线路 → 提交任务 → 获取结果
+- Dummy 模式（`submit_task(..., backend='dummy:local:simulator')`）的完整工作流：创建配置 → 构建线路 → 提交任务 → 获取结果
 - 验证示例代码可正确运行
 
 ## CI 集成

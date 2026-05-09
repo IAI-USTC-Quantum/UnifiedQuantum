@@ -32,7 +32,7 @@ Usage::
     print(info['status'])  # 'running', 'success', or 'failed'
 
     # Use dummy backend for local simulation
-    task_id = submit_task(circuit, backend='dummy', shots=1000)
+    task_id = submit_task(circuit, backend='dummy:local:simulator', shots=1000)
 
 Note:
     Any dry-run success followed by actual submission failure is a critical bug.
@@ -193,10 +193,10 @@ def _chip_from_kwargs(platform: str, kwargs: dict[str, Any]) -> str | None:
 def _split_backend_id(backend: str) -> tuple[str, str | None]:
     """Split a backend id into ``(platform_key, chip_or_None)``.
 
-    ``"dummy"`` and ``"dummy:..."`` are returned as platform-only — the dummy
-    routing path handles its own sub-identifier parsing.
+    ``"dummy:..."`` is returned as platform-only — the dummy routing path
+    handles its own sub-identifier parsing.
     """
-    if backend == "dummy" or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         return "dummy", None
     if ":" in backend:
         platform, chip = backend.split(":", 1)
@@ -348,7 +348,7 @@ def dry_run_task(
 
     # Dummy backends still need their special init path because they pull
     # chip_characterization / noise_model / available_qubits from kwargs.
-    if backend == "dummy" or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         try:
             from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
 
@@ -635,7 +635,7 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     explicit = kwargs.get("backend_info")
     if explicit is not None:
         return explicit
-    if backend in ("dummy",) or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         return None
     try:
         from uniqc.backend_adapter.backend_cache import get_cached_backends, is_stale
@@ -709,7 +709,7 @@ def _prepare_circuit_for_submission(
         cost more CPU time but generally yield shorter / higher-fidelity
         circuits.
     """
-    if backend == "dummy" or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         # Dummy backends accept anything; their dedicated path handles compilation.
         return circuit, {}
 
@@ -1063,7 +1063,7 @@ def submit_task(
     # Route dummy backend through _submit_dummy which pre-populates the result.
     # This ensures 'uniqc result <task_id>' returns data immediately without
     # needing a subsequent query against a cloud backend.
-    if backend == "dummy" or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
         return _submit_dummy(circuit, backend, shots=shots, metadata=metadata,
                              local_compile=local_compile,
@@ -1357,7 +1357,7 @@ def submit_batch(
     uniqc_task_id = generate_uniqc_task_id()
 
     # Route dummy backend to _submit_batch_dummy which pre-populates results.
-    if backend == "dummy" or backend.startswith("dummy:"):
+    if backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
         kwargs.pop("native_batch", None)
         result_id = _submit_batch_dummy(
@@ -1796,7 +1796,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
     # Path B: legacy / dummy direct path (no shards or non-uniqc id).
     if cached_task is not None:
         backend = cached_task.backend
-        if backend == "dummy" or backend.startswith("dummy:"):
+        if backend.startswith("dummy:"):
             return cached_task
 
     # Path C: not in cache. Try resolving via platform-id alias first

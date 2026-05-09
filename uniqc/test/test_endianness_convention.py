@@ -17,7 +17,7 @@ These tests guard the convention by:
 
 * Exercising every locally-available simulator (statevector / density-matrix /
   MPS / TorchQuantum if installed).
-* Exercising every dummy adapter path (virtual-line, virtual-grid, mps:linear,
+* Exercising every dummy adapter path (virtual-line, virtual-grid, mps-linear,
   density-matrix from chip caches such as originq:WK_C180 / PQPUMESH8).
 * Exercising the real-platform normalisers (Quafu / IBM-Qiskit) using mocked
   raw responses captured from the actual SDK so we do not need cloud
@@ -78,9 +78,9 @@ def test_local_simulator_endianness(backend_type):
 @pytest.mark.parametrize(
     "backend",
     [
-        "dummy:virtual-line-2",
-        "dummy:virtual-grid-2x2",
-        "dummy:mps:linear-2",
+        "dummy:local:virtual-line-2",
+        "dummy:local:virtual-grid-2x2",
+        "dummy:local:mps-linear-2",
     ],
 )
 def test_dummy_backend_endianness(backend):

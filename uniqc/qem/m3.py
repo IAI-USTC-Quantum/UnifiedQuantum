@@ -52,7 +52,7 @@ class M3Mitigator:
         calibration_result: Any | None = None,
         cache_path: str | pathlib.Path | None = None,
         max_age_hours: float = 24.0,
-        backend: str = "dummy",
+        backend: str = "dummy:local:simulator",
         qubit: int | tuple[int, int] | None = None,
         cache_dir: str | pathlib.Path | None = None,
     ) -> None:
