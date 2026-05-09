@@ -1,7 +1,7 @@
 """Entangled state preparation circuits: GHZ, W, and Cluster states.
 
 All three follow the *circuit fragment* design (see
-:doc:`/guide/algorithm_design`). The canonical APIs are:
+the design notes in the project README). The canonical APIs are:
 
 - ``ghz_state_circuit(n_qubits, qubits=None) -> Circuit``
 - ``w_state_circuit(n_qubits, qubits=None) -> Circuit``

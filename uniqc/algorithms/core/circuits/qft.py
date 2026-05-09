@@ -1,7 +1,7 @@
 """Quantum Fourier Transform (QFT) circuit fragment.
 
 This module follows the *circuit fragment* design (see
-:doc:`/guide/algorithm_design`):
+the design notes in the project README):
 
 - ``qft_circuit(n_qubits, qubits=None, swaps=True) -> Circuit``
   is the canonical fragment-style API and returns a fresh
