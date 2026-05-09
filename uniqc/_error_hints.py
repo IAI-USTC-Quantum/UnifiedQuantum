@@ -28,7 +28,7 @@ GITHUB_URL = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum"
 
 HINTS: dict[str, dict[str, list[str] | str]] = {
     "auth": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.exceptions.html#uniqc.exceptions.AuthenticationError",
         "causes": [
             "Invalid or expired API token",
             "Token lacks required permissions",
@@ -41,7 +41,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "backend_not_found": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.backend_adapter.backend.html#uniqc.backend_adapter.backend.get_backend",
         "causes": [
             "Backend name misspelled or incorrect case",
             "Backend not registered in the backend registry",
@@ -54,7 +54,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "config": {
-        "doc_url": "cli.html#uniqc-config",
+        "doc_url": "api/uniqc.config.html#uniqc.config.load_config",
         "causes": [
             "Missing or malformed config file",
             "Invalid YAML syntax in ~/.uniqc/config.yaml",
@@ -69,7 +69,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "task_submission": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.submit_task",
         "causes": [
             "Circuit incompatible with target backend",
             "Backend service temporarily unavailable",
@@ -84,7 +84,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "credits_quota": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.exceptions.html#uniqc.exceptions.InsufficientCreditsError",
         "causes": [
             "Account balance too low to execute the task",
             "Daily or monthly usage quota has been exceeded",
@@ -97,7 +97,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "network": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.exceptions.html#uniqc.exceptions.NetworkError",
         "causes": [
             "No internet connection",
             "DNS resolution failure",
@@ -112,7 +112,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "compilation": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.compile.compiler.html#uniqc.compile.compiler.compile",
         "causes": [
             "Circuit contains gates unsupported by the target backend",
             "Qiskit dependencies not installed",
@@ -127,7 +127,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "circuit_validation": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.algorithms.core.circuits.html",
         "causes": [
             "Invalid parameter values (negative, zero, out of range)",
             "Qubit index out of range for the circuit",
@@ -138,11 +138,11 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
             "Check qubit indices are within 0..(n_qubits-1)",
             "Verify parameter values are numeric and within valid ranges",
             "Ensure parameter count matches n_qubits * n_layers for variational circuits",
-            "See: https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/uniqc_api.html",
+            "See: https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/algorithm.html",
         ],
     },
     "measurement": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.algorithms.core.measurement.html",
         "causes": [
             "shots is not a positive integer",
             "Qubit indices out of range",
@@ -157,7 +157,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "calibration": {
-        "doc_url": "source/cli/calibrate.html",
+        "doc_url": "api/uniqc.qem.html#uniqc.qem.M3Mitigator",
         "causes": [
             "Calibration data is stale or missing",
             "No calibration cache for the specified backend/qubit",
@@ -171,7 +171,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "visualization": {
-        "doc_url": "source/uniqc_api.html",
+        "doc_url": "api/uniqc.visualization.html#uniqc.visualization.schedule_circuit",
         "causes": [
             "Gate duration not specified for timeline visualization",
             "Circuit not compiled to basis gates before scheduling",
