@@ -7,7 +7,11 @@ on:
       - 'docs/**'
       - 'uniqc/**'
       - 'site/**'
-      - 'scripts/generate_best_practice_notebooks.py'
+      - 'examples/**'
+      - 'example-exec-logs/**'
+      - 'scripts/build_docs.py'
+      - 'scripts/check_doc_logs.py'
+      - 'scripts/generate_release_notes.py'
       - '.github/workflows/docs.yml'
     tags:
       - 'v*'
@@ -17,7 +21,11 @@ on:
       - 'docs/**'
       - 'uniqc/**'
       - 'site/**'
-      - 'scripts/generate_best_practice_notebooks.py'
+      - 'examples/**'
+      - 'example-exec-logs/**'
+      - 'scripts/build_docs.py'
+      - 'scripts/check_doc_logs.py'
+      - 'scripts/generate_release_notes.py'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -58,10 +66,17 @@ jobs:
         run: |
           pip install -e .
 
+      # The full pre-doc-execution pipeline is run *locally* by maintainers
+      # (see CONTRIBUTING.md). CI only re-validates the cached run logs and
+      # then runs sphinx without re-executing examples.
+      - name: Verify example-exec-logs/
+        run: |
+          python scripts/check_doc_logs.py
+
       - name: Build docs
         run: |
           cd docs
-          make html
+          make html-fast
 
       - name: Assemble site
         run: |

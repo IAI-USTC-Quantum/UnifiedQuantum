@@ -1,12 +1,10 @@
 sphinx
-pydata-sphinx-theme
-sphinx_rtd_theme
-recommonmark
+furo
 sphinx-markdown-tables
 linkify-it-py
 myst_parser
-nbsphinx
 numpy
+matplotlib
 setuptools_scm
 intersphinx-registry
 sphinx-autoapi
