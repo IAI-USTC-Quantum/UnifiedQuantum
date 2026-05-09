@@ -45,7 +45,7 @@ def _get_adapter(backend: str, **kwargs) -> Any:
 
 
 def run_readout_em_workflow(
-    backend: str = "dummy",
+    backend: str = "dummy:local:simulator",
     qubits: list[int] | None = None,
     pairs: list[tuple[int, int]] | None = None,
     shots: int = 1000,

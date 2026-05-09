@@ -356,7 +356,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             """
             # 04. Python API 提交、取回与可视化
 
-            使用 `submit_task(backend="dummy")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。`backend="dummy"` 表示无约束、无噪声；需要虚拟拓扑时使用 `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`，需要真实芯片噪声时使用 `dummy:<platform>:<backend>`。
+            使用 `submit_task(backend="dummy:local:simulator")` 验证远端任务接口的本地替代路径：提交、等待、查询缓存、画图。`backend="dummy:local:simulator"` 表示无约束、无噪声；需要虚拟拓扑时使用 `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`，需要真实芯片噪声时使用 `dummy:<platform>:<backend>`。
             """
         ),
         code(COMMON_IMPORTS),
@@ -369,7 +369,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             circuit.cnot(0, 1)
             circuit.measure(0, 1)
 
-            task_id = submit_task(circuit, backend="dummy", shots=128, metadata={"example": "best-practices-api"})
+            task_id = submit_task(circuit, backend="dummy:local:simulator", shots=128, metadata={"example": "best-practices-api"})
             counts = wait_for_result(task_id)
             task = get_task(task_id)
 
@@ -443,7 +443,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             circuit.h(0)
             circuit.measure(0)
 
-            result = dry_run_task(circuit, backend="dummy", shots=100)
+            result = dry_run_task(circuit, backend="dummy:local:simulator", shots=100)
             print("dummy dry-run success:", result.success)
             print("details:", result.details)
 
@@ -623,7 +623,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
             # 10. XEB workflow
 
             使用很小的参数运行 1q XEB，覆盖校准、ReadoutEM、随机线路生成、fidelity 拟合和结果图示。
-            本 notebook 使用 `backend="dummy"` 搭配显式 `noise_model` 做本地含噪发布检查；如果要检查真实芯片标定噪声路径，应改用 `backend="dummy:originq:WK_C180"` 这类规则型 backend id，它会先按真实 backend compile/transpile，再本地含噪执行。
+            本 notebook 使用 `backend="dummy:local:simulator"` 搭配显式 `noise_model` 做本地含噪发布检查；如果要检查真实芯片标定噪声路径，应改用 `backend="dummy:originq:WK_C180"` 这类规则型 backend id，它会先按真实 backend compile/transpile，再本地含噪执行。
             发布前可以提高 `n_circuits` 和 `shots` 做更严格的人工检查。
             """
         ),
@@ -636,7 +636,7 @@ NOTEBOOKS: dict[str, list[Cell]] = {
 
             cache_dir = tempfile.mkdtemp(prefix="uniqc-bp-xeb-")
             results = xeb_workflow.run_1q_xeb_workflow(
-                backend="dummy",
+                backend="dummy:local:simulator",
                 qubits=[0],
                 depths=[1, 2, 3],
                 n_circuits=3,
@@ -727,8 +727,84 @@ def main() -> None:
     NOTEBOOK_DIR.mkdir(parents=True, exist_ok=True)
     (NOTEBOOK_DIR / "index.md").write_text(INDEX, encoding="utf-8")
 
+    # Gating policy (no silent fallbacks):
+    #   * Notebooks tagged with required SDKs / credentials are *only*
+    #     generated when those prerequisites are present.
+    #   * Pass UNIQC_DOCS_BUILD_ALL=1 to demand all notebooks (the
+    #     gate then *raises* on missing prereqs instead of skipping).
+    #   * Pass UNIQC_DOCS_INCLUDE=01_bare,10_xeb to whitelist a subset.
+    require_all = os.environ.get("UNIQC_DOCS_BUILD_ALL") == "1"
+    include_filter = os.environ.get("UNIQC_DOCS_INCLUDE", "")
+    include_set = (
+        {p.strip() for p in include_filter.split(",") if p.strip()}
+        if include_filter else None
+    )
+
+    # Per-notebook prerequisite tags. ``sdk`` is a check function name
+    # under ``uniqc.backend_adapter.task.optional_deps``; ``creds`` is
+    # a provider name passed to ``has_provider_credentials``.
+    PREREQS: dict[str, dict[str, list[str]]] = {
+        # Pure local notebooks — no provider prereqs.
+        "00_config_and_backend_cache.ipynb": {},
+        "01_bare_circuit_simulation.ipynb": {},
+        "02_named_circuit_and_reuse.ipynb": {},
+        "03_compile_region_dummy_backend.ipynb": {},
+        "04_api_submit_dummy_result.ipynb": {},
+        "05_cli_workflow_dummy.ipynb": {},
+        # Cloud template — requires no real SDK because the cloud cells
+        # are templated (commented out), but illustrate dry-run only.
+        "06_cloud_backend_template.ipynb": {},
+        "07_variational_circuit.ipynb": {},
+        "08_torch_quantum_training.ipynb": {"sdk": ["torch", "torchquantum"]},
+        "09_calibration_qem_dummy.ipynb": {},
+        "10_xeb_workflow_dummy.ipynb": {},
+    }
+
+    def _missing(prereqs: dict[str, list[str]]) -> list[str]:
+        from uniqc.backend_adapter.preflight import has_provider_credentials
+        from uniqc.backend_adapter.task import optional_deps as _od
+        out: list[str] = []
+        for sdk in prereqs.get("sdk", []):
+            checker = getattr(_od, f"check_{sdk}", None)
+            if checker is None:
+                # Fallback: try plain importlib check.
+                import importlib.util
+                if importlib.util.find_spec(sdk) is None:
+                    out.append(f"sdk:{sdk}")
+            elif not checker():
+                out.append(f"sdk:{sdk}")
+        for prov in prereqs.get("creds", []):
+            if not has_provider_credentials(prov):
+                out.append(f"creds:{prov}")
+        return out
+
+    skipped: list[tuple[str, list[str]]] = []
     for filename, cells in NOTEBOOKS.items():
+        if include_set is not None and not any(
+            filename.startswith(p) for p in include_set
+        ):
+            continue
+        prereqs = PREREQS.get(filename, {})
+        missing = _missing(prereqs)
+        if missing and not require_all:
+            skipped.append((filename, missing))
+            print(f"SKIP {filename}: missing {missing}")
+            continue
+        if missing and require_all:
+            raise RuntimeError(
+                f"UNIQC_DOCS_BUILD_ALL=1 but {filename} is missing "
+                f"prerequisites {missing}. Install them or omit "
+                "UNIQC_DOCS_BUILD_ALL."
+            )
         _write_notebook(filename, cells)
+
+    if skipped:
+        print()
+        print(
+            f"NOTE: {len(skipped)} notebook(s) skipped due to missing "
+            "prerequisites. Set UNIQC_DOCS_BUILD_ALL=1 to make missing "
+            "prereqs an error instead, or install the listed extras."
+        )
 
 
 if __name__ == "__main__":

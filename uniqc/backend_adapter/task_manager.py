@@ -328,6 +328,22 @@ def dry_run_task(
         Any dry-run success followed by actual submission failure is a
         critical bug. Please report it at the UnifiedQuantum issue tracker.
     """
+    # Strict pre-flight gate (same as submit_task / submit_batch).
+    from uniqc.backend_adapter.preflight import (
+        BackendPreflightError,
+        ensure_backend_ready,
+    )
+    try:
+        ensure_backend_ready(backend)
+    except (BackendPreflightError, ValueError) as exc:
+        return DryRunResult(
+            success=False,
+            details=f"Pre-flight check failed: {exc}",
+            error=str(exc),
+            error_kind="preflight",
+            backend_name=backend,
+        )
+
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 
     # Dummy backends still need their special init path because they pull
@@ -1000,9 +1016,22 @@ def submit_task(
         >>> # Local noisy simulation using chip characterization:
         >>> from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
         >>> chip = OriginQAdapter().get_chip_characterization("WK_C180")
-        >>> task_id = submit_task(circuit, backend='dummy', chip_characterization=chip)
+        >>> task_id = submit_task(circuit, backend='dummy:local:simulator', chip_characterization=chip)
     """
     import warnings
+
+    # Strict pre-flight gate: missing SDK / chip cache → loud error.
+    # Tests / scripts that pass "dummy:<provider>:<chip>" without the
+    # provider SDK installed will fail here instead of silently working.
+    from uniqc.backend_adapter.preflight import (
+        BackendPreflightError,
+        ensure_backend_ready,
+    )
+    try:
+        ensure_backend_ready(backend)
+    except (BackendPreflightError, ValueError):
+        # Re-raise with the same type so callers can distinguish.
+        raise
 
     # Re-pack the explicit kwargs into the kwargs dict so the existing
     # adapter wiring keeps working unchanged.
@@ -1297,6 +1326,16 @@ def submit_batch(
         >>> results = wait_for_result(uid)         # list[UnifiedResult] len=400
         >>> shards  = get_platform_task_ids(uid)   # 2 shard rows
     """
+    # Strict pre-flight gate (same as submit_task).
+    from uniqc.backend_adapter.preflight import (
+        BackendPreflightError,
+        ensure_backend_ready,
+    )
+    try:
+        ensure_backend_ready(backend)
+    except (BackendPreflightError, ValueError):
+        raise
+
     # Re-pack explicit kwargs.
     if backend_name is not None:
         kwargs.setdefault("backend_name", backend_name)

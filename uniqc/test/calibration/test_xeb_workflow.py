@@ -8,7 +8,7 @@ def test_1q_xeb_workflow_accepts_dummy_noise_model(tmp_path):
     from uniqc.algorithms.workflows import xeb_workflow
 
     results = xeb_workflow.run_1q_xeb_workflow(
-        backend="dummy",
+        backend="dummy:local:simulator",
         qubits=[0],
         depths=[1, 2],
         n_circuits=2,

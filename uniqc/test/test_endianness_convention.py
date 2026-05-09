@@ -94,11 +94,19 @@ def test_dummy_backend_endianness(backend):
     )
 
 
+@pytest.mark.requires_pyqpanda3
+@pytest.mark.requires_originq_credentials
 @pytest.mark.parametrize(
     "backend", ["dummy:originq:WK_C180", "dummy:originq:PQPUMESH8"],
 )
 def test_dummy_originq_chip_endianness(backend):
-    """Chip-backed density-matrix dummy honors c[0]=LSB."""
+    """Chip-backed density-matrix dummy honors c[0]=LSB.
+
+    Skipped automatically when pyqpanda3 / OriginQ chip cache is missing
+    (see project conftest); tests that use ``dummy:<provider>:<chip>``
+    strictly depend on the provider's SDK + chip data and there is no
+    silent fallback path.
+    """
     from uniqc.backend_adapter.task_manager import submit_batch, query_task
 
     pytest.importorskip(
@@ -107,15 +115,11 @@ def test_dummy_originq_chip_endianness(backend):
     )
     pytest.importorskip("qiskit_aer")
 
-    try:
-        uid = submit_batch([_probe_circuit()], backend=backend, shots=2048)
-    except (ValueError, RuntimeError, ImportError) as exc:
-        # ImportError: OriginQ adapter requires originq.token in config to
-        # build the dummy chip wrapper (CI has no creds).
-        pytest.skip(f"{backend} unavailable in this environment: {exc}")
+    uid = submit_batch([_probe_circuit()], backend=backend, shots=2048)
     info = query_task(uid)
-    if info.status != "success":
-        pytest.skip(f"{backend} failed (likely env): {info.error_message}")
+    assert info.status == "success", (
+        f"{backend} failed: {info.error_message}"
+    )
     assert _dominant(info.result) == "01", (
         f"{backend} returned {info.result}; expected '01' as dominant key"
     )

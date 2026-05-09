@@ -47,7 +47,7 @@ class TestSubmitTaskDocBasicUsage:
         circuit = _bell_circuit()
         task_id = submit_task(
             circuit,
-            backend="dummy",
+            backend="dummy:local:simulator",
             shots=100,
         )
         assert isinstance(task_id, str) and task_id
@@ -74,7 +74,7 @@ class TestSubmitTaskDocBasicUsage:
         # backend doesn't enforce basis, the prep step still validates.
         task_id = submit_task(
             circuit,
-            backend="dummy",
+            backend="dummy:local:simulator",
             shots=100,
         )
         assert task_id
@@ -140,7 +140,7 @@ class TestSubmitTaskDummyBackends:
     """Mirror the dummy-mode block from submit_task.md."""
 
     def test_plain_dummy_backend(self):
-        task_id = submit_task(_bell_circuit(), backend="dummy", shots=50)
+        task_id = submit_task(_bell_circuit(), backend="dummy:local:simulator", shots=50)
         result = wait_for_result(task_id, timeout=30)
         counts = _counts_dict(result)
         assert isinstance(counts, dict)
