@@ -175,6 +175,20 @@ def resolve_dummy_backend(
         )
     elif identifier.startswith("dummy:"):
         suffix = identifier.split(":", 1)[1].strip()
+        # Canonical local form: ``dummy:local:simulator`` /
+        # ``dummy:local:virtual-line-N`` / ``dummy:local:virtual-grid-RxC`` /
+        # ``dummy:local:mps:linear-N``. Strip the leading ``local:`` and
+        # fall through to the existing topology / chip dispatch.
+        if suffix == "local:simulator":
+            spec = DummyBackendSpec(
+                identifier="dummy",
+                name="dummy",
+                description="Unconstrained noiseless local simulator",
+            )
+            # Apply override block at the bottom of the function.
+            return _apply_dummy_overrides(spec, **overrides)
+        if suffix.startswith("local:"):
+            suffix = suffix[len("local:"):].strip()
         line_match = _VIRTUAL_LINE_RE.match(suffix)
         grid_match = _VIRTUAL_GRID_RE.match(suffix)
         mps_match = _MPS_LINEAR_RE.match(suffix)
@@ -252,6 +266,11 @@ def resolve_dummy_backend(
     else:
         raise ValueError(f"Not a dummy backend identifier: {identifier}")
 
+    return _apply_dummy_overrides(spec, **overrides)
+
+
+def _apply_dummy_overrides(spec: DummyBackendSpec, **overrides: Any) -> DummyBackendSpec:
+    """Apply user-supplied overrides (chip / qubits / topology / noise) onto a spec."""
     available_qubits_override = overrides.get("available_qubits")
     available_topology_override = overrides.get("available_topology")
     chip_override = overrides.get("chip_characterization")

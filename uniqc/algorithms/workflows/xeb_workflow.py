@@ -14,6 +14,7 @@ __all__ = [
     "run_1q_xeb_workflow",
     "run_2q_xeb_workflow",
     "run_parallel_xeb_workflow",
+    "run_parallel_cz_xeb_workflow",
 ]
 
 
@@ -21,33 +22,40 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     """Get a QuantumAdapter for the given backend name.
 
     Args:
-        backend: Backend identifier, e.g. "dummy", "originq:PQPUMESH8".
-            For OriginQ backends the chip name (after "originq:") is extracted
-            and passed as ``backend_name`` to ``OriginQAdapter``.
+        backend: Backend identifier, e.g. ``"local"``,
+            ``"dummy:local:simulator"``, ``"dummy:originq:WK_C180"``,
+            ``"originq:WK_C180"``. Any malformed identifier raises
+            :class:`ValueError`; missing SDK / chip cache problems raise
+            :class:`MissingDependencyError` /
+            :class:`BackendPreflightError` respectively. There are no
+            silent fallbacks.
     """
+    from uniqc.backend_adapter.preflight import parse_backend_target
     from uniqc.backend_adapter.task.adapters import (
         DummyAdapter,
         OriginQAdapter,
         QuafuAdapter,
     )
 
-    if backend == "dummy" or backend.startswith("dummy:"):
+    target = parse_backend_target(backend)
+    if target.kind in ("local", "local_topology", "local_mps", "dummy_provider"):
         from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
 
         return DummyAdapter(**dummy_adapter_kwargs(backend, **kwargs))
-    elif backend.startswith("origin"):
-        # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
-        chip = backend.split(":", 1)[1] if ":" in backend else backend
-        return OriginQAdapter(backend_name=chip)
-    elif backend.startswith("quafu"):
+    if target.provider == "originq":
+        return OriginQAdapter(backend_name=target.chip_name or "")
+    if target.provider == "quafu":
         return QuafuAdapter(**kwargs)
-    else:
-        # Fall back to dummy for unknown backends
-        return DummyAdapter(**kwargs)
+    raise ValueError(
+        f"Backend identifier {backend!r} (kind={target.kind!r}, "
+        f"provider={target.provider!r}) has no adapter wired in this "
+        "workflow. Use 'local', 'dummy:local:simulator', "
+        "'dummy:<provider>:<chip>', or '<provider>:<chip>'."
+    )
 
 
 def run_1q_xeb_workflow(
-    backend: str = "dummy",
+    backend: str = "dummy:local:simulator",
     qubits: list[int] | None = None,
     depths: list[int] | None = None,
     n_circuits: int = 50,
@@ -119,7 +127,7 @@ def run_1q_xeb_workflow(
 
 
 def run_2q_xeb_workflow(
-    backend: str = "dummy",
+    backend: str = "dummy:local:simulator",
     pairs: list[tuple[int, int]] | None = None,
     depths: list[int] | None = None,
     n_circuits: int = 50,
@@ -195,7 +203,7 @@ def run_2q_xeb_workflow(
 
 
 def run_parallel_xeb_workflow(
-    backend: str = "dummy",
+    backend: str = "dummy:local:simulator",
     chip_characterization: Any = None,
     depths: list[int] | None = None,
     n_circuits: int = 50,
@@ -305,4 +313,180 @@ def run_parallel_xeb_workflow(
         "patterns": pattern,
         "results": results,
         "pairs": edges,
+    }
+
+
+def run_parallel_cz_xeb_workflow(
+    backend: str = "local",
+    *,
+    chip_characterization: Any = None,
+    region_qubits: list[int] | None = None,
+    n_qubits: int | None = None,
+    patterns: list[list[tuple[int, int]]] | None = None,
+    pattern_mode: str = "auto",
+    color_idx: int = 0,
+    depths: list[int] | None = None,
+    instances: int = 20,
+    shots: int = 5000,
+    noise_model: dict[str, Any] | None = None,
+    seed: int | None = 2026,
+    cache_dir: str | None = None,
+    max_age_hours: float | None = None,
+) -> dict[str, Any]:
+    """Run parallel-CZ XEB on a chip and return per-pair fidelities.
+
+    Before doing anything this calls
+    :func:`uniqc.backend_adapter.preflight.ensure_backend_ready` on
+    ``backend``. Missing SDKs, missing or stale chip cache cause an
+    immediate, loud error — there are no silent fallbacks.
+
+    A *generic* chip pre-flight calibration: pick (or accept) a region
+    of qubits, build parallel CZ patterns, run Haar-U3 + parallel-CZ
+    XEB at multiple depths, and fit per-pair ``F(d) = beta · alpha^d``
+    on the 2-qubit marginals. Returns a dict whose ``per_pair_results``
+    field maps each ``(u, v)`` pair to an :class:`uniqc.XEBResult`
+    encoding ``alpha`` (per-cycle CZ fidelity) and its uncertainty.
+
+    Args:
+        backend: Backend name (``"local"``, ``"dummy:local:simulator"``,
+            ``"dummy:originq:WK_C180"``, ``"originq:WK_C180"``, ...).
+        chip_characterization: Required when ``region_qubits``/``patterns``
+            need to be derived from the chip topology, or when noise-aware
+            simulation is desired (passed to ``DummyAdapter``).
+        region_qubits: Explicit list of region qubits. If omitted, derived
+            from the chip topology + ``n_qubits`` via ``pick_region``.
+        n_qubits: Region size when picking automatically.
+        patterns: Explicit list of CZ patterns. If omitted, derived from
+            ``pattern_mode``.
+        pattern_mode:
+            ``"auto"`` — DSatur-color the region's induced edges into
+                disjoint matchings (one parallel-XEB run covers all of them).
+            ``"three_color"`` — chip-wide 3-coloring of *every* CZ edge,
+                use the matching at index ``color_idx`` (one matching).
+            ``"single_pair_per_pattern"`` — every pair in the region
+                becomes its own one-edge pattern (isolated XEB).
+        color_idx: Which color to keep when ``pattern_mode="three_color"``.
+        depths: Sweep over circuit depths. Defaults to ``[5, 10, 15, 20, 25, 30]``.
+        instances: Random circuit instances per ``(pattern, depth)``.
+        shots: Shots per circuit.
+        noise_model: Optional explicit DummyAdapter noise model.
+        seed: Master corpus RNG seed.
+        cache_dir: If set, per-pair :class:`XEBResult` files are saved here.
+
+    Returns:
+        Dict with keys:
+          * ``region_qubits``: list[int]
+          * ``patterns``: list[list[tuple[int,int]]]
+          * ``pairs``: list[(u,v)] (every pair touched by any pattern)
+          * ``per_pair_fits``: list[PairCircuitFit]
+          * ``per_pair_decays``: dict[(u,v), PairDecay]
+          * ``per_pair_results``: dict[(u,v), XEBResult]
+          * ``corpus_size``: int
+    """
+    from uniqc.backend_adapter.preflight import ensure_backend_ready
+    from uniqc.calibration.xeb.parallel_cz import ParallelCZBenchmarker
+    from uniqc.calibration.xeb.topology import (
+        ChipTopologyView,
+        Region,
+        parallel_patterns as _parallel_patterns,
+        pick_region,
+        three_color_chip,
+    )
+
+    # Hard pre-execution gate: missing SDK / chip cache → loud error.
+    preflight_chip = ensure_backend_ready(backend, max_age_hours=max_age_hours)
+    if chip_characterization is None and preflight_chip is not None:
+        chip_characterization = preflight_chip
+
+    if depths is None:
+        depths = [5, 10, 15, 20, 25, 30]
+
+    # Derive region + patterns from topology when not explicitly given.
+    view: ChipTopologyView | None = None
+    if chip_characterization is not None:
+        view = ChipTopologyView.from_chip_characterization(chip_characterization)
+
+    if region_qubits is None:
+        if view is None:
+            raise ValueError(
+                "region_qubits or chip_characterization (with n_qubits) is required"
+            )
+        if n_qubits is None:
+            raise ValueError(
+                "n_qubits is required when region_qubits is not supplied"
+            )
+        region = pick_region(view, int(n_qubits), seed=seed or 0)
+        region_qs = list(region.qubits)
+        region_obj: Region | None = region
+    else:
+        region_qs = [int(q) for q in region_qubits]
+        if view is not None:
+            adj = view.adjacency()
+            from uniqc.calibration.xeb.topology import _induced_edges
+            induced = tuple(_induced_edges(region_qs, adj))
+            region_obj = Region(
+                qubits=tuple(sorted(region_qs)), edges=induced, score=0.0,
+            )
+        else:
+            region_obj = None
+
+    if patterns is None:
+        if pattern_mode == "auto":
+            if region_obj is None or not region_obj.edges:
+                raise ValueError(
+                    "pattern_mode='auto' needs a region with edges; supply "
+                    "chip_characterization or explicit patterns"
+                )
+            patterns = [list(p) for p in _parallel_patterns(region_obj.edges)]
+        elif pattern_mode == "three_color":
+            if view is None and (region_obj is None or not region_obj.edges):
+                raise ValueError(
+                    "pattern_mode='three_color' needs chip_characterization "
+                    "or a region with edges"
+                )
+            # Color the region's edges when an explicit region is given,
+            # else color the entire chip's coupling map.
+            if region_obj is not None and region_obj.edges:
+                colors = _parallel_patterns(region_obj.edges, max_K=4)
+            else:
+                colors = three_color_chip(view, max_K=4)
+            if not (0 <= color_idx < len(colors)):
+                raise ValueError(
+                    f"color_idx={color_idx} out of range; got "
+                    f"{len(colors)} colors"
+                )
+            chosen = list(colors[color_idx])
+            patterns = [chosen]
+            # Region = qubits actually touched by the chosen matching.
+            region_qs = sorted({q for e in chosen for q in e})
+        elif pattern_mode == "single_pair_per_pattern":
+            if region_obj is None or not region_obj.edges:
+                raise ValueError(
+                    "pattern_mode='single_pair_per_pattern' needs region edges"
+                )
+            patterns = [[e] for e in region_obj.edges]
+        else:
+            raise ValueError(f"unknown pattern_mode={pattern_mode!r}")
+
+    # Build adapter (kept consistent with the rest of this module).
+    adapter_kwargs: dict[str, Any] = {}
+    if chip_characterization is not None:
+        adapter_kwargs["chip_characterization"] = chip_characterization
+    if noise_model is not None:
+        adapter_kwargs["noise_model"] = noise_model
+    adapter = _get_adapter(backend, **adapter_kwargs)
+
+    bench = ParallelCZBenchmarker(
+        adapter=adapter, shots=shots, seed=seed, cache_dir=cache_dir,
+    )
+    result = bench.run(region_qs, patterns, depths, instances=instances)
+
+    return {
+        "region_qubits": list(region_qs),
+        "patterns": [[tuple(e) for e in p] for p in patterns],
+        "pairs": list(result["per_pair_decays"].keys()),
+        "per_pair_fits": result["per_pair_fits"],
+        "per_pair_decays": result["per_pair_decays"],
+        "per_pair_results": result["per_pair_results"],
+        "corpus_size": len(result["corpus"]),
     }

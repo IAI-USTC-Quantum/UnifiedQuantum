@@ -229,7 +229,7 @@ class TestDummySubmitIntegration:
 
         task_id = submit_task(
             circuit,
-            "dummy",
+            "dummy:local:simulator",
             shots=100,
             options={"available_qubits": 4},
         )
@@ -247,7 +247,7 @@ class TestDummySubmitIntegration:
         circuit.cnot(0, 1)
 
         opts = DummyOptions(available_qubits=4, shots=200)
-        task_id = submit_task(circuit, "dummy", options=opts)
+        task_id = submit_task(circuit, "dummy:local:simulator", options=opts)
         assert isinstance(task_id, str)
         assert len(task_id) > 0
 
@@ -262,7 +262,7 @@ class TestDummySubmitIntegration:
 
         task_id = submit_task(
             circuit,
-            "dummy",
+            "dummy:local:simulator",
             shots=100,
             options={"available_qubits": 4},
             available_qubits=8,  # should override options

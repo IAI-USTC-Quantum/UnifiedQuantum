@@ -21,20 +21,34 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "UnifiedQuantum"))
 
+from uniqc.backend_adapter.preflight import (  # noqa: E402
+    BackendPreflightError,
+    MissingDependencyError,
+)
+
 
 def _get_wk180_adapter(dummy: bool, backend_name: str | None):
-    """Get adapter and chip characterization for WK180."""
+    """Get adapter and chip characterization for WK180.
+
+    Strict policy (no fallbacks): pyqpanda3 must be installed and the
+    chip cache must be present-or-refreshable. ``--dummy`` mode is not
+    exempt — chip-noisy simulation depends on real chip data.
+    """
+    from uniqc.backend_adapter.preflight import ensure_backend_ready
     from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
+    backend_name = backend_name or "originq:wuyuan:wk180"
+    chip_short = backend_name.split(":")[-1] or "WK_C180"
+    backend_id = (
+        f"dummy:originq:{chip_short}" if dummy else f"originq:{chip_short}"
+    )
+    chip_char = ensure_backend_ready(backend_id, max_age_hours=24.0)
+
     if dummy:
-        originq = OriginQAdapter()
-        chip_char = originq.get_chip_characterization(backend_name or "originq:wuyuan:wk180")
         adapter = DummyAdapter(chip_characterization=chip_char)
-        return adapter, chip_char
     else:
-        adapter = OriginQAdapter()
-        chip_char = adapter.get_chip_characterization(backend_name or "originq:wuyuan:wk180")
-        return adapter, chip_char
+        adapter = OriginQAdapter(backend_name=chip_short)
+    return adapter, chip_char, backend_id
 
 
 def run_wk180_readout_em(
@@ -65,8 +79,7 @@ def run_wk180_readout_em(
     if qubits is None:
         qubits = [0, 1, 2, 3]
 
-    adapter, chip_char = _get_wk180_adapter(dummy, backend_name)
-    backend_label = "dummy" if dummy else (backend_name or "originq:wuyuan:wk180")
+    adapter, chip_char, backend_label = _get_wk180_adapter(dummy, backend_name)
 
     print(f"[WK180] Running readout EM calibration on {backend_label}...")
     print(f"  1q qubits: {qubits}")
@@ -169,6 +182,9 @@ def main() -> None:
             backend_name=args.backend,
             output_file=args.output,
         )
+    except (MissingDependencyError, BackendPreflightError) as e:
+        print(f"\nERROR: {e}\n", file=sys.stderr)
+        sys.exit(3)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         raise
