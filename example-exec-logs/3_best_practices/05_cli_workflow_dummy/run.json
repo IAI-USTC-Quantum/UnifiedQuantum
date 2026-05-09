@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "command: /home/agony/projects/quantum-simulator-paper-new/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-1jkmhqy1/bell.originir -p dummy -s 64 --wait --format json\n{\n  \"task_id\": \"uqt_3cb047f6eaeb4e59a26c12ec3472d724\",\n  \"platform\": \"dummy\",\n  \"shots\": 64\n}\n{\n  \"counts\": {\n    \"00\": 32,\n    \"11\": 32\n  },\n  \"probabilities\": {\n    \"00\": 0.5,\n    \"11\": 0.5\n  },\n  \"shots\": 64,\n  \"platform\": \"dummy\",\n  \"task_id\": \"uqt_3cb047f6eaeb4e59a26c12ec3472d724\",\n  \"backend_name\": \"dummy:local:simulator\",\n  \"execution_time\": null,\n  \"error_message\": null\n}\n\n",
+  "stdout": "command: /home/agony/projects/quantum-simulator-paper-new/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-48p0kjyp/bell.originir -p dummy -s 64 --wait --format json\n{\n  \"task_id\": \"uqt_8cc935de0a1a43068d8bc72b45388c39\",\n  \"platform\": \"dummy\",\n  \"shots\": 64\n}\n{\n  \"counts\": {\n    \"00\": 32,\n    \"11\": 32\n  },\n  \"probabilities\": {\n    \"00\": 0.5,\n    \"11\": 0.5\n  },\n  \"shots\": 64,\n  \"platform\": \"dummy\",\n  \"task_id\": \"uqt_8cc935de0a1a43068d8bc72b45388c39\",\n  \"backend_name\": \"dummy:local:simulator\",\n  \"execution_time\": null,\n  \"error_message\": null\n}\n\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 3.311
+  "duration_seconds": 4.571
 }

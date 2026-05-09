@@ -28,16 +28,16 @@
   description:     Unconstrained noiseless local simulator
   topology:        None
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_d9725551505f4a30a463a1e81832abb3', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_60c3774a58ec4b8e82e762567c4be515', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 == dummy:local:virtual-line-3 ==
   description:     Noiseless virtual 3-qubit line topology
   topology:        [[0, 1], [1, 2]]
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_69c7174b7a3445899e28e6b2918bd2e6', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_09657a3b6d974f5cae79b46f4bbbeb2b', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
 == dummy:local:mps-linear-3:chi=8 ==
   description:     Noiseless MPS simulator on a 3-qubit linear chain, chi=8
   topology:        [[0, 1], [1, 2]]
   simulator_kwargs: {'chi_max': 8}
-  counts:          UnifiedResult(counts={'000': 130, '111': 126}, probabilities={'000': 0.5078125, '111': 0.4921875}, shots=256, platform='dummy', task_id='uqt_45f49f1a4ab64a34ba7573c9c6250cd9', backend_name='dummy:local:mps-linear-3:chi=8', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 142, '111': 114}, probabilities={'000': 0.5546875, '111': 0.4453125}, shots=256, platform='dummy', task_id='uqt_791a9adbd2044d319018b3bfbf61f067', backend_name='dummy:local:mps-linear-3:chi=8', execution_time=None, error_message=None)
 ```
 

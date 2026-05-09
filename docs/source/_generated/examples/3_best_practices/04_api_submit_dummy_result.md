@@ -19,9 +19,9 @@
 **Stdout**
 
 ```text
-task_id: uqt_19339016fdc24926a2bec03f7513f0a4
+task_id: uqt_fb99c729ec8a48aaadc4ed932e431122
 status: success
-counts: UnifiedResult(counts={'00': 64, '11': 64}, probabilities={'00': 0.5, '11': 0.5}, shots=128, platform='dummy', task_id='uqt_19339016fdc24926a2bec03f7513f0a4', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+counts: UnifiedResult(counts={'00': 64, '11': 64}, probabilities={'00': 0.5, '11': 0.5}, shots=128, platform='dummy', task_id='uqt_fb99c729ec8a48aaadc4ed932e431122', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 ```
 
 **Figures**

@@ -187,8 +187,17 @@ def _parse_module_docstring(path: pathlib.Path) -> str:
 
 
 def _make_spec(path: pathlib.Path) -> ExampleSpec:
-    chapter = path.parent.name
-    name = path.stem
+    # ``chapter`` is always the top-level numbered chapter dir under
+    # ``examples/`` (e.g. ``2_advanced``).
+    rel = path.relative_to(EXAMPLES_ROOT)
+    chapter = rel.parts[0]
+    # ``name`` is the rest of the relative path with the .py extension
+    # stripped and ``/`` flattened into ``__`` so it is filesystem-safe
+    # for use as a directory name under ``example-exec-logs/<chapter>/``
+    # and ``docs/source/_generated/examples/<chapter>/``.
+    sub_parts = list(rel.parts[1:])
+    sub_parts[-1] = path.stem
+    name = "__".join(sub_parts)
     docstring = _parse_module_docstring(path)
 
     require: list[str] = []
@@ -380,10 +389,11 @@ def _path_for_chapter_include(path: pathlib.Path) -> str:
     relative to the *including* file, not the included file, so we always use
     paths relative to ``docs/source/<chapter>/``.
 
-    ``docs/source/<chapter>/`` to ``examples/<chapter>/<name>.py``:
-    ``../../../examples/<chapter>/<name>.py``.
+    Examples are at ``examples/<chapter>/[<sub>/...]<name>.py`` where the
+    sub-path may be one or more directories deep.
     """
-    rel = pathlib.Path("..", "..", "..", "examples", path.parent.name, path.name)
+    rel_to_examples = path.relative_to(EXAMPLES_ROOT)
+    rel = pathlib.Path("..", "..", "..", "examples", *rel_to_examples.parts)
     return rel.as_posix()
 
 
@@ -505,8 +515,11 @@ def discover_examples(only_chapter: str | None) -> list[ExampleSpec]:
             continue
         if only_chapter and chapter_dir.name != only_chapter:
             continue
-        for path in sorted(chapter_dir.glob("*.py")):
-            if path.name.startswith("_"):
+        # Walk recursively so topical sub-dirs (e.g. ``2_advanced/algorithms/``,
+        # ``2_advanced/circuits/``) are picked up. Skip files / dirs whose name
+        # starts with ``_`` (private helpers).
+        for path in sorted(chapter_dir.rglob("*.py")):
+            if any(part.startswith("_") for part in path.relative_to(chapter_dir).parts):
                 continue
             specs.append(_make_spec(path))
     return specs
