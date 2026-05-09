@@ -1,0 +1,22 @@
+{
+  "example": "examples/3_best_practices/07_variational_circuit.py",
+  "chapter": "3_best_practices",
+  "name": "07_variational_circuit",
+  "title": "07 — 简单变分量子线路",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "matplotlib"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "step=00 theta=0.200 <Z>=0.985 grad=-0.228\nstep=04 theta=0.518 <Z>=0.865 grad=-0.537\nstep=08 theta=1.189 <Z>=0.390 grad=-0.943\nstep=12 theta=2.155 <Z>=-0.570 grad=-0.863\nstep=16 theta=2.781 <Z>=-0.935 grad=-0.362\nfinal theta: 2.9375\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [
+    "figure-01.png"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.134
+}

@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/06_qem_m3.py",
+  "chapter": "2_advanced",
+  "name": "06_qem_m3",
+  "title": "06 — Error mitigation: M3 / readout EM",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "observed:        {0: 40, 1: 360}\nmitigated (~):   {0: 0.0, 1: 400.0}\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.001
+}

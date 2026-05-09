@@ -1,0 +1,22 @@
+{
+  "example": "examples/3_best_practices/10_xeb_workflow_dummy.py",
+  "chapter": "3_best_practices",
+  "name": "10_xeb_workflow_dummy",
+  "title": "10 — XEB workflow",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "matplotlib"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "fidelity_per_layer: 0.983341\nfit parameters: {'A': 1.01276, 'B': 0.0, 'r': 0.983341}\ndepths: (1, 2, 3)\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [
+    "figure-01.png"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.134
+}

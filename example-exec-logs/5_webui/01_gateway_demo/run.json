@@ -1,0 +1,18 @@
+{
+  "example": "examples/5_webui/01_gateway_demo.py",
+  "chapter": "5_webui",
+  "name": "01_gateway_demo",
+  "title": "01 — Gateway / WebUI: programmatic launch and persistence",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "== Gateway ASGI app ==\nFastAPI with 26 routes\n\n== Configured host/port ==\nhost: 127.0.0.1\nport: 18765\n\n== Triggering one dummy task so the UI has something to show ==\ntask_id: uqt_202a790928e0483386986888947f7cd4\n\nLaunch the UI with:\n    uniqc gateway --host 127.0.0.1 --port 18765\n    # then open http://127.0.0.1:18765/\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 1.318
+}

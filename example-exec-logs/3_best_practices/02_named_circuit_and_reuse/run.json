@@ -1,0 +1,22 @@
+{
+  "example": "examples/3_best_practices/02_named_circuit_and_reuse.py",
+  "chapter": "3_best_practices",
+  "name": "02_named_circuit_and_reuse",
+  "title": "02 — Named Circuit 与可复用线路",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "matplotlib"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "DEF export:\nDEF bell_pair(q[0], q[1])\nH q[0]\nCNOT q[0], q[1]\nENDDEF\noperations: 9\nnon-zero states: {'0000': 0.24999999999999978, '0111': 0.2499999999999998, '1011': 0.24999999999999986, '1100': 0.24999999999999983}\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [
+    "figure-01.png"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.097
+}
