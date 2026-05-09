@@ -406,7 +406,7 @@ def refresh_backends(platform: str | None = None) -> dict[str, Any]:
 @router.get("/{backend_id}")
 def get_backend(backend_id: str) -> dict[str, Any]:
     """Get a specific backend by its full id (``platform:name``)."""
-    if backend_id == "dummy" or backend_id.startswith("dummy:"):
+    if backend_id.startswith("dummy:"):
         chip_meta = chip_cache_info()
         for b in list_dummy_backend_infos():
             if b.extra.get("dummy_backend_id") == backend_id:

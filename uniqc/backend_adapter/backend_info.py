@@ -76,8 +76,14 @@ class BackendInfo:
 
     def full_id(self) -> str:
         """Return the globally-unique identifier: ``platform:name``."""
-        if self.platform == Platform.DUMMY and self.name == "dummy":
-            return "dummy"
+        if self.platform == Platform.DUMMY:
+            # The dummy spec.name already encodes the full identifier
+            # (e.g. "dummy:local:simulator", "dummy:local:virtual-line-3",
+            # "originq:WK_C180" for chip-backed dummies). The platform tag
+            # would otherwise produce double-prefixed strings.
+            if self.name.startswith("dummy:"):
+                return self.name
+            return f"dummy:{self.name}"
         return f"{self.platform.value}:{self.name}"
 
     def to_dict(self) -> dict[str, Any]:

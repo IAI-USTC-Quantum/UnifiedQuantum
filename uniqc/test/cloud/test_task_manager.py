@@ -379,7 +379,7 @@ class TestWaitForResultUnit:
             nonlocal call_count
             call_count += 1
             # First call: still running; second call: still running (cached)
-            return TaskInfo(task_id=tid, backend="dummy", status=TaskStatus.RUNNING)
+            return TaskInfo(task_id=tid, backend="dummy:local:simulator", status=TaskStatus.RUNNING)
 
         def mock_final_query(tid):
             # Final uncached query (after timeout): FAILED
@@ -402,7 +402,7 @@ class TestWaitForResultUnit:
         from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus, wait_for_result
 
         def mock_query_task(tid):
-            return TaskInfo(task_id=tid, backend="dummy", status=TaskStatus.RUNNING)
+            return TaskInfo(task_id=tid, backend="dummy:local:simulator", status=TaskStatus.RUNNING)
 
         def mock_final_query(tid):
             return {"status": TASK_STATUS_SUCCESS, "result": {"00": 1024}}

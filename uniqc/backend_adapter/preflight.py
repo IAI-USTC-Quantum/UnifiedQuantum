@@ -23,11 +23,10 @@ Backend identifier grammar
 ``dummy:local:simulator``                   alias of ``local``
 ``dummy:local:virtual-line-N``              line-topology local simulator
 ``dummy:local:virtual-grid-RxC``            grid-topology local simulator
-``dummy:local:mps:linear-N[:k=v...]``       MPS local simulator
+``dummy:local:mps-linear-N[:k=v...]``       MPS local simulator
 ``dummy:<provider>:<chip>``                 noisy local sim using provider chip data
 ``<provider>:<chip>``                       direct submission to the provider
 ``<provider>``                              provider with default chip
-``dummy``                                   deprecated alias for ``local``
 """
 
 from __future__ import annotations
@@ -162,20 +161,25 @@ class BackendTarget:
 def _is_topology_suffix(suffix: str) -> bool:
     if suffix.startswith(("virtual-line-", "virtual-grid-")):
         return True
-    if suffix.startswith("mps:linear-"):
+    if suffix.startswith(("mps-linear-", "mps:linear-")):
         return True
     return False
+
+
+def _canonical_topology_suffix(suffix: str) -> str:
+    """Map any legacy MPS form (``mps:linear-N``) to the canonical hyphen form."""
+    if suffix.startswith("mps:linear-"):
+        return "mps-linear-" + suffix[len("mps:linear-"):]
+    return suffix
 
 
 def parse_backend_target(name: str) -> BackendTarget:
     """Parse a backend identifier into a :class:`BackendTarget`.
 
-    Raises ``ValueError`` for malformed identifiers.
-
-    Bare ``"dummy"`` and ``"dummy:local"`` are accepted as backwards-compat
-    aliases for ``"dummy:local:simulator"`` and emit a
-    :class:`DeprecationWarning` — new code should always use the
-    canonical ``"dummy:local:simulator"`` form (or just ``"local"``).
+    Raises ``ValueError`` for malformed identifiers. The bare aliases
+    ``"dummy"`` and ``"dummy:local"`` are no longer accepted — callers
+    must use the canonical ``"dummy:local:simulator"`` form (or just
+    ``"local"``).
     """
     if not isinstance(name, str) or not name.strip():
         raise ValueError(
@@ -189,39 +193,49 @@ def parse_backend_target(name: str) -> BackendTarget:
     if raw in ("local", "local:simulator", "dummy:local:simulator"):
         return BackendTarget(raw=raw, kind="local")
     if raw in ("dummy", "dummy:local"):
-        import warnings as _warnings
-        _warnings.warn(
-            f"Backend identifier {raw!r} is deprecated; use "
-            "'dummy:local:simulator' (or 'local') instead.",
-            DeprecationWarning,
-            stacklevel=2,
+        raise ValueError(
+            f"Backend identifier {raw!r} is not allowed. Use the canonical "
+            "'dummy:local:simulator' form (or 'local') for the unconstrained "
+            "noiseless simulator. For chip-noisy simulation, pass "
+            "'dummy:<provider>:<chip>' (e.g. 'dummy:originq:WK_C180')."
         )
-        return BackendTarget(raw=raw, kind="local")
 
     # dummy:local:<topology-spec>
     if raw.startswith("dummy:local:"):
         suffix = raw[len("dummy:local:"):]
         if suffix in ("simulator", ""):
             return BackendTarget(raw=raw, kind="local")
-        if suffix.startswith("virtual-line-") or suffix.startswith("virtual-grid-"):
+        if suffix.startswith(("virtual-line-", "virtual-grid-")):
             return BackendTarget(
                 raw=raw, kind="local_topology", topology_spec=suffix,
             )
-        if suffix.startswith("mps:linear-"):
+        if suffix.startswith("mps-linear-"):
             return BackendTarget(
                 raw=raw, kind="local_mps", topology_spec=suffix,
+            )
+        # Legacy ``mps:linear-`` (colon separator) → reject with migration hint.
+        if suffix.startswith("mps:linear-"):
+            canonical = f"dummy:local:{_canonical_topology_suffix(suffix)}"
+            raise ValueError(
+                f"Backend identifier {raw!r} uses the legacy 'mps:linear-' "
+                f"form. Use the canonical {canonical!r} form instead."
             )
         # Unknown local sub-kind → treat as configuration error.
         raise ValueError(
             f"Unknown local backend sub-identifier: {suffix!r}. Supported: "
-            "simulator, virtual-line-N, virtual-grid-RxC, mps:linear-N."
+            "simulator, virtual-line-N, virtual-grid-RxC, mps-linear-N."
         )
 
-    # Backwards-compat: legacy 'dummy:virtual-line-N' / 'dummy:mps:linear-N'
+    # Backwards-compat: legacy 'dummy:virtual-line-N' / 'dummy:mps:linear-N' /
+    # 'dummy:mps-linear-N' are no longer accepted — the canonical form is
+    # 'dummy:local:...'.
     if raw.startswith("dummy:") and _is_topology_suffix(raw.split(":", 1)[1]):
         suffix = raw.split(":", 1)[1]
-        kind = "local_mps" if suffix.startswith("mps:linear-") else "local_topology"
-        return BackendTarget(raw=raw, kind=kind, topology_spec=suffix)
+        canonical = f"dummy:local:{_canonical_topology_suffix(suffix)}"
+        raise ValueError(
+            f"Backend identifier {raw!r} is not allowed. Use the canonical "
+            f"{canonical!r} form instead."
+        )
 
     # dummy:<provider>:<chip>
     if raw.startswith("dummy:"):

@@ -82,7 +82,7 @@ uniqc submit circuit1.ir circuit2.ir --platform originq --dry-run
 ┃ 2   FAIL     —                    —        Unsupported gate 'T'   ┃
 ```
 
-> **dummy 平台**：`--platform dummy` 默认使用 `dummy`（无约束、无噪声）。可用 `--backend virtual-line-3` / `--backend virtual-grid-2x2` 指定虚拟拓扑，也可用 `--backend originq:WK_C180` 指定真实 backend 的本地含噪仿真。Python API 中对应写法是 `backend="dummy"`、`backend="dummy:virtual-line-3"`、`backend="dummy:originq:WK_C180"`。`dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上执行含噪模拟。
+> **dummy 平台**：`--platform dummy` 默认使用 `dummy`（无约束、无噪声）。可用 `--backend virtual-line-3` / `--backend virtual-grid-2x2` 指定虚拟拓扑，也可用 `--backend originq:WK_C180` 指定真实 backend 的本地含噪仿真。Python API 中对应写法是 `backend="dummy:local:simulator"`、`backend="dummy:local:virtual-line-3"`、`backend="dummy:originq:WK_C180"`。`dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上执行含噪模拟。
 
 ### 使用场景
 

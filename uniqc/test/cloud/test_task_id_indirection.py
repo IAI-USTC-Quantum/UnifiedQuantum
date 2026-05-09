@@ -67,7 +67,7 @@ def test_is_uniqc_task_id_rejects_other_formats():
 def _seed_parent(store: TaskStore, uid: str | None = None) -> str:
     uid = uid or generate_uniqc_task_id()
     store.save(
-        TaskInfo(task_id=uid, backend="dummy:virtual-line-2",
+        TaskInfo(task_id=uid, backend="dummy:local:virtual-line-2",
                  status=TaskStatus.PENDING, shots=100)
     )
     return uid
@@ -80,7 +80,7 @@ def test_save_and_get_shards(tmp_store: TaskStore):
             uniqc_task_id=uid,
             shard_index=i,
             platform_task_id=f"plat_{i}",
-            backend="dummy:virtual-line-2",
+            backend="dummy:local:virtual-line-2",
             circuit_count=1,
             sub_index_offset=i,
             status=TaskStatus.RUNNING.value,
@@ -94,7 +94,7 @@ def test_fk_cascade_on_parent_delete(tmp_store: TaskStore):
     uid = _seed_parent(tmp_store)
     tmp_store.save_shard(TaskShard(
         uniqc_task_id=uid, shard_index=0, platform_task_id="p0",
-        backend="dummy:virtual-line-2", circuit_count=1,
+        backend="dummy:local:virtual-line-2", circuit_count=1,
         sub_index_offset=0, status=TaskStatus.SUCCESS.value,
     ))
     assert len(tmp_store.get_shards(uid)) == 1
@@ -106,7 +106,7 @@ def test_find_uniqc_id_by_platform_id(tmp_store: TaskStore):
     uid = _seed_parent(tmp_store)
     tmp_store.save_shard(TaskShard(
         uniqc_task_id=uid, shard_index=0, platform_task_id="cloud-job-XYZ",
-        backend="dummy:virtual-line-2", circuit_count=1,
+        backend="dummy:local:virtual-line-2", circuit_count=1,
         sub_index_offset=0, status=TaskStatus.RUNNING.value,
     ))
     assert tmp_store.find_uniqc_id_by_platform_id("cloud-job-XYZ") == uid
@@ -153,7 +153,7 @@ def _make_bell():
 
 def test_submit_task_returns_uqt_id_with_one_shard(tmp_store):
     from uniqc import submit_task, get_platform_task_ids
-    uid = submit_task(_make_bell(), backend="dummy:virtual-line-2", shots=50)
+    uid = submit_task(_make_bell(), backend="dummy:local:virtual-line-2", shots=50)
     assert is_uniqc_task_id(uid)
     shards = get_platform_task_ids(uid)
     assert len(shards) == 1 and shards[0].circuit_count == 1
@@ -162,7 +162,7 @@ def test_submit_task_returns_uqt_id_with_one_shard(tmp_store):
 def test_submit_batch_one_shard_per_circuit_for_dummy(tmp_store):
     from uniqc import submit_batch, get_platform_task_ids, wait_for_result
     circuits = [_make_bell() for _ in range(4)]
-    uid = submit_batch(circuits, backend="dummy:virtual-line-2", shots=50)
+    uid = submit_batch(circuits, backend="dummy:local:virtual-line-2", shots=50)
     assert is_uniqc_task_id(uid)
     shards = get_platform_task_ids(uid)
     assert len(shards) == 4
@@ -178,7 +178,7 @@ def test_submit_batch_return_platform_ids(tmp_store):
     from uniqc import submit_batch
     plat_ids = submit_batch(
         [_make_bell() for _ in range(3)],
-        backend="dummy:virtual-line-2", shots=50,
+        backend="dummy:local:virtual-line-2", shots=50,
         return_platform_ids=True,
     )
     assert isinstance(plat_ids, list) and len(plat_ids) == 3
@@ -188,7 +188,7 @@ def test_legacy_platform_id_alias_emits_deprecation(tmp_store):
     from uniqc import submit_batch, get_platform_task_ids, query_task
     uid = submit_batch(
         [_make_bell() for _ in range(2)],
-        backend="dummy:virtual-line-2", shots=50,
+        backend="dummy:local:virtual-line-2", shots=50,
     )
     plat_id = get_platform_task_ids(uid)[0].platform_task_id
     with warnings.catch_warnings(record=True) as caught:
@@ -226,7 +226,7 @@ def test_archive_and_restore_preserves_shards(tmp_store):
     for i in range(2):
         tmp_store.save_shard(TaskShard(
             uniqc_task_id=uid, shard_index=i,
-            platform_task_id=f"p{i}", backend="dummy:virtual-line-2",
+            platform_task_id=f"p{i}", backend="dummy:local:virtual-line-2",
             circuit_count=1, sub_index_offset=i,
             status=TaskStatus.SUCCESS.value, result={"00": 50, "11": 50},
         ))
@@ -246,7 +246,7 @@ def test_delete_archived_clears_shards(tmp_store):
     uid = _seed_parent(tmp_store)
     tmp_store.save_shard(TaskShard(
         uniqc_task_id=uid, shard_index=0, platform_task_id="p0",
-        backend="dummy:virtual-line-2", circuit_count=1,
+        backend="dummy:local:virtual-line-2", circuit_count=1,
         sub_index_offset=0, status=TaskStatus.SUCCESS.value,
     ))
     archive = ArchiveStore()

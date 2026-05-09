@@ -214,12 +214,12 @@ class TestRegionSelectorIntegration:
 class TestDummySubmitIntegration:
     """Integration: submit_task with BackendOptions works end-to-end via dummy adapter.
 
-    Use backend='dummy' to activate the dummy adapter (bypasses _get_adapter lookup,
+    Use backend='dummy:local:simulator' to activate the dummy adapter (bypasses _get_adapter lookup,
     which requires a registered backend key).
     """
 
     def test_submit_task_with_options_dict(self):
-        """submit_task accepts a dict as the options parameter via backend='dummy'."""
+        """submit_task accepts a dict as the options parameter via backend='dummy:local:simulator'."""
         from uniqc.backend_adapter.task_manager import submit_task
         from uniqc.circuit_builder import Circuit
 

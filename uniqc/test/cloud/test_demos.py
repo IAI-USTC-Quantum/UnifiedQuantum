@@ -23,7 +23,7 @@ def demo_2():
     circuit = _build_circuit()
 
     # Submit with dummy backend for local simulation
-    task_id = submit_task(circuit, backend='dummy', shots=1000)
+    task_id = submit_task(circuit, backend='dummy:local:simulator', shots=1000)
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
@@ -39,7 +39,7 @@ def demo_3():
     circuit = _build_circuit()
 
     # Submit with dummy mode
-    task_id = submit_task(circuit, backend='dummy', shots=1000)
+    task_id = submit_task(circuit, backend='dummy:local:simulator', shots=1000)
     result = wait_for_result(task_id, timeout=60)
 
     if result:

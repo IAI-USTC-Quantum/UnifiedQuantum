@@ -13,7 +13,7 @@
 升级时最值得先确认的是：
 
 - 你是否在用 `uniqc calibrate` 进行芯片标定实验（`xeb` / `readout` / `pattern` 三个子命令）
-- 你是否在用显式 dummy backend id，而非已废弃的 `submit_task(dummy=True)`。推荐写法是 `backend="dummy"`、`backend="dummy:virtual-line-3"`、`backend="dummy:virtual-grid-2x2"`、`backend="dummy:originq:WK_C180"`。
+- 你是否在用显式 dummy backend id，而非已废弃的 `submit_task(dummy=True)`。推荐写法是 `backend="dummy:local:simulator"`、`backend="dummy:local:virtual-line-3"`、`backend="dummy:local:virtual-grid-2x2"`、`backend="dummy:originq:WK_C180"`。
 - 你是否理解 `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上做含噪执行。
 - 你是否在 Python API 中手动拼接 OriginIR 并提交——`uniqc submit --dry-run` 可以先做一次离线校验
 - Qiskit 用户是否需要单独安装 `qiskit-ibm-runtime`（`qiskit-ibm-provider` 已从 extras 中移除，因与 qiskit ≥ 1.0 不兼容）
@@ -77,12 +77,12 @@
 - **Calibration 模块**（`uniqc.calibration`）：新增 XEB 交叉熵标定（1q/2q/parallel）和读取误差标定，所有结果自动缓存到 `~/.uniqc/calibration_cache/`，带 ISO-8601 时间戳和 TTL 新鲜度检查。
 - **QEM 模块**（`uniqc.qem`）：新增 `M3Mitigator`（混淆矩阵线性反演）和 `ReadoutEM`（统一读取纠错接口），自动从 calibration cache 加载数据并强制 TTL 检查。
 - **`uniqc calibrate` CLI**：三个子命令——`uniqc calibrate xeb`、`uniqc calibrate readout`、`uniqc calibrate pattern`，与 calibration cache 完整集成。
-- **Dummy backend 语义统一**：`dummy`（无约束无噪声）、`dummy:virtual-line-N` / `dummy:virtual-grid-RxC`（虚拟拓扑无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。chip-backed dummy 不会出现在 backend 列表或 Gateway 卡片中，提交时会忠实记录编译后线路和执行线路到 task metadata。
+- **Dummy backend 语义统一**：`dummy`（无约束无噪声）、`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`（虚拟拓扑无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。chip-backed dummy 不会出现在 backend 列表或 Gateway 卡片中，提交时会忠实记录编译后线路和执行线路到 task metadata。
 - **30+ bug 修复**：涵盖 XEB 保真度计算、OriginQ adapter 健壮性、IBM/Quafu topology 渲染、numpy 兼容性、CLI 错误处理等多个方面。
 
 如果你正在从 `v0.0.7.post1` 或更早版本迁移，建议优先复核：
 
-- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy")`（会收到警告，但向后兼容）
+- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy:local:simulator")`（会收到警告，但向后兼容）
 - 你是否在用 `dummy:originq:WK_C180` 做本地含噪仿真——现在会先按真实 backend compile/transpile，再用 chip characterization 注入噪声
 - `Circuit.measure()` API 已统一为 `measure(*qubits)`，旧的 `measure(qubit, cbit)` 签名已不再支持
 - Package layout 已重组：backend/config/network/region/task 代码移至 `uniqc.backend_adapter`；compiler/transpiler/QASM/OriginIR 移至 `uniqc.compile`；visualization 移至 `uniqc.visualization`
@@ -117,7 +117,7 @@
 如果你正在从 `v0.0.6` 或更早版本迁移，建议优先复核：
 
 - 你是否有使用 `uniqc chip` 命令——它已移至 `uniqc backend chip-display`
-- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy")`（会收到警告，但向后兼容）
+- 你是否在用 `submit_task(..., dummy=True)`——请改用 `submit_task(..., backend="dummy:local:simulator")`（会收到警告，但向后兼容）
 - 你是否依赖 `uniqc submit` 的结果格式——v0.0.7 已统一所有平台适配器返回扁平 `{bitstring: shots}` dict
 
 ### `v0.0.7.post1`
@@ -126,7 +126,7 @@
 
 - `uniqc simulate --backend density` 正确映射到 `densitymatrix` 后端
 - `uniqc submit --dry-run` 不再因重复 `shots` 参数而报 TypeError
-- `dry_run_task(backend="dummy")` 正常工作（DummyAdapter 已正确注册）
+- `dry_run_task(backend="dummy:local:simulator")` 正常工作（DummyAdapter 已正确注册）
 - `uniqc backend list --format json` 输出正确的 JSON
 - `uniqc config validate` 不再误报 `active_profile` 元数据键
 - `submit_batch` 的 dummy 模式不再遗留 RUNNING → FAILED 状态的任务

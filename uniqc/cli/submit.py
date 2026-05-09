@@ -208,9 +208,25 @@ def _parse_to_circuit(circuit_text: str):
 
 def _dummy_backend_id(backend_name: str | None) -> str:
     if not backend_name:
-        return "dummy"
-    if backend_name == "dummy" or backend_name.startswith("dummy:"):
+        return "dummy:local:simulator"
+    if backend_name.startswith("dummy:"):
         return backend_name
+    if backend_name in ("dummy", "dummy:local"):
+        # Reject the legacy bare alias loudly so users adopt the canonical form.
+        raise typer.BadParameter(
+            f"Backend identifier {backend_name!r} is not allowed. Use "
+            "'dummy:local:simulator', 'dummy:local:virtual-line-N', "
+            "'dummy:local:virtual-grid-RxC', or 'dummy:<provider>:<chip>'."
+        )
+    if backend_name in ("local", "local:simulator", "simulator"):
+        return "dummy:local:simulator"
+    # Local topology / MPS suffixes get the canonical 'dummy:local:' prefix.
+    if (
+        backend_name.startswith(("virtual-line-", "virtual-grid-", "mps-linear-"))
+        or backend_name == "simulator"
+    ):
+        return f"dummy:local:{backend_name}"
+    # Otherwise treat as 'dummy:<provider>:<chip>'.
     return f"dummy:{backend_name}"
 
 

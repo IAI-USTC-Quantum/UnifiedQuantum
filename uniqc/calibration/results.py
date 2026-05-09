@@ -34,7 +34,7 @@ class CalibrationResult:
     """Base class for all calibration results."""
 
     calibrated_at: str  # ISO-8601 UTC timestamp, set by calibration module
-    backend: str  # e.g. "dummy", "origin:wuyuan:wk180"
+    backend: str  # e.g. "dummy:local:simulator", "originq:WK_C180"
     type: str  # "xeb_1q" | "xeb_2q" | "xeb_2q_parallel" | "readout_1q" | "readout_2q"
 
     def to_dict(self) -> dict[str, Any]:

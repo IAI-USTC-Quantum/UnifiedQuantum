@@ -192,7 +192,7 @@ Check at least:
 - New docs do not encourage old entries for new code: `uniqc.transpiler`, `uniqc.task`, `uniqc.qasm`, `uniqc.originir`, `uniqc.pytorch`, `uniqc.analyzer`.
 - Dummy backend semantics are consistent:
   - `dummy`: unconstrained, noiseless local VM.
-  - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: virtual topology, noiseless.
+  - `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`: virtual topology, noiseless.
   - `dummy:<platform>:<backend>`: rule-based chip-backed local noisy execution, not listed as an enumerable backend.
 - Config path is `~/.uniqc/config.yaml`.
 - AI workflow hints use `--ai-hints` / `--ai-hint`, environment variable `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`.

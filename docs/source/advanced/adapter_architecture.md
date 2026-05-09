@@ -198,7 +198,7 @@ results = adapter.query_sync(task_id, timeout=300)
 
 用于本地模拟，无需真实云平台连接。
 
-用户侧任务提交优先使用显式 backend id：`dummy`（无约束、无噪声）、`dummy:virtual-line-N` / `dummy:virtual-grid-RxC`（虚拟拓扑、无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。直接构造 `DummyAdapter` 主要用于底层 adapter 测试或自定义噪声模型。
+用户侧任务提交优先使用显式 backend id：`dummy`（无约束、无噪声）、`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`（虚拟拓扑、无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。直接构造 `DummyAdapter` 主要用于底层 adapter 测试或自定义噪声模型。
 
 ```python
 from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
@@ -280,7 +280,7 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 | OriginQ | `originq.token` | API 密钥 |
 | Quafu | `quafu.token` | API Token |
 | IBM | `ibm.token` | IBM Quantum Token |
-| Dummy | backend 前缀 | 通过 ``backend='dummy'`` 或 ``'dummy:...'`` 激活 |
+| Dummy | backend 前缀 | 通过 ``backend='dummy:local:simulator'`` 或 ``'dummy:...'`` 激活 |
 
 ### 配置加载
 

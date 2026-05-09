@@ -169,6 +169,28 @@ class UnifiedResult:
         """
         return self.counts
 
+    def to_json_dict(self) -> dict[str, Any]:
+        """Return a JSON-serializable representation.
+
+        Includes counts, probabilities, shots, platform identifiers and
+        optional metadata. The ``raw_result`` field is intentionally omitted
+        because it may hold arbitrary platform-specific objects that are not
+        JSON-serializable; access it via :meth:`raw` if needed.
+
+        Returns:
+            A plain ``dict`` with primitive (JSON-friendly) values only.
+        """
+        return {
+            "counts": dict(self.counts),
+            "probabilities": dict(self.probabilities),
+            "shots": int(self.shots),
+            "platform": self.platform,
+            "task_id": self.task_id,
+            "backend_name": self.backend_name,
+            "execution_time": self.execution_time,
+            "error_message": self.error_message,
+        }
+
     def raw(self) -> Any:
         """Return the original platform-specific raw result.
 

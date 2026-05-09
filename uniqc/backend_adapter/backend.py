@@ -611,14 +611,14 @@ class DummyBackend(QuantumBackend):
         from uniqc.backend_adapter.backend import get_backend
 
         # From chip characterization
-        backend = get_backend("dummy", config={"chip_characterization": chip})
+        backend = get_backend("dummy:local:simulator", config={"chip_characterization": chip})
         task_id = backend.submit(circuit, shots=1000)
 
         # With explicit chip_id (fetches from OriginQ)
-        backend = get_backend("dummy", config={"chip_id": "WK_C180"})
+        backend = get_backend("dummy:originq:WK_C180")
 
         # Noiseless (perfect simulator)
-        backend = get_backend("dummy")
+        backend = get_backend("dummy:local:simulator")
 
     Configuration (``config`` dict):
         chip_characterization:
@@ -660,9 +660,14 @@ class DummyBackend(QuantumBackend):
     def _resolve_config(self) -> None:
         """Resolve chip_characterization from config: chip_id or chip_characterization."""
         cfg = self.config or {}
-        identifier = str(cfg.get("backend_id") or self.name or "dummy")
+        identifier = str(cfg.get("backend_id") or self.name or "dummy:local:simulator")
 
-        if identifier == "dummy" or identifier.startswith("dummy:"):
+        if identifier in ("dummy", "dummy:local"):
+            # Backwards-compat for callers using the lower-level Backend factory:
+            # silently upgrade the bare alias to the canonical form.
+            identifier = "dummy:local:simulator"
+
+        if identifier.startswith("dummy:"):
             from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
             spec = resolve_dummy_backend(
@@ -719,7 +724,7 @@ class DummyBackend(QuantumBackend):
 
     def _create_adapter(self) -> DummyAdapter:
         return DummyAdapter(
-            backend_id=self._resolved_config.get("backend_id", self.name or "dummy"),
+            backend_id=self._resolved_config.get("backend_id", self.name or "dummy:local:simulator"),
             chip_characterization=self._chip_characterization,
             noise_model=self._resolved_config.get("noise_model"),
             available_qubits=self._resolved_config.get("available_qubits"),

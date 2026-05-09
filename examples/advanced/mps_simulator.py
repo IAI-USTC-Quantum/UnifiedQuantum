@@ -1,7 +1,7 @@
 """Matrix-Product-State (MPS) simulator example.
 
 Runs a 32-qubit GHZ-like brick circuit through ``MPSSimulator`` (direct API)
-and the ``dummy:mps:linear-N`` backend (via :func:`uniqc.submit_task`). The
+and the ``dummy:local:mps-linear-N`` backend (via :func:`uniqc.submit_task`). The
 MPS engine is noiseless and restricted to nearest-neighbour 2-qubit gates on
 an open chain, but it scales to hundreds of qubits when the entanglement is
 moderate (low Schmidt rank).
@@ -42,10 +42,10 @@ def main() -> None:
     print(f"  max bond dim:  {sim.max_bond}")
     print(f"  truncations:   {len(sim.truncation_errors)} (max={max(sim.truncation_errors or [0]):.1e})")
 
-    print(f"\n=== dummy:mps:linear-{n} backend (chi=8 forces truncation) ===")
+    print(f"\n=== dummy:local:mps-linear-{n} backend (chi=8 forces truncation) ===")
     task = submit_task(
         circuit,
-        backend=f"dummy:mps:linear-{n}:chi=8:cutoff=1e-10",
+        backend=f"dummy:local:mps-linear-{n}:chi=8:cutoff=1e-10",
         shots=400,
     )
     result = wait_for_result(task, timeout=60)
@@ -54,7 +54,7 @@ def main() -> None:
     print("\n=== Parameter parsing ===")
     from uniqc.backend_adapter.dummy_backend import resolve_dummy_backend
 
-    spec = resolve_dummy_backend("dummy:mps:linear-8:chi=16:cutoff=1e-8:seed=7")
+    spec = resolve_dummy_backend("dummy:local:mps-linear-8:chi=16:cutoff=1e-8:seed=7")
     print(f"  identifier:        {spec.identifier}")
     print(f"  description:       {spec.description}")
     print(f"  available_qubits:  {spec.available_qubits}")

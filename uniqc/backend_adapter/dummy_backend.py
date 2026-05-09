@@ -10,7 +10,7 @@ from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopol
 
 _VIRTUAL_LINE_RE = re.compile(r"^virtual-line-(\d+)$")
 _VIRTUAL_GRID_RE = re.compile(r"^virtual-grid-(\d+)x(\d+)$")
-_MPS_LINEAR_RE = re.compile(r"^mps:linear-(\d+)((?::[a-zA-Z_][a-zA-Z0-9_]*=[^:]+)*)$")
+_MPS_LINEAR_RE = re.compile(r"^mps-linear-(\d+)((?::[a-zA-Z_][a-zA-Z0-9_]*=[^:]+)*)$")
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -51,7 +51,7 @@ def virtual_line_topology(num_qubits: int) -> list[list[int]]:
 
 
 def _parse_mps_kwargs(suffix: str) -> dict[str, Any]:
-    """Parse the optional ``:key=value:...`` suffix of a ``dummy:mps:linear-N`` id.
+    """Parse the optional ``:key=value:...`` suffix of a ``dummy:local:mps-linear-N`` id.
 
     Recognised keys: ``chi`` (alias ``chi_max``, int), ``cutoff`` (alias
     ``svd_cutoff``, float), ``seed`` (int).
@@ -152,7 +152,7 @@ def _fetch_chip_characterization(platform: Platform, name: str) -> Any | None:
 
 
 def resolve_dummy_backend(
-    identifier: str = "dummy",
+    identifier: str = "dummy:local:simulator",
     *,
     allow_fetch: bool = True,
     **overrides: Any,
@@ -160,29 +160,32 @@ def resolve_dummy_backend(
     """Resolve a canonical dummy backend identifier.
 
     Supported identifiers:
-      - ``dummy``: unconstrained noiseless local simulator.
-      - ``dummy:virtual-line-N``: noiseless N-qubit line topology.
-      - ``dummy:virtual-grid-RxC``: noiseless R by C grid topology.
+      - ``dummy:local:simulator``: unconstrained noiseless local simulator.
+      - ``dummy:local:virtual-line-N``: noiseless N-qubit line topology.
+      - ``dummy:local:virtual-grid-RxC``: noiseless R by C grid topology.
+      - ``dummy:local:mps-linear-N``: MPS simulator on N-qubit linear chain.
       - ``dummy:<platform>:<backend>``: noisy simulator using cached/fetched
         chip characterization for a real backend.
+
+    Bare ``"dummy"`` and ``"dummy:local"`` are no longer accepted; use
+    ``"dummy:local:simulator"`` instead.
     """
-    identifier = (identifier or "dummy").strip()
-    if identifier == "dummy":
-        spec = DummyBackendSpec(
-            identifier="dummy",
-            name="dummy",
-            description="Unconstrained noiseless local simulator",
+    identifier = (identifier or "dummy:local:simulator").strip()
+    if identifier in ("dummy", "dummy:local"):
+        raise ValueError(
+            f"Backend identifier {identifier!r} is not allowed. Use the "
+            "canonical 'dummy:local:simulator' form instead."
         )
-    elif identifier.startswith("dummy:"):
+    if identifier.startswith("dummy:"):
         suffix = identifier.split(":", 1)[1].strip()
         # Canonical local form: ``dummy:local:simulator`` /
         # ``dummy:local:virtual-line-N`` / ``dummy:local:virtual-grid-RxC`` /
-        # ``dummy:local:mps:linear-N``. Strip the leading ``local:`` and
+        # ``dummy:local:mps-linear-N``. Strip the leading ``local:`` and
         # fall through to the existing topology / chip dispatch.
         if suffix == "local:simulator":
             spec = DummyBackendSpec(
-                identifier="dummy",
-                name="dummy",
+                identifier="dummy:local:simulator",
+                name="dummy:local:simulator",
                 description="Unconstrained noiseless local simulator",
             )
             # Apply override block at the bottom of the function.
@@ -196,9 +199,10 @@ def resolve_dummy_backend(
             n = int(mps_match.group(1))
             mps_kwargs = _parse_mps_kwargs(mps_match.group(2) or "")
             chi_str = f", chi={mps_kwargs['chi_max']}" if "chi_max" in mps_kwargs else ""
+            canonical = f"dummy:local:{suffix}"
             spec = DummyBackendSpec(
-                identifier=identifier,
-                name=suffix,
+                identifier=canonical,
+                name=canonical,
                 description=(
                     f"Noiseless MPS simulator on a {n}-qubit linear chain{chi_str}"
                 ),
@@ -209,9 +213,10 @@ def resolve_dummy_backend(
             )
         elif line_match:
             n = int(line_match.group(1))
+            canonical = f"dummy:local:{suffix}"
             spec = DummyBackendSpec(
-                identifier=identifier,
-                name=suffix,
+                identifier=canonical,
+                name=canonical,
                 description=f"Noiseless virtual {n}-qubit line topology",
                 available_qubits=list(range(n)),
                 available_topology=virtual_line_topology(n),
@@ -220,9 +225,10 @@ def resolve_dummy_backend(
             rows = int(grid_match.group(1))
             cols = int(grid_match.group(2))
             n = rows * cols
+            canonical = f"dummy:local:{suffix}"
             spec = DummyBackendSpec(
-                identifier=identifier,
-                name=suffix,
+                identifier=canonical,
+                name=canonical,
                 description=f"Noiseless virtual {rows}x{cols} grid topology",
                 available_qubits=list(range(n)),
                 available_topology=virtual_grid_topology(rows, cols),
@@ -231,8 +237,9 @@ def resolve_dummy_backend(
             parts = suffix.split(":", 1)
             if len(parts) != 2:
                 raise ValueError(
-                    "Dummy backend must be 'dummy', 'dummy:virtual-line-N', "
-                    "'dummy:virtual-grid-RxC', or 'dummy:<platform>:<backend>'."
+                    "Dummy backend must be 'dummy:local:simulator', "
+                    "'dummy:local:virtual-line-N', 'dummy:local:virtual-grid-RxC', "
+                    "'dummy:local:mps-linear-N', or 'dummy:<platform>:<backend>'."
                 )
             try:
                 source_platform = Platform(parts[0])
@@ -385,10 +392,10 @@ def list_dummy_backend_infos() -> list[BackendInfo]:
     users, not standalone backend cards in the management UI.
     """
     specs = [
-        resolve_dummy_backend("dummy", allow_fetch=False),
-        resolve_dummy_backend("dummy:virtual-line-3", allow_fetch=False),
-        resolve_dummy_backend("dummy:virtual-grid-2x2", allow_fetch=False),
-        resolve_dummy_backend("dummy:mps:linear-3", allow_fetch=False),
+        resolve_dummy_backend("dummy:local:simulator", allow_fetch=False),
+        resolve_dummy_backend("dummy:local:virtual-line-3", allow_fetch=False),
+        resolve_dummy_backend("dummy:local:virtual-grid-2x2", allow_fetch=False),
+        resolve_dummy_backend("dummy:local:mps-linear-3", allow_fetch=False),
     ]
 
     seen: set[str] = set()

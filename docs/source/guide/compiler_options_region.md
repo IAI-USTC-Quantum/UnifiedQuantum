@@ -10,7 +10,7 @@
     pip install --upgrade unified-quantum
 
 只做线路构建、`Circuit.qasm` / `Circuit.originir` 导出、模拟器运行（含
-`OriginIR_Simulator` / `MPSSimulator` / `dummy:virtual-line-N`）这些场景**不需要**
+`OriginIR_Simulator` / `MPSSimulator` / `dummy:local:virtual-line-N`）这些场景**不需要**
 qiskit；只有进入"编译/调度/timeline"才需要。
 ```
 
