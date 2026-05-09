@@ -64,3 +64,12 @@ uniqc submit circuit.ir -p originq -b WK_C180 -s 1000 --wait
 * [进阶教程](../2_advanced/index.md)：编译选项、区域选择、变分算法、calibration、QEM、MPS。
 * [最佳实践](../3_best_practices/index.md)：发布前可重跑的 11 个完整场景。
 * [CLI 介绍](../4_cli/index.md) / [WebUI](../5_webui/index.md) / [API 参考](../6_api/index.md)。
+
+## 本章子页
+
+```{toctree}
+:maxdepth: 1
+
+installation
+quickstart
+```

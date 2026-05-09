@@ -67,3 +67,22 @@ print(wait_for_result(task_id))
 
 更多真机相关的细节（dummy:<platform>:<backend>、calibration cache、QEM）在
 [进阶教程](../2_advanced/index.md)。
+
+## 本章子页（深度文档）
+
+下列页面是从原 `guide/` 章节迁移过来的深度文档，分别对应"构造电路 → 模拟 → 提交 →
+结果 → 平台约定"完整链路。
+
+```{toctree}
+:maxdepth: 1
+
+circuit
+originir
+qasm
+simulation
+submit_task
+task_manager
+pytorch
+platform_conventions
+best_practices
+```

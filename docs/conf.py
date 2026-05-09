@@ -156,33 +156,29 @@ extensions = [
 ]
 
 # -- sphinx-autoapi ---------------------------------------------------------
-# Auto-generated API reference pages live under ``source/6_api/`` (built
-# into the Sphinx output tree). This replaces the old hand-maintained
-# `uniqc.*.rst` stubs that were never created and produced toctree dead
-# links (B-U5/F-U4).
-try:
-    import autoapi  # noqa: F401  -- only enable if the extra is installed
-    extensions.append('autoapi.extension')
-    autoapi_type = 'python'
-    autoapi_dirs = [str((parent_path / 'uniqc').resolve())]
-    autoapi_root = 'source/6_api/autoapi'
-    autoapi_keep_files = False
-    autoapi_add_toctree_entry = False
-    autoapi_options = [
-        'members',
-        'undoc-members',
-        'show-inheritance',
-        'show-module-summary',
-        'imported-members',
-    ]
-    autoapi_ignore = [
-        '*/test/*',
-        '*/_version.py',
-        '*/uniqc_cpp*',
-    ]
-    autoapi_python_class_content = 'both'
-except ImportError:
-    pass
+# We use ``sphinx-apidoc`` (driven from the Makefile) as the canonical source
+# of API reference pages under ``source/6_api/uniqc*.rst``. ``sphinx-autoapi``
+# is intentionally **not** enabled — having both extensions generate docs for
+# the same modules causes "duplicate object description" warnings and a noisy
+# build. If you want autoapi-style cross-reference resolution, re-enable it
+# below and additionally disable apidoc's targets in the Makefile.
+#
+# try:
+#     import autoapi  # noqa: F401
+#     extensions.append('autoapi.extension')
+#     autoapi_type = 'python'
+#     autoapi_dirs = [str((parent_path / 'uniqc').resolve())]
+#     autoapi_root = 'source/6_api/autoapi'
+#     autoapi_keep_files = False
+#     autoapi_add_toctree_entry = False
+#     autoapi_options = [
+#         'members', 'undoc-members', 'show-inheritance',
+#         'show-module-summary', 'imported-members',
+#     ]
+#     autoapi_ignore = ['*/test/*', '*/_version.py', '*/uniqc_cpp*']
+#     autoapi_python_class_content = 'both'
+# except ImportError:
+#     pass
 
 # -- Options for myst_parser
 # See https://myst-parser.readthedocs.io/en/latest/syntax/optional.html
@@ -271,7 +267,17 @@ html_theme_options = {
     "source_directory": "docs/",
 }
 
-suppress_warnings = ["myst.xref_missing"]
+suppress_warnings = [
+    "myst.xref_missing",
+    "ref.python",
+    "docutils",
+    # apidoc occasionally emits "duplicate object description" for modules
+    # that re-export everything from a sub-module (e.g. uniqc.compile.draw
+    # is both a leaf module and re-exported by uniqc.compile). Harmless.
+    "ref.duplicate",
+    "autosectionlabel.*",
+    "epub.duplicated_toc_entry",
+]
 
 # Napoleon: render ``Attributes:`` sections as ``:ivar:`` roles inline instead
 # of standalone ``.. attribute::`` directives. Otherwise autodoc also picks up

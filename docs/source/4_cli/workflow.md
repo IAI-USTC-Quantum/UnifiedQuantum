@@ -1,0 +1,115 @@
+# 完整工作流与常见问题
+
+## 完整工作流示例
+
+### 示例 1：本地开发测试
+
+```bash
+# 1. 构建电路（使用 Python API 或手动编写）
+# 创建 bell.ir 文件
+
+# 2. 查看电路信息
+uniqc circuit bell.ir --info
+
+# 3. 本地模拟
+uniqc simulate bell.ir --shots 1000
+
+# 4. 转换格式
+uniqc circuit bell.ir --format qasm --output bell.qasm
+```
+
+### 示例 2：云端任务提交
+
+```bash
+# 1. 初始化配置
+uniqc config init
+
+# 2. 设置 API Token
+uniqc config set originq.token YOUR_TOKEN
+
+# 3. 验证配置
+uniqc config validate
+
+# 4. 查看可用后端
+uniqc backend list --platform originq
+uniqc backend show originq:WK_C180
+
+# 5. 试运行验证（可选，不消耗额度）
+uniqc submit bell.ir --platform originq --dry-run
+
+# 6. 提交任务
+uniqc submit bell.ir --platform originq --backend WK_C180 --shots 1000
+
+# 7. 查询结果
+uniqc result TASK_ID --platform originq --wait
+
+# 8. 查看任务列表
+uniqc task list --platform originq
+```
+
+### 示例 3：批量处理
+
+```bash
+# 批量试运行验证
+uniqc submit circuit1.ir circuit2.ir circuit3.ir \
+    --platform originq \
+    --backend WK_C180 \
+    --dry-run
+
+# 批量提交多个电路
+uniqc submit circuit1.ir circuit2.ir circuit3.ir \
+    --platform originq \
+    --backend WK_C180 \
+    --shots 1000 \
+    --format json
+
+# 查看所有任务状态
+uniqc task list --format json
+```
+
+## 常见问题
+
+### Q：如何确认 CLI 已正确安装？
+
+```bash
+uniqc --help
+```
+
+如果显示帮助信息，说明安装成功。
+
+### Q：配置文件存储在哪里？
+
+配置文件位于 `~/.uniqc/config.yaml`。可以通过 `uniqc config init` 重新初始化。
+
+### Q：如何切换不同的云平台账户？
+
+使用 profile 功能：
+
+```bash
+# 创建不同账户的 profile
+uniqc config profile create account1
+uniqc config set originq.token TOKEN1 --profile account1
+
+uniqc config profile create account2
+uniqc config set originq.token TOKEN2 --profile account2
+
+# 切换 profile
+uniqc config profile use account1
+```
+
+### Q：dummy 平台是什么？
+
+`dummy` 是一个本地模拟器后端，用于测试工作流而无需连接真实云平台。提交到 dummy 的任务会立即返回模拟结果。
+
+```bash
+# 无约束、无噪声
+uniqc submit bell.ir --platform dummy --wait
+
+# 指定虚拟拓扑，仍然无噪声
+uniqc submit bell.ir --platform dummy --backend virtual-line-3 --wait
+
+# 复用真实 backend 拓扑和标定数据：先 compile/transpile，再本地含噪执行
+uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --wait
+```
+
+`dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 `uniqc backend list` 的后端列表中。
