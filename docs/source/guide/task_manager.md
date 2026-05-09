@@ -26,23 +26,17 @@
 ### 安装依赖
 
 ```bash
-# 基础安装（OriginQ 平台）
+# 基础安装（包含 OriginQ / IBM Qiskit 的核心依赖）
 pip install unified-quantum
-
-# Quafu 平台
-pip install unified-quantum[quafu]
-
-# IBM Quantum 平台
-pip install unified-quantum[qiskit]
 
 # 本地模拟（Dummy 模式）
 pip install unified-quantum[simulation]
 
-# 全部平台
+# 全部维护中的可选依赖
 pip install unified-quantum[all]
 ```
 
-`[all]` 不包含 Quafu/`pyquafu`。Quafu 的旧 SDK 已 deprecated，且会引入 `numpy<2` 约束；只有明确需要旧 Quafu 后端并接受环境降级风险时，才单独安装 `[quafu]`。后续版本不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。
+`[all]` 不包含 `pyquafu`：Quafu 已归档（`[quafu]` extra 已移除），其旧 SDK 依赖 `numpy<2` 会引入环境降级风险。如仍需使用 Quafu，请直接 `pip install pyquafu` 并自行承担风险；后续版本不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。
 
 ### 配置云平台凭据
 

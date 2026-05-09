@@ -115,12 +115,12 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         "doc_url": "source/uniqc_api.html",
         "causes": [
             "Circuit contains gates unsupported by the target backend",
-            "Qiskit dependencies not installed",
+            "Qiskit failed to import — broken environment (qiskit is a core dependency)",
             "No topology information available for routing",
             "Failed to convert between circuit formats (OriginIR / QASM)",
         ],
         "troubleshooting": [
-            "Install Qiskit: pip install unified-quantum[qiskit]",
+            "Reinstall unified-quantum (qiskit is a required dependency): pip install --upgrade unified-quantum",
             "Provide backend_info or chip_characterization for topology",
             "Check supported gates for your target backend",
             "Use compile_to_basis=True when scheduling timelines",

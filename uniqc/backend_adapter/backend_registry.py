@@ -391,9 +391,22 @@ def fetch_platform_backends(
         logger.warning("Platform %s SDK not installed — skipping", platform.value)
         backends = get_cached_backends(platform)
         if not backends:
+            if platform.value == "quafu":
+                hint = (
+                    "Quafu support is deprecated and no longer installable via an extra. "
+                    "If you still need it, install pyquafu directly: `pip install pyquafu` "
+                    "(warning: pulls numpy<2)."
+                )
+            elif platform.value in ("qiskit", "ibm"):
+                hint = (
+                    "Qiskit is a core dependency of unified-quantum; the install appears "
+                    "broken. Reinstall with `pip install --upgrade unified-quantum`."
+                )
+            else:
+                hint = f"Install the relevant extras (e.g. `pip install unified-quantum[{platform.value}]`)."
             raise BackendError(
                 f"Platform {platform.value} has credentials but its SDK is not installed: {exc}. "
-                f"Install the relevant extras (e.g. `pip install unified-quantum[{platform.value}]`)."
+                f"{hint}"
             ) from exc
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch %s backends: %s", platform.value, exc)

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠ BREAKING
+
+- **`[qiskit]` extra removed** — `qiskit`, `qiskit-aer`, and `qiskit-ibm-runtime`
+  are now part of the **core dependencies** of `unified-quantum`. Users no longer
+  need to install `unified-quantum[qiskit]`; a plain `pip install unified-quantum`
+  is enough for compile / IBM Quantum / Qiskit-backed paths. If `import qiskit`
+  fails after install, the environment is broken — reinstall with
+  `pip install --upgrade unified-quantum`.
+- **`[quafu]` extra removed; Quafu support archived** — the Quafu adapter code
+  is retained for backwards compatibility but is now **deprecated** and emits a
+  `DeprecationWarning` at import time. The `[quafu]` extra is no longer
+  available. Users who still need Quafu must install `pyquafu` directly with
+  `pip install pyquafu` and accept that it requires `numpy<2`. Future releases
+  do not guarantee consistency or completeness of Quafu-related code, and
+  support may stop at any time.
+
+### Changed
+
+- Updated docstrings, error messages, troubleshooting hints, README tables and
+  installation/task_manager/submit_task/best_practices/platform_conventions/
+  compiler_options_region docs to remove `pip install unified-quantum[qiskit]`
+  and `pip install unified-quantum[quafu]` references and replace them with
+  the appropriate guidance (qiskit is core; quafu is archived/install pyquafu
+  manually).
+- `uniqc.backend_adapter.task.optional_deps.require()` now accepts an optional
+  `install_hint` and special-cases the legacy `extra="quafu"` argument so that
+  callers automatically get the deprecation/`pip install pyquafu` message.
+- `MissingDependencyError` raised from the Quafu adapter / cloud-platform SDK
+  paths now points at `pip install pyquafu` instead of a non-existent extra.
+
 ## [0.0.12] - 2026-05-07
 
 ### ⚠ BREAKING

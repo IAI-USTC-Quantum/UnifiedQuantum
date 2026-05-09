@@ -14,7 +14,7 @@ uv run pytest uniqc/test
 uv run pytest uniqc/test --real-cloud-test  # 周期性执行真实量子线路提交
 ```
 
-`qiskit`、`qutip`、`torch`、`sphinx` 等当前维护的模块缺失表示开发环境不完整，不应作为跳过全量测试或文档构建的常规理由。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。Quafu/`pyquafu` 是例外：`pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，因此不包含在 `[all]` 中，后续不保证相关代码一致性和完整性。不要用 `uv sync --all-extras` 作为默认维护者命令；只有明确测试 Quafu 时才单独安装 `[quafu]`。
+`qutip`、`torch`、`sphinx` 等当前维护的可选模块缺失表示开发环境不完整，不应作为跳过全量测试或文档构建的常规理由（`qiskit` 现在是核心依赖，缺失时直接说明安装损坏）。`pyproject.toml` 中的第三方依赖不钉版本，主分支不提交 `uv.lock`；如当前最新依赖之间出现上游兼容性冲突，应更新适配代码并记录兼容性问题，而不是在项目依赖声明中写死旧版本。Quafu/`pyquafu` 已归档：`[quafu]` extra 已移除，`pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，因此不包含在 `[all]` 中，后续不保证相关代码一致性和完整性。不要用 `uv sync --all-extras` 作为默认维护者命令；只有明确测试 Quafu 时才单独 `pip install pyquafu` 并承担降级风险。
 
 AI agent 运行 CLI 时推荐先打开渐进式提示：
 

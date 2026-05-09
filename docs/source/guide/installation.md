@@ -133,25 +133,25 @@ pip install unified-quantum[quark]
 
 > **注意**：`[quark]` extra 包含 `quarkstudio` 和 `quarkcircuit`。前者负责 `Task.status/run/result`，后者用于读取芯片拓扑、耦合器保真度、可用门和校准信息。QuarkStudio 当前仅面向 Python 3.12 及以上版本解析安装。
 
-### Quafu 平台
+### Quafu 平台（已归档 / Archived）
 
-> **Deprecated / 依赖风险**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，会把环境解析回 NumPy 1.x。`unified-quantum[all]` 不包含 Quafu；只有明确安装 `[quafu]` 时才会引入该风险。Quafu 平台侧 SDK 已 deprecated，UnifiedQuantum 后续不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。新项目建议优先使用 QuarkStudio/Quark 后端。
-
-```bash
-uv pip install unified-quantum[quafu]
-# 或 pip
-pip install unified-quantum[quafu]
-```
-
-### IBM 平台
+> **Deprecated / 依赖风险**：`[quafu]` extra 已移除。Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，会把环境解析回 NumPy 1.x；Quafu 平台侧 SDK 已 deprecated，UnifiedQuantum 后续不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。新项目建议优先使用 QuarkStudio/Quark 后端。
+>
+> 如仍需使用旧 Quafu 后端，请直接安装 `pyquafu`，并自行承担 NumPy 降级风险：
 
 ```bash
-uv pip install unified-quantum[qiskit]
-# 或 pip
-pip install unified-quantum[qiskit]
+pip install pyquafu
 ```
 
-> **注意**：`[qiskit]` extra 包含 `qiskit`、`qiskit-aer` 和 `qiskit-ibm-runtime`。项目不在 `pyproject.toml` 中钉住第三方依赖版本，具体版本由当前包索引解析得到。
+### IBM / Qiskit 平台
+
+Qiskit 已是 `unified-quantum` 的**核心依赖**，随默认安装一起进来；不需要再安装 `[qiskit]` extra。如果 `import qiskit` 失败，说明当前环境损坏，请重装：
+
+```bash
+pip install --upgrade unified-quantum
+```
+
+> **注意**：核心依赖现在包含 `qiskit`、`qiskit-aer` 和 `qiskit-ibm-runtime`。项目不在 `pyproject.toml` 中钉住第三方依赖版本，具体版本由当前包索引解析得到。
 
 ### 高级模拟 (QuTiP)
 
@@ -179,7 +179,7 @@ pip install unified-quantum[pytorch]
 
 ### 安装所有可选依赖
 
-`[all]` 会安装当前维护的可选功能依赖，但**不包含** Quafu/`pyquafu`，以避免 `numpy<2` 约束污染普通开发环境。确需使用 Quafu 时请单独安装 `[quafu]`，并接受上面的 deprecated 与 NumPy 降级风险。
+`[all]` 会安装当前维护的可选功能依赖，但**不包含** `pyquafu`，以避免 `numpy<2` 约束污染普通开发环境。Quafu 已归档：`[quafu]` extra 已移除，确需使用旧 Quafu 后端时请直接 `pip install pyquafu` 并自行承担 NumPy 降级风险。
 
 ```bash
 uv pip install unified-quantum[all]

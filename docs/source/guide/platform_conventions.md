@@ -36,7 +36,7 @@
 
 ### 2.2 Quafu
 
-> **Deprecated / 依赖风险**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，因此 Quafu 不包含在 `unified-quantum[all]` 中。只有明确安装 `unified-quantum[quafu]` 时才会启用旧 Quafu 路径。该平台 SDK 已 deprecated，后续不保证相关代码一致性和完整性，支持可能随时停止。
+> **Deprecated / 已归档**：Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，因此 Quafu 不包含在 `unified-quantum[all]` 中，且 `[quafu]` extra 已移除。如仍需使用旧 Quafu 路径，需手动 `pip install pyquafu` 并承担 NumPy 降级风险。该平台 SDK 已 deprecated，后续不保证相关代码一致性和完整性，支持可能随时停止。
 
 ```python
 {

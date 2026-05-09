@@ -22,7 +22,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         reason="submits real quantum circuits; pass --real-cloud-test to run"
     )
     skip_quafu = pytest.mark.skip(
-        reason="pyquafu legacy extra is not installed; install unified-quantum[quafu] to run"
+        reason="pyquafu legacy SDK is not installed; install it manually with `pip install pyquafu` to run (deprecated path; pulls numpy<2)"
     )
 
     quafu_available = importlib.util.find_spec("quafu") is not None

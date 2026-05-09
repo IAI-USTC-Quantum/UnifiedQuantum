@@ -127,14 +127,14 @@ print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 # OriginQ Cloud
 task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 
-# Quafu（需要 pip install unified-quantum[quafu]）
+# Quafu（archived；如需使用请直接 pip install pyquafu，pulls numpy<2）
 task_id = submit_task(circuit, backend='quafu:ScQ-P10', shots=1000)
 
-# IBM Quantum（需要 pip install unified-quantum[qiskit]）
+# IBM Quantum（qiskit 已是核心依赖，无需额外安装）
 task_id = submit_task(circuit, backend='ibm:ibm_brisbane', shots=1000)
 ```
 
-> **Quafu deprecated 说明**：`unified-quantum[all]` 不包含 Quafu/`pyquafu`。旧 `pyquafu` SDK 依赖 `numpy<2`，单独安装 `[quafu]` 可能导致环境降级。该平台路径后续不保证代码一致性和完整性，支持可能随时停止。
+> **Quafu 已归档说明**：`[quafu]` extra 已移除，`unified-quantum[all]` 不包含 `pyquafu`。旧 `pyquafu` SDK 依赖 `numpy<2`，单独 `pip install pyquafu` 可能导致环境降级。该平台路径后续不保证代码一致性和完整性，支持可能随时停止。
 
 ### 任务管理
 
@@ -302,8 +302,8 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 | 平台 | 定位 | 适用场景 | 额外依赖 |
 |------|------|---------|---------|
 | OriginQ Cloud | 主生产路径 | 生产环境、真实量子计算 | 无额外依赖 |
-| Quafu | 第三方云平台（deprecated） | BAQIS ScQ 系列 | `pip install unified-quantum[quafu]`，不包含在 `[all]` 中 |
-| IBM Quantum | 第三方云平台 | IBM Quantum 生态 | `pip install unified-quantum[qiskit]` |
+| Quafu | 第三方云平台（已归档/archived） | BAQIS ScQ 系列 | `[quafu]` extra 已移除；如需使用请 `pip install pyquafu`，会拉入 `numpy<2` |
+| IBM Quantum | 第三方云平台 | IBM Quantum 生态 | qiskit 已是核心依赖，无需额外安装 |
 | Dummy | 本地模拟 | 开发测试、联调 | `pip install unified-quantum[simulation]` |
 
 ## 平台边界与限制
@@ -313,7 +313,7 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 - **本地模拟 != 远端提交**：本地模拟解决的是线路验证问题；远端提交解决的是平台接入与任务执行问题。
 - **配置是前置条件**：不同平台需要配置相应的环境变量。
 - **网络与账号会影响可用性**：远端平台可能受网络环境、认证状态、平台可用性和排队情况影响。
-- **额外依赖**：IBM 需要安装额外的依赖包；Quafu 需要单独安装 `[quafu]`，但该路径已 deprecated 且有 `numpy<2` 风险。
+- **额外依赖**：IBM/Qiskit 已并入核心依赖，无需额外安装；Quafu 已归档，`[quafu]` extra 已移除，如仍需使用须手动 `pip install pyquafu` 并承担 `numpy<2` 风险。
 
 如果你还在反复修改线路结构、量子门或输出解释，说明你仍处于本地验证阶段，建议先回到 [本地模拟](simulation.md)。
 

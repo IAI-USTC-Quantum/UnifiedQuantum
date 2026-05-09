@@ -1,13 +1,32 @@
-"""Quafu backend adapter.
+"""[Deprecated] Quafu backend adapter.
+
+.. deprecated::
+   The Quafu platform path is deprecated and is **no longer installable via a
+   ``[quafu]`` extra**.  The adapter code is retained for backwards
+   compatibility but future releases do not guarantee consistency or
+   completeness.  Users who still need it must install ``pyquafu``
+   manually::
+
+       pip install pyquafu
+
+   Note: ``pyquafu`` requires ``numpy<2`` and may downgrade your environment.
 
 Translates OriginIR circuits to Quafu QuantumCircuit objects and submits
 via the ``quafu`` package (User / Task API).  No raw REST calls.
-
-Installation:
-    pip install unified-quantum[quafu]
 """
 
 from __future__ import annotations
+
+import warnings
+
+warnings.warn(
+    "uniqc.backend_adapter.task.adapters.quafu_adapter is deprecated; "
+    "the Quafu platform SDK (pyquafu) is no longer maintained and the "
+    "[quafu] extra has been removed. Install pyquafu manually if needed "
+    "(pip install pyquafu, requires numpy<2).",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = ["QuafuAdapter"]
 

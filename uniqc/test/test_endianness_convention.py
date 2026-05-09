@@ -103,7 +103,7 @@ def test_dummy_originq_chip_endianness(backend):
 
     pytest.importorskip(
         "qiskit",
-        reason="Chip-backed dummy compile path requires unified-quantum[qiskit]",
+        reason="Chip-backed dummy compile path requires qiskit (a core dependency); skip likely indicates a broken install",
     )
     pytest.importorskip("qiskit_aer")
 

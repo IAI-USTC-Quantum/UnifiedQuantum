@@ -4,9 +4,10 @@
 本页所有 `compile()` / `compile_with_config()` / `compile_for_backend()` /
 `schedule_circuit()` / `plot_time_line_html()` 调用都**强制依赖** Qiskit。
 任何 `level`（含 `level=0`）都会进入 Qiskit transpiler 路径，缺少 `qiskit`
-时直接抛 `CompilationFailedError`。请先安装可选依赖：
+时直接抛 `CompilationFailedError`。Qiskit 现在是 `unified-quantum` 的核心依赖，
+随默认安装一起进来；如果 `import qiskit` 失败，说明环境损坏，请重装：
 
-    pip install "unified-quantum[qiskit]"
+    pip install --upgrade unified-quantum
 
 只做线路构建、`Circuit.qasm` / `Circuit.originir` 导出、模拟器运行（含
 `OriginIR_Simulator` / `MPSSimulator` / `dummy:virtual-line-N`）这些场景**不需要**
@@ -518,16 +519,10 @@ task_id = submit_task(circuit, "quafu", options=opts)
 
 **缺少 Qiskit 依赖**
 
-调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedError`，提示：
+调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedError`。Qiskit 是核心依赖，缺失时通常意味着安装损坏，重装即可：
 
 ```
-pip install unified-quantum[qiskit]
-```
-
-或使用 uv：
-
-```
-uv pip install unified-quantum[qiskit]
+pip install --upgrade unified-quantum
 ```
 
 **绘图功能需要 matplotlib**
@@ -541,9 +536,9 @@ pip install matplotlib
 :::{note}
 🔧 `schedule_circuit` 与 `plot_time_line*` 在内部**始终**调用 `compile()`（默认
 `compile_to_basis=True`），即便输入只使用平台原生门也不例外。因此它们**强制依赖**
-`unified-quantum[qiskit]`：
+Qiskit；qiskit 现在是 `unified-quantum` 的核心依赖，缺失时请重装：
 
-    pip install "unified-quantum[qiskit]"
+    pip install --upgrade unified-quantum
 
 唯一可绕过 `compile()` 的路径是：构造一份所有 entry 都已带 `start_time` 的 pulse /
 timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 `TimelineDurationError`）。
