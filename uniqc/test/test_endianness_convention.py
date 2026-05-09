@@ -95,6 +95,7 @@ def test_dummy_backend_endianness(backend):
 
 
 @pytest.mark.requires_pyqpanda3
+@pytest.mark.requires_originq_credentials
 @pytest.mark.parametrize(
     "backend", ["dummy:originq:WK_C180", "dummy:originq:PQPUMESH8"],
 )
