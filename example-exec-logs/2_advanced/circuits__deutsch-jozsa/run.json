@@ -1,0 +1,22 @@
+{
+  "example": "examples/2_advanced/circuits/deutsch-jozsa.py",
+  "chapter": "2_advanced",
+  "name": "circuits__deutsch-jozsa",
+  "title": "Deutsch-Jozsa algorithm — complete example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [
+    "DeprecationWarning"
+  ],
+  "stdout": " Deutsch-Jozsa Algorithm — 3 data qubits\n Oracle type: balanced\n\n Results (top outcomes):\n   |000⟩  100.0% ← all zeros\n\n  → CONSTANT function (all measurements = |000⟩)\n\n  ✓ Run complete.\n",
+  "stderr": "",
+  "warnings": [
+    "DeprecationWarning: deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form) is deprecated. Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit(). (deutsch-jozsa.py:51)"
+  ],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.003
+}

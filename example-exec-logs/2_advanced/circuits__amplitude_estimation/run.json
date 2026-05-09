@@ -1,0 +1,20 @@
+{
+  "example": "examples/2_advanced/circuits/amplitude_estimation.py",
+  "chapter": "2_advanced",
+  "name": "circuits__amplitude_estimation",
+  "title": "Quantum Amplitude Estimation (QAE) — complete example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [
+    "DeprecationWarning"
+  ],
+  "stdout": " Quantum Amplitude Estimation\n Search qubits: 2, Eval qubits: 3\n Marked state: |00⟩\n\n Estimated probability: 0.853553\n True probability:      0.250000\n Error:                 0.603553\n\n Measurement counts (eval register):\n   |000⟩: 8\n   |001⟩: 353\n   |010⟩: 150\n   |011⟩: 565\n   |100⟩: 391\n   |101⟩: 610\n   |110⟩: 1174\n   |111⟩: 845\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.007
+}

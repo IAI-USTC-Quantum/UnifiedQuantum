@@ -1,0 +1,18 @@
+{
+  "example": "examples/3_best_practices/00_config_and_backend_cache.py",
+  "chapter": "3_best_practices",
+  "name": "00_config_and_backend_cache",
+  "title": "00 — 配置 Key 与后端缓存",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "profile: release-check\nvalidation errors: []\ncached backend ids: ['dummy:virtual-line-3']\ncache platforms: ['dummy']\naudit issues: []\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.002
+}

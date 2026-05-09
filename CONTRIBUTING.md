@@ -170,18 +170,83 @@ Please update:
 
 Before creating a new `v*` tag, maintainers should quickly review the release-notes page and make sure:
 
-1. Re-run the best-practices notebooks with `python scripts/generate_best_practice_notebooks.py` and review the executed outputs and figures.
-2. Confirm the best-practices coverage matrix still matches the supported user paths: config, backend cache, bare/named circuits, API/CLI submission, dummy or virtual backends, visualization, variational circuits, Torch integration, calibration, and QEM.
+1. Re-build the docs end-to-end with `cd docs && uv run make html` and review
+   the executed example outputs and figures. Any diff under
+   `example-exec-logs/` should be intentional.
+2. Confirm the best-practices coverage matrix
+   (`docs/source/3_best_practices/index.md`) still matches the supported
+   user paths: config, backend cache, bare/named circuits, API/CLI submission,
+   dummy or virtual backends, visualization, variational circuits, Torch
+   integration, calibration, and QEM.
 3. Check `CHANGELOG.md` and make sure the `[Unreleased]` section is accurate.
-4. Check `docs/source/releases/index.md` and make sure it reflects the main user-visible changes in the upcoming release.
-5. Confirm the generated release history is correct by building the docs or running `scripts/generate_release_notes.py`.
-6. Ensure recent commits and tag messages are clear enough for the generated version record.
-7. Mention any rename, migration, compatibility change, or incomplete real-cloud verification explicitly.
-8. Build the docs site successfully with the updated release-notes and best-practices notebook content.
+4. Check `docs/source/7_releases/index.md` and make sure it reflects the main
+   user-visible changes in the upcoming release.
+5. Confirm the generated release history is correct by building the docs or
+   running `scripts/generate_release_notes.py`.
+6. Ensure recent commits and tag messages are clear enough for the generated
+   version record.
+7. Mention any rename, migration, compatibility change, or incomplete
+   real-cloud verification explicitly.
+8. Build the docs site successfully with the updated release-notes and
+   re-executed example outputs.
 
-The best-practices notebooks are a release-time verifiable path check, not CI.
-They should stay small enough to run locally, but complete enough to show users a
-working path from configuration through execution and result interpretation.
+The full doc build (with pre-doc-execution) is a release-time verifiable path
+check, not CI. It should stay small enough to run locally, but complete enough
+to show users a working path from configuration through execution and result
+interpretation.
+
+## Documentation & examples
+
+The docs build is two-step:
+
+1. **Pre-doc-execution** (`scripts/build_docs.py`): walks `examples/<chapter>/*.py`,
+   parses each example's docstring directives (`[doc-require: ...]`,
+   `[doc-warning-ignore: ...]`, `[doc-output-include: ...]`,
+   `[doc-skip-execute]`, `[doc-title: ...]`), runs the runnable subset, captures
+   stdout / stderr / matplotlib figures, splices a Sphinx-includable Markdown
+   page into `docs/source/_generated/examples/<chapter>/<name>.md`, and refreshes
+   `example-exec-logs/`. The build **fails** on unfiltered warnings / errors /
+   exceptions.
+2. **Sphinx HTML** (`make html-fast`): a normal sphinx build that
+   `{include}`s the generated example pages from the chapter prose.
+
+`make html` runs both steps; `make html-fast` skips step 1 and trusts the
+committed `example-exec-logs/`. CI only ever runs step 2 + `scripts/check_doc_logs.py`.
+
+### Developer responsibilities
+
+* You must locally have the dependencies for the area of code you change.
+  If you only touched local-simulator code, you only need to be able to run
+  the `dummy:local:*` examples. If you touched real-chip code (originq /
+  quafu / ibm / quark), you should at least have the matching SDK installed —
+  ideally credentials too.
+* If you change anything that user-visible code or examples might depend on,
+  you **must** run `cd docs && uv run make html` locally before opening the
+  PR. Commit any resulting diffs under `example-exec-logs/`. In normal
+  conditions there should be no diff at all — diffs are exactly the signal
+  that an example's behaviour changed.
+* If your example only makes sense on a real chip / cloud platform, mark it
+  with `[doc-require: originq]` (or `quafu` / `ibm` / `quark`) plus
+  `[doc-skip-execute]` so the build pipeline lists it for documentation but
+  never tries to run it.
+* If a third-party library produces a noisy `DeprecationWarning` on import
+  that you can't avoid, add `[doc-warning-ignore: <python-regex>]` to the
+  example's docstring rather than disabling the build's strict warning
+  checking.
+* Examples are expected to live **directly under** `examples/<chapter>/`
+  (numeric prefix mirrors the doc chapter). Auxiliary scripts can live in
+  nested directories under `examples/<chapter>/`; the build pipeline only
+  walks the flat layer.
+
+### Adding a new example
+
+1. Write `examples/<chapter>/<NN>_<short-name>.py` with a module docstring
+   that starts with `<NN> — <Title>` and any `[doc-...:]` directives.
+2. Reference it from `docs/source/<chapter>/index.md` with
+   `` ```{include} ../_generated/examples/<chapter>/<NN>_<short-name>.md ``.
+3. Run `cd docs && uv run make html` and commit the resulting
+   `example-exec-logs/<chapter>/<NN>_<short-name>/` plus any sphinx-build
+   diffs.
 
 ## Code Style
 

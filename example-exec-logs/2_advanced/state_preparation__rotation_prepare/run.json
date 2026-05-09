@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/state_preparation/rotation_prepare.py",
+  "chapter": "2_advanced",
+  "name": "state_preparation__rotation_prepare",
+  "title": "Arbitrary state preparation via rotation — example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "Rotation-Based State Preparation\n==================================================\n\nBell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2\n  Fidelity: 0.00000000\n  |00⟩: +0.7071+0.0000j\n  |01⟩: -0.0000+0.0000j\n  |10⟩: +0.0000+0.0000j\n  |11⟩: -0.7071+0.0000j\n\nCircuit:\nQINIT 2\nCREG 0\nRY q[1], (-1.5707963267948966)\nRY q[0], (1.5707963267948966)\nCNOT q[1], q[0]\nRY q[0], (-1.5707963267948966)\nCNOT q[1], q[0]\nCNOT q[1], q[0]\nCNOT q[1], q[0]\n\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.001
+}

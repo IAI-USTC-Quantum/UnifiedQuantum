@@ -1,17 +1,29 @@
 # Minimal makefile for Sphinx documentation
 #
+# This project ships a *two-step* docs build:
+#
+# 1. Pre-doc-execution: scripts/build_docs.py walks examples/<chapter>/*.py,
+#    runs the runnable subset, captures stdout / stderr / matplotlib figures,
+#    splices a Markdown page into source/_generated/examples/, and refreshes
+#    example-exec-logs/ (which is committed). Fails the build on unfiltered
+#    warnings / errors.
+# 2. Sphinx HTML build: a normal `sphinx-build`, which `{include}`s the
+#    generated example pages into the chapter prose.
+#
+# CI does not re-run examples; it just calls scripts/check_doc_logs.py and
+# the html-fast target.
+#
 
-# You can set these variables from the command line, and also
-# from the environment for the first two.
 SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 SPHINXAPIDOC  ?= sphinx-apidoc
 SOURCEDIR     = .
 BUILDDIR      = _build
-# Apidoc regenerates the per-module reference rst files under source/ from
-# the live ../uniqc tree.  The output is not committed; running any doc
-# target below will refresh it first.
-APIDOC_OUT    = source
+
+# sphinx-apidoc still emits a per-module reference rst tree under source/
+# from the live ../uniqc tree.  The output is not committed; running any
+# doc target below refreshes it first.
+APIDOC_OUT    = source/6_api
 APIDOC_IN     = ../uniqc
 APIDOC_EXCLUDE = $(APIDOC_IN)/test $(APIDOC_IN)/cli $(APIDOC_IN)/_version.py $(APIDOC_IN)/**/test_*.py $(APIDOC_IN)/algorithms/core/measurement/test_measurement.py
 APIDOC_FLAGS  = -f -e -T
@@ -21,46 +33,56 @@ APIDOC_CLEAN  = $(APIDOC_OUT)/uniqc.rst $(APIDOC_OUT)/uniqc.*.rst
 PYTHON        ?= python3
 TEXPATCHER    = $(SOURCEDIR)/_tex_patch.py
 
-# Best-practice notebooks generator. Each notebook executes user-API
-# paths against either local simulators or real provider chips. The
-# generator skips notebooks whose required SDKs / credentials are
-# absent (no silent fallbacks). Set UNIQC_DOCS_BUILD_ALL=1 to make
-# missing prerequisites a hard error instead.
-BEST_PRACTICES_SCRIPT = ../scripts/generate_best_practice_notebooks.py
-BEST_PRACTICES_DIR    = source/best_practices
+# Pre-doc-execution driver (paths are relative to PROJECT_ROOT after `cd ..`).
+BUILD_DOCS_SCRIPT = scripts/build_docs.py
+CHECK_LOGS_SCRIPT = scripts/check_doc_logs.py
 
-# Put it first so that "make" without argument is like "make help".
+.PHONY: help apidoc examples examples-real-cloud check-logs html html-fast latexpdf clean Makefile
+
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help apidoc best-practices best-practices-strict Makefile
-
 # Regenerate the per-module reference rst (uniqc*.rst) from the source tree.
 apidoc:
+	mkdir -p $(APIDOC_OUT)
 	rm -f $(APIDOC_CLEAN)
 	$(SPHINXAPIDOC) $(APIDOC_FLAGS) -o $(APIDOC_OUT) $(APIDOC_IN) $(APIDOC_EXCLUDE)
 
-# Run the best-practice notebook generator. Skips notebooks with
-# missing prereqs (writes a clear SKIP line per notebook).
-best-practices:
-	$(PYTHON) $(BEST_PRACTICES_SCRIPT)
+# Pre-doc-execution: re-run runnable examples and refresh example-exec-logs/
+# plus source/_generated/examples/. Fails on unfiltered warnings/errors.
+examples:
+	cd .. && $(PYTHON) $(BUILD_DOCS_SCRIPT)
 
-# Strict variant: every notebook MUST be built. Aborts if any required
-# SDK / API token is missing. Use this in release CI on a host with
-# all extras + provider tokens configured.
-best-practices-strict:
-	UNIQC_DOCS_BUILD_ALL=1 $(PYTHON) $(BEST_PRACTICES_SCRIPT)
+# Same as `examples`, but also runs examples gated on real-cloud submissions.
+examples-real-cloud:
+	cd .. && $(PYTHON) $(BUILD_DOCS_SCRIPT) --real-cloud
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-# Runs apidoc first so every build starts from a fresh module index.
+# CI-side: just verify the cached example-exec-logs/index.json verdict.
+check-logs:
+	cd .. && $(PYTHON) $(CHECK_LOGS_SCRIPT)
+
+# Default html target: full local pipeline (re-run examples, then sphinx).
+html: examples apidoc
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# CI / fast local rebuild: skip the pre-doc-execution step, trust the
+# committed logs / generated pages.
+html-fast: apidoc
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Catch-all target for any other sphinx mode (man, dirhtml, ...).
 %: apidoc Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Special target for PDF: patch the tex file before latexmk runs
-latexpdf: apidoc
+latexpdf: examples apidoc
 	@$(SPHINXBUILD) -b latex "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	@if [ -f "$(TEXPATCHER)" ]; then \
 		$(PYTHON) $(TEXPATCHER) "$(BUILDDIR)/unifiedquantum.tex"; \
 		fi
 	@$(MAKE) -C "$(BUILDDIR)" LATEXMKOPTS="$(LATEXMKOPTS)" all-pdf
+
+clean:
+	rm -rf $(BUILDDIR)
+	rm -rf source/_generated
+	rm -rf $(APIDOC_OUT)/uniqc.rst $(APIDOC_OUT)/uniqc.*.rst $(APIDOC_OUT)/autoapi

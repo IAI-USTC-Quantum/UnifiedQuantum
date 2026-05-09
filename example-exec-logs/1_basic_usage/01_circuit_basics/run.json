@@ -1,0 +1,18 @@
+{
+  "example": "examples/1_basic_usage/01_circuit_basics.py",
+  "chapter": "1_basic_usage",
+  "name": "01_circuit_basics",
+  "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "== OriginIR ==\nQINIT 3\nCREG 3\nH q[0]\nX q[1]\nRX q[2], (1.5707963267948966)\nCNOT q[0], q[1]\nCZ q[1], q[2]\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\nMEASURE q[2], c[2]\n\n== OpenQASM 2.0 ==\nOPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[3];\ncreg c[3];\nh q[0];\nx q[1];\nrx(1.5707963267948966) q[2];\ncx q[0], q[1];\ncz q[1], q[2];\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\n\n== qubit remapping ==\nQINIT 103\nCREG 3\nH q[100]\nX q[101]\nRX q[102], (1.5707963267948966)\nCNOT q[100], q[101]\nCZ q[101], q[102]\nMEASURE q[100], c[0]\nMEASURE q[101], c[1]\nMEASURE q[102], c[2]\n\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.0
+}

@@ -50,19 +50,19 @@ CMD_REFS: dict[str, list[tuple[str, str]]] = {
         ("GitHub", GITHUB_URL),
     ],
     "calibrate": [
-        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-xeb": [
-        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#xeb"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#xeb"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-readout": [
-        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#readout"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#readout"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-pattern": [
-        ("CLI Docs", f"{DOCS_URL}source/cli/calibrate.html#pattern"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#pattern"),
         ("GitHub", GITHUB_URL),
     ],
 }

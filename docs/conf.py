@@ -27,7 +27,7 @@ import os
 def generate_release_notes():
     """Generate git-backed release notes used by the docs site."""
     script_path = parent_path / "scripts" / "generate_release_notes.py"
-    output_path = parent_path / "docs" / "source" / "releases" / "_generated" / "strict_history.md"
+    output_path = parent_path / "docs" / "source" / "7_releases" / "_generated" / "strict_history.md"
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -151,39 +151,34 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    # 'recommonmark',
     'myst_parser',
-    'nbsphinx',
     'sphinx.ext.viewcode',
 ]
 
 # -- sphinx-autoapi ---------------------------------------------------------
-# Auto-generated API reference pages live under ``api/`` (built into the
-# Sphinx output tree). This replaces the old hand-maintained `uniqc.*.rst`
-# stubs that were never created and produced toctree dead links (B-U5/F-U4).
-try:
-    import autoapi  # noqa: F401  -- only enable if the extra is installed
-    extensions.append('autoapi.extension')
-    autoapi_type = 'python'
-    autoapi_dirs = [str((parent_path / 'uniqc').resolve())]
-    autoapi_root = 'api'
-    autoapi_keep_files = False
-    autoapi_add_toctree_entry = False
-    autoapi_options = [
-        'members',
-        'undoc-members',
-        'show-inheritance',
-        'show-module-summary',
-        'imported-members',
-    ]
-    autoapi_ignore = [
-        '*/test/*',
-        '*/_version.py',
-        '*/uniqc_cpp*',
-    ]
-    autoapi_python_class_content = 'both'
-except ImportError:
-    pass
+# We use ``sphinx-apidoc`` (driven from the Makefile) as the canonical source
+# of API reference pages under ``source/6_api/uniqc*.rst``. ``sphinx-autoapi``
+# is intentionally **not** enabled — having both extensions generate docs for
+# the same modules causes "duplicate object description" warnings and a noisy
+# build. If you want autoapi-style cross-reference resolution, re-enable it
+# below and additionally disable apidoc's targets in the Makefile.
+#
+# try:
+#     import autoapi  # noqa: F401
+#     extensions.append('autoapi.extension')
+#     autoapi_type = 'python'
+#     autoapi_dirs = [str((parent_path / 'uniqc').resolve())]
+#     autoapi_root = 'source/6_api/autoapi'
+#     autoapi_keep_files = False
+#     autoapi_add_toctree_entry = False
+#     autoapi_options = [
+#         'members', 'undoc-members', 'show-inheritance',
+#         'show-module-summary', 'imported-members',
+#     ]
+#     autoapi_ignore = ['*/test/*', '*/_version.py', '*/uniqc_cpp*']
+#     autoapi_python_class_content = 'both'
+# except ImportError:
+#     pass
 
 # -- Options for myst_parser
 # See https://myst-parser.readthedocs.io/en/latest/syntax/optional.html
@@ -232,41 +227,53 @@ language = 'zh-CN'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'source/uniqc.test.rst', 'source/releases/_generated/*']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    'source/uniqc.test.rst',
+    'source/7_releases/_generated/*',
+    # Generated example pages live under source/_generated/examples/ and are
+    # only reachable via {include} from the chapter index pages — never as
+    # standalone documents. Sphinx-compiling them standalone breaks the
+    # relative paths because literalinclude / image paths in included
+    # content are resolved relative to the *including* file at include time,
+    # not the included file.
+    'source/_generated/examples/**/*.md',
+]
 autodoc_typehints = "description"
 source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
-nbsphinx_execute = "never"
-nbsphinx_allow_errors = False
+
+# Use index.md as the master document.
+master_doc = 'index'
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "pydata_sphinx_theme"
+html_theme = "furo"
 
 html_baseurl = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
 
-import pydata_sphinx_theme, os
-_html_theme_path = os.path.dirname(pydata_sphinx_theme.__file__)
-html_theme_path = [_html_theme_path]
+html_title = f"UnifiedQuantum {release}"
 
 html_theme_options = {
-    "show_nav_level": 1,
+    # Furo-specific options. The version switcher / theme switcher used by
+    # PyData are not available; Furo provides its own light/dark toggle in
+    # the top-right corner.
     "navigation_with_keys": True,
-    "show_toc_level": 2,
-    "header_links_before_dropdown": 6,
-    # Logo/title configuration - only show project name without version
-    "logo": {
-        "text": "UnifiedQuantum文档",
-    },
-    # Version switcher configuration for GitHub Pages
-    "switcher": {
-        "json_url": "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/_static/switcher.json",
-        "version_match": version_match,
-    },
-    # Add version switcher to navbar
-    "navbar_end": ["theme-switcher", "version-switcher"],
+    "sidebar_hide_name": False,
+    "top_of_page_buttons": ["view", "edit"],
+    "source_repository": "https://github.com/IAI-USTC-Quantum/UnifiedQuantum",
+    "source_branch": "main",
+    "source_directory": "docs/",
 }
 
-suppress_warnings = ["myst.xref_missing"]
+suppress_warnings = [
+    "myst.xref_missing",
+    "ref.python",
+    "docutils",
+    "autosectionlabel.*",
+    "epub.duplicated_toc_entry",
+]
 
 # Napoleon: render ``Attributes:`` sections as ``:ivar:`` roles inline instead
 # of standalone ``.. attribute::`` directives. Otherwise autodoc also picks up
@@ -383,3 +390,26 @@ latex_elements = {
 
 latex_show_urls = "inline"
 latex_show_pagerefs = True
+
+
+def _skip_duplicate_module_aliases(app, what, name, obj, skip, options):
+    """Skip top-level package members that shadow same-named submodules.
+
+    Some packages expose a lazy delegate (e.g. ``uniqc.compile.draw`` the
+    function in ``uniqc/compile/__init__.py`` vs. the ``uniqc.compile.draw``
+    submodule). Documenting both makes Sphinx register two objects under the
+    fully-qualified name ``uniqc.compile.draw``, which raises
+    "duplicate object description". We keep the canonical submodule entry and
+    drop the top-level alias.
+    """
+    duplicates = {
+        ("uniqc.compile", "draw"),
+    }
+    module = getattr(obj, "__module__", None)
+    if module is not None and (module, name) in duplicates:
+        return True
+    return skip
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", _skip_duplicate_module_aliases)

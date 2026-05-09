@@ -1,0 +1,23 @@
+{
+  "example": "examples/3_best_practices/08_torch_quantum_training.py",
+  "chapter": "3_best_practices",
+  "name": "08_torch_quantum_training",
+  "title": "08 — Torch 集成后的量子线路",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "pytorch",
+    "matplotlib"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "torch parameter: Parameter containing:\ntensor(2.7865, requires_grad=True)\nlast rows: [(13, 2.4625000953674316, -0.57, -0.7949999999999999), (14, 2.632000207901001, -0.72, -0.565), (15, 2.7865002155303955, -0.875, -0.515)]\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [
+    "figure-01.png"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.801
+}

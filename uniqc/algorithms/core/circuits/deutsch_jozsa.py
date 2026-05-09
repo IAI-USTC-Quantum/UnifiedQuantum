@@ -1,6 +1,6 @@
 """Deutsch-Jozsa algorithm circuit and oracle builder.
 
-The oracular convention here (per :doc:`/guide/algorithm_design`) is:
+The oracular convention here (per the design notes in the project README) is:
 
 - :func:`deutsch_jozsa_oracle` returns a fresh ``Circuit`` (the oracle).
 - :func:`deutsch_jozsa_circuit` accepts a *quantum-circuit* oracle as its

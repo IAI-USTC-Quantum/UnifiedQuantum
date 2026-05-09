@@ -1,7 +1,7 @@
 """Internal helper: bridge legacy in-place algorithm APIs to the new
 "circuit fragment" style.
 
-The ``circuit-fragment`` design (see :doc:`/guide/algorithm_design`) requires
+The ``circuit-fragment`` design (see the design notes in the project README) requires
 every public algorithm building block to **return a fresh** :class:`uniqc.circuit_builder.qcircuit.Circuit`
 instead of mutating an input one. Many of UnifiedQuantum's existing
 ``*_circuit`` functions historically followed the older "first arg is a

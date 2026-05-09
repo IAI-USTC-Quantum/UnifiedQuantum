@@ -1,0 +1,20 @@
+{
+  "example": "examples/2_advanced/circuits/vqd.py",
+  "chapter": "2_advanced",
+  "name": "circuits__vqd",
+  "title": "Variational Quantum Deflation (VQD) — complete example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [
+    "DeprecationWarning"
+  ],
+  "stdout": "=== VQD Example: H = Z₀ + ... + Z_{n-1} on 2 qubits ===\nn_layers=2, penalty=10.0, n_params=4\n\nExact eigenvalues: [-2.  0.  0.  2.]\n\n--- Step 1: VQE (ground state) ---\nVQE ground state energy: -2.000000  (exact: -2.000000)\n\n--- Step 2: VQD (first excited state) ---\nVQD first excited state energy: -0.000000  (exact: 0.000000)\nOverlap with ground state: 0.000000\n\n✓ Run complete.\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.546
+}

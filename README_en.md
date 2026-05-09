@@ -113,7 +113,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 > - OriginQ / Dummy: `{"00": 512, "11": 488}` (flat `{bitstring: shots}` dict)
 > - Quafu: `{"counts": {"00": 512, "11": 488}, "probabilities": {...}}` (nested dict)
 > - IBM: `[{"00": 512}, {"01": 300}]` (list of counts dicts, one per circuit in batch mode)
-> See [platform conventions](docs/source/guide/platform_conventions.md) for details.
+> See [platform conventions](docs/source/2_advanced/index.md) for details.
 
 ---
 
@@ -262,9 +262,9 @@ uniqc backend update
 
 | Example | Description |
 |---------|-------------|
-| [Circuit Remapping](examples/getting-started/1_circuit_remap.py) | Build a circuit and remap qubits for real hardware |
-| [Dummy Server](examples/getting-started/2_dummy_server.py) | Submit tasks to the local dummy simulator |
-| [Result Post-Processing](examples/getting-started/3_result_postprocess.py) | Convert and analyze results |
+| [Circuit Remapping](examples/1_basic_usage/02_local_simulation.py) | Build a circuit and remap qubits for real hardware |
+| [Dummy Server](examples/1_basic_usage/03_submit_and_postprocess.py) | Submit tasks to the local dummy simulator |
+| [Result Post-Processing](examples/1_basic_usage/03_submit_and_postprocess.py) | Convert and analyze results |
 
 ### Algorithms
 
@@ -281,7 +281,7 @@ uniqc backend update
 
 ### Release Notes
 
-- Full changelog: <https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/releases/index.html>
+- Full changelog: <https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/7_releases/index.html>
 
 ---
 

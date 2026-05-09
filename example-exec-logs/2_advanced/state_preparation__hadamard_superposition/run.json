@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/state_preparation/hadamard_superposition.py",
+  "chapter": "2_advanced",
+  "name": "state_preparation__hadamard_superposition",
+  "title": "Hadamard superposition — state preparation example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "Hadamard Superposition Demo (3 qubits)\n==================================================\n\nState vector (8 amplitudes):\n  |000⟩: +0.3536 (expected: +0.3536)\n  |001⟩: +0.3536 (expected: +0.3536)\n  |010⟩: +0.3536 (expected: +0.3536)\n  |011⟩: +0.3536 (expected: +0.3536)\n  |100⟩: +0.3536 (expected: +0.3536)\n  |101⟩: +0.3536 (expected: +0.3536)\n  |110⟩: +0.3536 (expected: +0.3536)\n  |111⟩: +0.3536 (expected: +0.3536)\n\nProbabilities:\n  |000⟩: 0.1250 ████\n  |001⟩: 0.1250 ████\n  |010⟩: 0.1250 ████\n  |011⟩: 0.1250 ████\n  |100⟩: 0.1250 ████\n  |101⟩: 0.1250 ████\n  |110⟩: 0.1250 ████\n  |111⟩: 0.1250 ████\n\nAll amplitudes equal? True\nTotal probability: 1.000000\n\n--- Subset: qubits [0, 2] only ---\n  |000⟩: 0.2500\n  |001⟩: 0.2500\n  |100⟩: 0.2500\n  |101⟩: 0.2500\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.002
+}
