@@ -187,14 +187,15 @@ Core dependencies (including `scipy`) are included by default.
 | Feature | Install command (uv) | pip fallback |
 |---------|---------------------|-------------|
 | OriginQ cloud | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| Quafu backend (deprecated, separate install) | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
-| Qiskit backend | `uv pip install unified-quantum[qiskit]` | `pip install unified-quantum[qiskit]` |
+| QuarkStudio / Quark cloud (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
 | Advanced simulation (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | Visualization | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | All optional deps | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
 
-`[all]` does not include Quafu/`pyquafu`. Install `[quafu]` explicitly only if you accept the risk that `pyquafu` may downgrade the environment to `numpy<2`. The Quafu platform path is deprecated; future releases do not guarantee consistency or completeness of Quafu-related code, and support may stop at any time.
+> **Quafu archived**: the `[quafu]` extra has been removed. The Quafu platform SDK is deprecated; if you still need it, install `pyquafu` directly with `pip install pyquafu` and accept the environment downgrade to `numpy<2`. Future releases do not guarantee consistency or completeness of Quafu-related code.
+>
+> Qiskit is a core dependency (installed by default with `unified-quantum`); the `[qiskit]` extra has been removed.
 
 TorchQuantum backend is not in PyPI extras yet — install it manually:
 

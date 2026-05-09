@@ -32,9 +32,18 @@ class TestMissingDependencyError:
 
     def test_error_message_format(self):
         """Test that error message includes install instructions."""
-        error = MissingDependencyError("quafu", "quafu")
-        assert "quafu" in str(error)
-        assert "pip install unified-quantum[quafu]" in str(error)
+        error = MissingDependencyError("qiskit", "qiskit")
+        assert "qiskit" in str(error)
+        assert "pip install unified-quantum[qiskit]" in str(error)
+
+    def test_error_message_with_install_hint(self):
+        """Test that explicit install_hint overrides the default extras message."""
+        error = MissingDependencyError(
+            "quafu",
+            install_hint="quafu is deprecated; install pyquafu directly: pip install pyquafu",
+        )
+        assert "pyquafu" in str(error)
+        assert "deprecated" in str(error)
 
     def test_error_attributes(self):
         """Test error attributes are set correctly."""

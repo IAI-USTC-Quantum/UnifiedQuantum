@@ -370,13 +370,24 @@ def dry_run_task(
                 warnings=("Known backends: originq, quafu, quark, ibm, dummy",),
             )
         except (ImportError, ModuleNotFoundError) as e:
-            return DryRunResult(
-                success=False,
-                details=(
-                    f"Adapter for '{backend}' is not installed. "
+            if str(platform) == "quafu":
+                hint = (
+                    "The Quafu adapter is deprecated; install pyquafu directly "
+                    "if you still need it: `pip install pyquafu` (pulls numpy<2)."
+                )
+            elif str(platform) in ("qiskit", "ibm"):
+                hint = (
+                    "Qiskit is a core dependency of unified-quantum; the install "
+                    "appears broken. Reinstall with `pip install --upgrade unified-quantum`."
+                )
+            else:
+                hint = (
                     f"Install the matching extra (e.g. "
                     f"`pip install \"unified-quantum[{platform}]\"`)."
-                ),
+                )
+            return DryRunResult(
+                success=False,
+                details=f"Adapter for '{backend}' is not installed. {hint}",
                 error=str(e),
                 error_kind="sdk_missing",
             )

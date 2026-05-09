@@ -113,8 +113,10 @@ def compile(
 
     .. important::
        ``compile`` (at every optimization ``level``, including ``level=0``)
-       requires the ``[qiskit]`` extra: ``pip install "unified-quantum[qiskit]"``.
-       Without ``qiskit`` installed every call raises ``CompilationFailedError``.
+       requires Qiskit, which is a **core dependency** installed by default
+       with ``unified-quantum``.  If ``import qiskit`` fails, the install is
+       broken — reinstall with ``pip install --upgrade unified-quantum``.
+       Without ``qiskit`` available every call raises ``CompilationFailedError``.
        There is currently no pure-Python fallback path.
 
     Parameters
@@ -376,8 +378,9 @@ def _load_transpile_qasm():
     except ImportError as exc:
         raise CompilationFailedError(
             format_enriched_message(
-                "compile() requires the optional qiskit dependencies. "
-                "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`.",
+                "compile() requires qiskit, which is a core dependency of "
+                "unified-quantum. The install appears broken; reinstall with "
+                "`pip install --upgrade unified-quantum`.",
                 "compilation",
             )
         ) from exc

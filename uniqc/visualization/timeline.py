@@ -144,8 +144,10 @@ def schedule_circuit(
 
     .. important::
        Whenever ``compile_to_basis=True`` (the default), this function calls
-       :func:`uniqc.compile.compile`, which **requires** the ``[qiskit]`` extra:
-       ``pip install "unified-quantum[qiskit]"``.  There is no native-only
+       :func:`uniqc.compile.compile`, which **requires** Qiskit.  Qiskit is a
+       core dependency installed by default with ``unified-quantum``; if it
+       fails to import, the install is broken (reinstall with
+       ``pip install --upgrade unified-quantum``).  There is no native-only
        bypass: even if the input circuit already uses only chip-native gates
        (e.g. CZ/SX/RZ), ``schedule_circuit`` will still call ``compile()`` to
        collect timing data unless every entry already carries an explicit

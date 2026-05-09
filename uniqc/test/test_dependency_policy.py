@@ -51,9 +51,33 @@ def test_third_party_dependencies_are_not_version_pinned() -> None:
     assert constrained == []
 
 
-def test_quafu_is_not_in_all_extra() -> None:
+def test_quafu_extra_has_been_removed() -> None:
+    """The legacy [quafu] extra is fully removed; pyquafu must not appear in any extra.
+
+    The Quafu platform SDK (pyquafu) is deprecated and pulls numpy<2; users who still
+    need it must install pyquafu manually. See docs/source/guide/installation.md.
+    """
     pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     optional = pyproject["project"]["optional-dependencies"]
 
-    assert "pyquafu" in optional["quafu"]
-    assert all("pyquafu" not in requirement for requirement in optional["all"])
+    assert "quafu" not in optional, "[quafu] extra must be removed"
+    for group, requirements in optional.items():
+        assert all("pyquafu" not in requirement for requirement in requirements), (
+            f"pyquafu unexpectedly listed under [{group}]"
+        )
+
+
+def test_qiskit_is_a_core_dependency() -> None:
+    """qiskit, qiskit-aer, qiskit-ibm-runtime moved into project.dependencies.
+
+    The legacy [qiskit] extra has been removed; qiskit is now part of the default install.
+    """
+    pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    deps = pyproject["project"]["dependencies"]
+    optional = pyproject["project"]["optional-dependencies"]
+
+    for pkg in ("qiskit", "qiskit-aer", "qiskit-ibm-runtime"):
+        assert any(_requirement_spec(req).split("[", 1)[0] == pkg for req in deps), (
+            f"{pkg} must be listed in project.dependencies"
+        )
+    assert "qiskit" not in optional, "[qiskit] extra must be removed"

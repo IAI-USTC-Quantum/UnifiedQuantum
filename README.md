@@ -199,14 +199,15 @@ pip install -e .
 | 功能 | 安装命令（uv） | pip 备选 |
 |------|----------------|---------|
 | OriginQ 云平台 | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| Quafu 执行后端（deprecated，单独安装） | `uv pip install unified-quantum[quafu]` | `pip install unified-quantum[quafu]` |
-| Qiskit 执行后端 | `uv pip install unified-quantum[qiskit]` | `pip install unified-quantum[qiskit]` |
+| QuarkStudio / Quark 云平台 (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
 | 高级模拟 (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | 可视化 | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch 集成 | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | 安装所有可选依赖 | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
 
-`[all]` 不包含 Quafu/`pyquafu`。如需使用旧 Quafu 后端，需要单独安装 `[quafu]`，并接受 `pyquafu` 可能把环境降到 `numpy<2` 的风险；该平台已 deprecated，后续不保证相关代码一致性和完整性，支持可能随时停止。
+> **Quafu 已归档 / Archived**：`[quafu]` extra 已移除。Quafu 平台 SDK 已 deprecated；如仍需使用，请直接 `pip install pyquafu` 并自行承担 `numpy<2` 的环境降级风险，UnifiedQuantum 后续不保证 Quafu 相关代码一致性和完整性。
+>
+> Qiskit 已是核心依赖（随 `unified-quantum` 默认安装），无需单独的 `[qiskit]` extra。
 
 TorchQuantum 后端当前不包含在 PyPI extras 中，需要手动安装：
 

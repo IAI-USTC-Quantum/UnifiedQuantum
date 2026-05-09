@@ -41,6 +41,9 @@ dependencies = [
     "scipy",
     "fastapi",
     "uvicorn[standard]",
+    "qiskit",
+    "qiskit-aer",
+    "qiskit-ibm-runtime",
 ]
 
 [project.urls]
@@ -50,8 +53,6 @@ dependencies = [
 uniqc = "uniqc.cli.main:app"
 
 [project.optional-dependencies]
-quafu = ["pyquafu"]
-qiskit = ["qiskit", "qiskit-aer", "qiskit-ibm-runtime"]
 originq = ["pyqpanda3"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
@@ -60,8 +61,6 @@ quark = ["quarkstudio; python_version >= '3.12'", "quarkcircuit; python_version 
 all = [
     "quarkstudio; python_version >= '3.12'",
     "quarkcircuit; python_version >= '3.12'",
-    "qiskit", "qiskit-aer",
-    "qiskit-ibm-runtime",
     "pyqpanda3",
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",

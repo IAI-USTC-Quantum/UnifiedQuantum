@@ -3,8 +3,8 @@
 Translates OriginIR circuits to Qiskit QuantumCircuit objects and submits
 via the ``qiskit`` / ``qiskit_ibm_runtime`` packages.  No raw REST calls.
 
-Installation:
-    pip install unified-quantum[qiskit]
+``qiskit`` is a core dependency of ``unified-quantum`` — no extra install
+step is required.
 """
 
 from __future__ import annotations

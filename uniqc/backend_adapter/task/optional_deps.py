@@ -44,29 +44,47 @@ __all__ = [
 ]
 
 
-def require(name: str, extra: str):
+def require(name: str, extra: str, install_hint: str | None = None):
     """Import an optional module with a clear error message if missing.
 
     Args:
         name: The module name to import (e.g., 'quafu', 'qiskit').
-        extra: The pip extras name for installation (e.g., 'quafu', 'qiskit').
+        extra: The pip extras name for installation (e.g., 'qiskit').
+            Note: as of the current release, ``qiskit`` is a core dependency
+            (no extra) and ``quafu`` no longer has an extra — see
+            ``install_hint``.
+        install_hint: Optional explicit install / recovery hint that overrides
+            the default ``unified-quantum[{extra}]`` message. Used for
+            deprecated paths (e.g., quafu) where there is no extras name.
 
     Returns:
         The imported module.
 
     Raises:
         MissingDependencyError: If the module cannot be imported.
-
-    Example:
-        >>> quafu = require("quafu", "quafu")
-        >>> # If quafu is not installed:
-        >>> # MissingDependencyError: Package 'quafu' is required...
     """
+    # Hard-coded deprecated path: there's no [quafu] extra anymore.
+    if install_hint is None and extra == "quafu":
+        install_hint = (
+            "The Quafu adapter is deprecated and is no longer installable via "
+            "a `[quafu]` extra. Install pyquafu directly if you still need it: "
+            "`pip install pyquafu` (warning: pulls numpy<2)."
+        )
     try:
         return importlib.import_module(name)
     except ImportError as e:
+        if install_hint is not None:
+            raise MissingDependencyError(name, install_hint=install_hint) from e
         raise MissingDependencyError(name, extra) from e
     except Exception as e:
+        if install_hint is not None:
+            raise MissingDependencyError(
+                name,
+                install_hint=(
+                    f"The package is installed but failed to import cleanly: {e!r}. "
+                    f"{install_hint}"
+                ),
+            ) from e
         raise MissingDependencyError(
             name,
             extra,
