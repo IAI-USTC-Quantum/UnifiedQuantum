@@ -1,7 +1,7 @@
 ### Variational Quantum Eigensolver (VQE) — complete example.
 
 *Source*: ``examples/2_advanced/algorithms/vqe.py``  
-*Status*: **not-executed**
+*Status*: **pass**
 
 Demonstrates:
   * Building a UCCSD ansatz for molecular Hamiltonians
@@ -23,7 +23,20 @@ References:
 :language: python
 ```
 
-:::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
-:::
+**Stdout**
+
+```text
+VQE for H2
+  Qubits: 4, Electrons: 2
+  UCCSD parameters: 5 (4 singles + 1 doubles)
+  Hamiltonian terms: 13
+  Nuclear repulsion: 0.7200 Ha
+
+  Iter   0: E = -0.584500 Ha
+  Iter  10: E = -0.584500 Ha
+
+  Final energy: -0.584500 Ha
+  Parameters: [ 0.   0.   0.   0.  -0.1]
+  Exact FCI:   -1.137274 Ha
+```
 

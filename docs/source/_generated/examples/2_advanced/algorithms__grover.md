@@ -1,7 +1,7 @@
 ### Grover's search algorithm — complete example.
 
 *Source*: ``examples/2_advanced/algorithms/grover.py``  
-*Status*: **not-executed**
+*Status*: **pass**
 
 Demonstrates:
   * Oracle construction for an n-qubit Grover search
@@ -23,7 +23,22 @@ References:
 :language: python
 ```
 
-:::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
-:::
+**Stdout**
+
+```text
+ Grover's Search — 3 data qubits
+ Marked state: 5 (101)
+ Search space: 8 states
+
+ Results (top 5 most probable states):
+   |110⟩   26.6%
+   |101⟩   25.2% ← TARGET
+   |000⟩   24.2%
+   |011⟩   24.0%
+
+ Target probability: 25.2%
+ Expected (ideal): ~95.0% (after optimal iterations)
+
+  ✓ Run complete.
+```
 

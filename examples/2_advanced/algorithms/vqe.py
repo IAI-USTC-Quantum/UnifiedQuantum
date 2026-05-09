@@ -16,7 +16,6 @@ References:
     https://arxiv.org/abs/1304.3061
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -67,14 +66,18 @@ def vqe_energy(params, hamiltonian, n_qubits, n_electrons):
     Returns:
         Total energy (float).
     """
-    # Build the ansatz circuit
+    # Build the ansatz circuit; pad with identities on every qubit so that
+    # zero-parameter ansätze still keep the full ``n_qubits`` register
+    # (the circuit builder otherwise prunes unused qubits).
     circuit = uccsd_ansatz(n_qubits, n_electrons, params=params)
+    for q in range(n_qubits):
+        circuit.identity(q)
 
     # Simulate statevector
     sim = OriginIR_Simulator(backend_type="statevector")
     # For energy evaluation, we use direct statevector overlap
     # (in practice, you'd use pauli_expectation with shot-based simulation)
-    sv = sim.simulate_statevector(circuit.originir)
+    sv = np.asarray(sim.simulate_statevector(circuit.originir), dtype=complex)
 
     energy = 0.0
     for pauli_str, coeff in hamiltonian:

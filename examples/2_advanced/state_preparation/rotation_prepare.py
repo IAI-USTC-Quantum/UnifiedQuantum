@@ -14,7 +14,6 @@ References:
     IEEE Transactions on CAD 25(6).
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -30,6 +29,8 @@ from uniqc import rotation_prepare
 
 def _fidelity(sv1, sv2):
     """Compute fidelity |⟨ψ₁|ψ₂⟩|²."""
+    sv1 = np.asarray(sv1, dtype=complex)
+    sv2 = np.asarray(sv2, dtype=complex)
     return abs(np.dot(sv1.conj(), sv2)) ** 2
 
 

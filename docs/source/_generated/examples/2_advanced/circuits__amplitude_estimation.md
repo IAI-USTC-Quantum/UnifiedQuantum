@@ -1,7 +1,7 @@
 ### Quantum Amplitude Estimation (QAE) — complete example.
 
 *Source*: ``examples/2_advanced/circuits/amplitude_estimation.py``  
-*Status*: **not-executed**
+*Status*: **pass**
 
 Demonstrates:
   * Building a simple oracle for amplitude estimation
@@ -22,7 +22,25 @@ References:
 :language: python
 ```
 
-:::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
-:::
+**Stdout**
+
+```text
+ Quantum Amplitude Estimation
+ Search qubits: 2, Eval qubits: 3
+ Marked state: |00⟩
+
+ Estimated probability: 0.853553
+ True probability:      0.250000
+ Error:                 0.603553
+
+ Measurement counts (eval register):
+   |000⟩: 8
+   |001⟩: 353
+   |010⟩: 150
+   |011⟩: 565
+   |100⟩: 391
+   |101⟩: 610
+   |110⟩: 1174
+   |111⟩: 845
+```
 

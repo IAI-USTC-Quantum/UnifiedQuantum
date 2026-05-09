@@ -15,7 +15,6 @@ References:
     AMS Contemporary Mathematics, 305, 53–74.
 
 [doc-require: ]
-[doc-skip-execute]
 [doc-warning-ignore: DeprecationWarning]
 """
 
@@ -34,7 +33,7 @@ from uniqc import (
 )
 
 
-def build_simple_oracle(n_qubits: int, marked_state: int) -> Circuit:
+def build_simple_oracle(qubits: list, marked_state: int) -> Circuit:
     """Build a phase-flip oracle that marks a specific computational basis state.
 
     Flips the phase of |marked_state⟩ by:
@@ -43,35 +42,36 @@ def build_simple_oracle(n_qubits: int, marked_state: int) -> Circuit:
     3. Undo X gates
 
     Args:
-        n_qubits: Number of qubits in the search register.
+        qubits: Indices of the search-register qubits the oracle should act on.
         marked_state: Integer representing the marked basis state.
 
     Returns:
         Oracle circuit.
     """
-    oracle = Circuit(n_qubits)
+    oracle = Circuit()
+    n_qubits = len(qubits)
     bits = format(marked_state, f"0{n_qubits}b")
 
     # Flip qubits where bit is 0
     for i, bit in enumerate(bits):
         if bit == "0":
-            oracle.x(i)
+            oracle.x(qubits[i])
 
     # Apply multi-controlled Z
     if n_qubits == 1:
-        oracle.z(0)
+        oracle.z(qubits[0])
     elif n_qubits == 2:
-        oracle.cz(0, 1)
+        oracle.cz(qubits[0], qubits[1])
     else:
         # For n > 2, use toffoli cascade
-        oracle.h(n_qubits - 1)
-        oracle.toffoli(0, 1, n_qubits - 1)
-        oracle.h(n_qubits - 1)
+        oracle.h(qubits[-1])
+        oracle.toffoli(qubits[0], qubits[1], qubits[-1])
+        oracle.h(qubits[-1])
 
     # Undo X flips
     for i, bit in enumerate(bits):
         if bit == "0":
-            oracle.x(i)
+            oracle.x(qubits[i])
 
     return oracle
 
@@ -89,19 +89,21 @@ def run_qae(n_qubits: int, n_eval_qubits: int, marked_state: int, shots: int = 4
         Dictionary with estimated probability and measurement counts.
     """
     total_qubits = n_qubits + n_eval_qubits
-    oracle = build_simple_oracle(n_qubits, marked_state)
+    search_qubits = list(range(n_eval_qubits, total_qubits))
+    eval_qubits = list(range(n_eval_qubits))
+    oracle = build_simple_oracle(search_qubits, marked_state)
 
-    c = Circuit()
-    amplitude_estimation_circuit(
-        c,
+    c = amplitude_estimation_circuit(
         oracle,
-        qubits=list(range(n_eval_qubits, total_qubits)),
-        eval_qubits=list(range(n_eval_qubits)),
+        qubits=search_qubits,
+        eval_qubits=eval_qubits,
     )
 
-    # Simulate
-    sim = QASM_Simulator(least_qubit_remapping=False)
-    result = sim.simulate_shots(c.qasm, shots=shots)
+    # Simulate via OriginIR (its toffoli decomposition is wider; QASM2 export
+    # rejects nested controlled-CCZ produced by the QAE wrapper).
+    from uniqc.simulator import OriginIR_Simulator
+    sim = OriginIR_Simulator()
+    result = sim.simulate_shots(c.originir, shots=shots)
 
     # Convert to bit-strings
     counts = {f"{int(k):0{n_eval_qubits}b}": v for k, v in result.items()}

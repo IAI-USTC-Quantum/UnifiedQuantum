@@ -8,7 +8,6 @@ Usage:
     python thermal_state.py [--n-qubits N] [--beta BETA] [--shots N]
 
 [doc-require: ]
-[doc-skip-execute]
 [doc-warning-ignore: DeprecationWarning]
 """
 
@@ -32,7 +31,8 @@ def run_thermal(n_qubits, beta, shots):
     c.measure(list(range(n_qubits)))
 
     sim = QASM_Simulator()
-    result = sim.simulate(c.to_qasm(), shots=shots)
+    raw = sim.simulate_shots(c.qasm, shots=shots)
+    result = {f"{int(k):0{n_qubits}b}": v for k, v in raw.items()}
 
     # Aggregate counts into probability distribution
     total = sum(result.values())

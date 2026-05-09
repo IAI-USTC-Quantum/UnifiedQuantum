@@ -15,7 +15,6 @@ References:
     Quantum 3, 156.
 
 [doc-require: ]
-[doc-skip-execute]
 [doc-warning-ignore: DeprecationWarning]
 """
 
@@ -32,7 +31,6 @@ from uniqc.simulator.qasm_simulator import QASM_Simulator
 from uniqc import (
     vqd_circuit,
     vqd_overlap_circuit,
-    _hea_ansatz,
 )
 
 
@@ -55,16 +53,6 @@ def _make_hamiltonian_matrix(n_qubits: int) -> np.ndarray:
 def _state_from_hea(ansatz_params: np.ndarray, n_qubits: int, n_layers: int) -> np.ndarray:
     """Compute the state vector produced by the HEA ansatz with given params."""
     dim = 2**n_qubits
-    # Build unitary matrix by simulating the circuit
-    c = Circuit(n_qubits)
-    _hea_ansatz(c, list(ansatz_params), n_layers, list(range(n_qubits)))
-    # Use state-vector simulation
-    sim = QASM_Simulator()
-    # Get state vector via QASM — use analytical approach instead
-    # Build the unitary by column-by-column simulation
-    from uniqc.simulator.origin_simulator import SingleGateSimulator
-    sim2 = SingleGateSimulator(n_qubits)
-    # Apply gates manually
     state = np.zeros(dim, dtype=complex)
     state[0] = 1.0
 

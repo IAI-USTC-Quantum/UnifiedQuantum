@@ -79,7 +79,7 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 6 backends, updated 21h ago
+    originq: 6 backends, updated 22h ago
     quafu: 16 backends, updated 10d ago (stale)
     ibm: 3 backends, updated 2d ago (stale)
 
@@ -94,7 +94,7 @@ Cache:
 
 == uniqc submit bell.originir -p dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_31492b45aba64d48a32d012448c29921",
+  "task_id": "uqt_9a5ce567d12e4d038346be29982c1d80",
   "platform": "dummy",
   "shots": 64
 }
@@ -109,7 +109,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_31492b45aba64d48a32d012448c29921",
+  "task_id": "uqt_9a5ce567d12e4d038346be29982c1d80",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null

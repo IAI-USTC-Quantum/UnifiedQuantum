@@ -15,12 +15,12 @@
 **Stdout**
 
 ```text
-step=00 theta=0.200 <Z>=0.985 grad=-0.148
-step=04 theta=0.445 <Z>=0.930 grad=-0.440
-step=08 theta=1.062 <Z>=0.520 grad=-0.892
-step=12 theta=2.023 <Z>=-0.440 grad=-0.922
-step=16 theta=2.736 <Z>=-0.885 grad=-0.420
-final theta: 2.915
+step=00 theta=0.200 <Z>=0.960 grad=-0.120
+step=04 theta=0.449 <Z>=0.885 grad=-0.395
+step=08 theta=1.034 <Z>=0.505 grad=-0.860
+step=12 theta=1.982 <Z>=-0.440 grad=-0.907
+step=16 theta=2.724 <Z>=-0.905 grad=-0.353
+final theta: 2.8975
 ```
 
 **Figures**

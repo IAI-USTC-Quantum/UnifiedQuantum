@@ -24,10 +24,10 @@ Usage:
   Iterations: 2
   Results (top 5):
     |101⟩   95.2% ← TARGET
-    |000⟩    0.8%
+    |100⟩    0.9%
+    |110⟩    0.8%
+    |111⟩    0.8%
     |010⟩    0.7%
-    |100⟩    0.7%
-    |001⟩    0.7%
 
   Target probability: 95.2%
   ✓ Done.

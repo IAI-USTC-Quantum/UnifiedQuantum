@@ -16,7 +16,6 @@ References:
     https://arxiv.org/abs/quant-ph/9605043
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -79,9 +78,9 @@ def build_oracle(n_qubits: int, marked_state: int) -> tuple[Circuit, list[int]]:
     if n_qubits == 1:
         c.cz(i=n_qubits, target=n_qubits)
     elif n_qubits == 2:
-        c.ccx(0, 1, n_qubits)
+        c.toffoli(0, 1, n_qubits)
         c.z(n_qubits)  # CCZ = CCX with final Z
-        c.ccx(0, 1, n_qubits)
+        c.toffoli(0, 1, n_qubits)
     else:
         # General multi-controlled Z using multiple Toffoli stages
         # MCZ: apply CNOT cascade then H on target then CNOT cascade
@@ -160,9 +159,9 @@ def build_diffusion(n_qubits: int) -> Circuit:
     if n_qubits == 1:
         c.z(0)
     elif n_qubits == 2:
-        c.ccx(0, 1, n_qubits)
+        c.toffoli(0, 1, n_qubits)
         c.z(n_qubits)
-        c.ccx(0, 1, n_qubits)
+        c.toffoli(0, 1, n_qubits)
     else:
         # Use ancilla at position n_qubits as target for MCZ
         _apply_mcz(c, list(range(n_qubits)), n_qubits)
@@ -212,9 +211,9 @@ def run_grover(
         for i, bit in enumerate(marked_bits):
             if bit == 0:
                 oracle_c.x(i)
-        oracle_c.ccx(0, 1, n_qubits)
+        oracle_c.toffoli(0, 1, n_qubits)
         oracle_c.z(n_qubits)
-        oracle_c.ccx(0, 1, n_qubits)
+        oracle_c.toffoli(0, 1, n_qubits)
         for i, bit in enumerate(marked_bits):
             if bit == 0:
                 oracle_c.x(i)
@@ -226,9 +225,9 @@ def run_grover(
         for i in range(n_qubits):
             oracle_c.x(i)
         if n_qubits == 2:
-            oracle_c.ccx(0, 1, n_qubits)
+            oracle_c.toffoli(0, 1, n_qubits)
             oracle_c.z(n_qubits)
-            oracle_c.ccx(0, 1, n_qubits)
+            oracle_c.toffoli(0, 1, n_qubits)
         else:
             _apply_mcz(oracle_c, list(range(n_qubits)), n_qubits)
         for i in range(n_qubits):
@@ -236,7 +235,7 @@ def run_grover(
         for i in range(n_qubits):
             oracle_c.h(i)
 
-    c.extend(oracle_c)
+    c.add_circuit(oracle_c)
     c.measure(*list(range(n_qubits)))
 
     # Simulate

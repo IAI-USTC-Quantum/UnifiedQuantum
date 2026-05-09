@@ -1,7 +1,7 @@
 ### Quantum Approximate Optimization Algorithm (QAOA) — complete example.
 
 *Source*: ``examples/2_advanced/algorithms/qaoa.py``  
-*Status*: **not-executed**
+*Status*: **pass**
 
 Demonstrates:
   * Building a QAOA ansatz for MaxCut
@@ -22,7 +22,18 @@ References:
 :language: python
 ```
 
-:::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
-:::
+**Stdout**
+
+```text
+QAOA for MaxCut
+  Graph: 3 edges, 3 nodes
+  Layers (p): 2
+  Max possible cut: 3
+
+  Iter   0: cut ≈ 1.608
+  Iter  20: cut ≈ 2.000
+
+  Best cut value: 2.000 / 3
+  Approximation ratio: 0.667
+```
 

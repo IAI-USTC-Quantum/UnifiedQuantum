@@ -14,7 +14,6 @@ References:
     system from very few measurements." Nature Physics 16, 1050–1057.
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -52,25 +51,22 @@ def run_shadow_demo(n_shots=1000, n_shadow=100):
     shadows = classical_shadow(c, qubits=[0, 1], shots=n_shots, n_shadow=n_shadow)
     print(f"  Collected {len(shadows)} shadow snapshots")
 
-    # 2. Estimate ⟨Z₀⟩
-    obs_z0 = {"Z0": 1.0}
-    est_z0 = shadow_expectation(shadows, obs_z0)
+    # 2. Estimate ⟨Z₀⟩ (Z on qubit 0, identity on qubit 1)
+    est_z0 = shadow_expectation(shadows, "ZI")
     print(f"\n  ⟨Z₀⟩ estimate: {est_z0:.4f} (exact: 0.0)")
 
     # 3. Estimate ⟨Z₀Z₁⟩
-    obs_z0z1 = {"Z0Z1": 1.0}
-    est_z0z1 = shadow_expectation(shadows, obs_z0z1)
+    est_z0z1 = shadow_expectation(shadows, "ZZ")
     print(f"  ⟨Z₀Z₁⟩ estimate: {est_z0z1:.4f} (exact: 1.0)")
 
     # 4. Estimate ⟨X₀⟩
-    obs_x0 = {"X0": 1.0}
-    est_x0 = shadow_expectation(shadows, obs_x0)
+    est_x0 = shadow_expectation(shadows, "XI")
     print(f"  ⟨X₀⟩ estimate: {est_x0:.4f} (exact: 1/√2 ≈ 0.707)")
 
     # 5. Compare with exact values
     from uniqc.simulator.originir_simulator import OriginIR_Simulator
     sim = OriginIR_Simulator(backend_type="statevector")
-    sv = sim.simulate_statevector(c.originir)
+    sv = np.asarray(sim.simulate_statevector(c.originir), dtype=complex)
 
     Z = np.array([[1, 0], [0, -1]])
     I = np.eye(2)

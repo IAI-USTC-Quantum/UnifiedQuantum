@@ -9,7 +9,6 @@ Usage:
     python dicke_state.py [--n-qubits N] [--k K] [--shots N]
 
 [doc-require: ]
-[doc-skip-execute]
 [doc-warning-ignore: DeprecationWarning]
 """
 
@@ -35,7 +34,9 @@ def run_dicke(n_qubits, k, shots):
     c.measure(list(range(n_qubits)))
 
     sim = QASM_Simulator()
-    result = sim.simulate(c.to_qasm(), shots=shots)
+    raw = sim.simulate_shots(c.qasm, shots=shots)
+    # simulate_shots returns int-keyed counts; render as bitstrings.
+    result = {f"{int(k):0{n_qubits}b}": v for k, v in raw.items()}
 
     # Expected number of basis states with exactly k ones
     from math import comb

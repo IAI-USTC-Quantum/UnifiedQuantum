@@ -13,7 +13,6 @@ References:
     James et al. (2001). "Measurement of qubits." Physical Review A 64, 052312.
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -46,33 +45,29 @@ def run_tomography_demo(n_shots=2000):
 
     print(f"\nCircuit: (|00⟩ + i|11⟩)/√2")
 
-    # Perform tomography
-    print(f"\nRunning tomography (3^2 = 9 measurement bases for 2 qubits)...")
-    results = state_tomography(c, qubits=[0, 1], shots=n_shots)
-
-    # Get summary
-    summary = tomography_summary(results, n_qubits=2)
-    print(f"\nTomography complete.")
-    print(f"  Number of measurement bases: {len(results)}")
-    print(f"  Density matrix shape: {summary.shape}")
-
-    # Compare with exact statevector
+    # Compare with exact statevector first (used as the tomography reference).
     from uniqc.simulator.originir_simulator import OriginIR_Simulator
     sim = OriginIR_Simulator(backend_type="statevector")
-    sv = sim.simulate_statevector(c.originir)
+    sv = np.asarray(sim.simulate_statevector(c.originir), dtype=complex)
     exact_rho = np.outer(sv, sv.conj())
 
-    # Compute fidelity
-    fidelity = np.real(np.sqrt(sv.conj() @ summary @ sv)) ** 2
-    print(f"\n  Fidelity with exact state: {fidelity:.6f}")
-    print(f"  Trace of reconstructed ρ: {np.real(np.trace(summary)):.6f}")
+    # Perform tomography (returns the reconstructed density matrix directly).
+    print(f"\nRunning tomography (3^2 = 9 measurement bases for 2 qubits)...")
+    rho = state_tomography(c, qubits=[0, 1], shots=n_shots)
+
+    # Pretty-print summary alongside the exact reference density matrix.
+    summary = tomography_summary(rho, label="ρ_tomo", reference_state=exact_rho)
+    print(f"\nTomography complete.")
+    print(f"  Density matrix shape: {rho.shape}")
+    print(f"  Fidelity ⟨ψ|ρ|ψ⟩: {summary['fidelity']:.6f}")
+    print(f"  Trace of reconstructed ρ: {np.real(np.trace(rho)):.6f}")
 
     # Show diagonal (populations)
     print(f"\n  Populations:")
     for i in range(4):
         basis = format(i, "02b")
         pop_exact = np.real(exact_rho[i, i])
-        pop_tomo = np.real(summary[i, i])
+        pop_tomo = np.real(rho[i, i])
         print(f"    |{basis}⟩: exact={pop_exact:.4f}, tomography={pop_tomo:.4f}")
 
 

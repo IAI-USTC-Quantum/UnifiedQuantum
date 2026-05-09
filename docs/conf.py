@@ -271,10 +271,6 @@ suppress_warnings = [
     "myst.xref_missing",
     "ref.python",
     "docutils",
-    # apidoc occasionally emits "duplicate object description" for modules
-    # that re-export everything from a sub-module (e.g. uniqc.compile.draw
-    # is both a leaf module and re-exported by uniqc.compile). Harmless.
-    "ref.duplicate",
     "autosectionlabel.*",
     "epub.duplicated_toc_entry",
 ]
@@ -394,3 +390,26 @@ latex_elements = {
 
 latex_show_urls = "inline"
 latex_show_pagerefs = True
+
+
+def _skip_duplicate_module_aliases(app, what, name, obj, skip, options):
+    """Skip top-level package members that shadow same-named submodules.
+
+    Some packages expose a lazy delegate (e.g. ``uniqc.compile.draw`` the
+    function in ``uniqc/compile/__init__.py`` vs. the ``uniqc.compile.draw``
+    submodule). Documenting both makes Sphinx register two objects under the
+    fully-qualified name ``uniqc.compile.draw``, which raises
+    "duplicate object description". We keep the canonical submodule entry and
+    drop the top-level alias.
+    """
+    duplicates = {
+        ("uniqc.compile", "draw"),
+    }
+    module = getattr(obj, "__module__", None)
+    if module is not None and (module, name) in duplicates:
+        return True
+    return skip
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", _skip_duplicate_module_aliases)

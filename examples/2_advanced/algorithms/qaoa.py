@@ -15,7 +15,6 @@ References:
     arXiv:1411.4028.
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -73,7 +72,7 @@ def qaoa_energy(betas_gammas, cost_terms, p, n_qubits):
     circuit = qaoa_ansatz(cost_terms, p=p, betas=betas, gammas=gammas)
 
     sim = OriginIR_Simulator(backend_type="statevector")
-    sv = sim.simulate_statevector(circuit.originir)
+    sv = np.asarray(sim.simulate_statevector(circuit.originir), dtype=complex)
 
     # Compute expectation value of each Pauli term
     energy = 0.0

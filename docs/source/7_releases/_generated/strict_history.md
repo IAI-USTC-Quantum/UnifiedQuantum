@@ -26,38 +26,43 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.12..HEAD`
-- 提交数：19
-- 变更文件数：104
+- 提交数：26
+- 变更文件数：489
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `merge` | 7 |
+| `docs` | 6 |
 | `fix` | 5 |
 | `feat` | 3 |
 | `other` | 3 |
+| `build` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 21 个文件
-- `uniqc/algorithms`: 21 个文件
+- `docs`: 284 个文件
+- `examples`: 71 个文件
+- `example-exec-logs`: 50 个文件
+- `uniqc/algorithms`: 22 个文件
 - `uniqc/test`: 19 个文件
 - `uniqc/backend_adapter`: 11 个文件
-- `examples`: 5 个文件
 - `uniqc/calibration`: 5 个文件
-- `uniqc/cli`: 3 个文件
+- `uniqc/cli`: 4 个文件
+- `scripts`: 3 个文件
 - `.claude`: 2 个文件
 - `uniqc/compile`: 2 个文件
+- `.github`: 1 个文件
 - `CHANGELOG.md`: 1 个文件
+- `CONTRIBUTING.md`: 1 个文件
 - `README.md`: 1 个文件
 - `README_en.md`: 1 个文件
 - `conftest.py`: 1 个文件
 - `frontend`: 1 个文件
 - `pyproject.toml`: 1 个文件
 - `pytest.ini`: 1 个文件
-- `scripts`: 1 个文件
 - `uniqc/_error_hints.py`: 1 个文件
 - `uniqc/config.py`: 1 个文件
 - `uniqc/exceptions.py`: 1 个文件
@@ -87,6 +92,13 @@
 - `c54019c` Merge pull request #88 from IAI-USTC-Quantum/feat/parallel-cz-xeb-and-preflight
 - `16c7f9d` fix(cli,backend): JSON-serialize UnifiedResult; reject bare 'dummy'; flatten mps form
 - `2b1c4e1` Merge pull request #89 from IAI-USTC-Quantum/fix/dummy-naming-and-cli-json
+- `b72358a` build(docs): add two-step doc pipeline + switch theme to Furo
+- `872399a` docs(examples): reorganize examples/ into chapter-numbered directories
+- `b5a53d4` docs: replace 6-area structure with 8 chapter-numbered sections
+- `53040fe` docs: commit example-exec-logs/ + _generated/ from initial pipeline run
+- `68e9474` docs: update CONTRIBUTING / README / docstrings for new doc structure
+- `089c634` docs(examples): pull aux dirs into chapter structure with directives
+- `3678316` docs: restore deep prose + integrate aux examples + silence warning noise
 
 ## v0.0.12
 

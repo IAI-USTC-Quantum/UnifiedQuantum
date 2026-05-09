@@ -21,7 +21,7 @@
 **Stdout**
 
 ```text
-written to: /tmp/uniqc-config-demo-g7srbl75/config.yaml
+written to: /tmp/uniqc-config-demo-6btr5c0v/config.yaml
 active profile: demo
 originq token (redacted): originq-token-redacted
 validation errors: []

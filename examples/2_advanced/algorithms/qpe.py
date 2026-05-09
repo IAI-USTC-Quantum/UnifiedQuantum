@@ -17,7 +17,6 @@ References:
     the Quantum Fourier Transform." https://arxiv.org/abs/quant-ph/9904026
 
 [doc-require: ]
-[doc-skip-execute]
 """
 
 import argparse
@@ -283,7 +282,7 @@ def run_qpe(
 
     # Find most likely outcome
     m_estimated = max(counts, key=counts.get)
-    m_int = int(m_estimated, 2)
+    m_int = m_estimated if isinstance(m_estimated, int) else int(m_estimated, 2)
     estimated_phase = m_int / (2**n_precision)
 
     return estimated_phase, true_phase, phase_counts

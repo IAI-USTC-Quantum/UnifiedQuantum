@@ -1,7 +1,7 @@
 ### Variational Quantum Deflation (VQD) — complete example.
 
 *Source*: ``examples/2_advanced/circuits/vqd.py``  
-*Status*: **not-executed**
+*Status*: **pass**
 
 Demonstrates:
   * Finding the ground state of H = Z₀ + Z₁ using VQE (layer 0)
@@ -22,7 +22,21 @@ References:
 :language: python
 ```
 
-:::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
-:::
+**Stdout**
+
+```text
+=== VQD Example: H = Z₀ + ... + Z_{n-1} on 2 qubits ===
+n_layers=2, penalty=10.0, n_params=4
+
+Exact eigenvalues: [-2.  0.  0.  2.]
+
+--- Step 1: VQE (ground state) ---
+VQE ground state energy: -2.000000  (exact: -2.000000)
+
+--- Step 2: VQD (first excited state) ---
+VQD first excited state energy: -0.000000  (exact: 0.000000)
+Overlap with ground state: 0.000000
+
+✓ Run complete.
+```
 
