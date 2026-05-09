@@ -9,6 +9,7 @@ __all__ = ["rotation_prepare"]
 from typing import List, Optional
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _apply_multiplexed_ry(
@@ -119,15 +120,15 @@ def rotation_prepare(
     d = len(target_vector)
 
     if d == 0:
-        raise ValueError("target_vector must not be empty")
+        raise ValueError(format_enriched_message("target_vector must not be empty", "circuit_validation"))
 
     n = int(round(np.log2(d)))
     if 2**n != d:
-        raise ValueError(f"target_vector length ({d}) must be a power of 2")
+        raise ValueError(format_enriched_message(f"target_vector length ({d}) must be a power of 2", "circuit_validation"))
 
     norm = np.linalg.norm(target_vector)
     if norm < 1e-15:
-        raise ValueError("target_vector must not be the zero vector")
+        raise ValueError(format_enriched_message("target_vector must not be the zero vector", "circuit_validation"))
 
     alpha = target_vector / norm
 

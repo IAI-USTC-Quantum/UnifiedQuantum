@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from uniqc._error_hints import format_enriched_message
+
 __all__ = [
     "run_readout_em_workflow",
     "apply_readout_em",
@@ -115,7 +117,7 @@ def apply_readout_em(
     elif isinstance(result, dict):
         counts = result.get("counts", result.get("result", {}).get("counts", {}))
     else:
-        raise TypeError(f"Unsupported result type: {type(result)}")
+        raise TypeError(format_enriched_message(f"Unsupported result type: {type(result)}", "circuit_validation"))
 
     if isinstance(counts, dict) and counts and isinstance(next(iter(counts)), str):
         counts = {int(k): v for k, v in counts.items()}

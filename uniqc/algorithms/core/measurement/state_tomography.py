@@ -8,6 +8,7 @@ import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
 from uniqc.utils.expectation import calculate_expectation
+from uniqc._error_hints import format_enriched_message
 
 
 def _build_tomography_circuit(circuit: Circuit, basis: tuple[str, ...]) -> str:
@@ -87,7 +88,7 @@ def state_tomography(
         0.5
     """
     if shots is not None and (not isinstance(shots, int) or shots <= 0):
-        raise ValueError(f"shots must be a positive integer, got {shots}")
+        raise ValueError(format_enriched_message(f"shots must be a positive integer, got {shots}", "measurement"))
 
     n_qubits = circuit.max_qubit + 1
 
@@ -96,10 +97,10 @@ def state_tomography(
     else:
         qubits = list(qubits)
         if len(qubits) == 0:
-            raise ValueError("qubits list cannot be empty")
+            raise ValueError(format_enriched_message("qubits list cannot be empty", "measurement"))
         if any(q < 0 or q >= n_qubits for q in qubits):
             raise ValueError(
-                f"qubits must be within circuit range 0..{n_qubits - 1}"
+                format_enriched_message(f"qubits must be within circuit range 0..{n_qubits - 1}", "measurement")
             )
 
     n = len(qubits)

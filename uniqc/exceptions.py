@@ -87,21 +87,34 @@ __all__ = [
 class UnifiedQuantumError(Exception):
     """Base exception for all UnifiedQuantum errors."""
 
-    def __init__(self, message: str, *, details: dict | None = None) -> None:
+    def __init__(self, message: str, *, details: dict | None = None, hint_key: str | None = None) -> None:
         """Initialize the error.
 
         Args:
             message: Human-readable error message.
             details: Optional dictionary with additional error details.
+            hint_key: Optional hint key for error enrichment.
         """
         super().__init__(message)
         self.message = message
         self.details = details or {}
+        self.hint_key = hint_key
 
     def __str__(self) -> str:
+        from uniqc._error_hints import format_enriched_message, get_hint_key_for_exception
+
         if self.details:
-            return f"{self.message} (details: {self.details})"
-        return self.message
+            parts = [f"{self.message} (details: {self.details})"]
+        else:
+            parts = [self.message]
+
+        key = self.hint_key or get_hint_key_for_exception(type(self))
+        if key:
+            enriched = format_enriched_message("", key)
+            if enriched:
+                parts.append(enriched)
+
+        return "\n".join(parts)
 
 
 # -----------------------------------------------------------------------------

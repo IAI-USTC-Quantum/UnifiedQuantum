@@ -7,6 +7,7 @@ import numpy as np
 
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc._error_hints import format_enriched_message
 
 
 def basis_rotation_measurement(
@@ -76,10 +77,10 @@ def basis_rotation_measurement(
     # here so users get an actionable error instead of bad numbers.
     if not getattr(circuit, "measure_list", None):
         raise ValueError(
-            "basis_rotation_measurement requires the circuit to already contain "
+            format_enriched_message("basis_rotation_measurement requires the circuit to already contain "
             "MEASURE instructions (e.g. `circuit.measure(*qubits)`); "
             "without them, basis rotations cannot be injected and the "
-            "returned distribution would silently be wrong for X/Y bases."
+            "returned distribution would silently be wrong for X/Y bases.", "measurement")
         )
 
     if qubits is None:
@@ -96,26 +97,26 @@ def basis_rotation_measurement(
         basis_strs = list(basis.upper())
         if len(basis_strs) != n:
             raise ValueError(
-                f"basis string length ({len(basis_strs)}) must match "
-                f"len(qubits) ({n})"
+                format_enriched_message(f"basis string length ({len(basis_strs)}) must match "
+                f"len(qubits) ({n})", "measurement")
             )
     elif isinstance(basis, list):
         if len(basis) != n:
             raise ValueError(
-                f"len(basis) ({len(basis)}) must match len(qubits) ({n})"
+                format_enriched_message(f"len(basis) ({len(basis)}) must match len(qubits) ({n})", "measurement")
             )
         basis_strs = [b.upper() for b in basis]
     else:
-        raise TypeError(f"basis must be str, list, or None, got {type(basis).__name__}")
+        raise TypeError(format_enriched_message(f"basis must be str, list, or None, got {type(basis).__name__}", "measurement"))
 
     for b in basis_strs:
         if b not in ("I", "X", "Y", "Z"):
             raise ValueError(
-                f"basis must only contain I/X/Y/Z, got: {b!r}"
+                format_enriched_message(f"basis must only contain I/X/Y/Z, got: {b!r}", "measurement")
             )
 
     if shots is not None and (not isinstance(shots, int) or shots <= 0):
-        raise ValueError(f"shots must be a positive integer, got {shots}")
+        raise ValueError(format_enriched_message(f"shots must be a positive integer, got {shots}", "measurement"))
 
     # Build rotation gate injection map per qubit index
     rot_gates: dict[int, list[str]] = {i: [] for i in range(n)}

@@ -8,6 +8,7 @@ import numpy as np
 
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc._error_hints import format_enriched_message
 
 
 def _parity(bitstring: str, pauli_string: str) -> int:
@@ -136,23 +137,23 @@ def _normalize_pauli_string(
         for item in pauli_spec:
             if not (isinstance(item, tuple) and len(item) == 2):
                 raise ValueError(
-                    "pauli_string list entries must be (Pauli, qubit) tuples, "
-                    f"got: {item!r}"
+                    format_enriched_message("pauli_string list entries must be (Pauli, qubit) tuples, "
+                    f"got: {item!r}", "measurement")
                 )
             op, idx = item
             op = str(op).upper()
             if op not in ("I", "X", "Y", "Z"):
-                raise ValueError(f"pauli_string contains invalid operator: {op!r}")
+                raise ValueError(format_enriched_message(f"pauli_string contains invalid operator: {op!r}", "measurement"))
             if not isinstance(idx, int) or idx < 0 or idx >= n_qubits:
                 raise ValueError(
-                    f"pauli_string qubit index out of range [0, {n_qubits}): {idx!r}"
+                    format_enriched_message(f"pauli_string qubit index out of range [0, {n_qubits}): {idx!r}", "measurement")
                 )
             out[idx] = op
         return "".join(out)
 
     if not isinstance(pauli_spec, str):
         raise ValueError(
-            f"pauli_string must be a str or list[(op, qubit)], got: {type(pauli_spec).__name__}"
+            format_enriched_message(f"pauli_string must be a str or list[(op, qubit)], got: {type(pauli_spec).__name__}", "measurement")
         )
 
     upper = pauli_spec.upper().replace(" ", "")
@@ -164,7 +165,7 @@ def _normalize_pauli_string(
             idx = int(idx_str)
             if idx < 0 or idx >= n_qubits:
                 raise ValueError(
-                    f"pauli_string qubit index out of range [0, {n_qubits}): {idx}"
+                    format_enriched_message(f"pauli_string qubit index out of range [0, {n_qubits}): {idx}", "measurement")
                 )
             out[idx] = op
         return "".join(out)
@@ -172,13 +173,13 @@ def _normalize_pauli_string(
     # Form 1: compact string
     if len(upper) != n_qubits:
         raise ValueError(
-            f"pauli_string length ({len(upper)}) must match circuit n_qubits "
-            f"({n_qubits}), or use indexed form like 'Z0Z1' / [('Z', 0), ('Z', 1)]"
+            format_enriched_message(f"pauli_string length ({len(upper)}) must match circuit n_qubits "
+            f"({n_qubits}), or use indexed form like 'Z0Z1' / [('Z', 0), ('Z', 1)]", "measurement")
         )
     for ch in upper:
         if ch not in ("I", "X", "Y", "Z"):
             raise ValueError(
-                f"pauli_string must contain only I/X/Y/Z, got: {pauli_spec!r}"
+                format_enriched_message(f"pauli_string must contain only I/X/Y/Z, got: {pauli_spec!r}", "measurement")
             )
     return upper
 
@@ -244,7 +245,7 @@ def pauli_expectation(
 
     if shots is not None:
         if not isinstance(shots, int) or shots <= 0:
-            raise ValueError(f"shots must be a positive integer, got: {shots}")
+            raise ValueError(format_enriched_message(f"shots must be a positive integer, got: {shots}", "measurement"))
         return _shots_expectation(circuit, pauli_upper, shots)
 
     return _statevector_expectation(circuit, pauli_upper)
@@ -279,7 +280,7 @@ class PauliExpectation:
         n_qubits = circuit.max_qubit + 1
         pauli_upper = _normalize_pauli_string(pauli_string, n_qubits)
         if shots is not None and (not isinstance(shots, int) or shots <= 0):
-            raise ValueError(f"shots must be a positive integer, got: {shots}")
+            raise ValueError(format_enriched_message(f"shots must be a positive integer, got: {shots}", "measurement"))
         self.circuit = circuit.copy()
         self.pauli_string = pauli_upper
         self.shots = shots
@@ -315,8 +316,8 @@ class PauliExpectation:
         """
         if program_type != "qasm":
             raise ValueError(
-                f"PauliExpectation currently supports program_type='qasm' only, "
-                f"got {program_type!r}"
+                format_enriched_message(f"PauliExpectation currently supports program_type='qasm' only, "
+                f"got {program_type!r}", "measurement")
             )
         if self.shots is None:
             return _statevector_expectation(self.circuit, self.pauli_string)

@@ -27,6 +27,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from uniqc._error_hints import format_enriched_message
+
 try:
     import pandas as pd
 except ImportError:
@@ -185,8 +187,8 @@ def schedule_circuit(
     if not has_explicit_start_times:
         if not compile_to_basis:
             raise TimelineDurationError(
-                "Timeline scheduling requires compiling logical circuits to basis gates first. "
-                "Use compile_to_basis=True, or pass pulse/timeline data with explicit start times."
+                format_enriched_message("Timeline scheduling requires compiling logical circuits to basis gates first. "
+                "Use compile_to_basis=True, or pass pulse/timeline data with explicit start times.", "visualization")
             )
         compiled_prog = _compile_to_basis_for_timeline(
             compiled_prog,
@@ -657,18 +659,18 @@ def _duration_for_gate(gate_name: str, qubits: tuple[int, ...], durations: dict[
         if "MEASURE" in durations:
             return durations["MEASURE"]
         if strict:
-            raise TimelineDurationError(_missing_duration_message(gate_name, "measure"))
+            raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "measure"), "visualization"))
         return 0.0
     if len(qubits) >= 2 or upper in _TWO_QUBIT_GATES:
         if "2Q" in durations:
             return durations["2Q"]
         if strict:
-            raise TimelineDurationError(_missing_duration_message(gate_name, "2q"))
+            raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "2q"), "visualization"))
         return 0.0
     if "1Q" in durations:
         return durations["1Q"]
     if strict:
-        raise TimelineDurationError(_missing_duration_message(gate_name, "1q"))
+        raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "1q"), "visualization"))
     return 0.0
 
 

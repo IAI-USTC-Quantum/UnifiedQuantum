@@ -5,6 +5,7 @@ __all__ = ["thermal_state"]
 from typing import List, Optional
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def thermal_state(
@@ -38,7 +39,7 @@ def thermal_state(
         >>> thermal_state(c, beta=1.0, qubits=[0])
     """
     if beta < 0:
-        raise ValueError(f"beta must be non-negative, got {beta}")
+        raise ValueError(format_enriched_message(f"beta must be non-negative, got {beta}", "circuit_validation"))
 
     if hamiltonian is None:
         # Default: H = Σ Z_i, independent qubits
@@ -56,7 +57,7 @@ def thermal_state(
         hamiltonian = np.asarray(hamiltonian, dtype=complex)
         d = hamiltonian.shape[0]
         if hamiltonian.shape != (d, d):
-            raise ValueError("hamiltonian must be a square matrix")
+            raise ValueError(format_enriched_message("hamiltonian must be a square matrix", "circuit_validation"))
 
         if qubits is None:
             n = int(round(np.log2(d)))
@@ -66,7 +67,7 @@ def thermal_state(
 
         if d != 2**n:
             raise ValueError(
-                f"hamiltonian dimension ({d}) must equal 2^n = {2**n}"
+                format_enriched_message(f"hamiltonian dimension ({d}) must equal 2^n = {2**n}", "circuit_validation")
             )
 
         eigenvalues, eigenvectors = np.linalg.eigh(hamiltonian)

@@ -9,6 +9,7 @@ __all__ = ["dicke_state"]
 from typing import List, Optional
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def dicke_state(
@@ -48,9 +49,9 @@ def dicke_state(
     n = len(qubits)
 
     if k < 0:
-        raise ValueError(f"k must be non-negative, got {k}")
+        raise ValueError(format_enriched_message(f"k must be non-negative, got {k}", "circuit_validation"))
     if k > n:
-        raise ValueError(f"k ({k}) must not exceed n ({n})")
+        raise ValueError(format_enriched_message(f"k ({k}) must not exceed n ({n})", "circuit_validation"))
     if k == 0:
         return  # |00...0> already prepared
     if k == n:

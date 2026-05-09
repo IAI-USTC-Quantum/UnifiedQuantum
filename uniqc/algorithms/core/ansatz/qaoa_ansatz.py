@@ -9,6 +9,7 @@ __all__ = ["qaoa_ansatz"]
 from typing import List, Optional, Tuple
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
@@ -150,9 +151,9 @@ def qaoa_ansatz(
     gammas = np.asarray(gammas)
 
     if len(betas) != p:
-        raise ValueError(f"betas length ({len(betas)}) must equal p ({p})")
+        raise ValueError(format_enriched_message(f"betas length ({len(betas)}) must equal p ({p})", "circuit_validation"))
     if len(gammas) != p:
-        raise ValueError(f"gammas length ({len(gammas)}) must equal p ({p})")
+        raise ValueError(format_enriched_message(f"gammas length ({len(gammas)}) must equal p ({p})", "circuit_validation"))
 
     circuit = Circuit()
 

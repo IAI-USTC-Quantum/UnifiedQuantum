@@ -11,6 +11,7 @@ from typing import List, Optional
 import math
 
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _gate_i(circuit: Circuit, q0: int, q1: int, n: int) -> None:
@@ -73,7 +74,7 @@ def _build_dicke_fragment(
         qubits = list(range(n_qubits))
     n = len(qubits)
     if k < 1 or k > n:
-        raise ValueError(f"k must satisfy 1 <= k <= n (got k={k}, n={n})")
+        raise ValueError(format_enriched_message(f"k must satisfy 1 <= k <= n (got k={k}, n={n})", "circuit_validation"))
 
     fragment = Circuit()
     # Use the verified state-vector-then-prepare implementation

@@ -10,6 +10,7 @@ from typing import List, Optional
 
 import numpy as np
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def hea(
@@ -57,7 +58,7 @@ def hea(
         params = np.asarray(params)
         if len(params) != n_params:
             raise ValueError(
-                f"Expected {n_params} parameters, got {len(params)}"
+                format_enriched_message(f"Expected {n_params} parameters, got {len(params)}", "circuit_validation")
             )
 
     circuit = Circuit()

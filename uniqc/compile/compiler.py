@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING, Literal
 from ._utils import CompilationFailedError
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
 
+from uniqc._error_hints import format_enriched_message
+
 if TYPE_CHECKING:
     from uniqc.backend_adapter.backend_info import BackendInfo
     from uniqc.circuit_builder import Circuit
@@ -60,9 +62,9 @@ class TranspilerConfig:
 
     def __post_init__(self) -> None:
         if self.type not in ("qiskit",):
-            raise ValueError(f"Unsupported transpiler type: {self.type!r}. Only 'qiskit' is supported.")
+            raise ValueError(format_enriched_message(f"Unsupported transpiler type: {self.type!r}. Only 'qiskit' is supported.", "compilation"))
         if not 0 <= self.level <= 3:
-            raise ValueError(f"optimization_level must be 0–3, got {self.level}")
+            raise ValueError(format_enriched_message(f"optimization_level must be 0–3, got {self.level}", "compilation"))
         object.__setattr__(self, "basis_gates", tuple(self.basis_gates or _DEFAULT_BASIS_GATES))
 
 
@@ -188,8 +190,11 @@ def compile_with_config(
         topology = [(e.u, e.v) for e in config.chip_characterization.connectivity]
     else:
         raise ValueError(
-            "compile() requires either backend_info.topology or "
-            "chip_characterization.connectivity to determine the coupling map."
+            format_enriched_message(
+                "compile() requires either backend_info.topology or "
+                "chip_characterization.connectivity to determine the coupling map.",
+                "compilation",
+            )
         )
 
     # If the caller restricted the chip to a subset of physical qubits
@@ -300,7 +305,7 @@ def compile_full(
     elif config.chip_characterization is not None and config.chip_characterization.connectivity:
         topology = [(e.u, e.v) for e in config.chip_characterization.connectivity]
     else:
-        raise ValueError("compile_full() requires either backend_info.topology or chip_characterization.connectivity.")
+        raise ValueError(format_enriched_message("compile_full() requires either backend_info.topology or chip_characterization.connectivity.", "compilation"))
 
     # Restrict the coupling map to user-allowed physical qubits, if any.
     if available_qubits is not None:
@@ -370,8 +375,11 @@ def _load_transpile_qasm():
         from .qiskit_transpiler import transpile_qasm
     except ImportError as exc:
         raise CompilationFailedError(
-            "compile() requires the optional qiskit dependencies. "
-            "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`."
+            format_enriched_message(
+                "compile() requires the optional qiskit dependencies. "
+                "Install unified-quantum[qiskit] or run with `uv run --extra qiskit ...`.",
+                "compilation",
+            )
         ) from exc
     return transpile_qasm
 

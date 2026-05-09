@@ -16,6 +16,7 @@ import warnings
 from typing import List, Optional
 
 from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def deutsch_jozsa_oracle(
@@ -39,9 +40,9 @@ def deutsch_jozsa_oracle(
         A new :class:`Circuit` containing the oracle gates.
     """
     if not isinstance(qubits, list):
-        raise TypeError("qubits must be a list of qubit indices")
+        raise TypeError(format_enriched_message("qubits must be a list of qubit indices", "circuit_validation"))
     if len(qubits) < 1:
-        raise ValueError("qubits must contain at least 1 data qubit")
+        raise ValueError(format_enriched_message("qubits must contain at least 1 data qubit", "circuit_validation"))
 
     n_qubits = len(qubits)
     ancilla = max(qubits) + 1
@@ -57,7 +58,7 @@ def deutsch_jozsa_oracle(
     for idx in target_bits:
         if idx < 0 or idx >= n_qubits:
             raise ValueError(
-                f"target_bit {idx} out of range for {n_qubits} data qubits"
+                format_enriched_message(f"target_bit {idx} out of range for {n_qubits} data qubits", "circuit_validation")
             )
         oracle.cnot(qubits[idx], ancilla)
 
@@ -71,17 +72,17 @@ def _build_dj_fragment(
     ancilla: Optional[int] = None,
 ) -> Circuit:
     if not isinstance(qubits, list):
-        raise TypeError("qubits must be a list of qubit indices")
+        raise TypeError(format_enriched_message("qubits must be a list of qubit indices", "circuit_validation"))
     if len(qubits) < 1:
-        raise ValueError("qubits must contain at least 1 data qubit")
+        raise ValueError(format_enriched_message("qubits must contain at least 1 data qubit", "circuit_validation"))
 
     n_data = len(qubits)
     if ancilla is None:
         ancilla = max(qubits) + 1
     if oracle.qubit_num > 0 and oracle.qubit_num != n_data + 1:
         raise ValueError(
-            f"Oracle acts on {oracle.qubit_num} qubits, "
-            f"expected {n_data + 1} (data + ancilla)"
+            format_enriched_message(f"Oracle acts on {oracle.qubit_num} qubits, "
+            f"expected {n_data + 1} (data + ancilla)", "circuit_validation")
         )
 
     fragment = Circuit()
@@ -129,7 +130,7 @@ def deutsch_jozsa_circuit(
     # Resolve dispatch
     if len(args) == 0:
         if oracle is None:
-            raise TypeError("deutsch_jozsa_circuit requires an oracle Circuit argument")
+            raise TypeError(format_enriched_message("deutsch_jozsa_circuit requires an oracle Circuit argument", "circuit_validation"))
         return _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
 
     if len(args) == 1:

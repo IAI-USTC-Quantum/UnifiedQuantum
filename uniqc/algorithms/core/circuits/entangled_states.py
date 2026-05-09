@@ -26,13 +26,14 @@ from typing import List, Optional, Tuple
 from uniqc.circuit_builder import Circuit
 from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc.algorithms.core.circuits.dicke_state import dicke_state_circuit
+from uniqc._error_hints import format_enriched_message
 
 
 def _build_ghz_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits))
     if len(qubits) < 2:
-        raise ValueError("ghz_state requires at least 2 qubits")
+        raise ValueError(format_enriched_message("ghz_state requires at least 2 qubits", "circuit_validation"))
     fragment = Circuit()
     fragment.h(qubits[0])
     for i in range(len(qubits) - 1):
@@ -80,7 +81,7 @@ def _build_w_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> C
     if qubits is None:
         qubits = list(range(n_qubits))
     if len(qubits) < 2:
-        raise ValueError("w_state requires at least 2 qubits")
+        raise ValueError(format_enriched_message("w_state requires at least 2 qubits", "circuit_validation"))
     # Build a fresh circuit and use the (already-fragment-style)
     # ``dicke_state_circuit`` to populate it with k=1.
     fragment = Circuit()
@@ -116,7 +117,7 @@ def _build_cluster_fragment(
         qubits = list(range(n_qubits))
     n = len(qubits)
     if n < 1:
-        raise ValueError("cluster_state requires at least 1 qubit")
+        raise ValueError(format_enriched_message("cluster_state requires at least 1 qubit", "circuit_validation"))
     fragment = Circuit()
     for q in qubits:
         fragment.h(q)
@@ -125,7 +126,7 @@ def _build_cluster_fragment(
     for src_idx, tgt_idx in edges:
         if src_idx >= n or tgt_idx >= n:
             raise ValueError(
-                f"Edge ({src_idx}, {tgt_idx}) out of range for {n} qubits"
+                format_enriched_message(f"Edge ({src_idx}, {tgt_idx}) out of range for {n} qubits", "circuit_validation")
             )
         fragment.cz(qubits[src_idx], qubits[tgt_idx])
     return fragment

@@ -7,6 +7,7 @@ import math
 
 from uniqc.circuit_builder import Circuit
 from uniqc.algorithms._compat import dispatch_circuit_fragment
+from uniqc._error_hints import format_enriched_message
 
 
 def _build_thermal_fragment(
@@ -16,7 +17,7 @@ def _build_thermal_fragment(
     beta: float = 1.0,
 ) -> Circuit:
     if beta < 0:
-        raise ValueError(f"beta must be non-negative, got {beta}")
+        raise ValueError(format_enriched_message(f"beta must be non-negative, got {beta}", "circuit_validation"))
     if qubits is None:
         qubits = list(range(n_qubits))
     exp_beta = math.exp(beta)
