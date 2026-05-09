@@ -19,7 +19,6 @@ const PLATFORM_FILTERS = [
   { id: "originq", label: "OriginQ" },
   { id: "ibm", label: "IBM" },
   { id: "quark", label: "Quark" },
-  { id: "quafu", label: "Quafu (deprecated)" },
 ] as const;
 const DEFAULT_PLATFORM_FILTERS: PlatformFilter[] = ["originq", "ibm", "quark"];
 
@@ -48,7 +47,6 @@ function fmtAge(seconds: number | null | undefined): string {
 }
 
 function statusForBackend(backend: BackendSummary): string {
-  if (backend.platform === "quafu") return "deprecated";
   if (backend.available) return "available";
   if (backend.status_kind === "deprecated") return "deprecated";
   if (backend.status_kind === "busy") return "running";

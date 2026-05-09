@@ -32,6 +32,9 @@ pip install unified-quantum
 # 本地模拟（Dummy 模式）
 pip install unified-quantum[simulation]
 
+# QuarkStudio / Quark 云平台（要求 Python ≥ 3.12）
+pip install unified-quantum[quark]
+
 # 全部维护中的可选依赖
 pip install unified-quantum[all]
 ```
@@ -42,8 +45,8 @@ pip install unified-quantum[all]
 
 ```bash
 uniqc config set originq.token "your-api-key"
-uniqc config set quafu.token "your-quafu-token"
 uniqc config set ibm.token "your-ibm-token"
+uniqc config set quark.host "your-quark-host"
 ```
 
 ### 基本用法

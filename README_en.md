@@ -187,6 +187,7 @@ Core dependencies (including `scipy`) are included by default.
 | Feature | Install command (uv) | pip fallback |
 |---------|---------------------|-------------|
 | OriginQ cloud | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
+| QuarkStudio / Quark cloud (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
 | Advanced simulation (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | Visualization | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
