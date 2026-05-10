@@ -12,8 +12,12 @@ from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_h
 
 HELP = f"Submit circuits to quantum cloud platforms\n  {build_ref_str('submit')}"
 INPUT_FILES_ARGUMENT = typer.Argument(..., help="Circuit file(s) to submit", exists=True)
-PLATFORM_OPTION = typer.Option(..., "--platform", "-p", help="Platform: originq/quafu/quark/ibm/dummy")
-BACKEND_OPTION = typer.Option(None, "--backend", "-b", help="Backend name (e.g., 'WK_C180' for OriginQ)")
+BACKEND_OPTION = typer.Option(
+    "dummy:local:simulator",
+    "--backend",
+    "-b",
+    help="Backend ID: 'originq:WK_C180', 'dummy:local:virtual-line-3', 'dummy:originq:WK_C180', etc. Default: dummy:local:simulator",
+)
 SHOTS_OPTION = typer.Option(1000, "--shots", "-s", help="Number of measurement shots")
 NAME_OPTION = typer.Option(None, "--name", help="Task name")
 WAIT_OPTION = typer.Option(False, "--wait", "-w", help="Wait for result after submission")
@@ -29,8 +33,7 @@ DRY_RUN_OPTION = typer.Option(
 
 def _handle_dry_run(
     circuits: list[str],
-    platform: str,
-    backend_name: str | None,
+    backend: str,
     shots: int,
     format: str,
 ) -> bool:
@@ -39,23 +42,12 @@ def _handle_dry_run(
 
     parsed = [_parse_to_circuit(c) for c in circuits]
 
-    # Build kwargs for backend-specific options.
-    kwargs: dict = {}
-    if backend_name and platform != "dummy":
-        if platform == "originq":
-            kwargs["backend_name"] = backend_name
-        elif platform in ("ibm", "quafu", "quark"):
-            kwargs["chip_id"] = backend_name
-
-    backend_key = _dummy_backend_id(backend_name) if platform == "dummy" else platform
-
     results: list[DryRunResult] = []
     for circuit in parsed:
         result = dry_run_task(
             circuit,
-            backend=backend_key,
+            backend=backend,
             shots=shots,
-            **kwargs,
         )
         results.append(result)
 
@@ -64,7 +56,7 @@ def _handle_dry_run(
         print_json(
             {
                 "dry_run": True,
-                "platform": platform,
+                "backend": backend,
                 "results": [
                     {
                         "success": r.success,
@@ -81,14 +73,14 @@ def _handle_dry_run(
         )
     else:
         if len(results) == 1:
-            _print_dry_run_result(results[0], platform)
+            _print_dry_run_result(results[0])
         else:
-            _print_dry_run_results(results, platform)
+            _print_dry_run_results(results)
 
     return all(result.success for result in results)
 
 
-def _print_dry_run_result(result: DryRunResult, platform: str) -> None:
+def _print_dry_run_result(result: DryRunResult) -> None:
     """Print a single dry-run result in human-readable format."""
     from .output import print_error, print_success, print_warning
 
@@ -108,7 +100,7 @@ def _print_dry_run_result(result: DryRunResult, platform: str) -> None:
         print(f"  Backend: {result.backend_name}")
 
 
-def _print_dry_run_results(results: list[DryRunResult], platform: str) -> None:
+def _print_dry_run_results(results: list[DryRunResult]) -> None:
     """Print multiple dry-run results as a table."""
     rows = []
     for i, r in enumerate(results):
@@ -129,8 +121,7 @@ def _print_dry_run_results(results: list[DryRunResult], platform: str) -> None:
 
 def submit(
     input_files: list[Path] = INPUT_FILES_ARGUMENT,
-    platform: str = PLATFORM_OPTION,
-    backend: str | None = BACKEND_OPTION,
+    backend: str = BACKEND_OPTION,
     shots: int = SHOTS_OPTION,
     name: str | None = NAME_OPTION,
     wait: bool = WAIT_OPTION,
@@ -146,14 +137,13 @@ def submit(
       - Check result: uniqc result <TASK_ID>
       - List all tasks: uniqc task list
       - Validate config first: uniqc config validate
-      - Pick a backend: uniqc backend list --platform <PLATFORM>
+      - Pick a backend: uniqc backend list
+      - Backend naming convention: see docs for 1_basic_usage/submit_task
     """
     if ai_hints_enabled(ai_hints):
         print_ai_hints("submit")
 
-    if platform not in ("originq", "quafu", "quark", "ibm", "dummy"):
-        print_error(f"Unknown platform: {platform}. Use originq/quafu/quark/ibm/dummy.")
-        raise typer.Exit(1)
+    backend = _normalize_backend_id(backend)
 
     circuits = []
     for path in input_files:
@@ -161,20 +151,20 @@ def submit(
 
     # Dry-run: validate without submitting
     if dry_run:
-        success = _handle_dry_run(circuits, platform, backend, shots, format)
+        success = _handle_dry_run(circuits, backend, shots, format)
         raise typer.Exit(0 if success else 1)
 
     try:
         if len(circuits) == 1:
-            task_id = _submit_single(circuits[0], platform, backend, shots, name)
+            task_id = _submit_single(circuits[0], backend, shots, name)
             if format == "json":
-                print_json({"task_id": task_id, "platform": platform, "shots": shots})
+                print_json({"task_id": task_id, "backend": backend, "shots": shots})
             else:
                 print_success(f"Task submitted: {task_id}")
         else:
-            task_ids = _submit_batch(circuits, platform, backend, shots, name)
+            task_ids = _submit_batch(circuits, backend, shots, name)
             if format == "json":
-                print_json({"task_ids": task_ids, "platform": platform, "shots": shots})
+                print_json({"task_ids": task_ids, "backend": backend, "shots": shots})
             else:
                 print_table(
                     "Submitted Tasks",
@@ -186,7 +176,7 @@ def submit(
         raise typer.Exit(1) from e
 
     if wait and len(circuits) == 1:
-        _wait_and_show(task_id, platform, timeout, format)
+        _wait_and_show(task_id, backend, timeout, format)
 
 
 def _parse_to_circuit(circuit_text: str):
@@ -206,49 +196,53 @@ def _parse_to_circuit(circuit_text: str):
         return qasm_parser.to_circuit()
 
 
-def _dummy_backend_id(backend_name: str | None) -> str:
-    if not backend_name:
+def _normalize_backend_id(backend: str) -> str:
+    """Normalize a backend identifier to its canonical form.
+
+    Rules:
+      - ``'dummy'`` → ``'dummy:local:simulator'``
+      - Already canonical forms (``'dummy:local:*'``, ``'dummy:<p>:<c>'``,
+        ``'originq:WK_C180'``, …) pass through unchanged.
+      - Bare topology/MPS names (``'virtual-line-3'``, ``'mps-linear-32'``)
+        get the ``'dummy:local:'`` prefix.
+      - Bare platform names (``'originq'``, ``'quafu'``, …) are rejected
+        with a helpful error message.
+    """
+    if backend == "dummy":
         return "dummy:local:simulator"
-    if backend_name.startswith("dummy:"):
-        return backend_name
-    if backend_name in ("dummy", "dummy:local"):
-        # Reject the legacy bare alias loudly so users adopt the canonical form.
-        raise typer.BadParameter(
-            f"Backend identifier {backend_name!r} is not allowed. Use "
-            "'dummy:local:simulator', 'dummy:local:virtual-line-N', "
-            "'dummy:local:virtual-grid-RxC', or 'dummy:<provider>:<chip>'."
-        )
-    if backend_name in ("local", "local:simulator", "simulator"):
+    if backend.startswith("dummy:"):
+        return backend
+    if backend in ("local", "local:simulator", "simulator"):
         return "dummy:local:simulator"
     # Local topology / MPS suffixes get the canonical 'dummy:local:' prefix.
-    if (
-        backend_name.startswith(("virtual-line-", "virtual-grid-", "mps-linear-"))
-        or backend_name == "simulator"
-    ):
-        return f"dummy:local:{backend_name}"
-    # Otherwise treat as 'dummy:<provider>:<chip>'.
-    return f"dummy:{backend_name}"
+    if backend.startswith(("virtual-line-", "virtual-grid-", "mps-linear-")):
+        return f"dummy:local:{backend}"
+    # Bare platform names are not allowed — guide users to the full identifier.
+    if backend in ("originq", "quafu", "quark", "ibm"):
+        raise typer.BadParameter(
+            f"Bare platform name {backend!r} is not a valid backend identifier. "
+            f"Use '{backend}:<chip>' (e.g. '{backend}:WK_C180'). "
+            f"Run 'uniqc backend list -p {backend}' to see available chips."
+        )
+    # Everything else is assumed to be a valid provider:chip identifier.
+    return backend
 
 
-def _submit_single(circuit: str, platform: str, backend_name: str | None, shots: int, name: str | None) -> str:
+def _submit_single(circuit: str, backend: str, shots: int, name: str | None) -> str:
     """Submit a single circuit using the unified task_manager API."""
     from uniqc.backend_adapter.task_manager import submit_task
 
     parsed_circuit = _parse_to_circuit(circuit)
 
-    # Build kwargs for backend-specific options
     kwargs: dict = {"shots": shots}
-    if backend_name and platform != "dummy":
-        kwargs["backend_name"] = backend_name
     if name:
         kwargs["metadata"] = {"task_name": name}
 
-    backend = _dummy_backend_id(backend_name) if platform == "dummy" else platform
     return submit_task(parsed_circuit, backend=backend, **kwargs)
 
 
 def _submit_batch(
-    circuits: list[str], platform: str, backend_name: str | None, shots: int, name: str | None
+    circuits: list[str], backend: str, shots: int, name: str | None
 ) -> list[str]:
     """Submit multiple circuits using the unified task_manager API."""
     from uniqc.backend_adapter.task_manager import submit_batch
@@ -260,18 +254,13 @@ def _submit_batch(
 
     parsed_circuits = [_parse_to_circuit(c) for c in circuits]
 
-    # Build kwargs for backend-specific options
     kwargs: dict = {"shots": shots}
-    if backend_name and platform != "dummy":
-        kwargs["backend_name"] = backend_name
-
-    backend = _dummy_backend_id(backend_name) if platform == "dummy" else platform
 
     return submit_batch(parsed_circuits, backend=backend, **kwargs)
 
 
-def _wait_and_show(task_id: str, platform: str, timeout: float, format: str) -> None:
+def _wait_and_show(task_id: str, backend: str, timeout: float, format: str) -> None:
     """Wait for task result and display it."""
     from .result import show_result
 
-    show_result(task_id, platform=platform, wait=True, timeout=timeout, format=format)
+    show_result(task_id, wait=True, timeout=timeout, format=format)

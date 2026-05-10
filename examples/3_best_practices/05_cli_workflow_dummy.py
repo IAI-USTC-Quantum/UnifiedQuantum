@@ -3,12 +3,12 @@
 [doc-require: ]
 [doc-output-include: stdout, source]
 
-通过 ``subprocess.run`` 执行 CLI：写出 OriginIR 文件，``uniqc submit --platform dummy --wait``，
+通过 ``subprocess.run`` 执行 CLI：写出 OriginIR 文件，``uniqc submit --backend dummy --wait``，
 并展示返回结果。
 
-* ``--platform dummy`` 默认对应无约束、无噪声的 ``dummy``；
-* 可通过 ``--backend virtual-line-3`` 指定虚拟拓扑；
-* 也可通过 ``--backend originq:WK_C180`` 走真实 backend compile/transpile + 本地含噪执行。
+* ``--backend dummy``（默认）对应无约束、无噪声的 ``dummy:local:simulator``；
+* 可通过 ``--backend dummy:local:virtual-line-3`` 指定虚拟拓扑；
+* 也可通过 ``--backend dummy:originq:WK_C180`` 走真实 backend compile/transpile + 本地含噪执行。
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ def main() -> None:
         "uniqc.cli",
         "submit",
         str(circuit_file),
-        "-p",
+        "--backend",
         "dummy",
         "-s",
         "64",

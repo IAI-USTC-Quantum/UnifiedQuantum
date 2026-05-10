@@ -62,9 +62,8 @@ def test_submit_accepts_options_after_input_files(tmp_path: Path, monkeypatch):
 
     seen: dict[str, object] = {}
 
-    def fake_submit_single(circuit: str, platform: str, backend_name: str | None, shots: int, name: str | None) -> str:
-        seen["platform"] = platform
-        seen["backend_name"] = backend_name
+    def fake_submit_single(circuit: str, backend: str, shots: int, name: str | None) -> str:
+        seen["backend"] = backend
         seen["shots"] = shots
         seen["name"] = name
         seen["circuit"] = circuit
@@ -72,11 +71,11 @@ def test_submit_accepts_options_after_input_files(tmp_path: Path, monkeypatch):
 
     monkeypatch.setattr(submit_module, "_submit_single", fake_submit_single)
 
-    result = runner.invoke(app, ["submit", str(input_file), "--platform", "dummy"])
+    result = runner.invoke(app, ["submit", str(input_file), "--backend", "dummy"])
 
     assert result.exit_code == 0, result.stdout
     assert "task-123" in result.stdout
-    assert seen["platform"] == "dummy"
+    assert seen["backend"] == "dummy:local:simulator"
     assert isinstance(seen["circuit"], str)
 
 
@@ -86,7 +85,7 @@ def test_submit_dry_run_failure_exits_nonzero(tmp_path: Path, monkeypatch):
 
     monkeypatch.setattr(submit_module, "_handle_dry_run", lambda *args, **kwargs: False)
 
-    result = runner.invoke(app, ["submit", str(input_file), "--platform", "dummy", "--dry-run"])
+    result = runner.invoke(app, ["submit", str(input_file), "--backend", "dummy", "--dry-run"])
 
     assert result.exit_code == 1
 

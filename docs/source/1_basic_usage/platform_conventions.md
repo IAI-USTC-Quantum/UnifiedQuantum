@@ -449,22 +449,25 @@ opts = DummyOptions(
 )
 ```
 
-### CLI 中的 Dummy 平台
+### CLI 中的 Dummy 后端
 
-在 CLI 中使用 `--platform dummy` 等效于选择 dummy backend id：
+CLI 使用 `--backend` 指定后端标识符，默认为 `dummy:local:simulator`：
 
 ```bash
-# 无约束、无噪声
-uniqc submit circuit.ir --platform dummy --shots 1000 --wait
+# 无约束、无噪声（简写）
+uniqc submit circuit.ir --backend dummy --shots 1000 --wait
+
+# 等价于不传 --backend（默认即 dummy:local:simulator）
+uniqc submit circuit.ir --shots 1000 --wait
 
 # 虚拟线性拓扑
-uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
+uniqc submit circuit.ir --backend dummy:local:virtual-line-3 --shots 1000 --wait
 
 # 真实 backend 的本地含噪仿真
-uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
+uniqc submit circuit.ir --backend dummy:originq:WK_C180 --shots 1000 --wait
 
 # 试运行验证
-uniqc submit circuit.ir --platform dummy --dry-run
+uniqc submit circuit.ir --backend dummy --dry-run
 ```
 
 ---

@@ -9,11 +9,11 @@
 * ``uniqc --help``
 * ``uniqc backend list``
 * ``uniqc simulate <file>``
-* ``uniqc submit <file> -p dummy --wait``
+* ``uniqc submit <file> --backend dummy --wait``
 * ``uniqc result <task_id>``
 * ``uniqc task list``
 
-需要真实 token 的子命令（``uniqc config set originq.token ...``、``uniqc submit -p originq``、
+需要真实 token 的子命令（``uniqc config set originq.token ...``、``uniqc submit --backend originq:...``、
 ``uniqc calibrate xeb``）只演示帮助文本，不会真的提交。
 """
 
@@ -57,8 +57,8 @@ def main() -> None:
     print("== uniqc simulate bell.originir --shots 256 ==")
     print(_run(["simulate", str(bell), "--shots", "256"]))
 
-    print("== uniqc submit bell.originir -p dummy -s 64 --wait --format json ==")
-    out = _run(["submit", str(bell), "-p", "dummy", "-s", "64", "--wait", "--format", "json"])
+    print("== uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==")
+    out = _run(["submit", str(bell), "--backend", "dummy", "-s", "64", "--wait", "--format", "json"])
     print(out)
 
     try:

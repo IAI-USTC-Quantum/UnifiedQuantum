@@ -178,6 +178,62 @@ originq_backend = backend.get_backend('originq')
 print(f"OriginQ available: {originq_backend.is_available()}")
 ```
 
+## 后端命名规则 {#guide-submit-task-backend-naming}
+
+`submit_task()` 和 CLI 的 `--backend` 参数均使用统一的后端标识符格式。
+
+### 格式说明
+
+- **云平台后端**：`provider:chip-name`（如 `originq:WK_C180`）
+- **本地 dummy 后端**：以 `dummy` 开头（如 `dummy:local:simulator`）
+
+### 命名规则与典型示例
+
+| 后端 ID | 含义 |
+|---------|------|
+| `originq:WK_C180` | OriginQ 180 比特真机 |
+| `originq:full_amplitude` | OriginQ 全振幅模拟器 |
+| `quafu:ScQ-P18` | Quafu 18 比特真机 |
+| `ibm:ibm_brisbane` | IBM Brisbane 真机 |
+| `dummy` 或 `dummy:local:simulator` | 无约束、无噪声本地模拟器 |
+| `dummy:local:virtual-line-N` | N 比特线性拓扑，无噪声 |
+| `dummy:local:virtual-grid-RxC` | R×C 网格拓扑，无噪声 |
+| `dummy:local:mps-linear-N` | N 比特 MPS 模拟器（线性链） |
+| `dummy:<platform>:<backend>` | 复用真实 backend 拓扑和标定数据的本地含噪模拟 |
+
+> `dummy:<platform>:<backend>` 是规则型写法，不需要提前注册，也不会出现在 `uniqc backend list` 的列表中。运行时会解析真实 backend 的拓扑和标定数据，先 compile/transpile，再在本地执行含噪模拟。
+
+### MPS 隐式参数
+
+MPS（Matrix Product State）模拟器支持通过后缀传递隐式参数，格式为：
+
+```
+dummy:local:mps-linear-N:chi=<bond_dim>:cutoff=<threshold>
+```
+
+| 参数 | 含义 | 默认值 |
+|------|------|--------|
+| `chi` | MPS bond dimension（键维度） | 取决于电路规模 |
+| `cutoff` | SVD 截断阈值 | `1e-10` |
+
+这些参数可选，省略时使用默认值。
+
+```python
+from uniqc import submit_task
+
+# 使用默认参数
+task_id = submit_task(circuit, backend='dummy:local:mps-linear-32')
+
+# 指定 bond dimension 和截断阈值
+task_id = submit_task(circuit, backend='dummy:local:mps-linear-32:chi=64:cutoff=1e-10')
+```
+
+CLI 中同样适用：
+
+```bash
+uniqc submit circuit.ir --backend dummy:local:mps-linear-32:chi=64:cutoff=1e-10
+```
+
 ## Dummy 模式（本地模拟） {#guide-submit-task-dummy}
 
 Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。通过 backend 名称前缀 ``dummy`` 激活。
