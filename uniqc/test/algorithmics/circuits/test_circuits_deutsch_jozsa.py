@@ -38,7 +38,7 @@ class TestDeutschJozsaCircuit:
 
     def test_constant_oracle_measures_all_zero(self):
         """Constant oracle → measurement result should be all zeros."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         n = 3
         oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=False)
@@ -46,7 +46,7 @@ class TestDeutschJozsaCircuit:
         # Use explicit qubits: data qubits 0,1,2 and ancilla qubit 3
         deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=n + 1)
+        sim = Simulator(backend_type="statevector", n_qubits=n + 1)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
         # LSB-first statevector: qubit k = bit k of index. Data qubits are
@@ -58,14 +58,14 @@ class TestDeutschJozsaCircuit:
 
     def test_balanced_oracle_measures_non_zero(self):
         """Balanced oracle → measurement result should NOT be all zeros."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         n = 3
         oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=True)
         c = Circuit()
         deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=n + 1)
+        sim = Simulator(backend_type="statevector", n_qubits=n + 1)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 
@@ -77,13 +77,13 @@ class TestDeutschJozsaCircuit:
 
     def test_1qubit_deutsch_balanced(self):
         """1-qubit Deutsch problem with balanced oracle should give non-zero."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         oracle = deutsch_jozsa_oracle(qubits=[0], balanced=True)
         c = Circuit()
         deutsch_jozsa_circuit(c, oracle, qubits=[0], ancilla=1)
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=2)
+        sim = Simulator(backend_type="statevector", n_qubits=2)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 

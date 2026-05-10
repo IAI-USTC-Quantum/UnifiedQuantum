@@ -335,9 +335,8 @@ nitpick_ignore = [
     # Classes re-exported from sub-package __init__; canonical location is the
     # sub-module, so the short re-export path won't resolve.
     ("py:class", "uniqc.circuit_builder.Circuit"),
-    ("py:class", "uniqc.simulator.OriginIR_Simulator"),
-    ("py:class", "uniqc.simulator.OriginIR_NoisySimulator"),
-    ("py:class", "uniqc.simulator.QASM_Simulator"),
+    ("py:class", "uniqc.simulator.Simulator"),
+    ("py:class", "uniqc.simulator.NoisySimulator"),
     ("py:class", "uniqc.simulator.OpcodeSimulator"),
     ("py:class", "uniqc.algorithms.core.measurement.classical_shadow.ShadowSnapshot"),
     ("py:class", "uniqc.circuit_builder.qcircuit.CircuitDagContext"),

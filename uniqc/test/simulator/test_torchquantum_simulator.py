@@ -10,13 +10,13 @@ torchquantum = pytest.importorskip("torchquantum", reason="torchquantum not inst
 import torch
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc.simulator.torchquantum_simulator import TORCHQUANTUM_AVAILABLE, TorchQuantumSimulator
 
 
 @pytest.fixture
 def cpp_sim():
-    return OriginIR_Simulator(backend_type="statevector")
+    return Simulator(backend_type="statevector")
 
 
 class TestGateMapping:

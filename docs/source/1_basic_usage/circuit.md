@@ -176,8 +176,8 @@ print(U.shape)           # (4, 4)
 若线路中包含 `MEASURE` / `CONTROL` / `DAGGER` 等无 unitary 表示的 opcode，会抛出 `NotMatrixableError`。如果只想看演化后的态矢，推荐使用状态向量模拟器：
 
 ```python
-from uniqc.simulator import OriginIR_Simulator
-sim = OriginIR_Simulator(backend_type='statevector')
+from uniqc.simulator import Simulator
+sim = Simulator(backend_type='statevector')
 psi = sim.simulate_statevector(c.originir)
 ```
 

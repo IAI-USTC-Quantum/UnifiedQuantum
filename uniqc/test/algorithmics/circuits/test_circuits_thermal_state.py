@@ -14,8 +14,8 @@ class TestThermalStateCircuit:
 
     def _simulate_1qubit(self, c):
         """Helper: simulate a 1-qubit circuit and return probabilities."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=1)
+        from uniqc.simulator import Simulator
+        sim = Simulator(backend_type="statevector", n_qubits=1)
         result = sim.simulate_statevector(c.qasm)
         return np.abs(result) ** 2
 

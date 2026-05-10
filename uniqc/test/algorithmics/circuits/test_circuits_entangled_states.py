@@ -11,8 +11,8 @@ from uniqc.algorithms.core.circuits import ghz_state, w_state, cluster_state
 
 def _simulate_probs(circuit, n_qubits):
     """Helper: run statevector simulation and return probability array."""
-    from uniqc.simulator.qasm_simulator import QASM_Simulator
-    sim = QASM_Simulator(backend_type='statevector', n_qubits=n_qubits)
+    from uniqc.simulator import Simulator
+    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
     result = sim.simulate_statevector(circuit.qasm)
     probs = np.abs(result) ** 2
     return probs

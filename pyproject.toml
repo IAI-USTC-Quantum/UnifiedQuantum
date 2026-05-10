@@ -107,6 +107,7 @@ dev = [
 ]
 docs = [
     "sphinx",
+    "furo",
     "pydata-sphinx-theme",
     "sphinx_rtd_theme",
     "recommonmark",

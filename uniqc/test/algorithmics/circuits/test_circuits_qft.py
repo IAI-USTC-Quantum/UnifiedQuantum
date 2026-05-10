@@ -14,12 +14,12 @@ class TestQFTCircuit:
 
     def test_3qubit_qft_uniform_distribution(self):
         """3-qubit QFT on |0⟩ should produce uniform probability 1/8 for each basis state."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         c = Circuit()
         qft_circuit(c, qubits=[0, 1, 2])
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=3)
+        sim = Simulator(backend_type="statevector", n_qubits=3)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 
@@ -28,7 +28,7 @@ class TestQFTCircuit:
 
     def test_1qubit_qft_is_hadamard(self):
         """1-qubit QFT on |0⟩ is equivalent to a single H gate."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         # QFT circuit
         c_qft = Circuit()
@@ -38,7 +38,7 @@ class TestQFTCircuit:
         c_h = Circuit()
         c_h.h(0)
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=1)
+        sim = Simulator(backend_type="statevector", n_qubits=1)
         r_qft = sim.simulate_statevector(c_qft.qasm)
         r_h = sim.simulate_statevector(c_h.qasm)
 
@@ -60,7 +60,7 @@ class TestQFTCircuit:
 
     def test_qft_then_iqft_identity(self):
         """QFT followed by inverse QFT should return to |0⟩."""
-        from uniqc.simulator.qasm_simulator import QASM_Simulator
+        from uniqc.simulator import Simulator
 
         c = Circuit()
         qft_circuit(c, qubits=[0, 1, 2], swaps=True)
@@ -83,7 +83,7 @@ class TestQFTCircuit:
                 c.rz(qubits[k], -angle / 2)
             c.h(qubits[j])
 
-        sim = QASM_Simulator(backend_type="statevector", n_qubits=3)
+        sim = Simulator(backend_type="statevector", n_qubits=3)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 

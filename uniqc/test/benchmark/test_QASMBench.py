@@ -2,7 +2,7 @@ import numpy as np
 from uniqc.compile.qasm import OpenQASM2_BaseParser, OpenQASM2_LineParser
 from pathlib import Path
 import pickle
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc.test._utils import uniq_test, NotMatchError
 from uniqc.compile.qasm import NotSupportedGateError
 
@@ -55,7 +55,7 @@ def _check_result(transpiled_circuit, reference_result, backend_type):
 
     #print('Testing circuit: ', transpiled_circuit)
     #print('Reference Result: ', reference_result)
-    qasm_simulator = QASM_Simulator(backend_type)
+    qasm_simulator = Simulator(backend_type, least_qubit_remapping=False)
     my_result = qasm_simulator.simulate_stateprob(transpiled_circuit)
 
     if len(reference_array) != len(my_result):

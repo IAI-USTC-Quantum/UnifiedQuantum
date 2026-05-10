@@ -2,12 +2,11 @@
 
 Two ways to obtain a simulator:
 
-- :func:`create_simulator` (recommended) — factory keyed by ``backend`` then
-  ``program_type``. Accepts both names and aliases.
-- :func:`get_simulator` — alias of :func:`create_simulator` with the same
-  ``(backend_type, program_type)`` argument order.
+- :func:`create_simulator` (recommended) — factory keyed by ``backend``.
+  Optionally pass ``noise=True`` to get a :class:`NoisySimulator`.
+- :func:`get_simulator` — alias of :func:`create_simulator`.
 
-Concrete simulator classes (``OriginIR_Simulator``, ``QASM_Simulator``,
+Concrete simulator classes (``Simulator``, ``NoisySimulator``,
 ``MPSSimulator``, ``TorchQuantumSimulator``, ``OpcodeSimulator``) and
 common error-model classes (``Depolarizing``, ``AmplitudeDamping`` …) are
 re-exported here so users do not need to know the submodule layout.
@@ -47,9 +46,8 @@ from .mps_simulator import MPSConfig as MPSConfig
 from .mps_simulator import MPSSimulator as MPSSimulator
 from .opcode_simulator import OpcodeSimulator as OpcodeSimulator
 from .opcode_simulator import backend_alias as backend_alias
-from .originir_simulator import OriginIR_NoisySimulator as OriginIR_NoisySimulator
-from .originir_simulator import OriginIR_Simulator as OriginIR_Simulator
-from .qasm_simulator import QASM_Simulator as QASM_Simulator
+from .simulator import NoisySimulator as NoisySimulator
+from .simulator import Simulator as Simulator
 
 try:
     from .torchquantum_simulator import TORCHQUANTUM_AVAILABLE as TORCHQUANTUM_AVAILABLE
@@ -64,9 +62,8 @@ __all__ = [
     "get_backend",
     # concrete simulators
     "OpcodeSimulator",
-    "OriginIR_Simulator",
-    "OriginIR_NoisySimulator",
-    "QASM_Simulator",
+    "Simulator",
+    "NoisySimulator",
     "MPSSimulator",
     "MPSConfig",
     "TorchQuantumSimulator",

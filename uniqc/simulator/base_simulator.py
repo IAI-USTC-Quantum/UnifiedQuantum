@@ -25,7 +25,7 @@ class BaseSimulator:
 
     This class describes common behaviors of simulators.
     It is not designed to be used directly; instead, it should be subclassed
-    by specific simulators (e.g., OriginIR_Simulator, QASM_Simulator).
+    by specific simulators (e.g., Simulator).
     """
 
     def __init__(self, backend_type = 'statevector',                                  
@@ -157,28 +157,94 @@ class BaseSimulator:
         checks topology constraints, and returns processed program body and
         measurement qubits.
 
+        Accepts either a string (OriginIR or QASM, depending on the subclass
+        parser) **or** a :class:`uniqc.Circuit` object.  When a ``Circuit`` is
+        passed, the parser is bypassed and opcodes are read directly from
+        ``circuit.opcode_list``.
+
         Args:
-            originir: Quantum program in the simulator's input format.
+            originir: Quantum program in the simulator's input format, or a
+                :class:`uniqc.Circuit`.
 
         Returns:
             Tuple containing the processed program body and measurement qubits.
         """
+        from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
+
         self._clear()
+
+        if isinstance(originir, _Circuit):
+            return self._simulate_from_circuit(originir)
+
         self.parser.parse(originir)
         # update self.qubit_mapping
         self._extract_actual_used_qubits()
 
         if self.available_qubits or self.available_topology:
             self._check_available_qubits()
-        
+
         processed_program_body = self._process_program_body()
         measure_qubit = self._process_measure()
-        
+
         # self.qubit_num = len(self.qubit_mapping)
         measure_qubit_cbit = sorted(measure_qubit, key = lambda k : k[1], reverse=False)
         measure_qubit = []
         for qubit in measure_qubit_cbit:
             measure_qubit.append(qubit[0])
+
+        return processed_program_body, measure_qubit
+
+    def _simulate_from_circuit(self, circuit):
+        """Simulate directly from a Circuit object, bypassing the parser.
+
+        Extracts opcodes and measurement info from the Circuit's attributes
+        (``opcode_list``, ``measure_list``) and applies the same qubit
+        remapping and topology checks as the string-based path.
+        """
+        # Build qubit mapping from opcodes
+        for opcode in circuit.opcode_list:
+            operation, qubit, cbit, parameter, dagger_flag, control_qubits = opcode
+            if isinstance(qubit, list):
+                for q in qubit:
+                    self._add_used_qubit(int(q))
+            elif qubit is not None:
+                self._add_used_qubit(int(qubit))
+
+        # Add measure qubits to mapping
+        for qubit in circuit.measure_list:
+            self._add_used_qubit(int(qubit))
+
+        if not self.least_qubit_remapping:
+            self.qubit_num = max(self.qubit_mapping.keys()) + 1
+            self.qubit_mapping = {q: q for q in range(self.qubit_num)}
+        else:
+            self.qubit_num = max(self.qubit_mapping.values()) + 1
+
+        if self.available_qubits or self.available_topology:
+            self._check_available_qubits()
+
+        # Process program body (apply qubit mapping, skip MEASURE)
+        processed_program_body = []
+        for opcode in circuit.opcode_list:
+            operation, qubit, cbit, parameter, dagger_flag, control_qubits = opcode
+            if self.available_topology and isinstance(qubit, list):
+                self._check_topology(qubit)
+            if qubit is not None:
+                if isinstance(qubit, list):
+                    mapped_qubit = [self.qubit_mapping[q] for q in qubit]
+                else:
+                    mapped_qubit = self.qubit_mapping[qubit]
+            processed_program_body.append(
+                (operation, mapped_qubit, cbit, parameter, dagger_flag, control_qubits)
+            )
+
+        # Process measurements (circuit.measure_list: qubit indices; cbit = list index)
+        measure_qubit_cbit = []
+        for i, qubit in enumerate(circuit.measure_list):
+            mapped = self.qubit_mapping[int(qubit)]
+            measure_qubit_cbit.append((mapped, i))
+        measure_qubit_cbit.sort(key=lambda k: k[1])
+        measure_qubit = [q for q, _ in measure_qubit_cbit]
 
         return processed_program_body, measure_qubit
     

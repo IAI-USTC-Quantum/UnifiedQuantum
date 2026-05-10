@@ -134,67 +134,11 @@ ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
 def _normalize_circuit_input(circuit: Any) -> Circuit:
     """Auto-detect input type and convert to :class:`uniqc.Circuit`.
 
-    Accepted input types:
-
-    - :class:`uniqc.Circuit` — returned as-is.
-    - :class:`str` — parsed as OriginIR or OpenQASM 2.0 based on content
-      heuristics (``QINIT`` → OriginIR, ``OPENQASM`` / ``qreg`` → QASM).
-    - ``qiskit.QuantumCircuit`` — exported via ``.qasm()`` then parsed.
-
-    Not supported (by design): pyqpanda3 native types, Quark native APIs.
-
-    Args:
-        circuit: Circuit in any supported format.
-
-    Returns:
-        A :class:`uniqc.Circuit` instance.
-
-    Raises:
-        TypeError: If the input type is not recognized.
-        CircuitTranslationError: If parsing or conversion fails.
+    Delegates to :func:`uniqc.circuit_builder.normalize.normalize_circuit_input`.
     """
-    from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
+    from uniqc.circuit_builder.normalize import normalize_circuit_input
 
-    if isinstance(circuit, _Circuit):
-        return circuit
-
-    if isinstance(circuit, str):
-        stripped = circuit.lstrip()
-        if stripped.startswith("QINIT") or "\nCREG " in stripped[:200]:
-            return _Circuit.from_originir(circuit)
-        if stripped.startswith("OPENQASM") or "qreg " in stripped[:200] or "gate " in stripped[:200]:
-            return _Circuit.from_qasm(circuit)
-        # Fallback: try OriginIR first (primary format), then QASM
-        try:
-            return _Circuit.from_originir(circuit)
-        except Exception:
-            pass
-        try:
-            return _Circuit.from_qasm(circuit)
-        except Exception:
-            raise TypeError(
-                f"Could not parse circuit string. Tried both OriginIR and "
-                f"OpenQASM 2.0 formats. First 80 chars: {circuit[:80]!r}"
-            ) from None
-
-    # Lazy check for qiskit.QuantumCircuit (avoid hard import)
-    try:
-        from qiskit import QuantumCircuit as _QiskitQC
-        if isinstance(circuit, _QiskitQC):
-            # qiskit 2.x removed .qasm(); use qiskit.qasm2.dumps() instead.
-            try:
-                from qiskit.qasm2 import dumps as _qasm2_dumps
-                qasm_str = _qasm2_dumps(circuit)
-            except ImportError:
-                qasm_str = circuit.qasm()
-            return _Circuit.from_qasm(qasm_str)
-    except ImportError:
-        pass
-
-    raise TypeError(
-        f"Unsupported circuit type: {type(circuit).__name__}. "
-        f"Expected uniqc.Circuit, str (OriginIR/QASM), or qiskit.QuantumCircuit."
-    )
+    return normalize_circuit_input(circuit).circuit
 
 
 def _get_adapter(backend_name: str) -> CircuitAdapter:

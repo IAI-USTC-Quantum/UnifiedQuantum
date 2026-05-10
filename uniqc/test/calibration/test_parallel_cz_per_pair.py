@@ -44,7 +44,7 @@ def test_pair_marginal_counts_handles_int_keys():
 def test_pair_ideal_probs_matches_full_simulation_for_disjoint_pairs():
     """For a circuit with disjoint CZ pairs, the 2-qubit subcircuit
     distribution must equal the marginal of the full distribution."""
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
     region = (0, 1, 2, 3)
     pattern = ((0, 1), (2, 3))
@@ -75,7 +75,7 @@ def test_pair_ideal_probs_matches_full_simulation_for_disjoint_pairs():
             c.cz(a, b)
     for q in region:
         c.measure(q)
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     full_probs = np.asarray(sim.simulate_pmeasure(c.originir), dtype=float)
 
     # Marginal on (0,1): sum over q2, q3 (bits 2 and 3). idx = (q1<<1)|q0.
@@ -93,7 +93,7 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
     """At depth 1, a single Haar layer + CZ has F_XEB = D <P_id^2>_meas - 1
     averaged over Haar-random circuits ≈ (D-1)/(D+1) ≈ 0.6 for D=4. With
     perfect simulation and many shots, the fit should give alpha close to 1."""
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
     region = [0, 1]
     patterns = [[(0, 1)]]
@@ -102,7 +102,7 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
     corpus = build_parallel_cz_xeb_corpus(
         region, patterns, depths, instances, seed=2026,
     )
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     rng = np.random.default_rng(0)
     records = []
     for pc in corpus:
@@ -132,7 +132,7 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
 def test_per_pair_F_XEB_detects_depolarising_decay():
     """Manually inject a depolarising channel (mix ideal with uniform) and
     verify the fitted alpha matches the depolarising survival rate."""
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
     region = [0, 1]
     patterns = [[(0, 1)]]
@@ -141,7 +141,7 @@ def test_per_pair_F_XEB_detects_depolarising_decay():
     corpus = build_parallel_cz_xeb_corpus(
         region, patterns, depths, instances, seed=11,
     )
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     rng = np.random.default_rng(0)
     p_per_cycle = 0.9  # survival rate per cycle
     records = []

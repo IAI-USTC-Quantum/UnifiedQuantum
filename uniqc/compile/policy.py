@@ -92,7 +92,7 @@ def resolve_basis_gates(
 
 
 def compile_for_backend(
-    circuit: Circuit,
+    circuit,
     backend_info: BackendInfo,
     *,
     level: int = 2,
@@ -110,7 +110,9 @@ def compile_for_backend(
     Parameters
     ----------
     circuit :
-        Source UnifiedQuantum :class:`Circuit`.
+        The input circuit. Accepts a :class:`uniqc.Circuit`, an OriginIR
+        string, an OpenQASM 2.0 string, or a ``qiskit.QuantumCircuit``.
+        Normalization is delegated to :func:`uniqc.compile.compile`.
     backend_info :
         Target backend descriptor. Topology and ``num_qubits`` are used by
         the routing pass.
@@ -119,7 +121,8 @@ def compile_for_backend(
     output_format :
         ``"circuit"`` (default) returns a :class:`Circuit`;
         ``"originir"`` returns an OriginIR string;
-        ``"qasm"`` returns an OpenQASM 2.0 string.
+        ``"qasm"`` returns an OpenQASM 2.0 string;
+        ``"auto"`` matches the detected input format.
 
     Returns
     -------

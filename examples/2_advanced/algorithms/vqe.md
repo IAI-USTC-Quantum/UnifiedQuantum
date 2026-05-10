@@ -42,7 +42,7 @@ expectation value over $\boldsymbol{\theta}$, we approach $E_0$.
 |-----------|--------|------|
 | `uccsd_ansatz` | `algorithmics.ansatz` | Parameterised trial state |
 | `pauli_expectation` | `algorithmics.measurement` | Energy measurement |
-| `OriginIR_Simulator` | `simulator` | Statevector simulation |
+| `Simulator` | `simulator` | Statevector simulation |
 
 ### H₂ Molecule
 
@@ -106,7 +106,7 @@ In production, use scipy's `COBYLA` or `SLSQP`.
 - **Larger molecules**: Extend to LiH, BeH₂, H₂O by expanding the Hamiltonian.
 - **Better ansätze**: Try Hardware-Efficient Ansatz (`hea`) for NISQ devices.
 - **Noise mitigation**: Use `classical_shadow` for efficient measurement.
-- **Shot-based simulation**: Replace statevector with `QASM_Simulator` for
+- **Shot-based simulation**: Replace statevector with `Simulator` for
   realistic measurement statistics.
 
 ## References

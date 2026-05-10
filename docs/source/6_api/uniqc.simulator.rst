@@ -12,9 +12,8 @@ Submodules
    uniqc.simulator.get_backend
    uniqc.simulator.mps_simulator
    uniqc.simulator.opcode_simulator
-   uniqc.simulator.originir_simulator
-   uniqc.simulator.qasm_simulator
    uniqc.simulator.qutip_sim_impl
+   uniqc.simulator.simulator
    uniqc.simulator.torchquantum_simulator
 
 Module contents

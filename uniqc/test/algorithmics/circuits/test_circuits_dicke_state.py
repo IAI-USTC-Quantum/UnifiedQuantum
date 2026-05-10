@@ -5,12 +5,12 @@ import pytest
 
 from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.circuits import dicke_state_circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 
 
 def _simulate(circuit, n):
     """Run statevector simulation and return probability array."""
-    sim = QASM_Simulator(backend_type='statevector', n_qubits=n)
+    sim = Simulator(backend_type='statevector', n_qubits=n)
     result = sim.simulate_statevector(circuit.qasm)
     return np.abs(result) ** 2
 

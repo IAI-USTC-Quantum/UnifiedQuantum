@@ -9,8 +9,8 @@ from uniqc.algorithms.core.circuits import grover_oracle, grover_diffusion
 
 def _simulate_probs(circuit, n_qubits):
     """Helper: run statevector simulation and return probability dict."""
-    from uniqc.simulator.qasm_simulator import QASM_Simulator
-    sim = QASM_Simulator(backend_type='statevector', n_qubits=n_qubits)
+    from uniqc.simulator import Simulator
+    sim = Simulator(backend_type='statevector', n_qubits=n_qubits)
     result = sim.simulate_statevector(circuit.qasm)
     probs = np.abs(result) ** 2
     prob_dict = {}

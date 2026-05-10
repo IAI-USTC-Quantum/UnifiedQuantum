@@ -1,4 +1,5 @@
-from .qcircuit import Circuit
+from .qcircuit import AnyQuantumCircuit, Circuit
+from .normalize import NormalizedCircuit, normalize_circuit_input, resolve_output_format
 from .matrix import get_matrix, NotMatrixableError
 from .qubit import Qubit, QReg, QRegSlice
 from .parameter import Parameter, Parameters

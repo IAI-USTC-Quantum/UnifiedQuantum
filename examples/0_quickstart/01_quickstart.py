@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from uniqc import Circuit, submit_task, wait_for_result
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def main() -> None:
@@ -26,7 +26,7 @@ def main() -> None:
     print("== OriginIR ==")
     print(circuit.originir)
 
-    sim = OriginIR_Simulator()
+    sim = Simulator()
     counts = sim.simulate_shots(circuit.originir, shots=1024)
     print("== Local simulator counts ==")
     print(counts)

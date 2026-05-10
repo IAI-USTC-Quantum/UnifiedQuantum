@@ -26,7 +26,7 @@ import math
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import (
     amplitude_estimation_circuit,
     amplitude_estimation_result,
@@ -101,8 +101,8 @@ def run_qae(n_qubits: int, n_eval_qubits: int, marked_state: int, shots: int = 4
 
     # Simulate via OriginIR (its toffoli decomposition is wider; QASM2 export
     # rejects nested controlled-CCZ produced by the QAE wrapper).
-    from uniqc.simulator import OriginIR_Simulator
-    sim = OriginIR_Simulator()
+    from uniqc.simulator import Simulator
+    sim = Simulator()
     result = sim.simulate_shots(c.originir, shots=shots)
 
     # Convert to bit-strings

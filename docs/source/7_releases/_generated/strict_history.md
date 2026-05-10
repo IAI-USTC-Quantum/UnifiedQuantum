@@ -7,9 +7,6 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
-| `v0.0.12` | `2026-05-07` | v0.0.12 — uniqc-managed task ID indirection layer (uqt_*) + native batch + cloud error propagation |
-| `v0.0.11.post1` | `2026-05-07` | v0.0.11.post1: chip-backed dummy relayout hotfix |
-| `v0.0.11` | `2026-05-07` | Release 0.0.11 |
 | `v0.0.10` | `2026-05-05` | Release v0.0.10 |
 | `v0.0.9` | `2026-05-04` | v0.0.9: Calibration/QEM/XEB, calibrate CLI, dummy backend unification, 30+ bug fixes |
 | `v0.0.8` | `2026-05-03` | v0.0.8 |
@@ -25,36 +22,46 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.12..HEAD`
-- 提交数：26
-- 变更文件数：489
+- 对比区间：`v0.0.10..HEAD`
+- 提交数：73
+- 变更文件数：589
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `merge` | 7 |
-| `docs` | 6 |
-| `fix` | 5 |
-| `feat` | 3 |
-| `other` | 3 |
+| `fix` | 22 |
+| `merge` | 14 |
+| `docs` | 13 |
+| `feat` | 13 |
+| `other` | 6 |
+| `chore` | 2 |
 | `build` | 1 |
+| `release` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 284 个文件
+- `docs`: 288 个文件
 - `examples`: 71 个文件
+- `uniqc/test`: 53 个文件
 - `example-exec-logs`: 50 个文件
-- `uniqc/algorithms`: 22 个文件
-- `uniqc/test`: 19 个文件
-- `uniqc/backend_adapter`: 11 个文件
-- `uniqc/calibration`: 5 个文件
-- `uniqc/cli`: 4 个文件
+- `uniqc/algorithms`: 29 个文件
+- `uniqc/backend_adapter`: 18 个文件
+- `uniqc/cli`: 10 个文件
+- `uniqc/compile`: 10 个文件
+- `uniqc/simulator`: 8 个文件
+- `uniqc/calibration`: 7 个文件
+- `uniqc/circuit_builder`: 7 个文件
+- `.claude`: 4 个文件
+- `site`: 4 个文件
+- `uniqc/gateway`: 4 个文件
+- `uniqc/qem`: 4 个文件
 - `scripts`: 3 个文件
-- `.claude`: 2 个文件
-- `uniqc/compile`: 2 个文件
+- `uniqc/utils`: 2 个文件
+- `uniqc/visualization`: 2 个文件
 - `.github`: 1 个文件
+- `.gitignore`: 1 个文件
 - `CHANGELOG.md`: 1 个文件
 - `CONTRIBUTING.md`: 1 个文件
 - `README.md`: 1 个文件
@@ -63,149 +70,10 @@
 - `frontend`: 1 个文件
 - `pyproject.toml`: 1 个文件
 - `pytest.ini`: 1 个文件
+- `uniqc/__init__.py`: 1 个文件
 - `uniqc/_error_hints.py`: 1 个文件
 - `uniqc/config.py`: 1 个文件
 - `uniqc/exceptions.py`: 1 个文件
-- `uniqc/gateway`: 1 个文件
-- `uniqc/qem`: 1 个文件
-- `uniqc/utils`: 1 个文件
-- `uniqc/visualization`: 1 个文件
-
-### 提交列表
-
-- `7a2a16d` fix(submit_task): enforce provider:chip-name format and fix auto-compile
-- `2555f46` Merge remote-tracking branch 'origin/main' into feat/pre-submission-validation
-- `ae88275` fix(adapters): enforce c[0]=LSB bitstring convention on Quafu and IBM/Qiskit
-- `00adde1` test(doc-basic-usage): accept UnsupportedGateError when no chip cache
-- `9301364` Merge pull request #83 from IAI-USTC-Quantum/feat/pre-submission-validation
-- `f03d567` Merge main into fix/endian; resolve submit_task.md and skip originq dummy when uncached
-- `c8d76d3` Merge pull request #84 from IAI-USTC-Quantum/fix/endian
-- `2781a9b` feat: enrich all API error messages with doc links and troubleshooting hints
-- `277dd82` Merge pull request #85 from IAI-USTC-Quantum/feat/error-hint
-- `1d3b9c7` feat: promote qiskit to core dep, archive quafu extra
-- `c51b4d1` fix: point error doc links to specific API pages instead of generic index
-- `7f4dc9c` Merge pull request #86 from IAI-USTC-Quantum/feat/error-hint
-- `15fa152` docs/frontend: surface Quark platform, hide Quafu from site
-- `74dd05d` Merge pull request #87 from IAI-USTC-Quantum/feat/repair-dependencies
-- `0548662` feat(calibration,backend): parallel-CZ XEB module + strict pre-flight policy
-- `8398204` fix(test): gate dummy:originq endianness test on OriginQ credentials
-- `c54019c` Merge pull request #88 from IAI-USTC-Quantum/feat/parallel-cz-xeb-and-preflight
-- `16c7f9d` fix(cli,backend): JSON-serialize UnifiedResult; reject bare 'dummy'; flatten mps form
-- `2b1c4e1` Merge pull request #89 from IAI-USTC-Quantum/fix/dummy-naming-and-cli-json
-- `b72358a` build(docs): add two-step doc pipeline + switch theme to Furo
-- `872399a` docs(examples): reorganize examples/ into chapter-numbered directories
-- `b5a53d4` docs: replace 6-area structure with 8 chapter-numbered sections
-- `53040fe` docs: commit example-exec-logs/ + _generated/ from initial pipeline run
-- `68e9474` docs: update CONTRIBUTING / README / docstrings for new doc structure
-- `089c634` docs(examples): pull aux dirs into chapter structure with directives
-- `3678316` docs: restore deep prose + integrate aux examples + silence warning noise
-
-## v0.0.12
-
-- 发布日期：`2026-05-07`
-- 发布标题：v0.0.12 — uniqc-managed task ID indirection layer (uqt_*) + native batch + cloud error propagation
-- 补充说明：Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-- 对比区间：`v0.0.11.post1..v0.0.12`
-- 提交数：3
-- 变更文件数：12
-
-### 提交类型统计
-
-| 类型 | 数量 |
-| --- | ---: |
-| `chore` | 1 |
-| `feat` | 1 |
-| `other` | 1 |
-
-### 变更区域
-
-- `uniqc/backend_adapter`: 5 个文件
-- `uniqc/gateway`: 2 个文件
-- `uniqc/test`: 2 个文件
-- `CHANGELOG.md`: 1 个文件
-- `uniqc/__init__.py`: 1 个文件
-- `uniqc/cli`: 1 个文件
-
-### 提交列表
-
-- `b9c3416` feat(batch): native batch submission for OriginQ + IBM (one task ID per batch)
-- `a2fce31` Add uniqc-managed task ID indirection layer (uqt_*)
-- `979dd9b` chore(release): v0.0.12
-
-## v0.0.11.post1
-
-- 发布日期：`2026-05-07`
-- 发布标题：v0.0.11.post1: chip-backed dummy relayout hotfix
-- 补充说明：Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-- 对比区间：`v0.0.11..v0.0.11.post1`
-- 提交数：2
-- 变更文件数：4
-
-### 提交类型统计
-
-| 类型 | 数量 |
-| --- | ---: |
-| `chore` | 1 |
-| `fix` | 1 |
-
-### 变更区域
-
-- `CHANGELOG.md`: 1 个文件
-- `uniqc/backend_adapter`: 1 个文件
-- `uniqc/compile`: 1 个文件
-- `uniqc/test`: 1 个文件
-
-### 提交列表
-
-- `487b2c9` fix(dummy): honour local_compile=0 and available_qubits in chip-backed dummy compile
-- `7b31627` chore(release): v0.0.11.post1
-
-## v0.0.11
-
-- 发布日期：`2026-05-07`
-- 发布标题：Release 0.0.11
-- 补充说明：fix: surgical bug fixes from audit review
-- 对比区间：`v0.0.10..v0.0.11`
-- 提交数：30
-- 变更文件数：141
-
-### 提交类型统计
-
-| 类型 | 数量 |
-| --- | ---: |
-| `fix` | 15 |
-| `feat` | 5 |
-| `docs` | 4 |
-| `merge` | 3 |
-| `other` | 2 |
-| `release` | 1 |
-
-### 变更区域
-
-- `docs`: 33 个文件
-- `uniqc/algorithms`: 20 个文件
-- `uniqc/test`: 19 个文件
-- `uniqc/backend_adapter`: 12 个文件
-- `uniqc/compile`: 10 个文件
-- `uniqc/circuit_builder`: 6 个文件
-- `uniqc/cli`: 6 个文件
-- `uniqc/simulator`: 5 个文件
-- `examples`: 4 个文件
-- `site`: 4 个文件
-- `uniqc/calibration`: 4 个文件
-- `uniqc/qem`: 4 个文件
-- `uniqc/visualization`: 2 个文件
-- `.claude`: 1 个文件
-- `.github`: 1 个文件
-- `.gitignore`: 1 个文件
-- `CHANGELOG.md`: 1 个文件
-- `README.md`: 1 个文件
-- `README_en.md`: 1 个文件
-- `pyproject.toml`: 1 个文件
-- `uniqc/__init__.py`: 1 个文件
-- `uniqc/config.py`: 1 个文件
-- `uniqc/exceptions.py`: 1 个文件
-- `uniqc/gateway`: 1 个文件
 - `uniqc/torch_adapter`: 1 个文件
 
 ### 提交列表
@@ -240,6 +108,49 @@
 - `90af7a3` Round-4 audit fixes: A-U3, B-U5, B-U6, C-U2, C-U5, C-U9, E-U7, NEW-U2.b
 - `367bf8a` release: 0.0.11 changelog + fix list_backends test for enriched chip-info entries
 - `292ce9b` Merge pull request #80 from IAI-USTC-Quantum/fix/audit-review
+- `487b2c9` fix(dummy): honour local_compile=0 and available_qubits in chip-backed dummy compile
+- `7b31627` chore(release): v0.0.11.post1
+- `b9c3416` feat(batch): native batch submission for OriginQ + IBM (one task ID per batch)
+- `a2fce31` Add uniqc-managed task ID indirection layer (uqt_*)
+- `979dd9b` chore(release): v0.0.12
+- `7a2a16d` fix(submit_task): enforce provider:chip-name format and fix auto-compile
+- `2555f46` Merge remote-tracking branch 'origin/main' into feat/pre-submission-validation
+- `ae88275` fix(adapters): enforce c[0]=LSB bitstring convention on Quafu and IBM/Qiskit
+- `00adde1` test(doc-basic-usage): accept UnsupportedGateError when no chip cache
+- `9301364` Merge pull request #83 from IAI-USTC-Quantum/feat/pre-submission-validation
+- `f03d567` Merge main into fix/endian; resolve submit_task.md and skip originq dummy when uncached
+- `c8d76d3` Merge pull request #84 from IAI-USTC-Quantum/fix/endian
+- `2781a9b` feat: enrich all API error messages with doc links and troubleshooting hints
+- `277dd82` Merge pull request #85 from IAI-USTC-Quantum/feat/error-hint
+- `1d3b9c7` feat: promote qiskit to core dep, archive quafu extra
+- `c51b4d1` fix: point error doc links to specific API pages instead of generic index
+- `7f4dc9c` Merge pull request #86 from IAI-USTC-Quantum/feat/error-hint
+- `15fa152` docs/frontend: surface Quark platform, hide Quafu from site
+- `74dd05d` Merge pull request #87 from IAI-USTC-Quantum/feat/repair-dependencies
+- `0548662` feat(calibration,backend): parallel-CZ XEB module + strict pre-flight policy
+- `8398204` fix(test): gate dummy:originq endianness test on OriginQ credentials
+- `c54019c` Merge pull request #88 from IAI-USTC-Quantum/feat/parallel-cz-xeb-and-preflight
+- `16c7f9d` fix(cli,backend): JSON-serialize UnifiedResult; reject bare 'dummy'; flatten mps form
+- `2b1c4e1` Merge pull request #89 from IAI-USTC-Quantum/fix/dummy-naming-and-cli-json
+- `b72358a` build(docs): add two-step doc pipeline + switch theme to Furo
+- `872399a` docs(examples): reorganize examples/ into chapter-numbered directories
+- `b5a53d4` docs: replace 6-area structure with 8 chapter-numbered sections
+- `53040fe` docs: commit example-exec-logs/ + _generated/ from initial pipeline run
+- `68e9474` docs: update CONTRIBUTING / README / docstrings for new doc structure
+- `089c634` docs(examples): pull aux dirs into chapter structure with directives
+- `3678316` docs: restore deep prose + integrate aux examples + silence warning noise
+- `3293188` docs: fix 11 broken aux scripts + cleanly resolve uniqc.compile.draw duplicate
+- `f387621` Merge pull request #90 from IAI-USTC-Quantum/docs/refactor-everything
+- `215d223` feat: add `uniqc doctor` CLI command for environment diagnostics
+- `cdbf189` Merge pull request #91 from IAI-USTC-Quantum/feat/cli-doctor
+- `60c1ada` docs: refactor four section index pages and add basic_usage main API page
+- `bc87b5f` Merge pull request #92 from IAI-USTC-Quantum/docs/refactor-section-indexes
+- `a3db434` feat: unify circuit input, add missing gates, async result API, and fake-backend tests
+- `9f0de0b` Merge pull request #93 from IAI-USTC-Quantum/feat/unify-circuit-builder-and-task
+- `252d69b` feat: unify compile and simulator input types
+- `8feb642` feat!: merge OriginIR_Simulator and QASM_Simulator into unified Simulator
+- `5bb5f81` fix(simulator): NoisySimulator MRO — noise injection was bypassed
+- `63df90c` docs: add uniqc-build-docs skill for local documentation build
 
 ## v0.0.10
 

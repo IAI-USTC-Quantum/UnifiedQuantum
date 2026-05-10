@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def _statevector(circuit: Circuit) -> np.ndarray:
     """Simulate a circuit and return its statevector (no qubit remapping)."""
-    sim = OriginIR_Simulator(backend_type='statevector', least_qubit_remapping=False)
+    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
     return sim.simulate_statevector(circuit.originir)
 
 

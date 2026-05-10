@@ -13,7 +13,7 @@ import math
 import matplotlib.pyplot as plt
 
 from uniqc import Circuit, circuit_def
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def probability_dict(values):
@@ -70,7 +70,7 @@ def main() -> None:
     print(bell_pair.to_originir_def())
     print("operations:", len(circuit.opcode_list))
 
-    probs = probability_dict(OriginIR_Simulator().simulate_pmeasure(circuit.originir))
+    probs = probability_dict(Simulator().simulate_pmeasure(circuit.originir))
     print("non-zero states:", probs)
     plot_probs(probs, "Named circuit result")
 

@@ -30,7 +30,7 @@ uniqc config always-ai-hint on
 
 ```python
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 circuit = Circuit()
 circuit.h(0)
@@ -38,7 +38,7 @@ circuit.cnot(0, 1)
 circuit.measure(0)
 circuit.measure(1)
 
-sim = OriginIR_Simulator()
+sim = Simulator()
 probabilities = sim.simulate_pmeasure(circuit.originir)
 ```
 

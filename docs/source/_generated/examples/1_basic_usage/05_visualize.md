@@ -9,6 +9,8 @@
 * 时序图 ``plot_time_line``（如果安装了 ``visualization`` extra），用来排查 timeline /
   并行度问题。
 
+Uses ``Simulator`` (unified simulator class from ``uniqc.simulator``).
+
 **Source code**
 
 ```{literalinclude} ../../../examples/1_basic_usage/05_visualize.py
@@ -18,8 +20,8 @@
 **Stdout**
 
 ```text
-counts: {0: 528, 7: 496}
-probabilities: {'000': 0.515625, '111': 0.484375}
+counts: {0: 497, 7: 527}
+probabilities: {'000': 0.4853515625, '111': 0.5146484375}
 ```
 
 **Figures**

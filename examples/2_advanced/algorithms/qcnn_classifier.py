@@ -22,9 +22,9 @@ except ImportError as e:
 def generate_state_dataset(n_qubits: int, n_samples: int):
     """Generate dataset of GHZ (label=1) and |0...0> (label=0) states."""
     from uniqc import Circuit
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
 
     states = []
     labels = []

@@ -45,9 +45,9 @@ print(originir_str)
 你可以将 OriginIR 文本直接传给模拟器，无需先构建 Circuit 对象：
 
 ```python
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
-sim = OriginIR_Simulator()
+sim = Simulator()
 prob = sim.simulate_pmeasure(originir_str)
 ```
 

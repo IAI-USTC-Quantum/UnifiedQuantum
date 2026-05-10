@@ -23,7 +23,7 @@ sys.path.insert(0, __file__.rsplit("/", 2)[0])
 import numpy as np
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import dicke_state_circuit
 
 
@@ -33,7 +33,7 @@ def run_dicke(n_qubits, k, shots):
     dicke_state_circuit(c, k=k)
     c.measure(list(range(n_qubits)))
 
-    sim = QASM_Simulator()
+    sim = Simulator()
     raw = sim.simulate_shots(c.qasm, shots=shots)
     # simulate_shots returns int-keyed counts; render as bitstrings.
     result = {f"{int(k):0{n_qubits}b}": v for k, v in raw.items()}

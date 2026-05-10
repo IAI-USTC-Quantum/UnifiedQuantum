@@ -31,7 +31,7 @@ import sys
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import ghz_state, w_state, cluster_state
 
 
@@ -61,7 +61,7 @@ def run_state(state_type: str, n_qubits: int, shots: int = 4096) -> dict:
     c.measure(*list(range(n_qubits)))
 
     # Simulate
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     result = sim.simulate_shots(c.qasm, shots=shots)
     total = sum(result.values())
     probs = {f"{int(k):0{n_qubits}b}": v / total for k, v in result.items()}

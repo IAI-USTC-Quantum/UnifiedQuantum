@@ -8,8 +8,7 @@ from uniqc.circuit_builder.originir_spec import (available_originir_gates,
                                                generate_sub_gateset_originir,
                                                generate_sub_error_channel_originir)
 
-from uniqc.simulator import OriginIR_NoisySimulator
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import NoisySimulator, Simulator
 from uniqc.test._utils import uniq_test, NotMatchError
 
 def compare_density_operator(circuit, backend_1 = 'density_operator', backend_2 = 'density_operator_qutip', noisy = False):
@@ -21,11 +20,11 @@ def compare_density_operator(circuit, backend_1 = 'density_operator', backend_2 
 
     # Step 1: Simulate the circuit using QuTip and UnifiedQuantum
     if noisy:
-        sim1 = OriginIR_NoisySimulator(backend_type=backend_1)
-        sim2 = OriginIR_NoisySimulator(backend_type=backend_2)
+        sim1 = NoisySimulator(backend_type=backend_1)
+        sim2 = NoisySimulator(backend_type=backend_2)
     else:
-        sim1 = OriginIR_Simulator(backend_type=backend_1)
-        sim2 = OriginIR_Simulator(backend_type=backend_2)
+        sim1 = Simulator(backend_type=backend_1)
+        sim2 = Simulator(backend_type=backend_2)
 
     #print('sim1')
     mat1 = sim1.simulate_density_matrix(circuit)

@@ -23,7 +23,7 @@ import numpy as np
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc import hadamard_superposition
 
 
@@ -40,7 +40,7 @@ def run_hadamard_demo(n_qubits=3):
     c = Circuit()
     hadamard_superposition(c, qubits=list(range(n_qubits)))
 
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     sv = sim.simulate_statevector(c.originir)
 
     print(f"\nState vector ({len(sv)} amplitudes):")
@@ -75,7 +75,7 @@ def run_hadamard_demo(n_qubits=3):
         # Touch qubit 1 to ensure allocation
         c3.x(1); c3.x(1)
 
-        sim2 = OriginIR_Simulator(backend_type="statevector", least_qubit_remapping=False)
+        sim2 = Simulator(backend_type="statevector", least_qubit_remapping=False)
         sv2 = sim2.simulate_statevector(c3.originir)
         probs2 = np.abs(sv2) ** 2
         for i, p in enumerate(probs2):

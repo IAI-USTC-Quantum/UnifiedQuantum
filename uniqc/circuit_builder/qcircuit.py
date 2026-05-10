@@ -26,6 +26,24 @@ from .opcode import (
 if TYPE_CHECKING:
     from .qubit import Qubit, QReg, QRegSlice
 
+    try:
+        import qiskit
+
+        _QiskitCircuit = qiskit.QuantumCircuit
+    except ImportError:
+        _QiskitCircuit = None  # type: ignore[assignment,misc]
+    try:
+        from pyqpanda3.intermediate_compiler import (
+            QProg as _PyQProg,
+        )
+
+        _PyQCircuit = _PyQProg
+    except ImportError:
+        _PyQCircuit = None  # type: ignore[assignment,misc]
+else:
+    _QiskitCircuit = None
+    _PyQCircuit = None
+
 # Opcode: (op_name, qubits, cbits, params, dagger, control_qubits)
 QubitSpec = int | list[int]
 CbitSpec = int | list[int] | None
@@ -35,7 +53,17 @@ OpCode = tuple[str, QubitSpec, CbitSpec, ParamSpec, bool, QubitSpec]
 # Extended types for Qubit/QRegSlice support
 QubitInput = Union[int, "Qubit", "QRegSlice", list]
 
-__all__ = ["Circuit", "OpcodeType"]
+# The universal circuit input type accepted by :func:`~uniqc.compile.compile`,
+# :class:`~uniqc.simulator.Simulator`, and :func:`~uniqc.submit_task`.
+#
+# At runtime this is ``Union[Circuit, str]``.  ``qiskit.QuantumCircuit`` and
+# ``pyqpanda3.QProg`` are also accepted but are resolved at type-check time
+# only (via ``TYPE_CHECKING``) to avoid hard import requirements.
+#
+# See :class:`Circuit` class docstring for full details.
+AnyQuantumCircuit = Union["Circuit", str]
+
+__all__ = ["Circuit", "OpcodeType", "AnyQuantumCircuit"]
 
 # Backward-compatible type alias
 OpcodeType = OpCode
@@ -111,6 +139,20 @@ class Circuit:
         Internal list of gate opcodes.
     _qregs : dict[str, QReg]
         Named quantum registers (if created with qregs parameter).
+
+    .. rubric:: AnyQuantumCircuit — the universal input type
+
+    Most public APIs (:func:`~uniqc.compile.compile`,
+    :class:`~uniqc.simulator.Simulator`, :func:`~uniqc.submit_task`)
+    accept :data:`AnyQuantumCircuit`, which is a union of:
+
+    * :class:`Circuit` — this class
+    * ``str`` — OriginIR or OpenQASM 2.0 (auto-detected from content)
+    * ``qiskit.QuantumCircuit`` — converted via QASM round-trip
+    * ``pyqpanda3.QProg`` — converted via OriginIR round-trip
+
+    Use :meth:`to_qiskit_circuit` or :meth:`to_pyqpanda3_circuit` to
+    convert back to external formats.
     """
 
     used_qubit_list: list[int]
@@ -339,6 +381,44 @@ class Circuit:
     def to_extended_originir(self) -> str:
         """Export the circuit in extended OriginIR format (full form with QINIT/CREG/MEASURE)."""
         return self.originir
+
+    def to_qiskit_circuit(self):
+        """Convert to a ``qiskit.QuantumCircuit``.
+
+        Returns:
+            qiskit.QuantumCircuit equivalent of this circuit.
+
+        Raises:
+            ImportError: If qiskit is not installed.
+        """
+        try:
+            from qiskit import qasm2
+        except ImportError:
+            raise ImportError(
+                "qiskit is required for to_qiskit_circuit(). "
+                "Install it with: pip install qiskit"
+            ) from None
+        return qasm2.loads(self.qasm)
+
+    def to_pyqpanda3_circuit(self):
+        """Convert to a pyqpanda3 ``QProg``.
+
+        Returns:
+            pyqpanda3 QProg equivalent of this circuit.
+
+        Raises:
+            ImportError: If pyqpanda3 is not installed.
+        """
+        try:
+            from pyqpanda3.intermediate_compiler import (
+                convert_originir_string_to_qprog,
+            )
+        except ImportError:
+            raise ImportError(
+                "pyqpanda3 is required for to_pyqpanda3_circuit(). "
+                "Install it with: pip install pyqpanda3"
+            ) from None
+        return convert_originir_string_to_qprog(self.originir)
 
     def record_qubit(self, qubits: int | list[int]) -> None:
         """Record the qubits used in the circuit."""

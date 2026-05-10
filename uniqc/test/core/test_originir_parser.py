@@ -3,7 +3,7 @@ import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.random_originir import random_originir
 from uniqc.compile.originir import OriginIR_BaseParser
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc.test._utils import NotMatchError, uniq_test
 
 BELL_ORIGINIR = """QINIT 2
@@ -29,7 +29,7 @@ def run_test_originir_parser():
         oir_2 = circuit_obj.originir
 
         # simulate oir_1 and oir_2
-        sim = OriginIR_Simulator(backend_type='statevector')
+        sim = Simulator(backend_type='statevector')
         state_1 = sim.simulate_statevector(oir_1)
         state_2 = sim.simulate_statevector(oir_2)
 

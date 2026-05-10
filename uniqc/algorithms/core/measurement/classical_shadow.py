@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc._error_hints import format_enriched_message
 
 
@@ -175,7 +175,7 @@ def classical_shadow(
         raise ValueError(format_enriched_message(f"n_shadow must be a positive integer, got {n_shadow}", "measurement"))
 
     rng = np.random.default_rng()
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
 
     # Stratified basis sampling: when n_shadow >= 3^n, cycle through every
     # basis combination an equal number of times (remainder drawn without

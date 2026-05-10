@@ -38,7 +38,7 @@ pip install unified-quantum[pytorch]
 import torch
 from uniqc.torch_adapter import QuantumLayer
 from uniqc import Circuit, Parameter
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 # 构建参数化电路（参数名会自动从 circuit._parameters 中读取）
 theta = Parameter("theta")
@@ -48,7 +48,7 @@ template.measure(0)
 
 # 定义期望值函数
 def expectation(circuit):
-    sim = OriginIR_Simulator()
+    sim = Simulator()
     result = sim.simulate(circuit.originir, shots=1000)
     # 计算 <Z> 期望值
     return result.get_expectation([0])
@@ -146,12 +146,12 @@ import torch
 import torch.nn as nn
 from uniqc.torch_adapter import QuantumLayer
 from uniqc import Circuit, Parameter
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 import numpy as np
 
 # 定义哈密顿量 H = Z0 + Z1 + X0X1
 def hamiltonian_expectation(circuit):
-    sim = OriginIR_Simulator()
+    sim = Simulator()
     result = sim.simulate(circuit.originir, shots=1000)
     
     # 计算 <Z0 + Z1 + X0X1>
@@ -205,11 +205,11 @@ for epoch in range(50):
 
 ```python
 from uniqc.torch_adapter import batch_execute, batch_execute_with_params
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 # 定义执行函数
 def simulate(circuit):
-    sim = OriginIR_Simulator()
+    sim = Simulator()
     return sim.simulate(circuit.originir, shots=1000)
 
 # 批量执行多个电路
