@@ -51,6 +51,8 @@ __all__ = [
     # Task query
     "query_task",
     "wait_for_result",
+    "poll_result",
+    "get_result",
     "get_platform_task_ids",
     # Cache management
     "save_task",
@@ -127,6 +129,72 @@ ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
     "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
 }
+
+
+def _normalize_circuit_input(circuit: Any) -> Circuit:
+    """Auto-detect input type and convert to :class:`uniqc.Circuit`.
+
+    Accepted input types:
+
+    - :class:`uniqc.Circuit` — returned as-is.
+    - :class:`str` — parsed as OriginIR or OpenQASM 2.0 based on content
+      heuristics (``QINIT`` → OriginIR, ``OPENQASM`` / ``qreg`` → QASM).
+    - ``qiskit.QuantumCircuit`` — exported via ``.qasm()`` then parsed.
+
+    Not supported (by design): pyqpanda3 native types, Quark native APIs.
+
+    Args:
+        circuit: Circuit in any supported format.
+
+    Returns:
+        A :class:`uniqc.Circuit` instance.
+
+    Raises:
+        TypeError: If the input type is not recognized.
+        CircuitTranslationError: If parsing or conversion fails.
+    """
+    from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
+
+    if isinstance(circuit, _Circuit):
+        return circuit
+
+    if isinstance(circuit, str):
+        stripped = circuit.lstrip()
+        if stripped.startswith("QINIT") or "\nCREG " in stripped[:200]:
+            return _Circuit.from_originir(circuit)
+        if stripped.startswith("OPENQASM") or "qreg " in stripped[:200] or "gate " in stripped[:200]:
+            return _Circuit.from_qasm(circuit)
+        # Fallback: try OriginIR first (primary format), then QASM
+        try:
+            return _Circuit.from_originir(circuit)
+        except Exception:
+            pass
+        try:
+            return _Circuit.from_qasm(circuit)
+        except Exception:
+            raise TypeError(
+                f"Could not parse circuit string. Tried both OriginIR and "
+                f"OpenQASM 2.0 formats. First 80 chars: {circuit[:80]!r}"
+            ) from None
+
+    # Lazy check for qiskit.QuantumCircuit (avoid hard import)
+    try:
+        from qiskit import QuantumCircuit as _QiskitQC
+        if isinstance(circuit, _QiskitQC):
+            # qiskit 2.x removed .qasm(); use qiskit.qasm2.dumps() instead.
+            try:
+                from qiskit.qasm2 import dumps as _qasm2_dumps
+                qasm_str = _qasm2_dumps(circuit)
+            except ImportError:
+                qasm_str = circuit.qasm()
+            return _Circuit.from_qasm(qasm_str)
+    except ImportError:
+        pass
+
+    raise TypeError(
+        f"Unsupported circuit type: {type(circuit).__name__}. "
+        f"Expected uniqc.Circuit, str (OriginIR/QASM), or qiskit.QuantumCircuit."
+    )
 
 
 def _get_adapter(backend_name: str) -> CircuitAdapter:
@@ -915,7 +983,7 @@ def _compile_for_chip_backed_dummy(
 
 
 def submit_task(
-    circuit: Circuit,
+    circuit: Circuit | str,
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
@@ -1019,6 +1087,9 @@ def submit_task(
         >>> task_id = submit_task(circuit, backend='dummy:local:simulator', chip_characterization=chip)
     """
     import warnings
+
+    # Normalize input: accept Circuit, OriginIR str, QASM str, qiskit.QuantumCircuit.
+    circuit = _normalize_circuit_input(circuit)
 
     # Strict pre-flight gate: missing SDK / chip cache → loud error.
     # Tests / scripts that pass "dummy:<provider>:<chip>" without the
@@ -1259,7 +1330,7 @@ def _submit_dummy(
 
 
 def submit_batch(
-    circuits: list[Circuit],
+    circuits: list[Circuit | str],
     backend: str,
     shots: int = 1000,
     options: BackendOptions | dict | None = None,
@@ -1326,6 +1397,9 @@ def submit_batch(
         >>> results = wait_for_result(uid)         # list[UnifiedResult] len=400
         >>> shards  = get_platform_task_ids(uid)   # 2 shard rows
     """
+    # Normalize inputs: accept Circuit, OriginIR str, QASM str, qiskit.QuantumCircuit.
+    circuits = [_normalize_circuit_input(c) for c in circuits]
+
     # Strict pre-flight gate (same as submit_task).
     from uniqc.backend_adapter.preflight import (
         BackendPreflightError,
@@ -2091,6 +2165,62 @@ def wait_for_result(
 
         # Wait before next poll
         time.sleep(poll_interval)
+
+
+def poll_result(task_id: str) -> TaskInfo:
+    """Non-blocking status check: return current task status/result without waiting.
+
+    Unlike :func:`wait_for_result`, this returns immediately with the latest
+    cached status. Call it in a loop if you want to poll without blocking.
+
+    Args:
+        task_id: The task identifier (``uqt_*`` or platform id).
+
+    Returns:
+        :class:`TaskInfo` with current status. Check ``.status`` for
+        ``TaskStatus.SUCCESS``, ``TaskStatus.FAILED``, ``TaskStatus.RUNNING``,
+        etc. If the task has completed, ``.result`` will be populated.
+
+    Example:
+        >>> task_id = submit_task(circuit, backend='originq:WK_C180')
+        >>> while True:
+        ...     info = poll_result(task_id)
+        ...     if info.status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
+        ...         break
+        ...     time.sleep(2)
+    """
+    return query_task(task_id)
+
+
+def get_result(
+    task_id: str,
+    timeout: float = 300.0,
+    poll_interval: float = 5.0,
+    raise_on_failure: bool = True,
+) -> UnifiedResult | list[UnifiedResult] | None:
+    """Blocking retrieval: wait until task completes or timeout.
+
+    This is a convenience alias for :func:`wait_for_result`. The name
+    ``get_result`` emphasises the "I want the answer" pattern, while
+    ``wait_for_result`` emphasises the blocking behaviour.
+
+    Args:
+        task_id: The task identifier.
+        timeout: Maximum time to wait in seconds (default 300).
+        poll_interval: Seconds between status checks (default 5).
+        raise_on_failure: If True (default), raise ``TaskFailedError``
+            when the task fails. If False, return ``None`` on failure.
+
+    Returns:
+        :class:`UnifiedResult` for single-circuit tasks, or
+        ``list[UnifiedResult]`` for native batch submissions.
+        Returns ``None`` if the task failed and *raise_on_failure* is False.
+
+    Raises:
+        TaskTimeoutError: If *timeout* is exceeded.
+        TaskFailedError: If the task fails and *raise_on_failure* is True.
+    """
+    return wait_for_result(task_id, timeout, poll_interval, raise_on_failure)
 
 
 # -----------------------------------------------------------------------------

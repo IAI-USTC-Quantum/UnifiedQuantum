@@ -48,6 +48,7 @@ qasm2_oir_mapping = {
     ("rx", "RX"),
     ("ry", "RY"),
     ("rz", "RZ"),
+    ("p", "U1"),
     ("u1", "U1"),
     ("u2", "U2"),
     ("u3", "U3"),
@@ -161,6 +162,11 @@ QASM2_OriginIR_dict = {qasm: oir for (qasm, oir) in qasm2_oir_mapping}
 # direct mapping from QASM2 operation to OriginIR
 OriginIR_QASM2_dict = {oir: qasm for (qasm, oir) in qasm2_oir_mapping}
 
+# Explicitly prefer "u1" over "p" for U1→QASM2 export.  Both ("p","U1")
+# and ("u1","U1") are in the mapping set, but set iteration order is
+# non-deterministic, so we pin the canonical QASM2 name here.
+OriginIR_QASM2_dict["U1"] = "u1"
+
 
 def direct_mapping_qasm2_to_oir(qasm2_operation):
     """
@@ -232,7 +238,7 @@ def get_opcode_from_QASM2(operation, qubits, cbits, parameters):
         return ("RY", qubits, cbits, parameters, False, None)
     elif operation == "rz":
         return ("RZ", qubits, cbits, parameters, False, None)
-    elif operation == "u1":
+    elif operation == "u1" or operation == "p":
         return ("U1", qubits, cbits, parameters, False, None)
     # 1-qubit 2-parameter gates
     elif operation == "u2":

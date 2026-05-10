@@ -101,19 +101,14 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ## Features
 
-- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends the same OriginIR to OriginQ, Quafu, IBM Quantum, or the local dummy simulator.
+- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, Quafu, IBM Quantum, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
+- **Format conversion**: `Circuit.from_qasm()` / `Circuit.from_originir()` for import; `circuit.to_qasm()` / `circuit.to_originir()` for export.
 - **Local simulation**: Built-in OriginIR Simulator and QASM Simulator, supporting statevector / density matrix backends, plus noisy variants.
 - **Algorithm components**: Built-in HEA, UCCSD, QAOA ansatz ready for VQE / QAOA research.
 - **PyTorch integration**: `QuantumLayer`, parameter-shift gradients, and batched execution for hybrid quantum-classical models.
 - **Interoperable**: Circuits from native API, Qiskit, Cirq, etc. — as long as they output OriginIR or OpenQASM 2.0.
-- **Sync / async**: `submit_task` returns `task_id` immediately; `wait_for_result` or `--wait` blocks until done.
+- **Async submission**: `submit_task` returns `task_id` immediately; `poll_result()` for non-blocking status check, `get_result()` or `wait_for_result()` to block until done.
 - **Easily extensible**: Gate sets, noise models, and platform adapters all follow interface contracts — a new backend is one adapter away.
-
-> **Result format differences**: `wait_for_result()` returns different inner structures per platform:
-> - OriginQ / Dummy: `{"00": 512, "11": 488}` (flat `{bitstring: shots}` dict)
-> - Quafu: `{"counts": {"00": 512, "11": 488}, "probabilities": {...}}` (nested dict)
-> - IBM: `[{"00": 512}, {"01": 300}]` (list of counts dicts, one per circuit in batch mode)
-> See [platform conventions](docs/source/2_advanced/index.md) for details.
 
 ---
 

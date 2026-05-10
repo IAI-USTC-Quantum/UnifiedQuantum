@@ -298,6 +298,48 @@ class Circuit:
         """Generate the circuit in OpenQASM format."""
         return self._make_qasm_circuit()
 
+    @classmethod
+    def from_qasm(cls, qasm_str: str) -> "Circuit":
+        """Create a Circuit from an OpenQASM 2.0 string.
+
+        Args:
+            qasm_str: OpenQASM 2.0 formatted circuit string.
+
+        Returns:
+            A new Circuit instance.
+        """
+        from uniqc.compile.qasm.qasm_base_parser import OpenQASM2_BaseParser
+        parser = OpenQASM2_BaseParser()
+        parser.parse(qasm_str)
+        return parser.to_circuit()
+
+    @classmethod
+    def from_originir(cls, originir_str: str) -> "Circuit":
+        """Create a Circuit from an OriginIR string.
+
+        Args:
+            originir_str: OriginIR formatted circuit string.
+
+        Returns:
+            A new Circuit instance.
+        """
+        from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+        parser = OriginIR_BaseParser()
+        parser.parse(originir_str)
+        return parser.to_circuit()
+
+    def to_qasm(self) -> str:
+        """Export the circuit as an OpenQASM 2.0 string."""
+        return self.qasm
+
+    def to_originir(self) -> str:
+        """Export the circuit as an OriginIR string."""
+        return self.originir
+
+    def to_extended_originir(self) -> str:
+        """Export the circuit in extended OriginIR format (full form with QINIT/CREG/MEASURE)."""
+        return self.originir
+
     def record_qubit(self, qubits: int | list[int]) -> None:
         """Record the qubits used in the circuit."""
         for qubit in qubits if isinstance(qubits, list) else [qubits]:
@@ -526,6 +568,15 @@ class Circuit:
         """
         self.add_gate("RPhi", qn, params=[theta, phi])
 
+    def p(self, qn: QubitInput, lam: float) -> None:
+        """Apply phase gate P(λ), equivalent to U1.
+
+        Args:
+            qn: Target qubit - can be int, Qubit, or QRegSlice
+            lam: Phase angle in radians.
+        """
+        self.add_gate("U1", qn, params=lam)
+
     # ─────────────────── Two-qubit gates ───────────────────
 
     def cnot(self, controller: QubitInput, target: QubitInput) -> None:
@@ -572,6 +623,61 @@ class Circuit:
             q2: Second qubit - can be int, Qubit, or QRegSlice
         """
         self.add_gate("SWAP", [q1, q2])
+
+    # ─────────────────── Controlled parametric gates ───────────────────
+
+    def crx(self, control: QubitInput, target: QubitInput, theta: float) -> None:
+        """Apply controlled-RX gate.
+
+        Args:
+            control: Control qubit.
+            target: Target qubit.
+            theta: Rotation angle in radians.
+        """
+        self.add_gate("RX", target, params=theta, control_qubits=[control])
+
+    def cry(self, control: QubitInput, target: QubitInput, theta: float) -> None:
+        """Apply controlled-RY gate.
+
+        Args:
+            control: Control qubit.
+            target: Target qubit.
+            theta: Rotation angle in radians.
+        """
+        self.add_gate("RY", target, params=theta, control_qubits=[control])
+
+    def crz(self, control: QubitInput, target: QubitInput, theta: float) -> None:
+        """Apply controlled-RZ gate.
+
+        Args:
+            control: Control qubit.
+            target: Target qubit.
+            theta: Rotation angle in radians.
+        """
+        self.add_gate("RZ", target, params=theta, control_qubits=[control])
+
+    def cp(self, control: QubitInput, target: QubitInput, lam: float) -> None:
+        """Apply controlled-phase gate (equivalent to CU1).
+
+        Args:
+            control: Control qubit.
+            target: Target qubit.
+            lam: Phase angle in radians.
+        """
+        self.add_gate("U1", target, params=lam, control_qubits=[control])
+
+    def cu(self, control: QubitInput, target: QubitInput,
+           theta: float, phi: float, lam: float) -> None:
+        """Apply controlled-U3 gate.
+
+        Args:
+            control: Control qubit.
+            target: Target qubit.
+            theta: Rotation angle in radians.
+            phi: Phi angle in radians.
+            lam: Lambda angle in radians.
+        """
+        self.add_gate("U3", target, params=[theta, phi, lam], control_qubits=[control])
 
     # ─────────────────── Three-qubit gates ───────────────────
 

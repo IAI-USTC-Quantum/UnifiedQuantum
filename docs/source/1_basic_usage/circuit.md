@@ -45,21 +45,25 @@ circuit.measure(0, 1)
 
 `h`, `x`, `y`, `z`, `sx`, `s`, `t`（无参数）
 
-`rx`, `ry`, `rz`, `u1`（1 参数）, `u2`（2 参数）, `u3`（3 参数）, `rphi`
+`rx`, `ry`, `rz`, `p`, `u1`（1 参数）, `u2`（2 参数）, `u3`（3 参数）, `rphi`
 
 ```python
 circuit.h(0)
 circuit.rx(0, 0.5)    # RX 门，参数 0.5
+circuit.p(0, 3.14)    # Phase 门（等价于 U1）
 circuit.u3(0, 1.57, 0.785, 0.392)
 ```
 
 ### 双量子比特门
 
-`cnot`, `cx`, `cz`, `iswap`, `swap`, `cswap`, `toffoli`, `xx`, `yy`, `zz`, `phase2q`, `uu15`
+`cnot`, `cx`, `cz`, `iswap`, `swap`, `crx`, `cry`, `crz`, `cp`, `cu`, `xx`, `yy`, `zz`, `phase2q`, `uu15`
 
 ```python
 circuit.cnot(0, 1)
 circuit.cz(1, 2)
+circuit.crx(0, 1, 0.5)           # Controlled RX
+circuit.cp(0, 1, 1.57)           # Controlled Phase
+circuit.cu(0, 1, 1.57, 0.785, 0.392)  # Controlled U3
 ```
 
 ### 三量子比特门
@@ -95,14 +99,21 @@ with circuit.dagger():
 
 ## 格式互转 {#guide-circuit-format-conversion}
 
-当你需要将线路提交到不同平台、交给不同后端执行，或与外部工具交换数据时，可以使用以下属性导出线路文本：
+当你需要将线路提交到不同平台、交给不同后端执行，或与外部工具交换数据时，可以使用以下属性和方法导出/导入线路文本：
 
 ```python
-# 获取 OriginIR 格式（用于 OriginQ 平台提交、本地模拟）
+# 导出（属性形式）
 originir_str = circuit.originir
-
-# 获取 OpenQASM 2.0 格式（用于 Quafu、IBM 平台提交、跨工具交互）
 qasm_str = circuit.qasm
+
+# 导出（方法形式，推荐用于明确表达意图）
+originir_str = circuit.to_originir()
+qasm_str = circuit.to_qasm()
+extended_originir_str = circuit.to_extended_originir()
+
+# 从外部格式导入（类方法）
+circuit_from_qasm = Circuit.from_qasm(qasm_str)
+circuit_from_originir = Circuit.from_originir(originir_str)
 ```
 
 > 关于 OriginIR 格式的详细说明，见 [OriginIR](originir.md)。关于 QASM 格式与格式互转，见 [QASM](qasm.md)。

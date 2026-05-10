@@ -27,6 +27,17 @@ from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, che
 if TYPE_CHECKING:
     import qiskit
 
+_QISKIT_TERMINAL_FAILED = {"ERROR", "CANCELLED", "FAILED"}
+
+
+def _normalize_qiskit_status(status_name: str) -> str:
+    """Map a Qiskit Runtime JobStatus name to a TASK_STATUS_* constant."""
+    if status_name in ("DONE", "COMPLETED"):
+        return TASK_STATUS_SUCCESS
+    if status_name in _QISKIT_TERMINAL_FAILED:
+        return TASK_STATUS_FAILED
+    return TASK_STATUS_RUNNING
+
 
 class QiskitAdapter(QuantumAdapter):
     """Adapter for IBM Quantum backends via Qiskit.
@@ -283,7 +294,7 @@ class QiskitAdapter(QuantumAdapter):
         status_name = status.name if hasattr(status, "name") else str(status)
 
         if status_name not in ("DONE", "COMPLETED"):
-            return {"status": status_name, "value": status.value if hasattr(status, "value") else status_name}
+            return {"status": _normalize_qiskit_status(status_name), "value": status.value if hasattr(status, "value") else status_name}
 
         raw_result = job.result()
         results = []
@@ -338,17 +349,11 @@ class QiskitAdapter(QuantumAdapter):
         taskinfo: dict[str, Any] = {"status": TASK_STATUS_SUCCESS, "result": []}
         for taskid in taskids:
             result_i = self.query(taskid)
-            status = result_i.get("status", "")
-            if status in ("ERROR", "CANCELLED", "FAILED"):
+            status = result_i.get("status", TASK_STATUS_RUNNING)
+            if status == TASK_STATUS_FAILED:
                 taskinfo["status"] = TASK_STATUS_FAILED
                 break
-            elif status in (
-                "INITIALIZING",
-                "QUEUED",
-                "VALIDATING",
-                "RUNNING",
-                "EXECUTING",
-            ):
+            elif status == TASK_STATUS_RUNNING:
                 taskinfo["status"] = TASK_STATUS_RUNNING
             if taskinfo["status"] == TASK_STATUS_SUCCESS:
                 taskinfo["result"].append(result_i.get("result", {}))
