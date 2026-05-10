@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "== Gateway ASGI app ==\nFastAPI with 26 routes\n\n== Configured host/port ==\nhost: 127.0.0.1\nport: 18765\n\n== Triggering one dummy task so the UI has something to show ==\ntask_id: uqt_feb9276a7c2e4ec5a8ceb2a5b74ef0fb\n\nLaunch the UI with:\n    uniqc gateway --host 127.0.0.1 --port 18765\n    # then open http://127.0.0.1:18765/\n",
+  "stdout": "== Gateway ASGI app ==\nFastAPI with 26 routes\n\n== Configured host/port ==\nhost: 127.0.0.1\nport: 18765\n\n== Triggering one dummy task so the UI has something to show ==\ntask_id: uqt_514264f0215c4f508a508960e074810d\n\nLaunch the UI with:\n    uniqc gateway --host 127.0.0.1 --port 18765\n    # then open http://127.0.0.1:18765/\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 1.751
+  "duration_seconds": 0.279
 }

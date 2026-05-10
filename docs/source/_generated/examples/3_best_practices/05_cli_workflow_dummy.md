@@ -19,9 +19,9 @@
 **Stdout**
 
 ```text
-command: /home/agony/projects/quantum-simulator-paper-new/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-_19xgseu/bell.originir -p dummy -s 64 --wait --format json
+command: /home/agony/projects/uniqc-skill-dev/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-4_hlcsx4/bell.originir -p dummy -s 64 --wait --format json
 {
-  "task_id": "uqt_32f53c77c8d342229b580b6ed335539c",
+  "task_id": "uqt_86398f37f7bf4742a7cc6aa7506e7b9e",
   "platform": "dummy",
   "shots": 64
 }
@@ -36,7 +36,7 @@ command: /home/agony/projects/quantum-simulator-paper-new/UnifiedQuantum/.venv/b
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_32f53c77c8d342229b580b6ed335539c",
+  "task_id": "uqt_86398f37f7bf4742a7cc6aa7506e7b9e",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null

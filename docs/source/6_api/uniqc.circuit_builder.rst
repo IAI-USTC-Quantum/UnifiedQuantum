@@ -9,6 +9,7 @@ Submodules
 
    uniqc.circuit_builder.matrix
    uniqc.circuit_builder.named_circuit
+   uniqc.circuit_builder.normalize
    uniqc.circuit_builder.opcode
    uniqc.circuit_builder.originir_spec
    uniqc.circuit_builder.parameter

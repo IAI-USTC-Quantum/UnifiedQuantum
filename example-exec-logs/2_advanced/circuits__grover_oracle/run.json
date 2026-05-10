@@ -9,7 +9,7 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   95.2% ← TARGET\n    |100⟩    0.9%\n    |110⟩    0.8%\n    |111⟩    0.8%\n    |010⟩    0.7%\n\n  Target probability: 95.2%\n  ✓ Done.\n",
+  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   94.8% ← TARGET\n    |011⟩    1.0%\n    |000⟩    0.8%\n    |110⟩    0.8%\n    |010⟩    0.7%\n\n  Target probability: 94.8%\n  ✓ Done.\n",
   "stderr": "",
   "warnings": [
     "DeprecationWarning: grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. Use grover_oracle(marked_state, qubits=...) and add_circuit(). (grover_oracle.py:38)",

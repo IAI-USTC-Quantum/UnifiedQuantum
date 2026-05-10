@@ -13,6 +13,7 @@ Submodules
    uniqc.simulator.mps_simulator
    uniqc.simulator.opcode_simulator
    uniqc.simulator.qutip_sim_impl
+   uniqc.simulator.simulator
    uniqc.simulator.torchquantum_simulator
 
 Module contents
