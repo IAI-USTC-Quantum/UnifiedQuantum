@@ -36,7 +36,7 @@ _DEFAULT_FIDELITY = 0.99
 
 
 def _resolve_input(circuit: Any) -> tuple[Circuit, str]:
-    """Normalize any input to (Circuit, original_format_string).
+    """Normalize any input to (Circuit, detected_type).
 
     Accepted formats: ``uniqc.Circuit``, OriginIR string, OpenQASM 2.0
     string, ``qiskit.QuantumCircuit``.
@@ -44,7 +44,7 @@ def _resolve_input(circuit: Any) -> tuple[Circuit, str]:
     from uniqc.circuit_builder.normalize import normalize_circuit_input
 
     result = normalize_circuit_input(circuit)
-    return result.circuit, result.original_format
+    return result.circuit, result.type
 
 
 @dataclass(frozen=True)
@@ -201,8 +201,8 @@ def compile_with_config(
     """Internal compile implementation that accepts a :class:`TranspilerConfig`."""
     messages: list[str] = []
 
-    # Normalize any input type to a Circuit and record the original format
-    circuit_obj, original_format = _resolve_input(circuit)
+    # Normalize any input type to a Circuit and record the detected type
+    circuit_obj, input_type = _resolve_input(circuit)
 
     # Resolve topology
     if backend_info is not None and backend_info.topology:
@@ -273,7 +273,7 @@ def compile_with_config(
     # Build return value — resolve output format (auto matches input)
     from uniqc.circuit_builder.normalize import resolve_output_format
 
-    target_format = resolve_output_format(output_format, original_format)
+    target_format = resolve_output_format(output_format, input_type)
     if target_format == "originir":
         return convert_qasm_to_oir(transpiled_qasm)
     if target_format == "qasm":
@@ -323,8 +323,8 @@ def compile_full(
     )
     messages: list[str] = []
 
-    # Normalize any input type to a Circuit and record the original format
-    circuit_obj, original_format = _resolve_input(circuit)
+    # Normalize any input type to a Circuit and record the detected type
+    circuit_obj, input_type = _resolve_input(circuit)
 
     # Resolve topology
     if backend_info is not None and backend_info.topology:
@@ -379,7 +379,7 @@ def compile_full(
 
     from uniqc.circuit_builder.normalize import resolve_output_format
 
-    target_format = resolve_output_format(output_format, original_format)
+    target_format = resolve_output_format(output_format, input_type)
     if target_format == "originir":
         output = convert_qasm_to_oir(transpiled_qasm)
     elif target_format == "qasm":

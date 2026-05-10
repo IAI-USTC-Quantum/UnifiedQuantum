@@ -7,7 +7,7 @@ from typing import Optional, List, Union
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc._error_hints import format_enriched_message
 
 
@@ -65,7 +65,7 @@ def _statevector_expectation(circuit: Circuit, pauli_string: str) -> float:
     n = rot_circuit.max_qubit + 1
 
     # Use QASM simulator in statevector mode
-    sim = QASM_Simulator(backend_type='statevector', n_qubits=n)
+    sim = Simulator(backend_type='statevector', n_qubits=n)
     qasm = rot_circuit.qasm
     result = sim.simulate_statevector(qasm)
 
@@ -88,7 +88,7 @@ def _shots_expectation(circuit: Circuit, pauli_string: str, shots: int) -> float
     rot_circuit = _apply_basis_rotation(circuit, pauli_string)
     n = rot_circuit.max_qubit + 1
 
-    sim = QASM_Simulator(backend_type='statevector', n_qubits=n)
+    sim = Simulator(backend_type='statevector', n_qubits=n)
     qasm = rot_circuit.qasm
     counts = sim.simulate_shots(qasm, shots=shots)
     total = sum(counts.values())
@@ -205,7 +205,7 @@ def pauli_expectation(
 
     Args:
         circuit: Quantum circuit. Must contain only gates supported by
-            ``QASM_Simulator`` and end with measurement instructions.
+            ``Simulator`` and end with measurement instructions.
         pauli_string: Pauli string in any of three accepted forms (case-
             insensitive):
 

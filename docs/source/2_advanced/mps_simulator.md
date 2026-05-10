@@ -1,6 +1,6 @@
 # MPS 模拟器 (MPSSimulator)
 
-UnifiedQuantum 在原有的稠密态模拟器（`OriginIR_Simulator` / `OriginIR_NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：[`uniqc.simulator.MPSSimulator`](#)。
+UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：[`uniqc.simulator.MPSSimulator`](#)。
 
 它的目标场景是：
 
@@ -16,7 +16,7 @@ UnifiedQuantum 在原有的稠密态模拟器（`OriginIR_Simulator` / `OriginIR
 
 下表对比两类后端：
 
-| 维度 | `OriginIR_Simulator` (C++) | `MPSSimulator` (Python) |
+| 维度 | `Simulator` (C++) | `MPSSimulator` (Python) |
 |---|---|---|
 | 量子比特上限 | ~28（受内存限制） | 数百（取决于 χ） |
 | 拓扑约束 | 任意 | **仅最近邻一维链** |
@@ -73,7 +73,7 @@ dummy:local:mps-linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]
 
 * `linear-N` 给出比特数与拓扑（`[[0,1],[1,2],...,[N-2,N-1]]`），dry-run 阶段会拒绝跨距 ≠ 1 的双比特门
 * `chi`、`cutoff`、`seed` 三个 kwarg 会被转发到 `MPSConfig`
-* 与 `dummy:local:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 `OriginIR_NoisySimulator`
+* 与 `dummy:local:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 `NoisySimulator`
 
 ## OriginIR 门集
 
@@ -92,9 +92,9 @@ OriginIR 的参数语法是 `GATE q[a],q[b],(theta)`，**不是** `GATE(theta) q
 
 | 电路 | 推荐后端 |
 |---|---|
-| ≤ 24 比特，任意拓扑，需要精确 | `OriginIR_Simulator` |
+| ≤ 24 比特，任意拓扑，需要精确 | `Simulator` |
 | 一维链，比特数大，纠缠浅 | `MPSSimulator` |
 | 任意拓扑、需要噪声 | `dummy:<platform>:<chip>` 或真实硬件 |
-| 跨距 > 1 的门 | 先用 SWAP 编译到最近邻，再走 MPS；或换 `OriginIR_Simulator` |
+| 跨距 > 1 的门 | 先用 SWAP 编译到最近邻，再走 MPS；或换 `Simulator` |
 
 如果电路达到了体积律纠缠（例如随机量子电路深度 ≈ N），任何 χ 都会爆，此时 MPS 不是合适的工具。

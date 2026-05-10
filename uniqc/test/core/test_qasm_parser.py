@@ -4,8 +4,7 @@ import uniqc.simulator as qsim
 import numpy as np
 
 from uniqc.circuit_builder.random_qasm import random_qasm, available_qasm_gates
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc.circuit_builder import Circuit
 from uniqc.test._utils import uniq_test, NotMatchError
 
@@ -36,8 +35,8 @@ def run_test_qasm_parser():
         oir_1 = circuit_obj.originir
 
         # simulate oir_1 and oir_2
-        sim_oir = OriginIR_Simulator(backend_type='statevector')
-        sim_qasm = QASM_Simulator(backend_type='statevector', least_qubit_remapping=True)
+        sim_oir = Simulator(backend_type='statevector')
+        sim_qasm = Simulator(backend_type='statevector', least_qubit_remapping=True)
         
         state_1 = sim_oir.simulate_pmeasure(oir_1)
         state_2 = sim_qasm.simulate_pmeasure(qasm_1)

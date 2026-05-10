@@ -27,7 +27,7 @@ import numpy as np
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import basis_rotation_measurement
 
 
@@ -271,7 +271,7 @@ def run_qpe(
     c, q_precision = build_qpe_circuit(n_precision, U, eigenstate)
 
     # Simulate
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     counts = sim.simulate_shots(c.qasm, shots=shots)
     total = sum(counts.values())
 

@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 
 
@@ -50,7 +50,7 @@ def run_deutsch_jozsa(
     c = Circuit()
     deutsch_jozsa_circuit(c, oracle, qubits=data_qubits, ancilla=n_qubits)
 
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     result = sim.simulate_shots(c.qasm, shots=shots)
     total = sum(result.values())
     return {f"{int(k):0{n_qubits}b}": v / total for k, v in result.items()}

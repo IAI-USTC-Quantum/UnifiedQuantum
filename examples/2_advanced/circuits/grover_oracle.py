@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import grover_diffusion, grover_oracle
 
 
@@ -40,7 +40,7 @@ def run_grover(n_qubits: int, marked_state: int, shots: int = 4096):
 
     c.measure(*data_qubits)
 
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     result = sim.simulate_shots(c.qasm, shots=shots)
     total = sum(result.values())
     return {f"{k:0{n_qubits}b}": v / total for k, v in result.items()}, n_iter

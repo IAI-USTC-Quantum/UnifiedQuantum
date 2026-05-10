@@ -63,7 +63,7 @@ pytest uniqc/test/ -v --real-cloud-test
 
 | 模块 | 测试文件 | 测试方式 | 覆盖范围 |
 |------|----------|----------|----------|
-| **simulator** | `test_simulator.py` | 单元测试 | 噪声模拟器（`OriginIR_NoisySimulator`）statevector/density_matrix 后端计算正确性；含自定义错误模型测试 |
+| **simulator** | `test_simulator.py` | 单元测试 | 噪声模拟器（`NoisySimulator`）statevector/density_matrix 后端计算正确性；含自定义错误模型测试 |
 | **originir** | `test_originir_parser.py`, `test_random_OriginIR.py` | 单元测试 + 随机回归 | 解析器：随机生成 OriginIR → 解析 → 重建 → 模拟结果一致性验证；密度矩阵后端与 QuTip 对比 |
 | **qasm** | `test_qasm_parser.py`, `test_random_QASM.py`, `test_random_QASM_measure.py`, `test_QASMBench.py` | 单元测试 + 随机回归 + Benchmark | QASM 解析与重建一致性；statevector/density_matrix 后端与 Qiskit 对比；shots 采样与 Qiskit 对比；QASMBench 兼容性验证 |
 | **transpiler** | `test_transpile.py` | 单元测试 | `plot_time_line` 脉冲序列可视化正确性 |
@@ -77,7 +77,7 @@ pytest uniqc/test/ -v --real-cloud-test
 
 测试模拟器的计算正确性，主要覆盖：
 
-- **噪声模拟器测试**：构建含噪声量子线路，验证 `OriginIR_NoisySimulator` 在 statevector 和 density_matrix 两种后端下的结果
+- **噪声模拟器测试**：构建含噪声量子线路，验证 `NoisySimulator` 在 statevector 和 density_matrix 两种后端下的结果
 - **自定义错误模型**：测试 `BitFlip`、`PhaseFlip`、`Depolarizing`、`TwoQubitDepolarizing`、`AmplitudeDamping` 等预设错误模型
 
 #### test_originir_parser.py

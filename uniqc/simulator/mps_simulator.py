@@ -2,7 +2,7 @@
 
 This is a pure-NumPy MPS simulator suitable for circuits whose entanglement
 stays bounded by a moderate bond dimension. Compared to the C++
-``OriginIR_Simulator`` it trades off generality for *scale*: an open-boundary
+``Simulator`` it trades off generality for *scale*: an open-boundary
 qubit chain at ``chi_max=64`` and N=64 qubits is comfortably tractable here
 while a dense statevector at the same N is not.
 
@@ -18,11 +18,11 @@ When to use this simulator
 When NOT to use this simulator
 ------------------------------
 - Long-range two-qubit gates. They are *refused* (rather than swap-routed
-  silently). Compile to NN first, or use the dense ``OriginIR_Simulator``.
+  silently). Compile to NN first, or use the dense ``Simulator``.
 - Circuits that need ``CONTROL ... ENDCONTROL`` blocks. Decompose to native
   gates first.
 - Noise simulation. The MPS path is currently noiseless; route noisy work
-  through ``OriginIR_NoisySimulator`` or ``dummy:<platform>:<chip>``.
+  through ``NoisySimulator`` or ``dummy:<platform>:<chip>``.
 
 Public API
 ----------
@@ -406,7 +406,7 @@ class _MPSState:
     def to_statevector(self) -> np.ndarray:
         """Contract the MPS into a length-``2**n`` statevector.
 
-        Index convention matches :class:`uniqc.simulator.OriginIR_Simulator`:
+        Index convention matches :class:`uniqc.simulator.Simulator`:
         the integer index ``i`` encodes bits with qubit 0 as the LSB.
         """
         # Build C[s_0, s_1, ..., s_{n-1}] by sequential contraction.
@@ -437,7 +437,7 @@ _PMEASURE_QUBIT_LIMIT = 24
 
 class MPSSimulator:
     """OriginIR-driven MPS simulator with the same call surface as
-    :class:`uniqc.simulator.OriginIR_Simulator`.
+    :class:`uniqc.simulator.Simulator`.
 
     Unlike that class, this simulator:
 
@@ -514,7 +514,7 @@ class MPSSimulator:
         Index convention: bit ``j`` of the integer index corresponds to the
         ``j``-th measured qubit (in the order they appear in the result of
         :func:`_measure_order`), with qubit 0 being the LSB. This matches
-        :meth:`uniqc.simulator.OriginIR_Simulator.simulate_pmeasure`.
+        :meth:`uniqc.simulator.Simulator.simulate_pmeasure`.
 
         For circuits with > 24 measured qubits this method raises — the
         dense probability vector would be infeasibly large. Use
@@ -533,7 +533,7 @@ class MPSSimulator:
         """Sample ``shots`` measurement outcomes by per-site MPS sampling.
 
         Returns a ``{int: count}`` dict matching
-        :meth:`uniqc.simulator.OriginIR_Simulator.simulate_shots`. The
+        :meth:`uniqc.simulator.Simulator.simulate_shots`. The
         integer key encodes bits with the first measured qubit as the LSB.
 
         This routes through :meth:`_MPSState.sample_one` (cost
@@ -615,7 +615,7 @@ class MPSSimulator:
             if abs(a - b) != 1:
                 raise ValueError(
                     f"MPSSimulator: long-range 2q gate '{operation}' on ({a},{b}) is not "
-                    "supported. Compile to nearest-neighbour first or use OriginIR_Simulator."
+                    "supported. Compile to nearest-neighbour first or use Simulator."
                 )
             if self.available_topology is not None:
                 if [a, b] not in self.available_topology and [b, a] not in self.available_topology:

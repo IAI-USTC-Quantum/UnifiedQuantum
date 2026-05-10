@@ -6,7 +6,7 @@ from typing import Optional, List
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc.utils.expectation import calculate_expectation
 from uniqc._error_hints import format_enriched_message
 
@@ -109,7 +109,7 @@ def state_tomography(
     # Build a reduced circuit that only uses the selected qubits
     # We achieve this by generating the full QASM and letting the simulator
     # handle the qubit remapping (least_qubit_remapping=False keeps indices).
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
 
     # Pre-compute the 3^n basis settings
     from itertools import product
@@ -374,7 +374,7 @@ def state_tomography(
             sign = 1.0
             for i, (p_i, b_i) in enumerate(zip(p, basis_for_p)):
                 # LSB-first: bit i of outcome = measurement of qubit i
-                # (QASM_Simulator emits outcomes with c[j]=q[j], so bit j
+                # (Simulator emits outcomes with c[j]=q[j], so bit j
                 # of the integer outcome is qubit j's measurement).
                 k_i = (outcome >> i) & 1
                 if p_i == "I":

@@ -8,6 +8,8 @@
 * 测量结果直方图（``matplotlib`` 直接画 counts/probabilities）；
 * 时序图 ``plot_time_line``（如果安装了 ``visualization`` extra），用来排查 timeline /
   并行度问题。
+
+Uses ``Simulator`` (unified simulator class from ``uniqc.simulator``).
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def main() -> None:
@@ -25,7 +27,7 @@ def main() -> None:
     c.cnot(1, 2)
     c.measure(0, 1, 2)
 
-    counts = OriginIR_Simulator().simulate_shots(c.originir, shots=1024)
+    counts = Simulator().simulate_shots(c.originir, shots=1024)
     total = sum(counts.values()) or 1
     n = c.qubit_num
     probs = {format(int(k), f"0{n}b"): v / total for k, v in counts.items()}

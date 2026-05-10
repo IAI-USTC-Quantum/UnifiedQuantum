@@ -264,7 +264,7 @@ def pair_marginal_counts(
 
     ``measured_qubits`` defines the bit positions of the count keys: the
     integer index of an outcome has **bit ``k`` (LSB+k) = state of the
-    ``k``-th measured qubit**. This matches ``OriginIR_Simulator``'s
+    ``k``-th measured qubit**. This matches ``Simulator``'s
     ``simulate_pmeasure`` ordering when ``format(idx, f'0{n}b')`` is used
     to render the count key as a binary string.
 
@@ -298,7 +298,7 @@ def pair_ideal_probs(schedule: Schedule, pair: PairKey) -> np.ndarray:
     the layout produced by :func:`pair_marginal_counts`.
     """
     from uniqc import Circuit
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
     a, b = int(pair[0]), int(pair[1])
     region = schedule.region_qubits
@@ -317,7 +317,7 @@ def pair_ideal_probs(schedule: Schedule, pair: PairKey) -> np.ndarray:
     # measure(1) -> bit 1 = sim-q1 = pair[1]
     c.measure(0)
     c.measure(1)
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     return np.asarray(sim.simulate_pmeasure(c.originir), dtype=float)
 
 

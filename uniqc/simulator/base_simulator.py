@@ -25,7 +25,7 @@ class BaseSimulator:
 
     This class describes common behaviors of simulators.
     It is not designed to be used directly; instead, it should be subclassed
-    by specific simulators (e.g., OriginIR_Simulator, QASM_Simulator).
+    by specific simulators (e.g., Simulator).
     """
 
     def __init__(self, backend_type = 'statevector',                                  

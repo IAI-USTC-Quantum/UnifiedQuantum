@@ -29,14 +29,14 @@ print(circuit.originir)
 ## 本地模拟
 
 接下来使用本地模拟器运行线路并观察结果。建议重点关注：
-- 如何使用 {class}`uniqc.simulator.OriginIR_Simulator` 创建模拟器
+- 如何使用 {class}`uniqc.simulator.Simulator` 创建模拟器
 - 如何调用 `simulate_pmeasure` 获取测量概率分布
 - 输出结果的含义（概率分布）
 
 ```python
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
-sim = OriginIR_Simulator()
+sim = Simulator()
 
 # 概率测量
 prob = sim.simulate_pmeasure(circuit.originir)

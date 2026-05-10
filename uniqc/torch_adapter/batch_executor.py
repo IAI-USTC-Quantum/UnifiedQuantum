@@ -36,7 +36,7 @@ def batch_execute(
 
     Example:
         >>> def simulate(c):
-        ...     sim = OriginIR_Simulator()
+        ...     sim = Simulator()
         ...     return sim.simulate(c.originir)
         >>> results = batch_execute([c1, c2, c3], simulate, n_workers=4)
     """

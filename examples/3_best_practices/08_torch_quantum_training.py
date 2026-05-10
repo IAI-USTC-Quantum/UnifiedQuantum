@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def circuit_for(theta):
@@ -26,7 +26,7 @@ def circuit_for(theta):
 
 
 def z_expectation(theta):
-    counts = OriginIR_Simulator().simulate_shots(circuit_for(theta).originir, shots=400)
+    counts = Simulator().simulate_shots(circuit_for(theta).originir, shots=400)
     total = sum(counts.values()) or 1
     return (counts.get(0, 0) - counts.get(1, 0)) / total
 

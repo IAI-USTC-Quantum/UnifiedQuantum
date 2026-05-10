@@ -22,7 +22,7 @@ import numpy as np
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import state_tomography, tomography_summary
 
 
@@ -46,8 +46,8 @@ def run_tomography_demo(n_shots=2000):
     print(f"\nCircuit: (|00⟩ + i|11⟩)/√2")
 
     # Compare with exact statevector first (used as the tomography reference).
-    from uniqc.simulator.originir_simulator import OriginIR_Simulator
-    sim = OriginIR_Simulator(backend_type="statevector")
+    from uniqc.simulator import Simulator
+    sim = Simulator(backend_type="statevector")
     sv = np.asarray(sim.simulate_statevector(c.originir), dtype=complex)
     exact_rho = np.outer(sv, sv.conj())
 

@@ -7,7 +7,7 @@ local simulation. It's useful for:
 - Quick prototyping and debugging
 - Running circuits when API tokens are not available
 
-The dummy adapter uses the built-in OriginIR simulator to execute circuits
+The dummy adapter uses the built-in Simulator to execute circuits
 and returns results in the same format as cloud backends.
 
 Usage:
@@ -50,8 +50,8 @@ if TYPE_CHECKING:
 class DummyAdapter(QuantumAdapter):
     """Local simulator adapter that mimics cloud backends.
 
-    This adapter executes circuits locally using the built-in OriginIR
-    simulator instead of submitting to real quantum hardware. It provides
+    This adapter executes circuits locally using the built-in Simulator
+    instead of submitting to real quantum hardware. It provides
     the same interface as cloud adapters, making it a drop-in replacement.
 
     Features:
@@ -111,7 +111,7 @@ class DummyAdapter(QuantumAdapter):
                 so the same circuit submitted to different dummy targets does not
                 collide in the local task cache.
             simulator_kind: Which local simulator to dispatch to. ``"default"``
-                (the C++-backed ``OriginIR_Simulator``) or ``"mps"`` (pure-Python
+                (the C++-backed ``Simulator``) or ``"mps"`` (pure-Python
                 NumPy MPS, NN-only, no noise).
             simulator_kwargs: Extra keyword arguments forwarded to the simulator
                 constructor (e.g. ``{"chi_max": 64, "svd_cutoff": 1e-12}`` for
@@ -171,9 +171,9 @@ class DummyAdapter(QuantumAdapter):
 
                 self._simulator_cls = MPSSimulator
             else:
-                from uniqc.simulator import OriginIR_Simulator
+                from uniqc.simulator import Simulator
 
-                self._simulator_cls = OriginIR_Simulator
+                self._simulator_cls = Simulator
         return self._simulator_cls
 
     def _build_simulator(self) -> Any:
@@ -634,14 +634,14 @@ class DummyAdapter(QuantumAdapter):
 
         if error_loader is not None or readout_error:
             try:
-                from uniqc.simulator import OriginIR_NoisySimulator
+                from uniqc.simulator import NoisySimulator
             except ImportError:
                 sim = Simulator(
                     available_qubits=self.available_qubits,
                     available_topology=self.available_topology,
                 )
             else:
-                sim = OriginIR_NoisySimulator(
+                sim = NoisySimulator(
                     backend_type="density_operator",
                     error_loader=error_loader,
                     available_qubits=self.available_qubits,
@@ -680,7 +680,7 @@ class DummyAdapter(QuantumAdapter):
         if error_loader is not None or readout_error:
             # Noisy simulation
             try:
-                from uniqc.simulator import OriginIR_NoisySimulator
+                from uniqc.simulator import NoisySimulator
             except ImportError:
                 # Fall back to noiseless
                 sim = Simulator(
@@ -688,7 +688,7 @@ class DummyAdapter(QuantumAdapter):
                     available_topology=self.available_topology,
                 )
             else:
-                sim = OriginIR_NoisySimulator(
+                sim = NoisySimulator(
                     backend_type="density_operator",
                     error_loader=error_loader,
                     available_qubits=self.available_qubits,

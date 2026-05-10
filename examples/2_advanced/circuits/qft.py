@@ -5,7 +5,7 @@ Demonstrates:
   * Building a QFT circuit using qft_circuit
   * Preparing a computational basis state as input
   * Verifying QFT output via state-vector inspection
-  * Running with QASM_Simulator for shot-based sampling
+  * Running with Simulator for shot-based sampling
 
 Usage:
     python qft.py [--n-qubits N] [--input-state STATE] [--shots N]
@@ -26,7 +26,7 @@ import math
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import basis_state
 from uniqc import qft_circuit
 
@@ -54,7 +54,7 @@ def run_qft(n_qubits: int, input_state: int, shots: int = 4096) -> dict:
     c.measure(*list(range(n_qubits)))
 
     # Simulate
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     result = sim.simulate_shots(c.qasm, shots=shots)
     total = sum(result.values())
     return {f"{int(k):0{n_qubits}b}": v / total for k, v in result.items()}

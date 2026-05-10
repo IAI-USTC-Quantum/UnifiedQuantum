@@ -27,7 +27,7 @@ import numpy as np
 sys.path.insert(0, str(__file__.rsplit("/", 2)[0]))
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import (
     vqd_circuit,
     vqd_overlap_circuit,

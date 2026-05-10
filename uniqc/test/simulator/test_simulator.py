@@ -3,7 +3,7 @@ from uniqc.simulator import (StatevectorSimulator)
 from uniqc.compile.qasm import OpenQASM2_LineParser
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import seed
-from uniqc.simulator import OriginIR_Simulator, OriginIR_NoisySimulator
+from uniqc.simulator import Simulator, NoisySimulator
 
 import time
 
@@ -68,7 +68,7 @@ def test_noisy_simulator():
     print(error_loader)
     
     # Create an instance of the NoisySimulator
-    simulator = OriginIR_NoisySimulator(
+    simulator = NoisySimulator(
         backend_type='statevector',
         error_loader=error_loader,
         readout_error=readout_error
@@ -131,7 +131,7 @@ def test_noisy_simulator_2():
     print(error_loader)
     
     # Create an instance of the NoisySimulator
-    simulator = OriginIR_NoisySimulator(
+    simulator = NoisySimulator(
         backend_type='density_matrix',
         error_loader=error_loader,
         readout_error=readout_error

@@ -23,7 +23,7 @@ import numpy as np
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc import rotation_prepare
 
 
@@ -81,7 +81,7 @@ def run_demo(state_type="bell"):
     print("Rotation-Based State Preparation")
     print("=" * 50)
 
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
 
     if state_type == "bell":
         target, circuit = bell_state()

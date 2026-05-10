@@ -37,7 +37,7 @@ backend_registry 内部已将 IBM 路由到 QiskitAdapter。
                            │
                            ▼
                     ┌───────────────┐
-                    │OriginIR_Sim   │
+                    │Simulator   │
                     └───────────────┘
 ```
 

@@ -14,7 +14,7 @@ import math
 import matplotlib.pyplot as plt
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def probability_dict(values):
@@ -56,7 +56,7 @@ def main() -> None:
     print("QASM header:")
     print("\n".join(circuit.qasm.splitlines()[:6]))
 
-    sim = OriginIR_Simulator()
+    sim = Simulator()
     probs = probability_dict(sim.simulate_pmeasure(circuit.originir))
     print("probabilities:", probs)
     plot_probs(probs, "Bell state probabilities")

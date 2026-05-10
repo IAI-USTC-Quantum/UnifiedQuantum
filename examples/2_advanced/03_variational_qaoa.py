@@ -13,7 +13,7 @@ from __future__ import annotations
 import itertools
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def qaoa_layer(gamma: float, beta: float) -> Circuit:
@@ -32,7 +32,7 @@ def qaoa_layer(gamma: float, beta: float) -> Circuit:
 
 
 def main() -> None:
-    sim = OriginIR_Simulator()
+    sim = Simulator()
 
     best = None
     for gamma, beta in itertools.product([0.2, 0.4, 0.6], [0.2, 0.4, 0.6]):

@@ -121,7 +121,7 @@ class QASMResultAdapter:
     Example:
         >>> adapter = QASMResultAdapter(
         ...     counts={"00": 512, "11": 488},
-        ...     metadata={"simulator": "qasm_simulator"},
+        ...     metadata={"simulator": "simulator"},
         ... )
         >>> adapter.probabilities
         {'00': 0.512, '11': 0.488}
@@ -138,7 +138,7 @@ class QASMResultAdapter:
         self.counts: Dict[str, int] = dict(counts)
         self.shots: int = shots if shots is not None else sum(self.counts.values())
         self.metadata: dict = metadata if metadata is not None else {}
-        self.metadata.setdefault("simulator", "qasm_simulator")
+        self.metadata.setdefault("simulator", "simulator")
         self.metadata.setdefault("shots", self.shots)
         self.probabilities: Dict[str, float] = normalize_result(self.counts)
 

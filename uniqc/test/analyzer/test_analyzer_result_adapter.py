@@ -157,7 +157,7 @@ class TestQASMResultAdapter:
         adapter = QASMResultAdapter(counts={"00": 512, "11": 488})
         assert adapter.counts == {"00": 512, "11": 488}
         assert adapter.shots == 1000
-        assert adapter.metadata["simulator"] == "qasm_simulator"
+        assert adapter.metadata["simulator"] == "simulator"
         assert adapter.metadata["shots"] == 1000
         assert adapter.probabilities["00"] == pytest.approx(0.512)
         assert adapter.probabilities["11"] == pytest.approx(0.488)

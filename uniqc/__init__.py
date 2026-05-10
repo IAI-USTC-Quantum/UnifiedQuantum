@@ -172,9 +172,9 @@ from .utils import (
 )
 
 try:
-    from .simulator import OriginIR_Simulator
+    from .simulator import Simulator
 except ImportError:
-    OriginIR_Simulator = None  # type: ignore[assignment]
+    Simulator = None  # type: ignore[assignment]
 
 try:
     import uniqc_cpp  # noqa: F401
@@ -258,7 +258,7 @@ __all__ = [
     "NotSupportedGateError",
     "OpenQASM2_BaseParser",
     "OriginIR_BaseParser",
-    "OriginIR_Simulator",
+    "Simulator",
     "OriginQCircuitAdapter",
     "OriginQBackend",
     "OriginQOptions",

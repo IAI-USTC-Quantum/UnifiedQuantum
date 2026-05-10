@@ -24,7 +24,7 @@ import numpy as np
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc import qaoa_ansatz
 
 
@@ -71,7 +71,7 @@ def qaoa_energy(betas_gammas, cost_terms, p, n_qubits):
 
     circuit = qaoa_ansatz(cost_terms, p=p, betas=betas, gammas=gammas)
 
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     sv = np.asarray(sim.simulate_statevector(circuit.originir), dtype=complex)
 
     # Compute expectation value of each Pauli term

@@ -20,7 +20,7 @@ import numpy as np
 sys.path.insert(0, __file__.rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc import thermal_state_circuit
 
 
@@ -30,7 +30,7 @@ def run_thermal(n_qubits, beta, shots):
     thermal_state_circuit(c, beta=beta)
     c.measure(list(range(n_qubits)))
 
-    sim = QASM_Simulator()
+    sim = Simulator()
     raw = sim.simulate_shots(c.qasm, shots=shots)
     result = {f"{int(k):0{n_qubits}b}": v for k, v in raw.items()}
 

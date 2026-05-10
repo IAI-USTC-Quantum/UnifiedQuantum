@@ -231,9 +231,9 @@ class XEBenchmarker:
     def _build_noiseless_simulator(self) -> Any:
         """Build a noiseless OriginIR simulator for computing ideal distributions."""
         try:
-            from uniqc.simulator import OriginIR_Simulator
+            from uniqc.simulator import Simulator
 
-            return OriginIR_Simulator()
+            return Simulator()
         except Exception:
             return None
 

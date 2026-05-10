@@ -22,10 +22,10 @@
 
 | API | 在哪个用户文档章节中使用 |
 |-----|------------------------|
-| {py:class}`uniqc.simulator.OriginIR_Simulator` | [本地模拟 · OriginIR 模拟器](simulation.md#guide-simulation-originir) · [主路径走读 · 2. 本地模拟](walkthrough.md#local-simulation) |
-| {py:class}`uniqc.simulator.QASM_Simulator` | [本地模拟 · QASM 模拟器](simulation.md#guide-simulation-qasm) |
+| {py:class}`uniqc.simulator.Simulator` | [本地模拟 · OriginIR 模拟器](simulation.md#guide-simulation-originir) · [主路径走读 · 2. 本地模拟](walkthrough.md#local-simulation) |
+| {py:class}`uniqc.simulator.Simulator` | [本地模拟 · QASM 模拟器](simulation.md#guide-simulation-qasm) |
 | {py:class}`uniqc.simulator.OpcodeSimulator` | [本地模拟 · Opcode 模拟器](simulation.md#guide-simulation-opcode) · [Opcode（进阶）](../2_advanced/opcode.md) |
-| {py:class}`uniqc.simulator.OriginIR_NoisySimulator` | [本地模拟 · 带噪声的本地模拟](simulation.md#guide-simulation-noisy) · [噪声模拟（进阶）](../2_advanced/noise_simulation.md) |
+| {py:class}`uniqc.simulator.NoisySimulator` | [本地模拟 · 带噪声的本地模拟](simulation.md#guide-simulation-noisy) · [噪声模拟（进阶）](../2_advanced/noise_simulation.md) |
 | `simulate_pmeasure` / `simulate_statevector` / `simulate_shots` | [本地模拟 · OriginIR 模拟器](simulation.md#guide-simulation-originir) |
 | {py:func}`uniqc.simulator.create_simulator` | [本地模拟 · 入口总览](simulation.md#guide-simulation-entry-overview) |
 | {py:func}`uniqc.simulator.backend_alias` | [本地模拟 · 入口总览](simulation.md#guide-simulation-entry-overview) |

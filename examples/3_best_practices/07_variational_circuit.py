@@ -14,7 +14,7 @@ import math
 import matplotlib.pyplot as plt
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 
 def build_ansatz(theta):
@@ -25,7 +25,7 @@ def build_ansatz(theta):
 
 
 def z_expectation(theta):
-    counts = OriginIR_Simulator().simulate_shots(build_ansatz(theta).originir, shots=400)
+    counts = Simulator().simulate_shots(build_ansatz(theta).originir, shots=400)
     total = sum(counts.values()) or 1
     p0 = counts.get(0, 0) / total
     p1 = counts.get(1, 0) / total

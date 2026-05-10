@@ -25,7 +25,7 @@ import numpy as np
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
 
 from uniqc import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc import uccsd_ansatz
 from uniqc import pauli_expectation
 
@@ -74,7 +74,7 @@ def vqe_energy(params, hamiltonian, n_qubits, n_electrons):
         circuit.identity(q)
 
     # Simulate statevector
-    sim = OriginIR_Simulator(backend_type="statevector")
+    sim = Simulator(backend_type="statevector")
     # For energy evaluation, we use direct statevector overlap
     # (in practice, you'd use pauli_expectation with shot-based simulation)
     sv = np.asarray(sim.simulate_statevector(circuit.originir), dtype=complex)

@@ -1,7 +1,6 @@
 from .base_simulator import BaseSimulator
 from .mps_simulator import MPSSimulator
-from .originir_simulator import OriginIR_Simulator
-from .qasm_simulator import QASM_Simulator
+from .simulator import NoisySimulator, Simulator
 from .torchquantum_simulator import TorchQuantumSimulator
 
 __all__ = ["create_simulator", "get_simulator"]
@@ -9,7 +8,8 @@ __all__ = ["create_simulator", "get_simulator"]
 
 def create_simulator(
     backend: str = "statevector",
-    program_type: str = "originir",
+    *,
+    noise: bool = False,
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Create a simulator backend.
@@ -19,18 +19,16 @@ def create_simulator(
             ``"statevector"``, ``"density_matrix"``, ``"densitymatrix"``,
             ``"density"``, ``"torchquantum"``, and ``"mps"`` (alias
             ``"matrix_product_state"``).
-        program_type: Type of quantum program (``"originir"``, ``"qasm"``,
-            or ``"auto"``).  When ``"auto"``, an ``OriginIR_Simulator`` is
-            created; the actual input format is detected at
-            ``simulate_preprocess()`` time and ``Circuit`` objects are also
-            accepted.
+        noise: If ``True``, return a :class:`NoisySimulator` instead of
+            an ideal :class:`Simulator`.  Ignored for ``"torchquantum"``
+            and ``"mps"`` backends.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
         A simulator instance for the requested backend.
 
     Raises:
-        ValueError: If the backend or program type is not supported.
+        ValueError: If the backend is not supported.
         ImportError: If the TorchQuantum backend is requested but optional
             dependencies are not installed.
     """
@@ -38,10 +36,6 @@ def create_simulator(
     if normalised_backend == "torchquantum":
         return TorchQuantumSimulator(**kwargs)
     if normalised_backend in ("mps", "matrix_product_state"):
-        if program_type not in ("originir", "auto"):
-            raise ValueError(
-                "MPSSimulator currently only supports program_type='originir' or 'auto'"
-            )
         return MPSSimulator(**kwargs)
 
     backend_type_aliases = {
@@ -54,42 +48,29 @@ def create_simulator(
         raise ValueError(f"Unsupported simulator backend: {backend}")
 
     backend_type = backend_type_aliases[normalised_backend]
-    if program_type in ("originir", "auto"):
-        return OriginIR_Simulator(backend_type=backend_type, **kwargs)
-
-    if program_type == "qasm":
-        return QASM_Simulator(backend_type=backend_type, **kwargs)
-
-    raise ValueError(f"Unsupported program type: {program_type}")
+    sim_cls = NoisySimulator if noise else Simulator
+    return sim_cls(backend_type=backend_type, **kwargs)
 
 
 def get_simulator(
     backend_type: str = "statevector",
-    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Create a simulator instance (alias for :func:`create_simulator`).
 
-    The argument order matches :func:`create_simulator` — ``backend_type``
-    first, then ``program_type``. Both arguments default to the most common
-    case (``"statevector"`` + ``"originir"``).
-
     Args:
         backend_type: Simulator backend, e.g. ``"statevector"``,
             ``"density_matrix"``, ``"mps"``, ``"torchquantum"``.
-        program_type: Quantum program format, ``"originir"`` (default) or
-            ``"qasm"``.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
         A simulator instance.
     """
-    return create_simulator(backend=backend_type, program_type=program_type, **kwargs)
+    return create_simulator(backend=backend_type, **kwargs)
 
 
 def get_backend(
     backend_type: str = "statevector",
-    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Deprecated: use :func:`get_simulator` or :func:`create_simulator`."""
@@ -101,4 +82,4 @@ def get_backend(
         DeprecationWarning,
         stacklevel=2,
     )
-    return create_simulator(backend=backend_type, program_type=program_type, **kwargs)
+    return create_simulator(backend=backend_type, **kwargs)

@@ -26,7 +26,7 @@ class NormalizedCircuit:
     ----------
     circuit : Circuit
         The unified :class:`uniqc.Circuit` object.
-    original_format : str
+    type : str
         Detected input format: ``"circuit"``, ``"originir"``, ``"qasm"``,
         or ``"qiskit"``.
     original_input : Any
@@ -35,32 +35,32 @@ class NormalizedCircuit:
     """
 
     circuit: Any  # Circuit (avoid hard import at module level)
-    original_format: str
+    type: str
     original_input: Any = None
 
 
-def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
+def normalize_circuit_input(circuit) -> NormalizedCircuit:
     """Auto-detect input type and convert to :class:`uniqc.Circuit`.
 
-    Accepted input types:
+    Accepted input types (see :data:`AnyQuantumCircuit` and
+    :class:`uniqc.Circuit` for details):
 
     - :class:`uniqc.Circuit` — returned as-is.
     - :class:`str` — parsed as OriginIR or OpenQASM 2.0 based on content
       heuristics (``QINIT`` → OriginIR, ``OPENQASM`` / ``qreg`` → QASM).
     - ``qiskit.QuantumCircuit`` — exported via ``qiskit.qasm2.dumps()``
       (or ``.qasm()`` for older Qiskit) then parsed.
-
-    Not supported (by design): pyqpanda3 native types, Quark native APIs.
+    - ``pyqpanda3.QProg`` — converted via OriginIR round-trip.
 
     Parameters
     ----------
-    circuit : Any
+    circuit : AnyQuantumCircuit
         Circuit in any supported format.
 
     Returns
     -------
     NormalizedCircuit
-        A dataclass containing the ``Circuit``, the detected format,
+        A dataclass containing the ``Circuit``, the detected type,
         and the original input.
 
     Raises
@@ -76,7 +76,7 @@ def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
     if isinstance(circuit, _Circuit):
         return NormalizedCircuit(
             circuit=circuit,
-            original_format="circuit",
+            type="circuit",
             original_input=circuit,
         )
 
@@ -86,20 +86,20 @@ def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
         if stripped.startswith("QINIT") or "\nCREG " in stripped[:200]:
             return NormalizedCircuit(
                 circuit=_Circuit.from_originir(circuit),
-                original_format="originir",
+                type="originir",
                 original_input=circuit,
             )
         if stripped.startswith("OPENQASM") or "qreg " in stripped[:200] or "gate " in stripped[:200]:
             return NormalizedCircuit(
                 circuit=_Circuit.from_qasm(circuit),
-                original_format="qasm",
+                type="qasm",
                 original_input=circuit,
             )
         # Fallback: try OriginIR first (primary format), then QASM
         try:
             return NormalizedCircuit(
                 circuit=_Circuit.from_originir(circuit),
-                original_format="originir",
+                type="originir",
                 original_input=circuit,
             )
         except Exception:
@@ -107,7 +107,7 @@ def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
         try:
             return NormalizedCircuit(
                 circuit=_Circuit.from_qasm(circuit),
-                original_format="qasm",
+                type="qasm",
                 original_input=circuit,
             )
         except Exception:
@@ -129,7 +129,7 @@ def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
                 qasm_str = circuit.qasm()
             return NormalizedCircuit(
                 circuit=_Circuit.from_qasm(qasm_str),
-                original_format="qiskit",
+                type="qiskit",
                 original_input=circuit,
             )
     except ImportError:
@@ -141,20 +141,19 @@ def normalize_circuit_input(circuit: Any) -> NormalizedCircuit:
     )
 
 
-def resolve_output_format(output_format: str, original_format: str) -> str:
+def resolve_output_format(output_format: str, type: str) -> str:
     """Resolve the ``"auto"`` output-format sentinel.
 
-    When ``output_format`` is ``"auto"``, the result matches
-    ``original_format`` (with ``"qiskit"`` mapped to ``"circuit"`` since
-    there is no native qiskit compile path).  Any explicit value is
-    returned unchanged.
+    When ``output_format`` is ``"auto"``, the result matches ``type``
+    (with ``"qiskit"`` mapped to ``"circuit"`` since there is no native
+    qiskit compile path).  Any explicit value is returned unchanged.
 
     Parameters
     ----------
     output_format : str
         One of ``"circuit"``, ``"originir"``, ``"qasm"``, or ``"auto"``.
-    original_format : str
-        The format detected by :func:`normalize_circuit_input`.
+    type : str
+        The detected type from :func:`normalize_circuit_input`.
 
     Returns
     -------
@@ -164,6 +163,6 @@ def resolve_output_format(output_format: str, original_format: str) -> str:
     if output_format != "auto":
         return output_format
     # Map "qiskit" to "circuit" — there is no native qiskit output path.
-    if original_format == "qiskit":
+    if type == "qiskit":
         return "circuit"
-    return original_format
+    return type

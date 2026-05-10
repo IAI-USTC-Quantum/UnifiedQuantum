@@ -6,7 +6,7 @@ from typing import Optional, List, Union, Dict
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.qasm_simulator import QASM_Simulator
+from uniqc.simulator import Simulator
 from uniqc._error_hints import format_enriched_message
 
 
@@ -143,7 +143,7 @@ def basis_rotation_measurement(
     modified_qasm = "\n".join(new_lines)
 
     # Simulate
-    sim = QASM_Simulator(least_qubit_remapping=False)
+    sim = Simulator(least_qubit_remapping=False)
     if shots is None:
         probs = sim.simulate_pmeasure(modified_qasm)
         return {f"{i:0{n}b}": float(p) for i, p in enumerate(probs)}

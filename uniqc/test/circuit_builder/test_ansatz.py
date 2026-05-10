@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator.originir_simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 from uniqc.algorithms.core.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 
 
 def _statevector(circuit: Circuit) -> np.ndarray:
-    sim = OriginIR_Simulator(backend_type='statevector', least_qubit_remapping=False)
+    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
     return sim.simulate_statevector(circuit.originir)
 
 
@@ -88,7 +88,7 @@ class TestUCCSD:
         # With zero params, should be Hartree-Fock: |0011> (first 2 occupied)
         c = uccsd_ansatz(n_qubits=4, n_electrons=2, params=np.zeros(5))
         # Only X(0) and X(1) are applied
-        sim = OriginIR_Simulator(backend_type='statevector', least_qubit_remapping=False)
+        sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
         # Need to ensure 4 qubits — touch all
         c.x(2); c.x(2)
         c.x(3); c.x(3)
