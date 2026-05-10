@@ -111,7 +111,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Next: submit to a real backend",
             "After finding a good circuit locally, use uniqc backend list to pick a backend, "
-            "then uniqc submit circuit.qasm --platform originq --backend <NAME>.",
+            "then uniqc submit circuit.qasm --backend originq:<NAME>.",
         ),
     ],
     "submit": [
@@ -130,9 +130,9 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "uniqc config set originq.token <YOUR_TOKEN> to set it.",
         ),
         (
-            "Wrong platform?",
-            "Re-run with --platform originq|quafu|quark|ibm|dummy. "
-            "Use uniqc backend list --platform <PLATFORM> to see available backends first.",
+            "Wrong backend?",
+            "Re-run with --backend <ID> (e.g. 'originq:WK_C180', 'dummy:local:virtual-line-3'). "
+            "Use uniqc backend list to see available backends.",
         ),
         (
             "Need step-by-step guidance?",
@@ -142,8 +142,8 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Picking the right backend",
-            "Run uniqc backend list to see backends, then pass the full name with --backend. "
-            "Example: --backend WK_C180",
+            "Run uniqc backend list to see backends, then pass the full identifier with --backend. "
+            "Example: --backend originq:WK_C180",
         ),
     ],
     "result": [
@@ -177,7 +177,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "3. Retry: uniqc task list",
         ),
         (
-            "Wrong platform?",
+            "Filter by platform",
             "Filter by platform: uniqc task list --platform originq. "
             "Supported platforms: originq, quafu, ibm.",
         ),
@@ -214,7 +214,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Select a backend for submission",
             "Copy the Name column value (e.g., WK_C180) and pass it to "
-            "uniqc submit circuit.qasm --platform originq --backend WK_C180",
+            "uniqc submit circuit.qasm --backend originq:WK_C180",
         ),
         (
             "Hardware vs simulator",
@@ -235,7 +235,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Use this backend for submission",
             "Pass the full identifier to --backend: "
-            "uniqc submit circuit.qasm --platform originq --backend WK_C180",
+            "uniqc submit circuit.qasm --backend <provider>:<chip> (e.g. originq:WK_C180)",
         ),
         (
             "Compare backends",
