@@ -191,7 +191,7 @@ class Simulator(BaseSimulator):
         self._splitted_lines = None
 
 
-class NoisySimulator(BaseNoisySimulator):
+class NoisySimulator(Simulator, BaseNoisySimulator):
     """Noisy unified quantum circuit simulator.
 
     Same input-format auto-detection as :class:`Simulator`, with
@@ -216,7 +216,8 @@ class NoisySimulator(BaseNoisySimulator):
     ):
         if readout_error is None:
             readout_error = {}
-        super().__init__(
+        BaseNoisySimulator.__init__(
+            self,
             backend_type,
             available_qubits,
             available_topology,
@@ -227,125 +228,17 @@ class NoisySimulator(BaseNoisySimulator):
         self._raw_source: str | None = None
         self._splitted_lines: list[str] | None = None
 
-    # ------------------------------------------------------------------
-    # Parser selection
-    # ------------------------------------------------------------------
-
-    def _select_parser(self, source: str):
-        """Return the appropriate parser for *source* based on content."""
-        stripped = source.lstrip()
-        if stripped.upper().startswith(("OPENQASM", "QREG")):
-            from uniqc.compile.qasm import OpenQASM2_BaseParser
-
-            return OpenQASM2_BaseParser()
-        from uniqc.compile.originir.originir_base_parser import (
-            OriginIR_BaseParser,
-        )
-
-        return OriginIR_BaseParser()
-
-    # ------------------------------------------------------------------
-    # Preprocessing
-    # ------------------------------------------------------------------
-
     def simulate_preprocess(self, input_data):
         """Parse, preprocess, and inject errors into the circuit.
 
-        Returns:
-            Tuple of ``(error_injected_program_body, measure_qubit)``.
+        Delegates to :meth:`Simulator.simulate_preprocess` for format
+        auto-detection and preprocessing, then applies noise injection
+        from :class:`BaseNoisySimulator`.
         """
-        from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
-        from uniqc.circuit_builder.normalize import normalize_circuit_input
-
-        self._clear()
-
-        if isinstance(input_data, _Circuit):
-            return self._simulate_from_circuit(input_data)
-
-        if not isinstance(input_data, str):
-            result = normalize_circuit_input(input_data)
-            return self._simulate_from_circuit(result.circuit)
-
-        self._raw_source = input_data
-        self.parser = self._select_parser(input_data)
-        self.parser.parse(input_data)
-        self._splitted_lines = input_data.splitlines()
-
-        self._extract_actual_used_qubits()
-        if self.available_qubits or self.available_topology:
-            self._check_available_qubits()
-
-        processed_program_body = self._process_program_body()
-        measure_qubit = self._process_measure()
-
-        measure_qubit_cbit = sorted(measure_qubit, key=lambda k: k[1])
-        measure_qubit = [q for q, _ in measure_qubit_cbit]
+        processed_program_body, measure_qubit = Simulator.simulate_preprocess(
+            self, input_data
+        )
+        if self.error_loader:
+            self.error_loader.process_opcodes(processed_program_body)
+            processed_program_body = self.error_loader.opcodes
         return processed_program_body, measure_qubit
-
-    # ------------------------------------------------------------------
-    # Program body processing (topology validation with line numbers)
-    # ------------------------------------------------------------------
-
-    def _process_program_body(self):
-        """Process opcodes with topology validation."""
-        processed: list = []
-        program_body = self.parser.program_body
-        splitted = self._splitted_lines
-
-        for i, opcode in enumerate(program_body):
-            (
-                operation,
-                qubit,
-                cbit,
-                parameter,
-                dagger_flag,
-                control_qubits_set,
-            ) = opcode
-
-            if isinstance(qubit, list) and self.available_topology:
-                if len(qubit) > 2:
-                    msg = (
-                        "Real chip does not support gate of 3-qubit or more. "
-                        "The dummy server does not support either. "
-                        "You should consider decomposite it."
-                    )
-                    if splitted and i + 2 < len(splitted):
-                        msg += f"\nLine {i + 2} ({splitted[i + 2]})."
-                    raise ValueError(msg)
-                if (
-                    [int(qubit[0]), int(qubit[1])] not in self.available_topology
-                    and [int(qubit[1]), int(qubit[0])]
-                    not in self.available_topology
-                ):
-                    msg = "Unsupported topology."
-                    if splitted and i + 2 < len(splitted):
-                        msg += f"\nLine {i + 2} ({splitted[i + 2]})."
-                    raise ValueError(msg)
-
-            if qubit is not None:
-                if isinstance(qubit, list):
-                    mapped_qubit = [self.qubit_mapping[q] for q in qubit]
-                else:
-                    mapped_qubit = self.qubit_mapping[qubit]
-
-            processed.append(
-                (
-                    operation,
-                    mapped_qubit,
-                    cbit,
-                    parameter,
-                    dagger_flag,
-                    control_qubits_set,
-                )
-            )
-        return processed
-
-    # ------------------------------------------------------------------
-    # State reset
-    # ------------------------------------------------------------------
-
-    def _clear(self):
-        super()._clear()
-        self.parser = None
-        self._raw_source = None
-        self._splitted_lines = None
