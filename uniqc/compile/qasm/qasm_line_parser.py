@@ -528,7 +528,7 @@ class OpenQASM2_LineParser:  # noqa: N801
                     (qreg_name3, qubit_index3),
                     (qreg_name4, qubit_index4),
                 ]
-            elif operation in ("rx", "ry", "rz", "u1"):
+            elif operation in ("rx", "ry", "rz", "u1", "p"):
                 operation, parameter, qreg_name, qubit_index = OpenQASM2_LineParser.handle_1q1p(line)  # type: ignore[assignment]
                 q = (qreg_name, qubit_index)
             elif operation == "u2":

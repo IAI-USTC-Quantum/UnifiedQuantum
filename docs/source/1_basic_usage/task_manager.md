@@ -61,15 +61,15 @@ circuit.h(0)
 circuit.cnot(0, 1)
 circuit.measure(0, 1)
 
-# 提交到云平台
+# 提交到云平台（直接传 Circuit 对象，也接受 OriginIR/QASM 字符串）
 task_id = submit_task(
-    circuit.originir,
-    backend='originq',
+    circuit,
+    backend='originq:WK_C180',
     shots=1000
 )
 
 # 等待结果（阻塞直到完成）
-result = wait_for_result(task_id, backend='originq', timeout=300)
+result = wait_for_result(task_id, timeout=300)
 print(result.counts)
 ```
 
@@ -92,10 +92,9 @@ print(result.counts)
 from uniqc import submit_task
 
 task_id = submit_task(
-    circuit,              # OriginIR 或 QASM 格式的线路字符串
-    backend='originq',    # 平台选择：'originq', 'quafu', 'ibm', 'dummy'
+    circuit,              # Circuit 对象、OriginIR 字符串、QASM 字符串或 qiskit.QuantumCircuit
+    backend='originq:WK_C180',  # 平台选择：'originq:chip', 'quafu:chip', 'ibm:chip', 'dummy:local:simulator'
     shots=1000,           # 测量次数
-    chip_id='...',        # 芯片 ID（平台相关）
     **kwargs              # 其他平台相关参数
 )
 ```
@@ -104,8 +103,8 @@ task_id = submit_task(
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `circuit` | str | 量子线路（OriginIR 或 QASM 格式） |
-| `backend` | str | 平台名称：`'originq'`, `'quafu'`, `'ibm'`, `'dummy'` |
+| `circuit` | Circuit \| str \| qiskit.QuantumCircuit | 量子线路（自动检测并转换为内部 Circuit） |
+| `backend` | str | 平台标识：`'originq:WK_C180'`, `'quafu:ScQ-P10'`, `'ibm:ibm_brisbane'`, `'dummy:local:simulator'` |
 | `shots` | int | 测量次数，默认 1000 |
 | `chip_id` | str | 目标芯片 ID（可选） |
 
@@ -132,8 +131,8 @@ task_ids = submit_batch(
 ```python
 from uniqc import query_task
 
-info = query_task(task_id, backend='originq')
-print(info['status'])  # 'running', 'success', 'failed'
+info = query_task(task_id)
+print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 ```
 
 #### wait_for_result()
@@ -145,10 +144,31 @@ from uniqc import wait_for_result
 
 result = wait_for_result(
     task_id,
-    backend='originq',
     timeout=300,      # 超时时间（秒）
-    interval=5        # 轮询间隔（秒）
+    poll_interval=5   # 轮询间隔（秒）
 )
+```
+
+#### get_result()
+
+阻塞获取结果（`wait_for_result` 的别名，强调"我要结果"的语义）：
+
+```python
+from uniqc import get_result
+
+result = get_result(task_id, timeout=300, poll_interval=5)
+```
+
+#### poll_result()
+
+非阻塞状态查询（立即返回当前状态，适合在循环中轮询）：
+
+```python
+from uniqc import poll_result, TaskStatus
+
+info = poll_result(task_id)
+if info.status == TaskStatus.SUCCESS:
+    print(info.result)
 ```
 
 ### 任务管理

@@ -41,6 +41,15 @@ backend_registry 内部已将 IBM 路由到 QiskitAdapter。
                     └───────────────┘
 ```
 
+## 统一输入与结果接口 {#advanced-adapter-unified-io}
+
+`submit_task()` 和 `submit_batch()` 接受多种输入类型（`Circuit`、OriginIR/QASM 字符串、`qiskit.QuantumCircuit`），提交前自动转换为内部 `Circuit` 对象。结果检索有两种模式：
+
+- `poll_result(task_id)` — 非阻塞查询，立即返回 `TaskInfo`（含 `.status` 和 `.result`）
+- `get_result(task_id)` / `wait_for_result(task_id)` — 阻塞等待直到任务完成或超时
+
+所有 adapter 的 `query()` 方法返回统一的 `{"status": "success"|"failed"|"running", ...}` 格式，`task_manager` 自动映射为 `TaskStatus` 枚举。
+
 ## QuantumAdapter 基类 {#advanced-adapter-base-class}
 
 `QuantumAdapter` 是所有适配器的抽象基类，定义了统一的接口。

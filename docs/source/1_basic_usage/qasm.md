@@ -38,8 +38,11 @@ circuit.h(0)
 circuit.cnot(0, 1)
 circuit.measure(0, 1)
 
+# 属性形式
 qasm_str = circuit.qasm
-print(qasm_str)
+
+# 方法形式（推荐用于明确表达意图）
+qasm_str = circuit.to_qasm()
 ```
 
 ### Circuit → OriginIR
@@ -47,20 +50,40 @@ print(qasm_str)
 同一线路也可导出为 OriginIR 格式：
 
 ```python
+# 属性形式
 originir_str = circuit.originir
-print(originir_str)
+
+# 方法形式
+originir_str = circuit.to_originir()
 ```
 
 > 关于线路构建与格式导出的完整 API，见 [构建量子线路](circuit.md)。关于 OriginIR 格式的详细说明，见 [OriginIR](originir.md)。
 
+### QASM → Circuit（推荐）
+
+使用 `Circuit.from_qasm()` 类方法将 QASM 文本导入为 Circuit 对象：
+
+```python
+circuit = Circuit.from_qasm(qasm_str)
+# 可以继续编辑或提交
+task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
+```
+
 ### QASM → OriginIR
 
-如果你有外部 QASM 文本（例如从其他工具生成），可以将其转换为 OriginIR：
+将 QASM 文本直接转换为 OriginIR 字符串：
 
 ```python
 from uniqc.compile.converter import convert_qasm_to_oir
 
 originir_str = convert_qasm_to_oir(qasm_str)
+```
+
+或者通过 Circuit 对象中转：
+
+```python
+circuit = Circuit.from_qasm(qasm_str)
+originir_str = circuit.to_originir()
 ```
 
 ### 互转边界
@@ -152,6 +175,12 @@ originir_str = circuit.originir  # OriginIR 原生支持任意宽度多控门
 | YY        | `ryy(θ)` | $e^{-i \frac{\theta}{2} Y \otimes Y} = \begin{bmatrix} \cos(\theta/2) & 0 & 0 & i\sin(\theta/2) \\ 0 & \cos(\theta/2) & -i\sin(\theta/2) & 0 \\ 0 & -i\sin(\theta/2) & \cos(\theta/2) & 0 \\ i\sin(\theta/2) & 0 & 0 & \cos(\theta/2) \end{bmatrix}$ |
 | ZZ        | `rzz(θ)` | $e^{-i \frac{\theta}{2} Z \otimes Z} = \begin{bmatrix} e^{-i\theta/2} & 0 & 0 & 0 \\ 0 & e^{i\theta/2} & 0 & 0 \\ 0 & 0 & e^{i\theta/2} & 0 \\ 0 & 0 & 0 & e^{-i\theta/2} \end{bmatrix}$ |
 | XY        | `rxy(θ)` | $e^{-i \frac{\theta}{2} \left(\frac{1}{2}(X\otimes X+Y\otimes Y)\right)} = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos(\theta/2) & -i\sin(\theta/2) & 0 \\ 0 & -i\sin(\theta/2) & \cos(\theta/2) & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$ |
+| CRX       | `crx(θ)` | Controlled RX: $\begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & \cos(\theta/2) & -i\sin(\theta/2) \\ 0 & 0 & -i\sin(\theta/2) & \cos(\theta/2) \end{bmatrix}$ |
+| CRY       | `cry(θ)` | Controlled RY: $\begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & \cos(\theta/2) & -\sin(\theta/2) \\ 0 & 0 & \sin(\theta/2) & \cos(\theta/2) \end{bmatrix}$ |
+| CRZ       | `crz(θ)` | Controlled RZ: $\begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & e^{-i\theta/2} & 0 \\ 0 & 0 & 0 & e^{i\theta/2} \end{bmatrix}$ |
+| CU1       | `cu1(λ)` | Controlled Phase: $\begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & e^{i\lambda} \end{bmatrix}$ |
+| **2q3p operation** |  |  |
+| CU3       | `cu3(θ,φ,λ)` | Controlled U3: controlled version of U3 gate |
 
 ## 下一步
 

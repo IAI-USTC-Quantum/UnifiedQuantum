@@ -77,7 +77,7 @@ default:
 > 完整 API 文档与所有可选参数（`local_compile`、`cloud_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](#guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
 
 ```python
-from uniqc import Circuit, submit_task, wait_for_result, query_task
+from uniqc import Circuit, submit_task, wait_for_result, query_task, poll_result, get_result
 
 # 1. 创建电路
 circuit = Circuit()
@@ -232,6 +232,49 @@ task_ids = submit_batch(circuits, backend='originq:WK_C180', shots=1000)
 print(f"Submitted {len(task_ids)} tasks")
 ```
 
+## 多种输入格式 {#guide-submit-task-input-formats}
+
+`submit_task()` 和 `submit_batch()` 支持以下输入类型，提交时会自动检测并转换为内部 `Circuit` 对象：
+
+- **`uniqc.Circuit`**（推荐）—— 直接传入
+- **OriginIR 字符串** —— 以 `QINIT` 开头的 OriginIR 文本
+- **OpenQASM 2.0 字符串** —— 以 `OPENQASM` 开头的 QASM 文本
+- **`qiskit.QuantumCircuit`** —— 自动转为 QASM 后再导入
+
+```python
+from uniqc import Circuit, submit_task
+
+# 方式 1: Circuit 对象（推荐）
+circuit = Circuit(2)
+circuit.h(0)
+circuit.cnot(0, 1)
+circuit.measure(0, 1)
+task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
+
+# 方式 2: OriginIR 字符串
+task_id = submit_task(
+    "QINIT 2\nCREG 2\nH q[0]\nCNOT q[0], q[1]\n"
+    "MEASURE q[0], c[0]\nMEASURE q[1], c[1]\n",
+    backend='originq:WK_C180', shots=1000,
+)
+
+# 方式 3: OpenQASM 2.0 字符串
+task_id = submit_task(
+    'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
+    'qreg q[2];\ncreg c[2];\nh q[0];\ncx q[0],q[1];\n'
+    'measure q[0] -> c[0];\nmeasure q[1] -> c[1];\n',
+    backend='originq:WK_C180', shots=1000,
+)
+
+# 方式 4: Qiskit QuantumCircuit
+from qiskit import QuantumCircuit as QiskitQC
+qc = QiskitQC(2, 2)
+qc.h(0); qc.cx(0, 1); qc.measure([0, 1], [0, 1])
+task_id = submit_task(qc, backend='ibm:ibm_brisbane', shots=1000)
+```
+
+如果字符串格式无法识别，会抛出 `TypeError`。
+
 ## 结果处理
 
 ### Bitstring 约定（永久不变）{#guide-submit-task-bitstring-convention}
@@ -290,6 +333,38 @@ exp_zz = calculate_expectation(result.probabilities, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
 
+### 非阻塞查询 {#guide-submit-task-polling}
+
+所有任务提交都是异步的——`submit_task()` 立即返回 task_id，不会阻塞等待云端结果。你可以选择阻塞或非阻塞方式获取结果：
+
+```python
+from uniqc import submit_task, get_result, poll_result, TaskStatus
+
+task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
+
+# 方式 1: 非阻塞轮询（立即返回当前状态）
+info = poll_result(task_id)
+print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
+
+# 方式 2: 阻塞等待（等任务完成或超时）
+result = get_result(task_id, timeout=300, poll_interval=5)
+
+# 方式 3: 经典阻塞等待（get_result 的等价接口）
+from uniqc import wait_for_result
+result = wait_for_result(task_id, timeout=300)
+```
+
+典型轮询模式：
+
+```python
+import time
+while True:
+    info = poll_result(task_id)
+    if info.status in (TaskStatus.SUCCESS, TaskStatus.FAILED):
+        break
+    time.sleep(2)
+```
+
 ### 平台特定后端参数
 
 ```python
@@ -343,6 +418,12 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
    :noindex:
 
 .. autofunction:: uniqc.backend_adapter.task_manager.wait_for_result
+   :noindex:
+
+.. autofunction:: uniqc.backend_adapter.task_manager.get_result
+   :noindex:
+
+.. autofunction:: uniqc.backend_adapter.task_manager.poll_result
    :noindex:
 
 .. autofunction:: uniqc.backend_adapter.task_manager.query_task

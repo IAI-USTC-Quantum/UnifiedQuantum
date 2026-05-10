@@ -148,6 +148,36 @@ QASMBench 基准测试兼容性：
 - Dummy 模式（`submit_task(..., backend='dummy:local:simulator')`）的完整工作流：创建配置 → 构建线路 → 提交任务 → 获取结果
 - 验证示例代码可正确运行
 
+#### test_fake_backend.py（task_pipeline/）
+
+Fake-backend 端到端测试，**无需 API key 或云访问**：
+
+- `submit_task` + `get_result` / `wait_for_result` 完整流水线
+- `poll_result` 非阻塞查询
+- `submit_batch` 批量提交与结果排序
+- OriginIR / QASM 字符串自动检测输入
+- `Circuit.from_qasm()` / `Circuit.to_qasm()` 序列化往返
+- 全目标门集（H, X, Y, Z, S, T, RX, RY, RZ, P, U1, U2, U3, CNOT, CZ, SWAP, CRX, CRY, CRZ, CP, CU, TOFFOLI）
+- `qiskit.QuantumCircuit` 自动转换
+
+```bash
+# 运行 fake-backend 测试（无需任何 API key）
+pytest uniqc/test/task_pipeline/test_fake_backend.py -v
+```
+
+#### test_ibm_fake.py（task_pipeline/）
+
+IBM 适配器本地测试，使用 qiskit fake provider（无需 IBM Quantum 凭证）：
+
+- `IBMCircuitAdapter.adapt()` 转换验证
+- 全目标门集适配
+- `qiskit_adapter._normalize_qiskit_status` 状态映射验证
+
+```bash
+# 运行 IBM fake 测试（需要 qiskit，无需 IBM 凭证）
+pytest uniqc/test/task_pipeline/test_ibm_fake.py -v
+```
+
 ## CI 集成
 
 项目有两套 CI workflow 涉及测试：
