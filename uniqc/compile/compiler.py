@@ -14,7 +14,7 @@ import heapq
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from ._utils import CompilationFailedError
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
@@ -26,13 +26,25 @@ if TYPE_CHECKING:
     from uniqc.circuit_builder import Circuit
     from uniqc.cli.chip_info import ChipCharacterization
 
-OutputFormat = Literal["circuit", "originir", "qasm"]
+OutputFormat = Literal["circuit", "originir", "qasm", "auto"]
 
 # Default basis gates for superconducting qubit platforms
 _DEFAULT_BASIS_GATES = ("cz", "sx", "rz")
 
 # Default fidelity assumed for edges/qubits not in characterization
 _DEFAULT_FIDELITY = 0.99
+
+
+def _resolve_input(circuit: Any) -> tuple[Circuit, str]:
+    """Normalize any input to (Circuit, original_format_string).
+
+    Accepted formats: ``uniqc.Circuit``, OriginIR string, OpenQASM 2.0
+    string, ``qiskit.QuantumCircuit``.
+    """
+    from uniqc.circuit_builder.normalize import normalize_circuit_input
+
+    result = normalize_circuit_input(circuit)
+    return result.circuit, result.original_format
 
 
 @dataclass(frozen=True)
@@ -94,7 +106,7 @@ class CompilationResult:
 
 
 def compile(
-    circuit: Circuit | str,
+    circuit: Any,
     backend_info: BackendInfo | None = None,
     *,
     type: str = "qiskit",
@@ -122,7 +134,8 @@ def compile(
     Parameters
     ----------
     circuit :
-        The input circuit. Accepts a ``Circuit`` object or an OriginIR string.
+        The input circuit. Accepts a :class:`uniqc.Circuit`, an OriginIR
+        string, an OpenQASM 2.0 string, or a ``qiskit.QuantumCircuit``.
     backend_info :
         Target backend descriptor. Supplies the topology coupling map.
         If omitted, the topology is taken from ``chip_characterization``.
@@ -139,7 +152,8 @@ def compile(
     output_format :
         Return format. ``"circuit"`` (default) returns a new ``Circuit`` object;
         ``"originir"`` returns an OriginIR string;
-        ``"qasm"`` returns a QASM2 string.
+        ``"qasm"`` returns a QASM2 string;
+        ``"auto"`` matches the detected input format.
 
     Returns
     -------
@@ -153,6 +167,8 @@ def compile(
     ValueError
         If the transpiler type is unsupported, the optimization level is out
         of range, or no topology information is available.
+    TypeError
+        If the input type is not recognized.
 
     Example
     -------
@@ -175,7 +191,7 @@ def compile(
 
 
 def compile_with_config(
-    circuit: Circuit | str,
+    circuit: Any,
     backend_info: BackendInfo | None,
     config: TranspilerConfig,
     output_format: OutputFormat,
@@ -184,6 +200,9 @@ def compile_with_config(
 ) -> Circuit | str:
     """Internal compile implementation that accepts a :class:`TranspilerConfig`."""
     messages: list[str] = []
+
+    # Normalize any input type to a Circuit and record the original format
+    circuit_obj, original_format = _resolve_input(circuit)
 
     # Resolve topology
     if backend_info is not None and backend_info.topology:
@@ -213,8 +232,7 @@ def compile_with_config(
                 "actually connected on the chip."
             )
 
-    # Resolve input string
-    originir_input = circuit.originir if hasattr(circuit, "originir") else str(circuit)
+    originir_input = circuit_obj.originir
 
     # Fidelity-weighted *mapping* selection (no OriginIR rewriting)
     routed_originir = originir_input
@@ -252,10 +270,13 @@ def compile_with_config(
         initial_layout=initial_layout,
     )[0]
 
-    # Build return value
-    if output_format == "originir":
+    # Build return value — resolve output format (auto matches input)
+    from uniqc.circuit_builder.normalize import resolve_output_format
+
+    target_format = resolve_output_format(output_format, original_format)
+    if target_format == "originir":
         return convert_qasm_to_oir(transpiled_qasm)
-    if output_format == "qasm":
+    if target_format == "qasm":
         return transpiled_qasm
 
     output_originir = convert_qasm_to_oir(transpiled_qasm)
@@ -263,7 +284,7 @@ def compile_with_config(
 
 
 def compile_full(
-    circuit: Circuit | str,
+    circuit: Any,
     backend_info: BackendInfo | None = None,
     *,
     type: str = "qiskit",
@@ -281,7 +302,8 @@ def compile_full(
     Parameters
     ----------
     circuit :
-        The input circuit.
+        The input circuit. Accepts a :class:`uniqc.Circuit`, an OriginIR
+        string, an OpenQASM 2.0 string, or a ``qiskit.QuantumCircuit``.
     backend_info :
         Target backend descriptor.
     type, level, basis_gates, chip_characterization, output_format,
@@ -301,6 +323,9 @@ def compile_full(
     )
     messages: list[str] = []
 
+    # Normalize any input type to a Circuit and record the original format
+    circuit_obj, original_format = _resolve_input(circuit)
+
     # Resolve topology
     if backend_info is not None and backend_info.topology:
         topology = [(e.u, e.v) for e in backend_info.topology]
@@ -319,7 +344,7 @@ def compile_full(
                 "empty coupling map."
             )
 
-    originir_input = circuit.originir if hasattr(circuit, "originir") else str(circuit)
+    originir_input = circuit_obj.originir
     routed_originir = originir_input
     routing_overhead = 0
     fidelity_estimate: float | None = None
@@ -352,9 +377,12 @@ def compile_full(
         initial_layout=initial_layout,
     )[0]
 
-    if output_format == "originir":
+    from uniqc.circuit_builder.normalize import resolve_output_format
+
+    target_format = resolve_output_format(output_format, original_format)
+    if target_format == "originir":
         output = convert_qasm_to_oir(transpiled_qasm)
-    elif output_format == "qasm":
+    elif target_format == "qasm":
         output = transpiled_qasm
     else:
         output = _originir_to_circuit(convert_qasm_to_oir(transpiled_qasm))

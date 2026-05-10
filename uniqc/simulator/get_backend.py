@@ -19,7 +19,11 @@ def create_simulator(
             ``"statevector"``, ``"density_matrix"``, ``"densitymatrix"``,
             ``"density"``, ``"torchquantum"``, and ``"mps"`` (alias
             ``"matrix_product_state"``).
-        program_type: Type of quantum program ("originir" or "qasm").
+        program_type: Type of quantum program (``"originir"``, ``"qasm"``,
+            or ``"auto"``).  When ``"auto"``, an ``OriginIR_Simulator`` is
+            created; the actual input format is detected at
+            ``simulate_preprocess()`` time and ``Circuit`` objects are also
+            accepted.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
@@ -34,9 +38,9 @@ def create_simulator(
     if normalised_backend == "torchquantum":
         return TorchQuantumSimulator(**kwargs)
     if normalised_backend in ("mps", "matrix_product_state"):
-        if program_type != "originir":
+        if program_type not in ("originir", "auto"):
             raise ValueError(
-                "MPSSimulator currently only supports program_type='originir'"
+                "MPSSimulator currently only supports program_type='originir' or 'auto'"
             )
         return MPSSimulator(**kwargs)
 
@@ -50,7 +54,7 @@ def create_simulator(
         raise ValueError(f"Unsupported simulator backend: {backend}")
 
     backend_type = backend_type_aliases[normalised_backend]
-    if program_type == "originir":
+    if program_type in ("originir", "auto"):
         return OriginIR_Simulator(backend_type=backend_type, **kwargs)
 
     if program_type == "qasm":
