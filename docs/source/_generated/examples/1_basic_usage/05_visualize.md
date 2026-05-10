@@ -1,7 +1,7 @@
 ### 05 — Visualize circuits and results
 
 *Source*: ``examples/1_basic_usage/05_visualize.py``  
-*Status*: **pass**
+*Status*: **skip** — missing requirements: matplotlib (matplotlib installed)
 
 两类常用的可视化：
 
@@ -17,14 +17,7 @@ Uses ``Simulator`` (unified simulator class from ``uniqc.simulator``).
 :language: python
 ```
 
-**Stdout**
-
-```text
-counts: {0: 497, 7: 527}
-probabilities: {'000': 0.4853515625, '111': 0.5146484375}
-```
-
-**Figures**
-
-![05 — Visualize circuits and results — figure-01.png](../_generated/examples/1_basic_usage/figures/05_visualize/figure-01.png)
+:::{note}
+Example skipped during pre-doc-execution: missing requirements: matplotlib (matplotlib installed)
+:::
 

@@ -1,7 +1,7 @@
 ### WK180 chip-wide parallel-CZ XEB example for UnifiedQuantum.
 
 *Source*: ``examples/2_advanced/wk180/xeb.py``  
-*Status*: **not-executed**
+*Status*: **skip** — missing requirements: originq (pyqpanda3 + originq token configured)
 
 This example partitions every CZ edge of OriginQ's WK_C180 chip into
 three disjoint matchings (3-edge-coloring), picks one matching, and
@@ -49,6 +49,6 @@ Usage:
 ```
 
 :::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
+Example skipped during pre-doc-execution: missing requirements: originq (pyqpanda3 + originq token configured)
 :::
 

@@ -9,11 +9,11 @@
 * ``uniqc --help``
 * ``uniqc backend list``
 * ``uniqc simulate <file>``
-* ``uniqc submit <file> -p dummy --wait``
+* ``uniqc submit <file> --backend dummy --wait``
 * ``uniqc result <task_id>``
 * ``uniqc task list``
 
-需要真实 token 的子命令（``uniqc config set originq.token ...``、``uniqc submit -p originq``、
+需要真实 token 的子命令（``uniqc config set originq.token ...``、``uniqc submit --backend originq:...``、
 ``uniqc calibrate xeb``）只演示帮助文本，不会真的提交。
 
 **Source code**
@@ -87,8 +87,10 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 6 backends, updated 22h ago
-    ibm: 3 backends, updated 2d ago (stale)
+    originq: 6 backends, updated 7h ago
+    quafu: 16 backends, updated 4d ago (stale)
+    ibm: 3 backends, updated 4d ago (stale)
+    quark: 15 backends, updated 7h ago
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -99,10 +101,10 @@ Cache:
 │ 11    │ 127   │ 50.0%       │
 └───────┴───────┴─────────────┘
 
-== uniqc submit bell.originir -p dummy -s 64 --wait --format json ==
+== uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_c85692894cf4461f9b975e59110bceb1",
-  "platform": "dummy",
+  "task_id": "uqt_55e283d64b45465c8be23d62d4a90c30",
+  "backend": "dummy:local:simulator",
   "shots": 64
 }
 {
@@ -116,7 +118,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_c85692894cf4461f9b975e59110bceb1",
+  "task_id": "uqt_55e283d64b45465c8be23d62d4a90c30",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -127,11 +129,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_c85692894cf4… │ dummy:local:simu… │ success │ 64    │ 2026-05-10T13:22:… │
-│ uqt_86398f37f7bf… │ dummy:local:simu… │ success │ 64    │ 2026-05-10T13:22:… │
-│ uqt_80de05181dd2… │ dummy:local:simu… │ success │ 128   │ 2026-05-10T13:22:… │
-│ uqt_4a7c2c51fdf0… │ dummy:local:mps-… │ success │ 400   │ 2026-05-10T13:22:… │
-│ uqt_e8e42ff6a0ad… │ dummy:local:mps-… │ success │ 256   │ 2026-05-10T13:22:… │
+│ uqt_55e283d64b45… │ dummy:local:simu… │ success │ 64    │ 2026-05-10T16:15:… │
+│ uqt_a3c0f44416d0… │ dummy:local:simu… │ success │ 64    │ 2026-05-10T16:14:… │
+│ uqt_6e50b39fac10… │ dummy:local:mps-… │ success │ 400   │ 2026-05-10T16:14:… │
+│ uqt_c524d419ae19… │ dummy:local:mps-… │ success │ 256   │ 2026-05-10T16:14:… │
+│ uqt_068b9ccc3d3d… │ dummy:local:virt… │ success │ 256   │ 2026-05-10T16:14:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

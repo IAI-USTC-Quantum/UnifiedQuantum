@@ -12,6 +12,7 @@ Submodules
    uniqc.backend_adapter.task.adapters.ibm_adapter
    uniqc.backend_adapter.task.adapters.originq_adapter
    uniqc.backend_adapter.task.adapters.qiskit_adapter
+   uniqc.backend_adapter.task.adapters.quafu_adapter
    uniqc.backend_adapter.task.adapters.quark_adapter
 
 Module contents
