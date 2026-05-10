@@ -41,7 +41,7 @@ def simulate_by_uniq(qasm_str, backend_type='statevector', shots=10000):
         numpy.ndarray: The probability of each state.
     '''
 
-    qasm_simulator = Simulator(backend_type=backend_type)
+    qasm_simulator = Simulator(backend_type=backend_type, least_qubit_remapping=False)
 
     if qasm_simulator.opcode_simulator.simulator_typestr == 'density_operator':
         counts = qasm_simulator.simulate_pmeasure(qasm_str)

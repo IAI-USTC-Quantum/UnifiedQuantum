@@ -42,7 +42,7 @@ def simulate_by_qiskit_statevector(qasm_str):
 
 def _check_result(transpiled_circuit, reference_array, backend_type):
 
-    qasm_simulator = Simulator(backend_type)
+    qasm_simulator = Simulator(backend_type, least_qubit_remapping=False)
     my_result = qasm_simulator.simulate_pmeasure(transpiled_circuit)
 
     if len(reference_array) != len(my_result):
@@ -186,8 +186,8 @@ def compare_density_operator(circuit):
     # 3. If the results are not the same, raise an error.
 
     # Step 1: Simulate the circuit using QuTip and UnifiedQuantum
-    sim_uniq = Simulator(backend_type='density_operator')
-    sim_qutip = Simulator(backend_type='density_operator_qutip')
+    sim_uniq = Simulator(backend_type='density_operator', least_qubit_remapping=False)
+    sim_qutip = Simulator(backend_type='density_operator_qutip', least_qubit_remapping=False)
 
     mat_uniq = sim_uniq.simulate_density_matrix(circuit)
     mat_qutip = sim_qutip.simulate_density_matrix(circuit)
