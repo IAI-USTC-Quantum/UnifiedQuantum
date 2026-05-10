@@ -29,14 +29,14 @@ References:
  Input state: |5⟩ = |101⟩
 
  Results (top 8):
-   |001⟩   13.4%
-   |110⟩   13.0%
-   |010⟩   12.8%
-   |101⟩   12.7%
-   |011⟩   12.1%
-   |111⟩   12.1%
-   |100⟩   12.0%
-   |000⟩   11.9%
+   |011⟩   13.1%
+   |101⟩   12.8%
+   |010⟩   12.7%
+   |001⟩   12.6%
+   |000⟩   12.5%
+   |110⟩   12.5%
+   |100⟩   12.1%
+   |111⟩   11.6%
 
  Ideal: each basis state has probability 12.50%
  (QFT of |j⟩ produces equal-amplitude superposition with phase encoding)

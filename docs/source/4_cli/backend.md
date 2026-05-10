@@ -25,7 +25,6 @@ Dummy backend 的可枚举列表只包含通用本地 backend 和虚拟拓扑 fi
 
 ```bash
 uniqc backend list --platform originq
-uniqc backend list --platform quafu
 uniqc backend list --platform ibm
 
 # 短格式
@@ -59,7 +58,6 @@ uniqc backend list --info
 ┃ Platform  Name                    Qubits  Status    Type ┃
 ┃ originq   WK_C180                    180  available  hw  ┃
 ┃ originq   origin:simulator:01          0  available  sim ┃
-┃ quafu     ScQ-P18                     18  available  hw  ┃
 ┃ ibm       ibm_fez                    127  available  hw  ┃
 ```
 
@@ -129,7 +127,6 @@ rich 格式输出包含以下面板：
 ```bash
 # 查看芯片标定数据（使用缓存，若无缓存则自动拉取）
 uniqc backend chip-display originq/WK_C180
-uniqc backend chip-display quafu/ScQ-P18
 uniqc backend chip-display ibm/sherbrooke
 ```
 

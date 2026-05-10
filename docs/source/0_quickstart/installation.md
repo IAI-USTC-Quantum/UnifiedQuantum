@@ -112,8 +112,7 @@ uniqc config validate
 
 * OriginQ 是目前推荐的入门平台：免费试用门槛低、文档完整，`uniqc backend list -p originq`
   能看到全部芯片。
-* 其它平台同理：`uniqc config set quafu.token ...` / `uniqc config set ibm.token ...` /
-  `uniqc config set quark.token ...`。
+* 其它平台同理：`uniqc config set ibm.token ...` / `uniqc config set quark.token ...`。
 
 配置文件结构与 profile 切换的完整说明见 [平台约定](../1_basic_usage/platform_conventions.md) 与
 [`uniqc config`](../4_cli/config.md)。
@@ -151,16 +150,6 @@ pip install unified-quantum[quark]
 
 > **注意**：`[quark]` extra 包含 `quarkstudio` 和 `quarkcircuit`。前者负责 `Task.status/run/result`，后者用于读取芯片拓扑、耦合器保真度、可用门和校准信息。QuarkStudio 当前仅面向 Python 3.12 及以上版本解析安装。
 
-### Quafu 平台（已归档 / Archived）
-
-> **Deprecated / 依赖风险**：`[quafu]` extra 已移除。Quafu 的旧 `pyquafu` SDK 依赖 `numpy<2`，会把环境解析回 NumPy 1.x；Quafu 平台侧 SDK 已 deprecated，UnifiedQuantum 后续不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。新项目建议优先使用 QuarkStudio/Quark 后端。
->
-> 如仍需使用旧 Quafu 后端，请直接安装 `pyquafu`，并自行承担 NumPy 降级风险：
-
-```bash
-pip install pyquafu
-```
-
 ### IBM / Qiskit 平台
 
 Qiskit 已是 `unified-quantum` 的**核心依赖**，随默认安装一起进来；不需要再安装 `[qiskit]` extra。如果 `import qiskit` 失败，说明当前环境损坏，请重装：
@@ -197,7 +186,7 @@ pip install unified-quantum[pytorch]
 
 ### 安装所有可选依赖
 
-`[all]` 会安装当前维护的可选功能依赖，但**不包含** `pyquafu`，以避免 `numpy<2` 约束污染普通开发环境。Quafu 已归档：`[quafu]` extra 已移除，确需使用旧 Quafu 后端时请直接 `pip install pyquafu` 并自行承担 NumPy 降级风险。
+`[all]` 会安装当前维护的可选功能依赖。
 
 ```bash
 uv pip install unified-quantum[all]
@@ -207,7 +196,7 @@ pip install unified-quantum[all]
 
 ## 开发者补充
 
-维护者应使用 `uv sync --all-extras --group dev --group docs --upgrade` 建立全量环境；缺少当前维护的可选后端依赖或文档构建依赖都应视为开发环境不完整，而不是测试阻断的正常原因。Quafu/`pyquafu` 是例外：它因 `numpy<2` 约束和平台 deprecated 状态不再包含在 `[all]` 中。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
+维护者应使用 `uv sync --all-extras --group dev --group docs --upgrade` 建立全量环境；缺少当前维护的可选后端依赖或文档构建依赖都应视为开发环境不完整，而不是测试阻断的正常原因。项目依赖策略是不在 `pyproject.toml` 中约束第三方依赖版本，主分支不提交 `uv.lock`，依赖解析问题应通过升级解析结果和上游兼容性审查处理。
 
 如需本地构建文档，使用上述全量环境后进入 `docs/` 目录执行 `make html`。这一步仅在维护文档时需要，普通安装可跳过。
 

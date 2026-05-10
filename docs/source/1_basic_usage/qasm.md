@@ -8,7 +8,7 @@
 
 - 想用 `circuit.qasm` 导出 OpenQASM 2.0 格式的线路文本
 - 想将已有的 QASM 文本转换为 OriginIR 格式
-- 需要提交到 Quafu、IBM 等要求 QASM 格式的平台
+- 需要提交到 IBM 等要求 QASM 格式的平台
 - 想查阅某个门在 OriginIR 和 QASM 之间的对应关系
 
 > 如果你还不知道如何构建线路，请先阅读 [构建量子线路](circuit.md)。
@@ -17,7 +17,7 @@
 
 OpenQASM 2.0 是量子计算领域广泛使用的跨平台线路描述标准。在 UnifiedQuantum 中，QASM 主要用于以下场景：
 
-- **跨平台提交**：Quafu、IBM 等平台接受 QASM 格式的线路
+- **跨平台提交**：IBM 等平台接受 QASM 格式的线路
 - **外部互操作**：导入已有的 QASM 文件并转换为 UnifiedQuantum 可处理的格式
 
 > **注意**：UnifiedQuantum 对 OpenQASM 2.0 的支持目前**不完整**——并非所有 QASM 2.0 指令都能被解析或互转。使用前请确认你需要的门在下方的对照表中列出。详见 {mod}`uniqc.compile.qasm` 模块的 API 参考。
@@ -186,7 +186,7 @@ originir_str = circuit.originir  # OriginIR 原生支持任意宽度多控门
 
 - 如果你还不知道如何构建线路，先阅读 [构建量子线路](circuit.md)
 - 如果你想用 QASM 文本直接模拟，见 [本地模拟](simulation.md)
-- 如果你想提交到 Quafu 或 IBM 平台，见 [提交任务](submit_task.md)
+- 如果你想提交到 IBM 平台，见 [提交任务](submit_task.md)
 - 如果你需要了解 OriginIR 格式，见 [OriginIR](originir.md)
 
 ## 相关测试

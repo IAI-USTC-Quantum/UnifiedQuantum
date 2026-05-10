@@ -16,7 +16,6 @@ uniqc config init
 ```bash
 # 设置平台 Token
 uniqc config set originq.token YOUR_TOKEN
-uniqc config set quafu.token YOUR_TOKEN
 uniqc config set ibm.token YOUR_TOKEN
 
 # IBM Quantum 如需代理，可以写入嵌套 proxy 配置

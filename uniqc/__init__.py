@@ -117,7 +117,7 @@ from .algorithms.core.state_preparation import (
     thermal_state,
 )
 from .algorithms.workflows import readout_em_workflow, xeb_workflow
-from .circuit_builder import Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def, get_matrix
+from .circuit_builder import AnyQuantumCircuit, Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def, get_matrix, normalize_to_circuit
 from .compile import CompilationFailedError, CompilationResult, TranspilerConfig, compile
 from .compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
 from .compile.validation import (
@@ -172,9 +172,10 @@ from .utils import (
 )
 
 try:
-    from .simulator import Simulator
+    from .simulator import Simulator, NoisySimulator
 except ImportError:
     Simulator = None  # type: ignore[assignment]
+    NoisySimulator = None  # type: ignore[assignment]
 
 try:
     import uniqc_cpp  # noqa: F401
@@ -228,6 +229,7 @@ __all__ = [
     "BackendError",
     "BackendAuditIssue",
     "BackendInfo",
+    "AnyQuantumCircuit",
     "BackendNotAvailableError",
     "BackendNotFoundError",
     "BackendOptions",
@@ -259,6 +261,7 @@ __all__ = [
     "OpenQASM2_BaseParser",
     "OriginIR_BaseParser",
     "Simulator",
+    "NoisySimulator",
     "OriginQCircuitAdapter",
     "OriginQBackend",
     "OriginQOptions",
@@ -312,6 +315,7 @@ __all__ = [
     "algorithms",
     "audit_backend_info",
     "audit_backends",
+    "normalize_to_circuit",
     "basis_rotation_measurement",
     "BasisRotationMeasurement",
     "basis_state",
@@ -349,8 +353,8 @@ __all__ = [
     "find_backend",
     "get_backend",
     "get_ibm_proxy_from_config",
-    "get_result",
     "get_matrix",
+    "get_result",
     "get_task",
     "ghz_state",
     "grover_diffusion",

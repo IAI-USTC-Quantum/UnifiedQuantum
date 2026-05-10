@@ -1,21 +1,24 @@
 """Shared circuit input normalization.
 
-This module provides the single source of truth for auto-detecting and
-converting circuit input types (``uniqc.Circuit``, OriginIR strings,
-OpenQASM 2.0 strings, and ``qiskit.QuantumCircuit``) into a unified
-``uniqc.Circuit`` object.
-
-The compile, simulator, and task-manager modules all delegate to these
-functions so that every public entry point accepts the same set of input
-types.
+Provides the :data:`AnyQuantumCircuit` type alias and
+:func:`normalize_circuit_input` used by compile, simulators, and task-manager
+modules so that every public entry point accepts the same set of input types.
 """
 
 from __future__ import annotations
 
-__all__ = ["NormalizedCircuit", "normalize_circuit_input", "resolve_output_format"]
+__all__ = ["AnyQuantumCircuit", "NormalizedCircuit", "normalize_circuit_input", "normalize_to_circuit", "resolve_output_format"]
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from .qcircuit import Circuit
+
+#: Accepted input types for circuit-oriented APIs.
+#: A :class:`~uniqc.circuit_builder.Circuit` object, an OriginIR string,
+#: or an OpenQASM 2.0 string.
+AnyQuantumCircuit = Union["Circuit", str]
 
 
 @dataclass
@@ -30,139 +33,126 @@ class NormalizedCircuit:
         Detected input format: ``"circuit"``, ``"originir"``, ``"qasm"``,
         or ``"qiskit"``.
     original_input : Any
-        The raw input value, retained so callers can round-trip
-        (e.g. return a ``qiskit.QuantumCircuit`` when the user passed one).
+        The raw input value, retained so callers can round-trip.
     """
 
-    circuit: Any  # Circuit (avoid hard import at module level)
+    circuit: Any
     type: str
     original_input: Any = None
+
+
+def _parse_originir(text: str):
+    from uniqc.compile.originir import OriginIR_BaseParser
+    parser = OriginIR_BaseParser()
+    parser.parse(text)
+    return parser.to_circuit()
+
+
+def _parse_qasm(text: str):
+    from uniqc.compile.qasm import OpenQASM2_BaseParser
+    parser = OpenQASM2_BaseParser()
+    parser.parse(text)
+    return parser.to_circuit()
 
 
 def normalize_circuit_input(circuit) -> NormalizedCircuit:
     """Auto-detect input type and convert to :class:`uniqc.Circuit`.
 
-    Accepted input types (see :data:`AnyQuantumCircuit` and
-    :class:`uniqc.Circuit` for details):
+    Accepted input types:
 
     - :class:`uniqc.Circuit` — returned as-is.
-    - :class:`str` — parsed as OriginIR or OpenQASM 2.0 based on content
-      heuristics (``QINIT`` → OriginIR, ``OPENQASM`` / ``qreg`` → QASM).
-    - ``qiskit.QuantumCircuit`` — exported via ``qiskit.qasm2.dumps()``
-      (or ``.qasm()`` for older Qiskit) then parsed.
+    - :class:`str` — parsed as OriginIR or OpenQASM 2.0.
+    - ``qiskit.QuantumCircuit`` — exported via ``qiskit.qasm2.dumps()`` then parsed.
     - ``pyqpanda3.QProg`` — converted via OriginIR round-trip.
 
     Parameters
     ----------
-    circuit : AnyQuantumCircuit
+    circuit : Any
         Circuit in any supported format.
 
     Returns
     -------
     NormalizedCircuit
-        A dataclass containing the ``Circuit``, the detected type,
-        and the original input.
-
-    Raises
-    ------
-    TypeError
-        If the input type is not recognized.
-    CircuitTranslationError
-        If parsing or conversion fails.
+        Dataclass with ``.circuit``, ``.type``, and ``.original_input`` fields.
     """
-    from .qcircuit import Circuit as _Circuit
+    from .qcircuit import Circuit
 
-    # 1. Already a Circuit
-    if isinstance(circuit, _Circuit):
-        return NormalizedCircuit(
-            circuit=circuit,
-            type="circuit",
-            original_input=circuit,
-        )
+    if isinstance(circuit, Circuit):
+        return NormalizedCircuit(circuit=circuit, type="circuit", original_input=circuit)
 
-    # 2. String — auto-detect OriginIR vs QASM
     if isinstance(circuit, str):
         stripped = circuit.lstrip()
-        if stripped.startswith("QINIT") or "\nCREG " in stripped[:200]:
-            return NormalizedCircuit(
-                circuit=_Circuit.from_originir(circuit),
-                type="originir",
-                original_input=circuit,
-            )
-        if stripped.startswith("OPENQASM") or "qreg " in stripped[:200] or "gate " in stripped[:200]:
-            return NormalizedCircuit(
-                circuit=_Circuit.from_qasm(circuit),
-                type="qasm",
-                original_input=circuit,
-            )
-        # Fallback: try OriginIR first (primary format), then QASM
+        if stripped.upper().startswith(("OPENQASM", "QREG", "CREG", "MEASURE")):
+            try:
+                return NormalizedCircuit(
+                    circuit=_parse_qasm(circuit), type="qasm", original_input=circuit
+                )
+            except Exception:
+                pass
         try:
             return NormalizedCircuit(
-                circuit=_Circuit.from_originir(circuit),
-                type="originir",
-                original_input=circuit,
+                circuit=_parse_originir(circuit), type="originir", original_input=circuit
             )
         except Exception:
             pass
-        try:
-            return NormalizedCircuit(
-                circuit=_Circuit.from_qasm(circuit),
-                type="qasm",
-                original_input=circuit,
-            )
-        except Exception:
-            raise TypeError(
-                f"Could not parse circuit string. Tried both OriginIR and "
-                f"OpenQASM 2.0 formats. First 80 chars: {circuit[:80]!r}"
-            ) from None
+        # Last-ditch QASM attempt
+        return NormalizedCircuit(
+            circuit=_parse_qasm(circuit), type="qasm", original_input=circuit
+        )
 
-    # 3. qiskit.QuantumCircuit — lazy import
+    # qiskit.QuantumCircuit
     try:
-        from qiskit import QuantumCircuit as _QiskitQC
+        import qiskit.qasm2
 
-        if isinstance(circuit, _QiskitQC):
-            try:
-                from qiskit.qasm2 import dumps as _qasm2_dumps
+        qasm_str = qiskit.qasm2.dumps(circuit)
+        return NormalizedCircuit(
+            circuit=_parse_qasm(qasm_str), type="qiskit", original_input=circuit
+        )
+    except Exception:
+        pass
 
-                qasm_str = _qasm2_dumps(circuit)
-            except ImportError:
-                qasm_str = circuit.qasm()
+    # pyqpanda3.QProg
+    try:
+        import pyqpanda3
+
+        if isinstance(circuit, pyqpanda3.QProg):
+            originir_str = pyqpanda3.convert_qprog_to_originir(circuit)
             return NormalizedCircuit(
-                circuit=_Circuit.from_qasm(qasm_str),
-                type="qiskit",
+                circuit=_parse_originir(originir_str),
+                type="originir",
                 original_input=circuit,
             )
-    except ImportError:
+    except Exception:
         pass
 
     raise TypeError(
-        f"Unsupported circuit type: {type(circuit).__name__}. "
-        f"Expected uniqc.Circuit, str (OriginIR/QASM), or qiskit.QuantumCircuit."
+        f"Cannot normalize input of type {type(circuit).__name__}. "
+        f"Expected Circuit, originir string, qasm string, "
+        f"qiskit.QuantumCircuit, or pyqpanda3.QProg."
     )
 
 
-def resolve_output_format(output_format: str, type: str) -> str:
-    """Resolve the ``"auto"`` output-format sentinel.
+def normalize_to_circuit(input: AnyQuantumCircuit) -> "Circuit":
+    """Convert *AnyQuantumCircuit* to a :class:`Circuit` object."""
+    return normalize_circuit_input(input).circuit
 
-    When ``output_format`` is ``"auto"``, the result matches ``type``
-    (with ``"qiskit"`` mapped to ``"circuit"`` since there is no native
-    qiskit compile path).  Any explicit value is returned unchanged.
+
+def resolve_output_format(output_format: str, type: str) -> str:
+    """Resolve the output format string to a canonical name.
 
     Parameters
     ----------
     output_format : str
-        One of ``"circuit"``, ``"originir"``, ``"qasm"``, or ``"auto"``.
+        User-specified format: ``"originir"``, ``"qasm"``, ``"circuit"``, or
+        ``"auto"``. ``"auto"`` returns the same format as the input *type*.
     type : str
-        The detected type from :func:`normalize_circuit_input`.
+        Detected input format from :func:`normalize_circuit_input`.
 
     Returns
     -------
     str
-        The resolved format (one of ``"circuit"``, ``"originir"``, ``"qasm"``).
+        Canonical format: ``"originir"`` or ``"qasm"``.
     """
-    if output_format != "auto":
-        return output_format
-    # Map "qiskit" to "circuit" — there is no native qiskit output path.
-    if type == "qiskit":
-        return "circuit"
-    return type
+    if output_format == "auto":
+        return "originir" if type in ("circuit", "originir") else "qasm"
+    return output_format

@@ -8,8 +8,7 @@ __all__ = ["create_simulator", "get_simulator"]
 
 def create_simulator(
     backend: str = "statevector",
-    *,
-    noise: bool = False,
+    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Create a simulator backend.
@@ -19,9 +18,8 @@ def create_simulator(
             ``"statevector"``, ``"density_matrix"``, ``"densitymatrix"``,
             ``"density"``, ``"torchquantum"``, and ``"mps"`` (alias
             ``"matrix_product_state"``).
-        noise: If ``True``, return a :class:`NoisySimulator` instead of
-            an ideal :class:`Simulator`.  Ignored for ``"torchquantum"``
-            and ``"mps"`` backends.
+        program_type: Ignored — :class:`Simulator` auto-detects the input
+            format.  Kept for backward compatibility.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
@@ -48,29 +46,36 @@ def create_simulator(
         raise ValueError(f"Unsupported simulator backend: {backend}")
 
     backend_type = backend_type_aliases[normalised_backend]
-    sim_cls = NoisySimulator if noise else Simulator
-    return sim_cls(backend_type=backend_type, **kwargs)
+    return Simulator(backend_type=backend_type, **kwargs)
 
 
 def get_simulator(
     backend_type: str = "statevector",
+    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Create a simulator instance (alias for :func:`create_simulator`).
 
+    The argument order matches :func:`create_simulator` — ``backend_type``
+    first, then ``program_type``. Both arguments default to the most common
+    case (``"statevector"`` + ``"originir"``).
+
     Args:
         backend_type: Simulator backend, e.g. ``"statevector"``,
             ``"density_matrix"``, ``"mps"``, ``"torchquantum"``.
+        program_type: Ignored — :class:`Simulator` auto-detects the input
+            format.
         **kwargs: Additional arguments passed to the simulator constructor.
 
     Returns:
         A simulator instance.
     """
-    return create_simulator(backend=backend_type, **kwargs)
+    return create_simulator(backend=backend_type, program_type=program_type, **kwargs)
 
 
 def get_backend(
     backend_type: str = "statevector",
+    program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
     """Deprecated: use :func:`get_simulator` or :func:`create_simulator`."""
@@ -82,4 +87,4 @@ def get_backend(
         DeprecationWarning,
         stacklevel=2,
     )
-    return create_simulator(backend=backend_type, **kwargs)
+    return create_simulator(backend=backend_type, program_type=program_type, **kwargs)

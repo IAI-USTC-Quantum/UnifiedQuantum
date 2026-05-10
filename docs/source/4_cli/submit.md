@@ -55,6 +55,14 @@ uniqc submit circuit.ir --backend dummy:originq:WK_C180
 uniqc submit circuit1.ir circuit2.ir circuit3.ir --backend originq:WK_C180
 ```
 
+## 支持的平台
+
+| 平台 | 说明 |
+|------|------|
+| `originq` | 本源量子云平台 |
+| `ibm` | IBM Quantum |
+| `dummy` | 本地模拟器（用于测试） |
+
 ## 试运行模式 (`--dry-run`)
 
 `--dry-run` 在不发起任何网络请求的情况下验证电路兼容性。检查项包括：
@@ -90,8 +98,8 @@ uniqc submit circuit1.ir circuit2.ir --backend originq:WK_C180 --dry-run
 失败：
 
 ```
-[DRY-RUN FAILED] Unsupported gate 'TOFFOLI' on platform 'quafu'
-  Details: Gate 'TOFFOLI' is not in the supported gate set for Quafu.
+[DRY-RUN FAILED] Unsupported gate 'TOFFOLI' on platform 'ibm'
+  Details: Gate 'TOFFOLI' is not in the supported gate set for IBM.
 ```
 
 批量输出（表格）：

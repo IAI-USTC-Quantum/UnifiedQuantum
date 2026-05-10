@@ -176,7 +176,6 @@ transpile_qasm(qasm_strs, ...)
 ```
 BackendOptions（基类）
 ├── OriginQOptions
-├── QuafuOptions
 ├── IBMOptions
 └── DummyOptions
 ```
@@ -194,21 +193,6 @@ opts = OriginQOptions(
     measurement_amend=False,           # 默认 False，测量误差缓解
     auto_mapping=False,                # 默认 False
     shots=1000,                       # 继承自 BackendOptions 基类
-)
-```
-
-#### Quafu
-
-```python
-from uniqc import QuafuOptions
-
-opts = QuafuOptions(
-    chip_id="ScQ-P18",        # 默认
-    auto_mapping=True,        # 默认 True
-    task_name="my-task",      # 可选，服务端任务名
-    group_name="my-group",    # 可选，批次跟踪
-    wait=False,               # 默认 False，阻塞直到服务端确认
-    shots=1000,
 )
 ```
 
@@ -251,13 +235,9 @@ opts = BackendOptionsFactory.from_kwargs("originq", {
 })
 assert isinstance(opts, OriginQOptions)
 
-# 从 None 创建平台默认值
-opts = BackendOptionsFactory.normalize_options(None, "quafu")
-# → QuafuOptions(chip_id="ScQ-P18", auto_mapping=True, ...)
-
 # 从 dict 规范化（normalize_options 的主入口）
 opts = BackendOptionsFactory.normalize_options(
-    {"chip_id": "ScQ-P10"}, "quafu"
+    {"backend_name": "WK_C180"}, "originq"
 )
 ```
 
@@ -450,25 +430,6 @@ task_id = submit_task(compiled, "originq", options=opts)
 print(f"任务 ID: {task_id}")
 ```
 
-### 4.2 仅使用 BackendOptions 提交
-
-```python
-from uniqc import QuafuOptions, submit_task
-from uniqc import Circuit
-
-circuit = Circuit()
-circuit.h(0)
-circuit.cnot(0, 1)
-
-# 类型安全的选项写法
-opts = QuafuOptions(
-    chip_id="ScQ-P10",
-    task_name="ghz-experiment",
-    wait=True,
-)
-task_id = submit_task(circuit, "quafu", options=opts)
-```
-
 ---
 
 ## 5. API 速查
@@ -492,17 +453,6 @@ task_id = submit_task(circuit, "quafu", options=opts)
 | `circuit_optimize` | `bool` | `True` |
 | `measurement_amend` | `bool` | `False` |
 | `auto_mapping` | `bool` | `False` |
-| `shots` | `int` | `1000` |
-
-### `QuafuOptions`
-
-| 字段 | 类型 | 默认值 |
-|------|------|--------|
-| `chip_id` | `str` | `"ScQ-P18"` |
-| `auto_mapping` | `bool` | `True` |
-| `task_name` | `str \| None` | `None` |
-| `group_name` | `str \| None` | `None` |
-| `wait` | `bool` | `False` |
 | `shots` | `int` | `1000` |
 
 ### `RegionSelector`

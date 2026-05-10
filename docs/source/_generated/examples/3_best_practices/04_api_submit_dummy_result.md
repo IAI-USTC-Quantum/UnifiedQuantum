@@ -1,7 +1,7 @@
 ### 04 — Python API 提交、取回与可视化
 
 *Source*: ``examples/3_best_practices/04_api_submit_dummy_result.py``  
-*Status*: **pass**
+*Status*: **skip** — missing requirements: matplotlib (matplotlib installed)
 
 使用 ``submit_task(backend="dummy:local:simulator")`` 验证远端任务接口的本地替代
 路径：提交、等待、查询缓存、画图。
@@ -16,15 +16,7 @@
 :language: python
 ```
 
-**Stdout**
-
-```text
-task_id: uqt_80de05181dd24851b7341eaec6456d2e
-status: success
-counts: UnifiedResult(counts={'00': 64, '11': 64}, probabilities={'00': 0.5, '11': 0.5}, shots=128, platform='dummy', task_id='uqt_80de05181dd24851b7341eaec6456d2e', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
-```
-
-**Figures**
-
-![04 — Python API 提交、取回与可视化 — figure-01.png](../_generated/examples/3_best_practices/figures/04_api_submit_dummy_result/figure-01.png)
+:::{note}
+Example skipped during pre-doc-execution: missing requirements: matplotlib (matplotlib installed)
+:::
 

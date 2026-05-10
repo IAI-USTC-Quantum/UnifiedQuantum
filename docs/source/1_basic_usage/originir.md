@@ -16,15 +16,19 @@
 
 ## 什么是 OriginIR
 
-OriginIR 是本源量子体系下的量子线路描述语言。在 UnifiedQuantum 中，它是线路的**首选内部表示格式**——当你调用 `circuit.originir` 时，输出的就是这种格式。OriginQ 平台的任务提交也使用该格式。
+OriginIR 是本源量子体系下的量子线路描述语言，源自 [pyqpanda3](https://github.com/OriginQ/pyqpanda-3)（[PyPI](https://pypi.org/project/pyqpanda3/)）/ OriginQ 生态。
 
-如果你需要跨平台交互（例如提交到 Quafu 或 IBM），则需要导出为 OpenQASM 2.0 格式，详见 [QASM](qasm.md)。
+在 UnifiedQuantum 中，线路的**内部表示**是 `Circuit` 对象及其 `opcode_list`（由 {class}`uniqc.circuit_builder.OpcodeType` 元组组成，定义在 `uniqc.circuit_builder.opcode` 模块中）。当你调用 `circuit.originir` 时，是把内部的 opcode 序列序列化为 OriginIR 文本——它是一种**导出与交换格式**，而非内部存储格式。OriginQ 平台的任务提交也使用该格式。
+
+> **内部表示 vs 导出格式**：`Circuit` 对象在内存中以 `opcode_list: list[OpcodeType]` 存储门操作序列。`.originir` 和 `.qasm` 是将 opcode 序列序列化为文本的属性。模拟器在底层也直接消费 opcode，不需要先序列化为 OriginIR 再解析。
+
+如果你需要跨平台交互（例如提交到 IBM），则需要导出为 OpenQASM 2.0 格式，详见 [QASM](qasm.md)。
 
 ## 在 UnifiedQuantum 中使用 OriginIR
 
 ### 从 Circuit 导出
 
-构建完线路后，直接获取 OriginIR 文本：
+构建完线路后，直接获取 OriginIR 文本（触发序列化，不是读取存储的文本）：
 
 ```python
 from uniqc import Circuit
