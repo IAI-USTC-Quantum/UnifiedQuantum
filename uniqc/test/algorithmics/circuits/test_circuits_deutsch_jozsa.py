@@ -46,7 +46,7 @@ class TestDeutschJozsaCircuit:
         # Use explicit qubits: data qubits 0,1,2 and ancilla qubit 3
         deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
 
-        sim = Simulator(backend_type="statevector")
+        sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
         # LSB-first statevector: qubit k = bit k of index. Data qubits are
@@ -65,7 +65,7 @@ class TestDeutschJozsaCircuit:
         c = Circuit()
         deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
 
-        sim = Simulator(backend_type="statevector")
+        sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 
@@ -83,7 +83,7 @@ class TestDeutschJozsaCircuit:
         c = Circuit()
         deutsch_jozsa_circuit(c, oracle, qubits=[0], ancilla=1)
 
-        sim = Simulator(backend_type="statevector")
+        sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 

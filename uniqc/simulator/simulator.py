@@ -102,9 +102,10 @@ class Simulator(BaseSimulator):
             self._check_available_qubits()
 
         processed_program_body = self._process_program_body()
-        processed_measure_qubits = self._process_measure_qubits()
-
-        return processed_program_body, processed_measure_qubits
+        measure_qubit = self._process_measure()
+        measure_qubit_cbit = sorted(measure_qubit, key=lambda k: k[1])
+        measure_qubit = [q for q, _ in measure_qubit_cbit]
+        return processed_program_body, measure_qubit
 
     def _clear(self):
         super()._clear()
@@ -171,14 +172,16 @@ class NoisySimulator(BaseNoisySimulator):
             self._check_available_qubits()
 
         processed_program_body = self._process_program_body()
-        processed_measure_qubits = self._process_measure_qubits()
+        measure_qubit = self._process_measure()
+        measure_qubit_cbit = sorted(measure_qubit, key=lambda k: k[1])
+        measure_qubit = [q for q, _ in measure_qubit_cbit]
 
         # Apply error injection (same logic as BaseNoisySimulator).
         if self.error_loader:
             self.error_loader.process_opcodes(processed_program_body)
             processed_program_body = self.error_loader.opcodes
 
-        return processed_program_body, processed_measure_qubits
+        return processed_program_body, measure_qubit
 
     def _clear(self):
         super()._clear()
