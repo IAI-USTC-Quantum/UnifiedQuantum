@@ -65,6 +65,10 @@ CMD_REFS: dict[str, list[tuple[str, str]]] = {
         ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#pattern"),
         ("GitHub", GITHUB_URL),
     ],
+    "doctor": [
+        ("CLI Docs", f"{DOCS_URL}source/cli/doctor.html"),
+        ("GitHub", GITHUB_URL),
+    ],
 }
 
 # ----------------------------------------------------------------------
@@ -350,6 +354,29 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Circuit mode",
             "Pass --type circuit --circuit circuit.ir to extract parallel 2q gate groups from OriginIR.",
+        ),
+    ],
+    "doctor": [
+        (
+            "First-time setup check",
+            "Run `uniqc doctor` after installing to verify your environment. "
+            "It checks dependencies, config, task database, backend cache, and platform connectivity.",
+        ),
+        (
+            "Missing dependencies?",
+            "Install optional packages with pip: "
+            "pip install pyqpanda3 (OriginQ), pyquafu (Quafu), quarkstudio (Quark), "
+            "qiskit qiskit-ibm-runtime (IBM). Core deps are numpy, typer, rich, scipy, pyyaml.",
+        ),
+        (
+            "Config errors?",
+            "Run `uniqc config validate` for detailed validation, then `uniqc config set <platform>.token <TOKEN>` "
+            "to set credentials.",
+        ),
+        (
+            "Connectivity failures?",
+            "Check your network and API token. For IBM with proxy, set: "
+            "uniqc config set ibm.proxy.https http://127.0.0.1:7890",
         ),
     ],
 }

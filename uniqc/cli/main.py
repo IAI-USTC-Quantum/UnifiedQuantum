@@ -60,6 +60,7 @@ def main(
 from . import backend
 from . import calibrate
 from . import circuit
+from . import doctor
 from . import simulate
 from . import submit
 from . import result
@@ -74,6 +75,7 @@ app.command("circuit", help=circuit.HELP)(circuit.convert)
 app.command("simulate", help=simulate.HELP)(simulate.simulate)
 app.command("submit", help=submit.HELP)(submit.submit)
 app.command("result", help=result.HELP)(result.result)
+app.command("doctor", help=doctor.HELP)(doctor.run_doctor)
 app.add_typer(config.app, name="config")
 app.add_typer(task.app, name="task")
 app.add_typer(backend.app, name="backend")

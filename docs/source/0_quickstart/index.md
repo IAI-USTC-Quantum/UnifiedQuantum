@@ -34,6 +34,8 @@ uniqc config validate
 * 其它平台同理：`uniqc config set quafu.token ...` / `uniqc config set ibm.token ...` /
   `uniqc config set quark.token ...`。
 
+安装与配置完成后，可运行 `uniqc doctor` 一键验证环境（依赖、配置、缓存、网络连通性等），详见 [](/4_cli/doctor)。
+
 ## 3. 端到端验证
 
 下面这个例子把"构造线路 → 本地模拟 → 通过 ``submit_task`` 在 dummy 上跑一遍 → 真机
