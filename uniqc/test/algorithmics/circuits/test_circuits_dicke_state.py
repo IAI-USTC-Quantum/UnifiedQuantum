@@ -10,7 +10,7 @@ from uniqc.simulator import Simulator
 
 def _simulate(circuit, n):
     """Run statevector simulation and return probability array."""
-    sim = Simulator(backend_type='statevector', n_qubits=n)
+    sim = Simulator(backend_type='statevector')
     result = sim.simulate_statevector(circuit.qasm)
     return np.abs(result) ** 2
 

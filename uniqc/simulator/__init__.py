@@ -2,9 +2,10 @@
 
 Two ways to obtain a simulator:
 
-- :func:`create_simulator` (recommended) — factory keyed by ``backend``.
-  Optionally pass ``noise=True`` to get a :class:`NoisySimulator`.
-- :func:`get_simulator` — alias of :func:`create_simulator`.
+- :func:`create_simulator` (recommended) — factory keyed by ``backend`` then
+  ``program_type``. Accepts both names and aliases.
+- :func:`get_simulator` — alias of :func:`create_simulator` with the same
+  ``(backend_type, program_type)`` argument order.
 
 Concrete simulator classes (``Simulator``, ``NoisySimulator``,
 ``MPSSimulator``, ``TorchQuantumSimulator``, ``OpcodeSimulator``) and
@@ -61,9 +62,9 @@ __all__ = [
     "get_simulator",
     "get_backend",
     # concrete simulators
-    "OpcodeSimulator",
     "Simulator",
     "NoisySimulator",
+    "OpcodeSimulator",
     "MPSSimulator",
     "MPSConfig",
     "TorchQuantumSimulator",

@@ -87,10 +87,8 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 6 backends, updated 4h ago
-    quafu: 16 backends, updated 4d ago (stale)
-    ibm: 3 backends, updated 4d ago (stale)
-    quark: 15 backends, updated 4h ago
+    originq: 6 backends, updated 22h ago
+    ibm: 3 backends, updated 2d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       

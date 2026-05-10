@@ -166,7 +166,6 @@ depth_no_vz = compute_gate_depth(circuit, virtual_z=False)
 | 平台 | basis gate set | 提交语言 |
 |------|----------------|----------|
 | `originq` | `cz + sx + rz` | OriginIR |
-| `quafu` | `cz + sx + rz` | QASM 2.0 |
 | `quark` | `cz + sx + rz` | QASM 2.0 |
 | `ibm` | `BackendInfo.extra["basis_gates"]`（来自 IBM backend） | QASM 2.0 |
 

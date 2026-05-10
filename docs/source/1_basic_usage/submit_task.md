@@ -44,7 +44,7 @@
 
 ## 统一云平台接口 {#guide-submit-task-unified-api}
 
-UnifiedQuantum 提供统一的云平台接入层，通过一致的接口操作 OriginQ、Quafu 和 IBM 三大平台。
+UnifiedQuantum 提供统一的云平台接入层，通过一致的接口操作 OriginQ、IBM 和 Quark 等平台。
 
 ### 配置方式
 
@@ -52,7 +52,6 @@ UnifiedQuantum 提供统一的云平台接入层，通过一致的接口操作 O
 
 ```bash
 uniqc config set originq.token "your-originq-token"
-uniqc config set quafu.token "your-quafu-token"
 uniqc config set ibm.token "your-ibm-token"
 ```
 
@@ -63,8 +62,6 @@ active_profile: default
 default:
   originq:
     token: "your-originq-token"
-  quafu:
-    token: "your-quafu-token"
   ibm:
     token: "your-ibm-token"
     proxy:
@@ -109,7 +106,7 @@ print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 
 > **关于 `backend` 字符串的强校验（自 0.0.12 起）**：`submit_task()` /
 > `submit_batch()` 要求 `backend` 满足 `provider:chip-name` 规范格式
-> （如 `originq:WK_C180`、`quafu:ScQ-P10`、`ibm:ibm_brisbane`）。仅传裸平台名
+> （如 `originq:WK_C180`、`ibm:ibm_brisbane`）。仅传裸平台名
 > （`'originq'`）会被拒绝，错误信息会列出本地缓存里能用的 chip。需要先
 > 通过 `uniqc auth login` / `uniqc config set <provider>.token …` 配好 API key，
 > 然后用 `uniqc backend list -p originq` 拉一遍 backend 列表，再选一个
@@ -127,17 +124,12 @@ print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 # OriginQ Cloud
 task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 
-# Quafu（archived；如需使用请直接 pip install pyquafu，pulls numpy<2）
-task_id = submit_task(circuit, backend='quafu:ScQ-P10', shots=1000)
-
 # IBM Quantum（qiskit 已是核心依赖，无需额外安装）
 task_id = submit_task(circuit, backend='ibm:ibm_brisbane', shots=1000)
 
 # QuarkStudio / Quark（需要 pip install unified-quantum[quark]，Python ≥ 3.12）
 task_id = submit_task(circuit, backend='quark:<chip>', shots=1000)
 ```
-
-> **Quafu 已归档说明**：`[quafu]` extra 已移除，`unified-quantum[all]` 不包含 `pyquafu`。旧 `pyquafu` SDK 依赖 `numpy<2`，单独 `pip install pyquafu` 可能导致环境降级。该平台路径后续不保证代码一致性和完整性，支持可能随时停止。
 
 ### 任务管理
 
@@ -166,7 +158,7 @@ clear_cache()
 from uniqc import backend
 
 # 列出所有已注册后端名称
-names = backend.list_backends()  # ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+names = backend.list_backends()  # ['dummy', 'ibm', 'originq', 'quark']
 
 # 获取详细状态信息
 backends = backend.list_backends_by_platform()
@@ -193,7 +185,6 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 |---------|------|
 | `originq:WK_C180` | OriginQ 180 比特真机 |
 | `originq:full_amplitude` | OriginQ 全振幅模拟器 |
-| `quafu:ScQ-P18` | Quafu 18 比特真机 |
 | `ibm:ibm_brisbane` | IBM Brisbane 真机 |
 | `dummy` 或 `dummy:local:simulator` | 无约束、无噪声本地模拟器 |
 | `dummy:local:virtual-line-N` | N 比特线性拓扑，无噪声 |
@@ -335,7 +326,7 @@ task_id = submit_task(qc, backend='ibm:ibm_brisbane', shots=1000)
 
 ### Bitstring 约定（永久不变）{#guide-submit-task-bitstring-convention}
 
-uniqc 在所有平台（OriginQ / Quafu / IBM-Qiskit / Quark / Dummy / 本地仿真）
+uniqc 在所有平台（OriginQ / IBM-Qiskit / Quark / Dummy / 本地仿真）
 返回的 `result.counts` / `result.probabilities` 字典 key 都满足 **同一条永久
 约定**：
 
@@ -365,8 +356,8 @@ print(wait_for_result(uid)[0].counts)   # -> {'01': 1024}
 `uniqc/test/test_endianness_convention.py` 在每次发布前对所有平台 adapter
 强制校验，**不会再改变**。
 
-任何平台原生 SDK 的差异（IBM 默认 little-endian、Quafu 在某些后端 q[0]=
-最左、Quark 取决于固件）都已经在 adapter 内部统一翻译为以上约定；下游代码
+任何平台原生 SDK 的差异（IBM 默认 little-endian、Quark 取决于固件）
+都已经在 adapter 内部统一翻译为以上约定；下游代码
 不必再做 `[::-1]` 之类的手工翻转。
 
 ### 返回值结构
@@ -424,9 +415,6 @@ while True:
 ### 平台特定后端参数
 
 ```python
-# Quafu: 指定芯片
-task_id = submit_task(circuit, backend='quafu:ScQ-P10', auto_mapping=True)
-
 # OriginQ: 指定芯片和优化选项
 task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 ```
@@ -437,7 +425,6 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 |------|------|---------|---------|
 | OriginQ Cloud | 主生产路径 | 生产环境、真实量子计算 | 无额外依赖 |
 | QuarkStudio / Quark | 第三方云平台 | 国内 QuarkStudio 生态 / 自建 Quark 集群 | `pip install unified-quantum[quark]`（要求 Python ≥ 3.12） |
-| Quafu | 第三方云平台（已归档/archived） | BAQIS ScQ 系列 | `[quafu]` extra 已移除；如需使用请 `pip install pyquafu`，会拉入 `numpy<2` |
 | IBM Quantum | 第三方云平台 | IBM Quantum 生态 | qiskit 已是核心依赖，无需额外安装 |
 | Dummy | 本地模拟 | 开发测试、联调 | `pip install unified-quantum[simulation]` |
 
@@ -448,7 +435,7 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 - **本地模拟 != 远端提交**：本地模拟解决的是线路验证问题；远端提交解决的是平台接入与任务执行问题。
 - **配置是前置条件**：不同平台需要配置相应的环境变量。
 - **网络与账号会影响可用性**：远端平台可能受网络环境、认证状态、平台可用性和排队情况影响。
-- **额外依赖**：IBM/Qiskit 已并入核心依赖，无需额外安装；Quark 需要 `pip install unified-quantum[quark]`（Python ≥ 3.12）；Quafu 已归档，`[quafu]` extra 已移除，如仍需使用须手动 `pip install pyquafu` 并承担 `numpy<2` 风险。
+- **额外依赖**：IBM/Qiskit 已并入核心依赖，无需额外安装；Quark 需要 `pip install unified-quantum[quark]`（Python ≥ 3.12）。
 
 如果你还在反复修改线路结构、量子门或输出解释，说明你仍处于本地验证阶段，建议先回到 [本地模拟](simulation.md)。
 
@@ -493,7 +480,7 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 | `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 `docs/source/compile/compile_levels.md`。 |
 | `cloud_compile` (kwarg) | `1` | 转发给适配器的云端编译强度。`0` 关闭云端编译（如 OriginQ 适配器会收到 `circuit_optimize=False`），`>0` 开启；支持精细控制的适配器可直接读取 1/2/3。 |
 | `skip_validation` (kwarg) | `False` | 完全跳过离线 compatibility 检查（不推荐，会让已知会被云端拒绝的线路也走到网络层）。 |
-| `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `QuafuOptions` / `IBMOptions` 等）。 |
+| `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `IBMOptions` 等）。 |
 | `metadata` (kwarg) | `None` | 写入本地 task 缓存的附加元数据；后续可通过 `query_task(...).metadata` 取回。 |
 | `backend_name` / `chip_id` (kwarg) | — | 旧式写法，把 chip 名以独立 kwarg 形式传入。新代码直接写在 `backend='provider:chip'` 即可，旧写法会被自动归一。 |
 

@@ -143,7 +143,7 @@ def basis_rotation_measurement(
     modified_qasm = "\n".join(new_lines)
 
     # Simulate
-    sim = Simulator(least_qubit_remapping=False)
+    sim = Simulator()
     if shots is None:
         probs = sim.simulate_pmeasure(modified_qasm)
         return {f"{i:0{n}b}": float(p) for i, p in enumerate(probs)}

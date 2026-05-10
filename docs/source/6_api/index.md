@@ -17,7 +17,7 @@
   {py:func}`uniqc.submit_batch`, {py:func}`uniqc.wait_for_result`,
   {py:func}`uniqc.query_task`, {py:func}`uniqc.get_task`
 * {py:class}`uniqc.QuantumBackend`, {py:class}`uniqc.OriginQBackend`,
-  {py:class}`uniqc.IBMBackend`, {py:class}`uniqc.QuafuBackend`,
+  {py:class}`uniqc.IBMBackend`,
   {py:class}`uniqc.QuarkBackend`, {py:class}`uniqc.DummyBackend`
 * {py:class}`uniqc.BackendInfo`, {py:class}`uniqc.QubitTopology`,
   {py:class}`uniqc.RegionSelector`

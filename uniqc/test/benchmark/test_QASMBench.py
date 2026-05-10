@@ -55,7 +55,7 @@ def _check_result(transpiled_circuit, reference_result, backend_type):
 
     #print('Testing circuit: ', transpiled_circuit)
     #print('Reference Result: ', reference_result)
-    qasm_simulator = Simulator(backend_type, least_qubit_remapping=False)
+    qasm_simulator = Simulator(backend_type)
     my_result = qasm_simulator.simulate_stateprob(transpiled_circuit)
 
     if len(reference_array) != len(my_result):

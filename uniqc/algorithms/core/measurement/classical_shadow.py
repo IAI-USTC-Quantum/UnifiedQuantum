@@ -175,7 +175,7 @@ def classical_shadow(
         raise ValueError(format_enriched_message(f"n_shadow must be a positive integer, got {n_shadow}", "measurement"))
 
     rng = np.random.default_rng()
-    sim = Simulator(least_qubit_remapping=False)
+    sim = Simulator()
 
     # Stratified basis sampling: when n_shadow >= 3^n, cycle through every
     # basis combination an equal number of times (remainder drawn without

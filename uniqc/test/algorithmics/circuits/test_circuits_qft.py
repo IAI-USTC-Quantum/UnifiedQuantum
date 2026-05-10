@@ -19,7 +19,7 @@ class TestQFTCircuit:
         c = Circuit()
         qft_circuit(c, qubits=[0, 1, 2])
 
-        sim = Simulator(backend_type="statevector", n_qubits=3)
+        sim = Simulator(backend_type="statevector")
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 
@@ -38,7 +38,7 @@ class TestQFTCircuit:
         c_h = Circuit()
         c_h.h(0)
 
-        sim = Simulator(backend_type="statevector", n_qubits=1)
+        sim = Simulator(backend_type="statevector")
         r_qft = sim.simulate_statevector(c_qft.qasm)
         r_h = sim.simulate_statevector(c_h.qasm)
 
@@ -83,7 +83,7 @@ class TestQFTCircuit:
                 c.rz(qubits[k], -angle / 2)
             c.h(qubits[j])
 
-        sim = Simulator(backend_type="statevector", n_qubits=3)
+        sim = Simulator(backend_type="statevector")
         result = sim.simulate_statevector(c.qasm)
         probs = np.abs(result) ** 2
 

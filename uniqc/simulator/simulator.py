@@ -1,39 +1,54 @@
 """Unified quantum circuit simulator.
 
-This module provides a single ``Simulator`` class that auto-detects the input
-format (OriginIR, OpenQASM 2.0, or ``uniqc.Circuit``) and delegates to the
-appropriate parser.  ``NoisySimulator`` extends it with noise-model support.
+Provides ``Simulator`` and ``NoisySimulator`` — the public simulator classes
+that accept *any* quantum-circuit representation (``Circuit`` object, OriginIR
+string, or OpenQASM 2.0 string) and auto-detect the input format at runtime.
 
 Key exports:
-    - Simulator: Ideal simulator for any supported circuit format.
+    - Simulator: Ideal simulator (statevector / density matrix backends).
     - NoisySimulator: Noisy simulator with error-model injection.
 """
 
-from __future__ import annotations
+__all__ = ["Simulator", "NoisySimulator"]
 
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List
 
 from .base_simulator import BaseNoisySimulator, BaseSimulator
 from .error_model import ErrorLoader
+from .opcode_simulator import OpcodeSimulator
+from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+from uniqc.compile.qasm.qasm_base_parser import OpenQASM2_BaseParser
 
-if TYPE_CHECKING:
-    from .uniqc_cpp import *
 
-__all__ = ["Simulator", "NoisySimulator"]
+def _to_originir_str(quantum_code):
+    """Normalise *AnyQuantumCircuit* to an OriginIR or QASM string.
+
+    Accepts a ``Circuit`` object (calls ``.originir``), an OriginIR string, or
+    a QASM string.  Raises ``TypeError`` for unsupported types.
+    """
+    from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
+
+    if isinstance(quantum_code, _Circuit):
+        return quantum_code.originir
+    if isinstance(quantum_code, str):
+        return quantum_code
+    raise TypeError(
+        f"Expected Circuit, originir string, or qasm string, "
+        f"got {type(quantum_code).__name__}"
+    )
 
 
 class Simulator(BaseSimulator):
-    """Unified quantum circuit simulator.
+    """Unified ideal quantum circuit simulator.
 
-    Accepts any supported input format and auto-detects the parser:
+    Accepts any of the following as *quantum_code*:
 
-    * :class:`uniqc.Circuit` — opcodes are read directly (parser bypassed).
-    * ``str`` — OriginIR or OpenQASM 2.0 (detected from content heuristics).
-    * ``qiskit.QuantumCircuit`` / other external types — normalized to
-      ``Circuit`` via :func:`uniqc.circuit_builder.normalize.normalize_circuit_input`.
+    - A :class:`~uniqc.circuit_builder.Circuit` object
+    - An OriginIR string (``circuit.originir``)
+    - An OpenQASM 2.0 string (``circuit.qasm``)
 
-    See :data:`uniqc.circuit_builder.AnyQuantumCircuit` for the full list of
-    accepted input types.
+    The input format is detected automatically: OriginIR is tried first, and
+    if parsing fails the code falls back to QASM.
 
     Args:
         backend_type: Backend type (``"statevector"`` or ``"densitymatrix"``).
@@ -45,200 +60,126 @@ class Simulator(BaseSimulator):
 
     def __init__(
         self,
-        backend_type: str = "statevector",
-        available_qubits: List[int] | None = None,
-        available_topology: List[List[int]] | None = None,
+        backend_type="statevector",
+        available_qubits: List[int] = None,
+        available_topology: List[List[int]] = None,
         **extra_kwargs,
     ):
         super().__init__(
             backend_type, available_qubits, available_topology, **extra_kwargs
         )
-        self.parser = None
-        self._raw_source: str | None = None
-        self._splitted_lines: list[str] | None = None
+        self.parser = OriginIR_BaseParser()
 
     # ------------------------------------------------------------------
-    # Parser selection
+    # simulate_preprocess — auto-detect input format
     # ------------------------------------------------------------------
 
-    def _select_parser(self, source: str):
-        """Return the appropriate parser for *source* based on content."""
-        stripped = source.lstrip()
-        if stripped.upper().startswith(("OPENQASM", "QREG")):
-            from uniqc.compile.qasm import OpenQASM2_BaseParser
+    def simulate_preprocess(self, quantum_code):
+        """Parse and preprocess a quantum program.
 
-            return OpenQASM2_BaseParser()
-        # Default to OriginIR (primary format).
-        from uniqc.compile.originir.originir_base_parser import (
-            OriginIR_BaseParser,
-        )
-
-        return OriginIR_BaseParser()
-
-    # ------------------------------------------------------------------
-    # Preprocessing
-    # ------------------------------------------------------------------
-
-    def simulate_preprocess(self, input_data):
-        """Parse and preprocess any supported circuit input.
+        *quantum_code* may be a :class:`Circuit`, an OriginIR string, or a
+        QASM string.  The format is detected automatically.
 
         Returns:
-            Tuple of ``(processed_program_body, measure_qubit)``.
+            Tuple of (processed_program_body, measurement_qubits).
         """
-        from uniqc.circuit_builder.qcircuit import Circuit as _Circuit
-        from uniqc.circuit_builder.normalize import normalize_circuit_input
+        quantum_code = _to_originir_str(quantum_code)
 
+        # Try OriginIR first.
         self._clear()
-
-        # Circuit objects: direct opcode path (no parser).
-        if isinstance(input_data, _Circuit):
-            return self._simulate_from_circuit(input_data)
-
-        # Non-string, non-Circuit (e.g. qiskit.QuantumCircuit): normalize.
-        if not isinstance(input_data, str):
-            result = normalize_circuit_input(input_data)
-            return self._simulate_from_circuit(result.circuit)
-
-        # String path: auto-detect parser from content.
-        self._raw_source = input_data
-        self.parser = self._select_parser(input_data)
-        self.parser.parse(input_data)
-        self._splitted_lines = input_data.splitlines()
+        self.parser = OriginIR_BaseParser()
+        try:
+            self.parser.parse(quantum_code)
+        except Exception:
+            # Fall back to QASM.
+            self._clear()
+            self.parser = OpenQASM2_BaseParser()
+            self.parser.parse(quantum_code)
 
         self._extract_actual_used_qubits()
+
         if self.available_qubits or self.available_topology:
             self._check_available_qubits()
 
         processed_program_body = self._process_program_body()
-        measure_qubit = self._process_measure()
+        processed_measure_qubits = self._process_measure_qubits()
 
-        measure_qubit_cbit = sorted(measure_qubit, key=lambda k: k[1])
-        measure_qubit = [q for q, _ in measure_qubit_cbit]
-        return processed_program_body, measure_qubit
-
-    # ------------------------------------------------------------------
-    # Program body processing (topology validation with line numbers)
-    # ------------------------------------------------------------------
-
-    def _process_program_body(self):
-        """Process opcodes with topology validation.
-
-        Both OriginIR and QASM parsers already exclude ``MEASURE`` from
-        ``program_body`` and store them in ``parser.measure_qubits``.
-        When ``self._splitted_lines`` is available the error messages
-        include the offending source line.
-        """
-        processed: list = []
-        program_body = self.parser.program_body
-        splitted = self._splitted_lines
-
-        for i, opcode in enumerate(program_body):
-            (
-                operation,
-                qubit,
-                cbit,
-                parameter,
-                dagger_flag,
-                control_qubits_set,
-            ) = opcode
-
-            if isinstance(qubit, list) and self.available_topology:
-                if len(qubit) > 2:
-                    msg = (
-                        "Real chip does not support gate of 3-qubit or more. "
-                        "The dummy server does not support either. "
-                        "You should consider decomposite it."
-                    )
-                    if splitted and i + 2 < len(splitted):
-                        msg += f"\nLine {i + 2} ({splitted[i + 2]})."
-                    raise ValueError(msg)
-                if (
-                    [int(qubit[0]), int(qubit[1])] not in self.available_topology
-                    and [int(qubit[1]), int(qubit[0])]
-                    not in self.available_topology
-                ):
-                    msg = "Unsupported topology."
-                    if splitted and i + 2 < len(splitted):
-                        msg += f"\nLine {i + 2} ({splitted[i + 2]})."
-                    raise ValueError(msg)
-
-            if qubit is not None:
-                if isinstance(qubit, list):
-                    mapped_qubit = [self.qubit_mapping[q] for q in qubit]
-                else:
-                    mapped_qubit = self.qubit_mapping[qubit]
-
-            processed.append(
-                (
-                    operation,
-                    mapped_qubit,
-                    cbit,
-                    parameter,
-                    dagger_flag,
-                    control_qubits_set,
-                )
-            )
-        return processed
-
-    # ------------------------------------------------------------------
-    # State reset
-    # ------------------------------------------------------------------
+        return processed_program_body, processed_measure_qubits
 
     def _clear(self):
         super()._clear()
-        self.parser = None
-        self._raw_source = None
-        self._splitted_lines = None
+        self.parser = OriginIR_BaseParser()
 
 
-class NoisySimulator(Simulator, BaseNoisySimulator):
-    """Noisy unified quantum circuit simulator.
+class NoisySimulator(BaseNoisySimulator):
+    """Unified noisy quantum circuit simulator.
 
-    Same input-format auto-detection as :class:`Simulator`, with
-    noise-model injection via :class:`ErrorLoader`.
+    Same input flexibility as :class:`Simulator` (``Circuit``, OriginIR, or
+    QASM string), with additional support for gate-level error injection and
+    readout-error modelling.
 
     Args:
-        backend_type: Backend type (``"statevector"`` or ``"densitymatrix"``).
+        backend_type: Backend type (must be ``"density_matrix"`` for noise).
         available_qubits: List of available qubit indices (optional).
         available_topology: List of available qubit pairs (optional).
-        error_loader: ErrorLoader instance for gate error injection (optional).
-        readout_error: Dict mapping qubit index to ``[p0, p1]`` readout error
-            rates (optional).
+        error_loader: :class:`ErrorLoader` instance for gate error injection.
+        readout_error: Dict mapping qubit index to ``[p01, p10]`` readout
+            error rates.
     """
 
     def __init__(
         self,
-        backend_type: str = "statevector",
-        available_qubits: List[int] | None = None,
-        available_topology: List[List[int]] | None = None,
-        error_loader: ErrorLoader | None = None,
-        readout_error: Dict[int, List[float]] | None = None,
+        backend_type="statevector",
+        available_qubits: List[int] = None,
+        available_topology: List[List[int]] = None,
+        error_loader: ErrorLoader = None,
+        readout_error: Dict[int, List[float]] = {},
     ):
-        if readout_error is None:
-            readout_error = {}
-        BaseNoisySimulator.__init__(
-            self,
+        super().__init__(
             backend_type,
             available_qubits,
             available_topology,
             error_loader,
             readout_error,
         )
-        self.parser = None
-        self._raw_source: str | None = None
-        self._splitted_lines: list[str] | None = None
+        self.parser = OriginIR_BaseParser()
 
-    def simulate_preprocess(self, input_data):
-        """Parse, preprocess, and inject errors into the circuit.
+    def simulate_preprocess(self, quantum_code):
+        """Parse, preprocess, and inject errors into a quantum program.
 
-        Delegates to :meth:`Simulator.simulate_preprocess` for format
-        auto-detection and preprocessing, then applies noise injection
-        from :class:`BaseNoisySimulator`.
+        *quantum_code* may be a :class:`Circuit`, an OriginIR string, or a
+        QASM string.
+
+        Returns:
+            Tuple of (error-injected program_body, measurement_qubits).
         """
-        processed_program_body, measure_qubit = Simulator.simulate_preprocess(
-            self, input_data
-        )
+        quantum_code = _to_originir_str(quantum_code)
+
+        # Try OriginIR first.
+        self._clear()
+        self.parser = OriginIR_BaseParser()
+        try:
+            self.parser.parse(quantum_code)
+        except Exception:
+            self._clear()
+            self.parser = OpenQASM2_BaseParser()
+            self.parser.parse(quantum_code)
+
+        self._extract_actual_used_qubits()
+
+        if self.available_qubits or self.available_topology:
+            self._check_available_qubits()
+
+        processed_program_body = self._process_program_body()
+        processed_measure_qubits = self._process_measure_qubits()
+
+        # Apply error injection (same logic as BaseNoisySimulator).
         if self.error_loader:
             self.error_loader.process_opcodes(processed_program_body)
             processed_program_body = self.error_loader.opcodes
-        return processed_program_body, measure_qubit
+
+        return processed_program_body, processed_measure_qubits
+
+    def _clear(self):
+        super()._clear()
+        self.parser = OriginIR_BaseParser()

@@ -41,7 +41,7 @@
 | {py:func}`uniqc.dry_run_task` | [主路径走读 · 真机提交模板](walkthrough.md#真机提交模板) · [提交任务 · 通用流程](submit_task.md#guide-submit-task-flow) |
 | {py:func}`uniqc.wait_for_result` | [主路径走读 · 3. 提交与后处理](walkthrough.md#submit-postprocess) · [提交任务 · 通用流程](submit_task.md#guide-submit-task-flow) |
 | {py:func}`uniqc.query_task` | [提交任务 · 通用流程](submit_task.md#guide-submit-task-flow) |
-| {py:class}`uniqc.OriginQOptions` / {py:class}`uniqc.QuafuOptions` / {py:class}`uniqc.IBMOptions` / {py:class}`uniqc.QuarkOptions` / {py:class}`uniqc.DummyOptions` | [提交任务 · 完整 API 参考](submit_task.md#guide-submit-task-api-reference) · [编译选项 · 类型化后端选项](../2_advanced/compiler_options_region.md#2-类型化后端选项-backendoptions) |
+| {py:class}`uniqc.OriginQOptions` / {py:class}`uniqc.IBMOptions` / {py:class}`uniqc.QuarkOptions` / {py:class}`uniqc.DummyOptions` | [提交任务 · 完整 API 参考](submit_task.md#guide-submit-task-api-reference) · [编译选项 · 类型化后端选项](../2_advanced/compiler_options_region.md#2-类型化后端选项-backendoptions) |
 | {py:class}`uniqc.BackendOptions` / {py:class}`uniqc.BackendOptionsFactory` | [编译选项 · 类型化后端选项](../2_advanced/compiler_options_region.md#2-类型化后端选项-backendoptions) |
 | {py:class}`uniqc.UnifiedResult` | [提交任务 · 结果处理](submit_task.md#结果处理) |
 | {py:class}`uniqc.TaskInfo` / {py:class}`uniqc.TaskStatus` | [提交任务 · 结果处理](submit_task.md#结果处理) |
@@ -62,7 +62,7 @@
 | {py:func}`uniqc.get_backend` | [平台约定 · 统一后端工厂](platform_conventions.md#platform-get-backend) |
 | {py:class}`uniqc.BackendInfo` | [平台约定 · 统一后端工厂](platform_conventions.md#platform-get-backend) |
 | {py:class}`uniqc.DummyBackend` | [平台约定 · DummyBackend](platform_conventions.md#platform-dummy-backend) · [Dummy 系统（进阶）](../2_advanced/index.md#_4-dummy-_-noiseless-_-virtual-topology-_-chip-noise) |
-| {py:class}`uniqc.OriginQBackend` / {py:class}`uniqc.QuafuBackend` / {py:class}`uniqc.IBMBackend` / {py:class}`uniqc.QuarkBackend` | [平台约定 · 统一后端工厂](platform_conventions.md#platform-get-backend) |
+| {py:class}`uniqc.OriginQBackend` / {py:class}`uniqc.IBMBackend` / {py:class}`uniqc.QuarkBackend` | [平台约定 · 统一后端工厂](platform_conventions.md#platform-get-backend) |
 
 ## 编译与区域选择
 

@@ -83,33 +83,27 @@ def simulate(
 def _run_simulation(content: str, backend: str, shots: int) -> dict[str, float]:
     """Run simulation and return measurement probabilities keyed by bitstring.
 
-    Accepts both OriginIR and OpenQASM 2.0 input — format is auto-detected
-    by :class:`~uniqc.simulator.Simulator`.
+    Accepts both OriginIR and OpenQASM 2.0 input, dispatching to the matching
+    simulator. Format detection reuses :func:`uniqc.cli.circuit._detect_format`;
+    unknown content falls back to the OriginIR simulator so its existing error
+    messages stay visible to the user.
     """
-    from uniqc.compile.originir import OriginIR_BaseParser
     from uniqc.simulator import Simulator
 
     # Normalise CLI backend names to Python API names
     backend_type = "densitymatrix" if backend == "density" else backend
 
     sim = Simulator(backend_type=backend_type)
+    sim.simulate_preprocess(content)
 
-    # Parse just to determine n_qubits for formatting.
-    parser = OriginIR_BaseParser()
-    try:
-        parser.parse(content)
-    except Exception:
-        from uniqc.compile.qasm import OpenQASM2_BaseParser
-
-        parser = OpenQASM2_BaseParser()
-        parser.parse(content)
-
-    n_qubits = max(int(parser.n_qubit or 1), 1)
+    n_qubits = max(int(sim.qubit_num or 1), 1)
 
     def _fmt(state: int) -> str:
         return format(int(state), f"0{n_qubits}b")
 
     if backend == "statevector":
+        # simulate_pmeasure returns a 1-D array/list of length 2^n indexed
+        # by computational basis state.
         probs = sim.simulate_pmeasure(content)
         return {
             _fmt(i): float(p)
