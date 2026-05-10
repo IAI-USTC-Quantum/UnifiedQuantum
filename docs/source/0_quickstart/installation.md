@@ -100,6 +100,24 @@ python -c "import uniqc; print(uniqc.__version__)"
 
 若能打印出版本号（如 `0.200.0`），说明安装成功。
 
+也可以直接运行 [`uniqc doctor`](../4_cli/doctor.md) 一键体检（依赖、配置、缓存、网络连通性）。
+
+## 配置真机平台（推荐 OriginQ）
+
+```bash
+uniqc config init
+uniqc config set originq.token <YOUR_ORIGINQ_TOKEN>
+uniqc config validate
+```
+
+* OriginQ 是目前推荐的入门平台：免费试用门槛低、文档完整，`uniqc backend list -p originq`
+  能看到全部芯片。
+* 其它平台同理：`uniqc config set quafu.token ...` / `uniqc config set ibm.token ...` /
+  `uniqc config set quark.token ...`。
+
+配置文件结构与 profile 切换的完整说明见 [平台约定](../1_basic_usage/platform_conventions.md) 与
+[`uniqc config`](../4_cli/config.md)。
+
 ## 构建 C++ 扩展常见问题
 
 **Q：编译时报 `CMake could not find...`**
