@@ -50,13 +50,11 @@ def list_tasks(
 
     from uniqc.backend_adapter.task_manager import list_tasks as _list_tasks
 
-    tasks = _list_tasks(status=status, backend=platform)
+    tasks = _list_tasks(status=status, backend=platform, limit=limit)
 
     if not tasks:
         print_info("No tasks found")
         return
-
-    tasks = tasks[:limit]
 
     if format == "json":
         print_json([task_to_dict(t) for t in tasks])
@@ -211,7 +209,7 @@ def clear(
     if ai_hints_enabled(ai_hints):
         print_ai_hints("task-list")
 
-    from uniqc.backend_adapter.task_manager import clear_completed_tasks, clear_cache, list_tasks
+    from uniqc.backend_adapter.task_manager import _store, clear_cache, clear_completed_tasks
 
     if status:
         count = clear_completed_tasks(status=status)
@@ -221,7 +219,9 @@ def clear(
             if not confirm:
                 print_info("Cancelled")
                 return
-        count = len(list_tasks())
+        # Use SQL COUNT(*) instead of materialising every row — the
+        # cache can grow into the GBs once tasks accumulate.
+        count = _store().count()
         clear_cache()
 
     print_success(f"Cleared {count} tasks from cache")

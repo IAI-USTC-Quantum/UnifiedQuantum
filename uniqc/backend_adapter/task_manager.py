@@ -383,13 +383,18 @@ def dry_run_task(
             )
         forwarded_kwargs = dict(kwargs)
     else:
-        # Reuse the same adapter resolver as submit_task so that
-        # 'originq:WK_C180' works in both APIs.
+        # Reuse the same backend resolver as submit_task so that
+        # 'originq:WK_C180' works in both APIs. We need the platform
+        # ``QuantumAdapter`` (which implements ``dry_run``), not the
+        # circuit-translation ``CircuitAdapter`` returned by
+        # ``_get_adapter`` — those two adapter hierarchies are distinct
+        # despite the shared name.
         platform = backend.split(":", 1)[0] if ":" in backend else backend
         chip = backend.split(":", 1)[1] if ":" in backend else None
         try:
-            adapter = _get_adapter(backend)
-        except BackendNotFoundError as e:
+            backend_instance = backend_module.get_backend(backend)
+            adapter = backend_instance.adapter
+        except ValueError as e:
             return DryRunResult(
                 success=False,
                 details=str(e),
@@ -528,6 +533,9 @@ def list_tasks(
     status: str | None = None,
     backend: str | None = None,
     cache_dir: Path | None = None,
+    *,
+    limit: int | None = None,
+    offset: int | None = None,
 ) -> list[TaskInfo]:
     """List tasks from the local cache.
 
@@ -535,11 +543,17 @@ def list_tasks(
         status: Filter by status (optional).
         backend: Filter by backend (optional).
         cache_dir: Optional custom cache directory.
+        limit: If set, push a SQL ``LIMIT`` to the underlying store so very
+            large caches (thousands of tasks, gigabytes of result blobs) do
+            not have to be fully materialised in memory before being sliced.
+        offset: SQL ``OFFSET`` for paginated reads. Implies ``limit``.
 
     Returns:
         List of TaskInfo objects matching the filters, newest first.
     """
-    return _store(cache_dir).list(status=status, backend=backend)
+    return _store(cache_dir).list(
+        status=status, backend=backend, limit=limit, offset=offset
+    )
 
 
 def clear_completed_tasks(
@@ -2248,9 +2262,14 @@ class TaskManager:
         self,
         status: str | None = None,
         backend: str | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[TaskInfo]:
         """List tasks from cache."""
-        return list_tasks(status, backend, cache_dir=self._cache_dir)
+        return list_tasks(
+            status, backend, cache_dir=self._cache_dir, limit=limit, offset=offset,
+        )
 
     def clear_completed(self) -> int:
         """Clear completed tasks from cache."""

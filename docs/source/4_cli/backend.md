@@ -180,7 +180,7 @@ uniqc backend show originq:WK_C180
 uniqc backend chip-display originq/WK_C180 --update
 
 # 5. 提交任务（使用查得的后端名）
-uniqc submit circuit.ir --platform originq --backend WK_C180 --shots 1000
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 ```
 
 ## 选项速查

@@ -35,13 +35,13 @@ uniqc backend list --platform originq
 uniqc backend show originq:WK_C180
 
 # 5. 试运行验证（可选，不消耗额度）
-uniqc submit bell.ir --platform originq --dry-run
+uniqc submit bell.ir --backend originq:WK_C180 --dry-run
 
 # 6. 提交任务
-uniqc submit bell.ir --platform originq --backend WK_C180 --shots 1000
+uniqc submit bell.ir --backend originq:WK_C180 --shots 1000
 
 # 7. 查询结果
-uniqc result TASK_ID --platform originq --wait
+uniqc result TASK_ID --wait
 
 # 8. 查看任务列表
 uniqc task list --platform originq
@@ -52,14 +52,12 @@ uniqc task list --platform originq
 ```bash
 # 批量试运行验证
 uniqc submit circuit1.ir circuit2.ir circuit3.ir \
-    --platform originq \
-    --backend WK_C180 \
+    --backend originq:WK_C180 \
     --dry-run
 
 # 批量提交多个电路
 uniqc submit circuit1.ir circuit2.ir circuit3.ir \
-    --platform originq \
-    --backend WK_C180 \
+    --backend originq:WK_C180 \
     --shots 1000 \
     --format json
 
@@ -103,13 +101,13 @@ uniqc config profile use account1
 
 ```bash
 # 无约束、无噪声
-uniqc submit bell.ir --platform dummy --wait
+uniqc submit bell.ir --backend dummy:local:simulator --wait
 
 # 指定虚拟拓扑，仍然无噪声
-uniqc submit bell.ir --platform dummy --backend virtual-line-3 --wait
+uniqc submit bell.ir --backend dummy:local:virtual-line-3 --wait
 
 # 复用真实 backend 拓扑和标定数据：先 compile/transpile，再本地含噪执行
-uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --wait
+uniqc submit bell.ir --backend dummy:originq:WK_C180 --wait
 ```
 
 `dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 `uniqc backend list` 的后端列表中。
