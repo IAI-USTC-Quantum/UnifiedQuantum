@@ -110,15 +110,15 @@ Platform: ibm
 ### 方式 A：提交后立即返回 task_id（异步）
 
 ```bash
-# 提交到 Quafu（OriginIR 格式）
-python -m uniqc submit circuit.originir -p quafu -s 1000
+# 提交到 Quafu（OriginIR 格式，需指定 chip）
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000
 
-# 提交到 IBM（QASM 格式）
-python -m uniqc submit circuit.qasm -p ibm -s 1000
+# 提交到 IBM（QASM 格式，需指定 chip）
+python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000
 
-# 指定后端
-python -m uniqc submit circuit.originir -p quafu -b ScQ-P18 -s 1000
-python -m uniqc submit circuit.qasm -p ibm -b ibm_fez -s 1000
+# 等价的 -b 简写
+python -m uniqc submit circuit.originir -b quafu:ScQ-P18 -s 1000
+python -m uniqc submit circuit.qasm -b ibm:ibm_fez -s 1000
 ```
 
 成功后会返回类似以下内容：
@@ -134,8 +134,8 @@ python -m uniqc submit circuit.qasm -p ibm -b ibm_fez -s 1000
 
 ```bash
 # 同步提交，等结果最久等 300 秒
-python -m uniqc submit circuit.originir -p quafu -s 1000 --wait --timeout 300
-python -m uniqc submit circuit.qasm -p ibm -s 1000 --wait --timeout 300
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
+python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
 ```
 
 ---
@@ -146,13 +146,13 @@ python -m uniqc submit circuit.qasm -p ibm -s 1000 --wait --timeout 300
 
 ```bash
 # 单电路试运行
-python -m uniqc submit circuit.originir -p quafu --dry-run
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
 
-# 指定后端进行验证
-python -m uniqc submit circuit.originir -p quafu -b ScQ-P18 --dry-run
+# 指定不同的 chip 进行验证
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
 
 # 批量试运行
-python -m uniqc submit circuit1.originir circuit2.originir -p originq --dry-run
+python -m uniqc submit circuit1.originir circuit2.originir --backend originq:WK_C180 --dry-run
 ```
 
 ---
@@ -194,11 +194,11 @@ python -m uniqc config validate
 python -m uniqc backend list -p quafu
 
 # 3. 同步提交（一步到位）
-python -m uniqc submit circuit.originir -p quafu -s 1000 --wait --timeout 300
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
 
 # 或分步操作：
 # 3a. 提交（异步）
-python -m uniqc submit circuit.originir -p quafu -s 1000
+python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000
 #   → 拿到 task_id：abc123def456
 
 # 3b. 轮询结果
@@ -215,7 +215,7 @@ python -m uniqc config validate
 python -m uniqc backend list -p ibm
 
 # 3. 提交（IBM 接受 QASM 格式）
-python -m uniqc submit circuit.qasm -p ibm -s 1000 --wait --timeout 300
+python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
 ```
 
 ## 结果格式说明

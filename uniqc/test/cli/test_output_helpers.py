@@ -110,3 +110,44 @@ class TestExtractCountsAndProbs:
         assert extract_counts_and_probs(None) == ({}, {})
         assert extract_counts_and_probs({}) == ({}, {})
         assert extract_counts_and_probs([]) == ({}, {})
+
+    def test_unified_result_single(self):
+        """``UnifiedResult`` (e.g. from ``wait_for_result``) is unwrapped."""
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        result = UnifiedResult.from_counts(
+            {"00": 512, "11": 488}, "dummy", "task-x"
+        )
+        counts, probs = extract_counts_and_probs(result)
+
+        assert counts == {"00": 512, "11": 488}
+        assert probs == pytest.approx({"00": 0.512, "11": 0.488})
+
+    def test_unified_result_probs_only_uses_internal_shots(self):
+        """``from_probabilities`` populates ``shots``; reconstructed counts use it."""
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        # Build a UnifiedResult that exposes probabilities (and shots) but
+        # whose counts dict has been cleared to mimic an adapter that
+        # only normalised probabilities.
+        result = UnifiedResult.from_probabilities(
+            {"00": 0.5, "11": 0.5}, 1000, "originq", "task-y"
+        )
+        result.counts = {}
+        counts, probs = extract_counts_and_probs(result)
+
+        assert counts == {"00": 500, "11": 500}
+        assert probs == pytest.approx({"00": 0.5, "11": 0.5})
+
+    def test_unified_result_batch_merges(self):
+        """``list[UnifiedResult]`` (native batch) merges counts across circuits."""
+        from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+        results = [
+            UnifiedResult.from_counts({"00": 400, "11": 100}, "ibm", "t-1"),
+            UnifiedResult.from_counts({"00": 100, "11": 400}, "ibm", "t-2"),
+        ]
+        counts, probs = extract_counts_and_probs(results)
+
+        assert counts == {"00": 500, "11": 500}
+        assert probs == pytest.approx({"00": 0.5, "11": 0.5})

@@ -360,6 +360,83 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
         save_chip(chip)
         return chip
 
+    if provider == "ibm":
+        try:
+            from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+            from uniqc.cli.chip_cache import save_chip
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"IBM SDK import failed while refreshing chip "
+                f"characterization for {chip_name!r}: {exc}"
+            ) from exc
+        try:
+            adapter = IBMAdapter()
+            chip = adapter.get_chip_characterization(chip_name)
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"IBM refresh failed for {chip_name!r}: {exc}. "
+                "Check IBM Quantum credentials, network connectivity, and "
+                "that the backend name is valid (e.g. 'ibm_fez')."
+            ) from exc
+        if chip is None:
+            raise BackendPreflightError(
+                f"IBM returned no characterization for {chip_name!r}. "
+                "Verify the backend name is reachable from your IBM account."
+            )
+        save_chip(chip)
+        return chip
+
+    if provider == "quafu":
+        try:
+            from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+            from uniqc.cli.chip_cache import save_chip
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"Quafu SDK import failed while refreshing chip "
+                f"characterization for {chip_name!r}: {exc}"
+            ) from exc
+        try:
+            adapter = QuafuAdapter()
+            chip = adapter.get_chip_characterization(chip_name)
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"Quafu refresh failed for {chip_name!r}: {exc}. "
+                "Check UNIQC_QUAFU_TOKEN, network connectivity, and "
+                "that the chip name is valid."
+            ) from exc
+        if chip is None:
+            raise BackendPreflightError(
+                f"Quafu returned no characterization for {chip_name!r}. "
+                "Verify the chip name (e.g. 'ScQ-P18') is currently online."
+            )
+        save_chip(chip)
+        return chip
+
+    if provider == "quark":
+        try:
+            from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
+            from uniqc.cli.chip_cache import save_chip
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"Quark SDK import failed while refreshing chip "
+                f"characterization for {chip_name!r}: {exc}"
+            ) from exc
+        try:
+            adapter = QuarkAdapter()
+            chip = adapter.get_chip_characterization(chip_name)
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"Quark refresh failed for {chip_name!r}: {exc}. "
+                "Check QuarkStudio configuration and that the chip name is valid."
+            ) from exc
+        if chip is None:
+            raise BackendPreflightError(
+                f"Quark returned no characterization for {chip_name!r}. "
+                "Verify the chip name is currently online."
+            )
+        save_chip(chip)
+        return chip
+
     raise BackendPreflightError(
         f"Cache refresh not implemented for provider {provider!r}. "
         "Run the provider's CLI 'uniqc backend chip-display "

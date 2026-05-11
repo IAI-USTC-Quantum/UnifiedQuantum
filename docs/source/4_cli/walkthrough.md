@@ -13,7 +13,7 @@
 |------|------|---------|
 | ``uniqc --help`` | 顶层帮助，列出所有子命令 | [CLI 介绍](index.md) |
 | ``uniqc simulate <file> [--shots N] [--backend <id>]`` | 本地模拟 OriginIR / QASM 文件 | [`uniqc simulate`](simulate.md) |
-| ``uniqc submit <file> -p <platform> [-b <backend>] [-s <shots>] [--wait]`` | 提交线路；``-p dummy`` 用本地 dummy；真平台需配 token | [`uniqc submit`](submit.md) |
+| ``uniqc submit <file> -b <provider:chip> [-s <shots>] [--wait]`` | 提交线路；``-b dummy:local:simulator`` 用本地 dummy；真平台需配 token | [`uniqc submit`](submit.md) |
 | ``uniqc submit ... --dry-run`` | 离线校验（不真的提交） | [`uniqc submit`](submit.md) |
 | ``uniqc result <task_id>`` | 查询 / 取回单个任务结果 | [`uniqc result`](result.md) |
 | ``uniqc task list / show / ...`` | 本地任务历史（SQLite at ``~/.uniqc/tasks.db``） | [`uniqc task`](task.md) |
