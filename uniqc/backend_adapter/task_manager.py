@@ -857,21 +857,6 @@ def _backend_info_from_chip(spec: Any):
     )
 
 
-def _active_qubits_from_originir(originir: str) -> set[int]:
-    """Best-effort scan of an OriginIR string for qubits actually touched
-    by gates (not counting unused logical slots from a generous QINIT)."""
-    import re
-    pattern = re.compile(r"q\[(\d+)\]")
-    active: set[int] = set()
-    for line in originir.splitlines():
-        s = line.strip()
-        if not s or s.startswith("QINIT") or s.startswith("CREG"):
-            continue
-        for m in pattern.finditer(s):
-            active.add(int(m.group(1)))
-    return active
-
-
 def _compile_for_chip_backed_dummy(
     circuit: Circuit,
     spec: Any,
@@ -890,14 +875,13 @@ def _compile_for_chip_backed_dummy(
     When ``available_qubits`` is given (typically forwarded from the
     user's ``submit_task`` kwargs that already constrain the dummy
     simulator), the layout pass is restricted to that physical-qubit
-    subset so the relayout cannot land on chip-but-disabled qubits. As
-    an additional safety rule, if the source circuit's actually-touched
-    qubits are all already inside ``available_qubits``, the IR is
-    passed through verbatim regardless of ``local_compile`` — the user
-    has hand-picked a valid layout and we MUST NOT silently relabel
-    onto different physical qubits (the original bug that prompted
-    NEW-U1 / NEW-U2: q[58] silently moved to q[13] on a chip whose
-    q[13] had been excluded as bad).
+    subset so the relayout cannot land on chip-but-disabled qubits — the
+    ``compile_with_config`` call drops every coupling-map edge that
+    touches a forbidden qubit, which is the same protection that
+    originally prompted NEW-U1 / NEW-U2 (q[58] silently moved to q[13]
+    on a chip whose q[13] had been excluded as bad). Users who really
+    do want byte-identical pass-through despite chip-backed dummy
+    semantics can opt out with ``local_compile=0``.
     """
     enriched = dict(metadata or {})
 
@@ -913,14 +897,6 @@ def _compile_for_chip_backed_dummy(
         return source_originir, enriched
     if spec.source_platform is None or spec.chip_characterization is None:
         return source_originir, enriched
-    if effective_available is not None:
-        active = _active_qubits_from_originir(source_originir)
-        allowed = {int(q) for q in effective_available}
-        if active and active.issubset(allowed):
-            # User picked the layout. Don't relabel.
-            enriched.setdefault("compile_passthrough_reason",
-                                "active qubits already inside available_qubits")
-            return source_originir, enriched
 
     from uniqc.compile import compile as compile_circuit
 

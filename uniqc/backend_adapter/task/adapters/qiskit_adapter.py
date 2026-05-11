@@ -147,6 +147,100 @@ class QiskitAdapter(QuantumAdapter):
         return check_qiskit() and hasattr(self, "_service") and self._service is not None
 
     # -------------------------------------------------------------------------
+    # Backend discovery
+    # -------------------------------------------------------------------------
+
+    def list_backends(self) -> list[dict[str, Any]]:
+        """List IBM backends through QiskitRuntimeService.
+
+        The returned entries include both average metrics and per-qubit/per-edge
+        calibration details from ``backend.target`` so the Gateway can color
+        chip topologies without flattening every edge to the global average.
+        """
+        # Lazy import to avoid a circular import at module load time —
+        # ``ibm_adapter`` itself imports ``QiskitAdapter`` inside its
+        # constructor for backwards-compatible delegation.
+        from uniqc.backend_adapter.task.adapters.ibm_adapter import (
+            _backend_configuration,
+            _backend_coupling_map,
+            _backend_is_simulator,
+            _backend_name,
+            _chip_characterization_from_backend,
+            _compute_ibm_fidelity,
+        )
+
+        raw_backends: list[dict[str, Any]] = []
+        for b in self._service.backends():
+            name = _backend_name(b)
+            cfg = _backend_configuration(b)
+            try:
+                status = "available" if b.status().operational else "unavailable"
+            except Exception:
+                status = "unknown"
+            try:
+                pt = b.processor_type
+                processor_type = pt.get("family", "") if isinstance(pt, dict) else str(pt) if pt else ""
+            except Exception:
+                processor_type = ""
+            coupling_map = _backend_coupling_map(b, cfg)
+            entry: dict[str, Any] = {
+                "name": name,
+                "simulator": _backend_is_simulator(b),
+                "configuration": {
+                    "num_qubits": getattr(b, "num_qubits", 0),
+                    "coupling_map": [list(edge) for edge in coupling_map],
+                    "basis_gates": list(getattr(b, "basis_gates", []) or getattr(cfg, "basis_gates", []) or []),
+                    "max_shots": getattr(b, "max_shots", None) or getattr(cfg, "max_shots", None),
+                    "memory": getattr(b, "memory", False) or getattr(cfg, "memory", False),
+                    "qobd": getattr(b, "qobd", False) or getattr(cfg, "qobd", False),
+                    "supported_instructions": list(getattr(b, "supported_instructions", []) or [])
+                    if hasattr(b, "supported_instructions")
+                    else [],
+                    "processor_type": processor_type,
+                },
+                "status": status,
+                "description": getattr(b, "description", ""),
+            }
+            try:
+                od = b.online_date
+                if od:
+                    entry["online_date"] = str(od)
+            except Exception:
+                pass
+            fidelity = _compute_ibm_fidelity(b)
+            entry.update(fidelity)
+            chip = _chip_characterization_from_backend(b, backend_name=name)
+            if chip is not None:
+                entry["per_qubit_calibration"] = [item.to_dict() for item in chip.single_qubit_data]
+                entry["per_pair_calibration"] = [item.to_dict() for item in chip.two_qubit_data]
+                entry["global_info"] = chip.global_info.to_dict()
+                entry["calibrated_at"] = chip.calibrated_at
+            raw_backends.append(entry)
+        return raw_backends
+
+    def get_chip_characterization(self, backend_name: str):
+        """Return per-qubit and per-pair calibration data for an IBM backend.
+
+        Parameters
+        ----------
+        backend_name:
+            IBM backend name, e.g. ``"ibm_brisbane"``.
+
+        Returns
+        -------
+        ChipCharacterization or None
+        """
+        from uniqc.backend_adapter.task.adapters.ibm_adapter import (
+            _chip_characterization_from_backend,
+        )
+
+        try:
+            backend = self._service.backend(backend_name)
+        except Exception:
+            return None
+        return _chip_characterization_from_backend(backend, backend_name=backend_name)
+
+    # -------------------------------------------------------------------------
     # Circuit translation
     # -------------------------------------------------------------------------
 
@@ -345,7 +439,16 @@ class QiskitAdapter(QuantumAdapter):
         }
 
     def query_batch(self, taskids: list[str]) -> dict[str, Any]:
-        """Query multiple IBM Quantum jobs and merge results."""
+        """Query multiple IBM Quantum jobs and merge results.
+
+        Each per-job ``query`` may return either a single counts ``dict``
+        (when one Sampler job covers exactly one PUB) or a ``list[dict]``
+        (when one Sampler job covers many PUBs — IBM's native batch
+        execution). The merged ``result`` must always be a flat
+        ``list[dict]`` so downstream code (``query_sync``, the task
+        manager normalisers, integration tests like
+        ``run_test_result_shape_batch``) can iterate per-circuit.
+        """
         taskinfo: dict[str, Any] = {"status": TASK_STATUS_SUCCESS, "result": []}
         for taskid in taskids:
             result_i = self.query(taskid)
@@ -356,7 +459,13 @@ class QiskitAdapter(QuantumAdapter):
             elif status == TASK_STATUS_RUNNING:
                 taskinfo["status"] = TASK_STATUS_RUNNING
             if taskinfo["status"] == TASK_STATUS_SUCCESS:
-                taskinfo["result"].append(result_i.get("result", {}))
+                payload = result_i.get("result", {})
+                if isinstance(payload, list):
+                    taskinfo["result"].extend(payload)
+                elif isinstance(payload, dict):
+                    taskinfo["result"].append(payload)
+                else:
+                    taskinfo["result"].append(payload)
         return taskinfo
 
     # -------------------------------------------------------------------------
