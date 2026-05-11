@@ -281,61 +281,8 @@ class IBMAdapter(QuantumAdapter):
         return self._delegate._service
 
     def list_backends(self) -> list[dict[str, Any]]:
-        """List IBM backends through QiskitRuntimeService.
-
-        The returned entries include both average metrics and per-qubit/per-edge
-        calibration details from ``backend.target`` so the Gateway can color
-        chip topologies without flattening every edge to the global average.
-        """
-        service = self._get_service()
-        raw_backends: list[dict[str, Any]] = []
-        for b in service.backends():
-            name = _backend_name(b)
-            cfg = _backend_configuration(b)
-            try:
-                status = "available" if b.status().operational else "unavailable"
-            except Exception:
-                status = "unknown"
-            try:
-                pt = b.processor_type
-                processor_type = pt.get("family", "") if isinstance(pt, dict) else str(pt) if pt else ""
-            except Exception:
-                processor_type = ""
-            coupling_map = _backend_coupling_map(b, cfg)
-            entry: dict[str, Any] = {
-                "name": name,
-                "simulator": _backend_is_simulator(b),
-                "configuration": {
-                    "num_qubits": getattr(b, "num_qubits", 0),
-                    "coupling_map": [list(edge) for edge in coupling_map],
-                    "basis_gates": list(getattr(b, "basis_gates", []) or getattr(cfg, "basis_gates", []) or []),
-                    "max_shots": getattr(b, "max_shots", None) or getattr(cfg, "max_shots", None),
-                    "memory": getattr(b, "memory", False) or getattr(cfg, "memory", False),
-                    "qobd": getattr(b, "qobd", False) or getattr(cfg, "qobd", False),
-                    "supported_instructions": list(getattr(b, "supported_instructions", []) or [])
-                    if hasattr(b, "supported_instructions")
-                    else [],
-                    "processor_type": processor_type,
-                },
-                "status": status,
-                "description": getattr(b, "description", ""),
-            }
-            try:
-                od = b.online_date
-                if od:
-                    entry["online_date"] = str(od)
-            except Exception:
-                pass
-            fidelity = _compute_ibm_fidelity(b)
-            entry.update(fidelity)
-            chip = _chip_characterization_from_backend(b, backend_name=name)
-            if chip is not None:
-                entry["per_qubit_calibration"] = [item.to_dict() for item in chip.single_qubit_data]
-                entry["per_pair_calibration"] = [item.to_dict() for item in chip.two_qubit_data]
-                entry["global_info"] = chip.global_info.to_dict()
-                entry["calibrated_at"] = chip.calibrated_at
-            raw_backends.append(entry)
-        return raw_backends
+        """List IBM backends — delegates to :class:`QiskitAdapter`."""
+        return self._delegate.list_backends()
 
     def translate_circuit(self, originir: str) -> Any:
         return self._delegate.translate_circuit(originir)
@@ -368,21 +315,18 @@ class IBMAdapter(QuantumAdapter):
     def get_chip_characterization(self, backend_name: str):
         """Return per-qubit and per-pair calibration data for an IBM backend.
 
+        Delegates to :class:`QiskitAdapter`.
+
         Parameters
         ----------
         backend_name:
-            IBM backend name, e.g. ``"ibm-sherbrooke"``.
+            IBM backend name, e.g. ``"ibm_brisbane"``.
 
         Returns
         -------
         ChipCharacterization or None
         """
-        service = self._get_service()
-        try:
-            backend = service.backend(backend_name)
-        except Exception:
-            return None
-        return _chip_characterization_from_backend(backend, backend_name=backend_name)
+        return self._delegate.get_chip_characterization(backend_name)
 
 
 def _chip_characterization_from_backend(backend: Any, *, backend_name: str | None = None):
