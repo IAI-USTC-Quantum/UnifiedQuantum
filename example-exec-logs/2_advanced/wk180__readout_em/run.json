@@ -3,8 +3,8 @@
   "chapter": "2_advanced",
   "name": "wk180__readout_em",
   "title": "WK180 readout EM example for UnifiedQuantum.",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
+  "verdict": "not-executed",
+  "skip_reason": null,
   "require": [
     "originq"
   ],

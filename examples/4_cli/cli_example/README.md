@@ -19,12 +19,12 @@ uv tool install unified-quantum
 
 ```bash
 # 初始化配置文件
-python -m uniqc config init
+python -m uniqc.cli config init
 
 # 设置各平台 API Token
-python -m uniqc config set originq.token YOUR_ORIGINQ_TOKEN
-python -m uniqc config set quafu.token   YOUR_QUAFU_TOKEN
-python -m uniqc config set ibm.token     YOUR_IBM_TOKEN
+python -m uniqc.cli config set originq.token YOUR_ORIGINQ_TOKEN
+python -m uniqc.cli config set quafu.token   YOUR_QUAFU_TOKEN
+python -m uniqc.cli config set ibm.token     YOUR_IBM_TOKEN
 ```
 
 ---
@@ -35,12 +35,12 @@ python -m uniqc config set ibm.token     YOUR_IBM_TOKEN
 
 ```bash
 # 验证所有已配置平台的凭证
-python -m uniqc config validate
+python -m uniqc.cli config validate
 
 # 单独查看某个平台的配置状态
-python -m uniqc config get originq
-python -m uniqc config get quafu
-python -m uniqc config get ibm
+python -m uniqc.cli config get originq
+python -m uniqc.cli config get quafu
+python -m uniqc.cli config get ibm
 ```
 
 预期输出示例（有效凭证）：
@@ -59,34 +59,34 @@ Platform: ibm
 
 ```bash
 # 列出所有平台的可用后端（默认只显示 available）
-python -m uniqc backend list
+python -m uniqc.cli backend list
 
 # 仅看 Quafu 平台
-python -m uniqc backend list -p quafu
+python -m uniqc.cli backend list -p quafu
 
 # 仅看 IBM 平台
-python -m uniqc backend list -p ibm
+python -m uniqc.cli backend list -p ibm
 
 # 显示后端详情（含保真度信息）
-python -m uniqc backend list -p quafu --info
-python -m uniqc backend list -p ibm --info
+python -m uniqc.cli backend list -p quafu --info
+python -m uniqc.cli backend list -p ibm --info
 
 # 强制从云端刷新后端列表
-python -m uniqc backend update
+python -m uniqc.cli backend update
 ```
 
 ### 查看后端详情和芯片标定
 
 ```bash
 # 查看单个后端的完整信息（含保真度和拓扑）
-python -m uniqc backend show originq:wuyuan:d5
-python -m uniqc backend show originq:simulator:01
+python -m uniqc.cli backend show originq:wuyuan:d5
+python -m uniqc.cli backend show originq:simulator:01
 
 # 查看芯片逐量子比特标定数据
-python -m uniqc backend chip-display originq/wuyuan:d5
+python -m uniqc.cli backend chip-display originq/wuyuan:d5
 
 # 强制刷新标定数据
-python -m uniqc backend chip-display originq/wuyuan:d5 --update
+python -m uniqc.cli backend chip-display originq/wuyuan:d5 --update
 ```
 
 输出示例：
@@ -111,14 +111,14 @@ Platform: ibm
 
 ```bash
 # 提交到 Quafu（OriginIR 格式，需指定 chip）
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 -s 1000
 
 # 提交到 IBM（QASM 格式，需指定 chip）
-python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000
+python -m uniqc.cli submit circuit.qasm --backend ibm:ibm_fez -s 1000
 
 # 等价的 -b 简写
-python -m uniqc submit circuit.originir -b quafu:ScQ-P18 -s 1000
-python -m uniqc submit circuit.qasm -b ibm:ibm_fez -s 1000
+python -m uniqc.cli submit circuit.originir -b quafu:ScQ-P18 -s 1000
+python -m uniqc.cli submit circuit.qasm -b ibm:ibm_fez -s 1000
 ```
 
 成功后会返回类似以下内容：
@@ -134,8 +134,8 @@ python -m uniqc submit circuit.qasm -b ibm:ibm_fez -s 1000
 
 ```bash
 # 同步提交，等结果最久等 300 秒
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
-python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
+python -m uniqc.cli submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
 ```
 
 ---
@@ -146,13 +146,13 @@ python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeo
 
 ```bash
 # 单电路试运行
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 --dry-run
 
 # 指定不同的 chip 进行验证
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 --dry-run
 
 # 批量试运行
-python -m uniqc submit circuit1.originir circuit2.originir --backend originq:WK_C180 --dry-run
+python -m uniqc.cli submit circuit1.originir circuit2.originir --backend originq:WK_C180 --dry-run
 ```
 
 ---
@@ -163,12 +163,12 @@ python -m uniqc submit circuit1.originir circuit2.originir --backend originq:WK_
 
 ```bash
 # 查询结果（异步轮询，最久等 300 秒）
-python -m uniqc result <task_id> -p quafu --wait --timeout 300
-python -m uniqc result <task_id> -p ibm --wait --timeout 300
+python -m uniqc.cli result <task_id> -p quafu --wait --timeout 300
+python -m uniqc.cli result <task_id> -p ibm --wait --timeout 300
 
 # 不等待，直接查询当前状态
-python -m uniqc result <task_id> -p quafu
-python -m uniqc result <task_id> -p ibm
+python -m uniqc.cli result <task_id> -p quafu
+python -m uniqc.cli result <task_id> -p ibm
 ```
 
 输出示例（`--format table`）：
@@ -188,34 +188,34 @@ Bitstring    Shots    Probability
 
 ```bash
 # 1. 验证凭证
-python -m uniqc config validate
+python -m uniqc.cli config validate
 
 # 2. 查看可用后端
-python -m uniqc backend list -p quafu
+python -m uniqc.cli backend list -p quafu
 
 # 3. 同步提交（一步到位）
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 -s 1000 --wait --timeout 300
 
 # 或分步操作：
 # 3a. 提交（异步）
-python -m uniqc submit circuit.originir --backend quafu:ScQ-P18 -s 1000
+python -m uniqc.cli submit circuit.originir --backend quafu:ScQ-P18 -s 1000
 #   → 拿到 task_id：abc123def456
 
 # 3b. 轮询结果
-python -m uniqc result abc123def456 -p quafu --wait --timeout 300
+python -m uniqc.cli result abc123def456 -p quafu --wait --timeout 300
 ```
 
 ## 完整流程示例（IBM）
 
 ```bash
 # 1. 验证凭证
-python -m uniqc config validate
+python -m uniqc.cli config validate
 
 # 2. 查看可用后端
-python -m uniqc backend list -p ibm
+python -m uniqc.cli backend list -p ibm
 
 # 3. 提交（IBM 接受 QASM 格式）
-python -m uniqc submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
+python -m uniqc.cli submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --timeout 300
 ```
 
 ## 结果格式说明

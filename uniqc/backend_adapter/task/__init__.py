@@ -23,7 +23,7 @@ Public API (from ``uniqc.backend_adapter.task_manager``):
 
 CLI shortcut::
 
-    uniqc submit circuit.originir --platform quafu --chip-id ScQ-P18 --dry-run
+    uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
 
 Python example::
 

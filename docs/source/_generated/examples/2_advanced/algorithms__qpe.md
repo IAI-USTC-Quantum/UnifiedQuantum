@@ -33,14 +33,14 @@ References:
  Unitary: t
 
  Measurement results:
-   |0111⟩  prob= 42.2%  phase=0.4375 ← most likely
-   |0000⟩  prob= 40.8%  phase=0.0000
-   |0011⟩  prob=  4.9%  phase=0.1875
-   |0100⟩  prob=  4.9%  phase=0.2500
-   |0010⟩  prob=  2.1%  phase=0.1250
-   |0110⟩  prob=  1.8%  phase=0.3750
-   |0101⟩  prob=  1.7%  phase=0.3125
-   |0001⟩  prob=  1.6%  phase=0.0625
+   |0111⟩  prob= 41.9%  phase=0.4375 ← most likely
+   |0000⟩  prob= 39.9%  phase=0.0000
+   |0100⟩  prob=  5.7%  phase=0.2500
+   |0011⟩  prob=  5.0%  phase=0.1875
+   |0010⟩  prob=  2.3%  phase=0.1250
+   |0101⟩  prob=  2.0%  phase=0.3125
+   |0001⟩  prob=  1.8%  phase=0.0625
+   |0110⟩  prob=  1.5%  phase=0.3750
 
  Estimated phase:  0.4375
  True phase:       0.0000

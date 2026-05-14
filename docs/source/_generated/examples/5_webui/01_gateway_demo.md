@@ -28,7 +28,7 @@ host: 127.0.0.1
 port: 18765
 
 == Triggering one dummy task so the UI has something to show ==
-task_id: uqt_8738bb9b33ca49d784ff712ac800a91d
+task_id: uqt_def5be34dead4a6ead380b767a2e33b4
 
 Launch the UI with:
     uniqc gateway --host 127.0.0.1 --port 18765

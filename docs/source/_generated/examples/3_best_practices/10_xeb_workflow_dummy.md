@@ -1,7 +1,7 @@
 ### 10 — XEB workflow
 
 *Source*: ``examples/3_best_practices/10_xeb_workflow_dummy.py``  
-*Status*: **skip** — missing requirements: matplotlib (matplotlib installed)
+*Status*: **pass**
 
 使用很小的参数运行 1q XEB，覆盖校准、ReadoutEM、随机线路生成、fidelity 拟合和结果
 图示。本例子使用 ``backend="dummy:local:simulator"`` 搭配显式 ``noise_model`` 做本地
@@ -14,7 +14,15 @@
 :language: python
 ```
 
-:::{note}
-Example skipped during pre-doc-execution: missing requirements: matplotlib (matplotlib installed)
-:::
+**Stdout**
+
+```text
+fidelity_per_layer: 0.983341
+fit parameters: {'A': 1.01276, 'B': 0.0, 'r': 0.983341}
+depths: (1, 2, 3)
+```
+
+**Figures**
+
+![10 — XEB workflow — figure-01.png](../_generated/examples/3_best_practices/figures/10_xeb_workflow_dummy/figure-01.png)
 

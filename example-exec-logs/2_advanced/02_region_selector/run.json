@@ -3,8 +3,8 @@
   "chapter": "2_advanced",
   "name": "02_region_selector",
   "title": "02 — RegionSelector: pick a high-fidelity sub-region of a chip",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
+  "verdict": "not-executed",
+  "skip_reason": null,
   "require": [
     "originq"
   ],

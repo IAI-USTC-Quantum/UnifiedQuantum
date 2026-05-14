@@ -26,17 +26,17 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.12..HEAD`
-- 提交数：45
-- 变更文件数：542
+- 提交数：54
+- 变更文件数：546
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `merge` | 13 |
-| `docs` | 10 |
+| `merge` | 16 |
+| `fix` | 13 |
+| `docs` | 11 |
 | `feat` | 8 |
-| `fix` | 8 |
 | `other` | 3 |
 | `build` | 1 |
 | `refactor` | 1 |
@@ -44,13 +44,13 @@
 
 ### 变更区域
 
-- `docs`: 291 个文件
+- `docs`: 292 个文件
 - `examples`: 71 个文件
 - `example-exec-logs`: 50 个文件
-- `uniqc/test`: 41 个文件
+- `uniqc/test`: 42 个文件
 - `uniqc/algorithms`: 22 个文件
-- `uniqc/backend_adapter`: 12 个文件
-- `uniqc/cli`: 7 个文件
+- `uniqc/backend_adapter`: 13 个文件
+- `uniqc/cli`: 8 个文件
 - `uniqc/simulator`: 7 个文件
 - `uniqc/calibration`: 6 个文件
 - `uniqc/circuit_builder`: 5 个文件
@@ -124,6 +124,15 @@
 - `d9af4c3` refactor: unified Simulator/NoisySimulator + AnyQuantumCircuit type + docs overhaul
 - `ef258d9` fix: export get_result and poll_result from uniqc
 - `ce86786` fix: Simulator method name + test qubit remapping
+- `b3d1b62` fix: normalize.py full API + circuit_builder exports
+- `d430dd3` docs: commit auto-generated example outputs and sphinx-apidoc artifacts
+- `8f35fb8` fix(test_benchmark): restore least_qubit_remapping=False for QASM benchmark
+- `807671a` fix(test_random_QASM): restore least_qubit_remapping=False
+- `2a0229e` Merge pull request #96 from IAI-USTC-Quantum/doc/misc-doc-fixing
+- `a4380b0` fix(release): resolve known release-blocker gaps
+- `759138a` Merge pull request #97 from IAI-USTC-Quantum/fix/resolve-release-gaps
+- `47ebb1b` fix(release): unbreak IBM discovery, batch-result shape, and chip-backed dummy compile
+- `a994020` Merge pull request #98 from IAI-USTC-Quantum/fix/pre-release
 
 ## v0.0.12
 
