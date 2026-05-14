@@ -146,6 +146,23 @@ def _phase2q(theta1: float, theta2: float, thetazz: float) -> np.ndarray:
     ).astype(np.complex128)
 
 
+def _uu15(params: Sequence[float]) -> np.ndarray:
+    """Most-general 2-qubit unitary in Cartan / KAK form.
+
+    Mirrors the ``gate uu15(...)`` body in
+    :data:`uniqc.circuit_builder.translate_qasm2_oir.QASM2_CUSTOM_GATE_DEFS`:
+    ``(U3(c)⊗U3(d)) · RZZ(tzz) · RYY(tyy) · RXX(txx) · (U3(a)⊗U3(b))``.
+    Qubit ``a`` is the LSB to match the rest of this module's conventions.
+    """
+    if len(params) != 15:
+        raise ValueError(f"UU15 expects 15 parameters, got {len(params)}")
+    a0, a1, a2, b0, b1, b2, txx, tyy, tzz, c0, c1, c2, d0, d1, d2 = params
+    pre = np.kron(_u3(b0, b1, b2), _u3(a0, a1, a2))
+    middle = _zz(tzz) @ _yy(tyy) @ _xx(txx)
+    post = np.kron(_u3(d0, d1, d2), _u3(c0, c1, c2))
+    return post @ middle @ pre
+
+
 def _xy(theta: float) -> np.ndarray:
     c, s = math.cos(theta / 2), math.sin(theta / 2)
     return np.array(
@@ -233,6 +250,8 @@ def _base_gate_matrix(
             return _xy(_single_param(params))
         if name == "PHASE2Q":
             return _phase2q(values[0], values[1], values[2])
+        if name == "UU15":
+            return _uu15(values)
         raise NotImplementedError(f"Unsupported 2-qubit gate: {name!r}")
 
     if len(qubits) == 3:

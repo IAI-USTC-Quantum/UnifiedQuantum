@@ -101,7 +101,11 @@ from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_SUCCESS,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.options import BackendOptions, BackendOptionsFactory
+from uniqc.backend_adapter.task.options import (
+    BackendOptions,
+    BackendOptionsFactory,
+    UnifiedOptions,
+)
 from uniqc.backend_adapter.task.result_types import DryRunResult, UnifiedResult
 from uniqc.backend_adapter.task.store import (
     DEFAULT_CACHE_DIR,
@@ -744,10 +748,34 @@ def _prepare_circuit_for_submission(
 
     language = resolve_submit_language(backend)
 
+    # --- Auto-decompose OriginIR-native gates with no QASM 2.0 stdlib name ---
+    # RPhi / PHASE2Q / UU15 etc. are mathematically expressible in qelib1.inc
+    # via the IR-level rewrite in ``uniqc.compile.decompose``.  We attempt
+    # the rewrite up-front so that subsequent language and basis checks see
+    # only QASM2-friendly opcodes.  Controlled wrappings (rare) still trigger
+    # the hard block below because ``decompose_for_qasm2`` cannot lift them.
+    if language is not None and language.upper() in {"QASM2", "OPENQASM2", "OPENQASM 2.0"}:
+        from uniqc.compile.decompose import (
+            QASM2_UNREPRESENTABLE_GATES,
+            decompose_for_qasm2,
+        )
+
+        if any(
+            str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES
+            for op in circuit.opcode_list
+        ):
+            try:
+                circuit = decompose_for_qasm2(circuit)
+            except (NotImplementedError, ValueError):
+                # Fall through to the language check below, which will
+                # surface the original "not expressible" error.
+                pass
+
     # --- Hard block: IR language compatibility (never skippable) ---
-    # Gates like RPhi/RPHI90/PHASE2Q/UU15 cannot be expressed in QASM2;
-    # submitting them to QASM2-only platforms (Quafu/Quark/IBM) will always
-    # fail at the cloud backend.
+    # Anything that survives the decomposition pass above and still maps to
+    # gate names QASM 2.0 cannot represent is a real failure (typically
+    # controlled-RPhi or future OriginIR-only gates).  Cloud backends would
+    # reject these too.
     _lang_report = compatibility_report(circuit, backend_info=None, language=language)
     if _lang_report.errors:
         from uniqc.exceptions import UnsupportedGateError
@@ -921,7 +949,7 @@ def submit_task(
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
-    options: BackendOptions | dict | None = None,
+    options: BackendOptions | UnifiedOptions | dict | None = None,
     *,
     local_compile: int = 1,
     cloud_compile: int = 1,
@@ -949,8 +977,11 @@ def submit_task(
         shots: Number of measurement shots.
         metadata: Optional metadata to store with the task.
         options: Optional typed backend options. Accepts a
-            :class:`BackendOptions` instance, a plain dict (treated as
-            ``**kwargs``), or ``None`` for platform defaults.
+            :class:`BackendOptions` instance, a :class:`UnifiedOptions`
+            instance (auto-translated to the platform's specific options
+            with cross-platform semantics for ``optimize_level`` /
+            ``error_mitigation`` / ``auto_mapping``), a plain dict
+            (treated as ``**kwargs``), or ``None`` for platform defaults.
         local_compile: Local qiskit transpile pass strength.
 
             - ``0`` — no local transpile. The circuit is shipped as-authored
@@ -994,8 +1025,11 @@ def submit_task(
             name (bare ``'provider'``) or is otherwise unrecognised.
         BackendNotAvailableError: If the backend is not available.
         UnsupportedGateError: If the circuit uses gates that cannot be
-            expressed in the backend's IR language (hard block — never
-            skippable, no amount of local/cloud compile can help).
+            expressed in the backend's IR language and cannot be
+            auto-decomposed (hard block — most OriginIR-native gates
+            such as ``RPhi``/``PHASE2Q``/``UU15`` are auto-rewritten via
+            :mod:`uniqc.compile.decompose` before this check; only
+            controlled wrappings or unrecognised gates fall through).
         AuthenticationError: If authentication fails.
         InsufficientCreditsError: If account has insufficient credits.
         QuotaExceededError: If usage quota is exceeded.
@@ -1267,7 +1301,7 @@ def submit_batch(
     circuits: list[Circuit | str],
     backend: str,
     shots: int = 1000,
-    options: BackendOptions | dict | None = None,
+    options: BackendOptions | UnifiedOptions | dict | None = None,
     *,
     local_compile: int = 1,
     cloud_compile: int = 1,
