@@ -7,35 +7,224 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.13] - 2026-05-14
+
+This release unifies the front-door surface of UnifiedQuantum: a single
+`--backend` flag on the CLI, a single `Simulator` / `NoisySimulator` for both
+OriginIR and OpenQASM, and a single `AnyQuantumCircuit` input type across the
+Python API. Qiskit becomes a core dependency, Quafu is archived behind a
+deprecation warning, and the documentation site is rebuilt around an
+8-chapter, two-step pipeline on the Furo theme.
+
 ### ⚠ BREAKING
 
-- **`[qiskit]` extra removed** — `qiskit`, `qiskit-aer`, and `qiskit-ibm-runtime`
-  are now part of the **core dependencies** of `unified-quantum`. Users no longer
-  need to install `unified-quantum[qiskit]`; a plain `pip install unified-quantum`
-  is enough for compile / IBM Quantum / Qiskit-backed paths. If `import qiskit`
-  fails after install, the environment is broken — reinstall with
-  `pip install --upgrade unified-quantum`.
-- **`[quafu]` extra removed; Quafu support archived** — the Quafu adapter code
-  is retained for backwards compatibility but is now **deprecated** and emits a
-  `DeprecationWarning` at import time. The `[quafu]` extra is no longer
-  available. Users who still need Quafu must install `pyquafu` directly with
-  `pip install pyquafu` and accept that it requires `numpy<2`. Future releases
-  do not guarantee consistency or completeness of Quafu-related code, and
-  support may stop at any time.
+- **`uniqc submit --platform` removed** — `uniqc submit` no longer accepts
+  `--platform` / `-p`. Use a single `--backend <provider>:<chip>` instead
+  (e.g. `--backend originq:WK_C180`, `--backend ibm:ibm_fez`,
+  `--backend dummy:local:simulator`, `--backend dummy:originq:WK_C180`).
+  Omitting `--backend` now defaults to `dummy:local:simulator`. The bare
+  string `dummy` is accepted as an alias for `dummy:local:simulator`.
+  Note: `uniqc backend list/update`, `uniqc task list`, and `uniqc result`
+  still accept `--platform` for cache/scoping operations.
+- **`OriginIR_Simulator` and `QASM_Simulator` removed** — both classes are
+  replaced by a single `Simulator` (and `NoisySimulator`) in
+  `uniqc.simulator` that auto-detects the input format (OriginIR vs
+  OpenQASM 2.0) at runtime. Update imports to
+  `from uniqc.simulator import Simulator, NoisySimulator`. The
+  `program_type=` factory parameter is gone. `originir_simulator.py` and
+  `qasm_simulator.py` are deleted.
+- **`AnyQuantumCircuit` input type** — public APIs that take a circuit
+  (compile, simulate, submit) now accept the new `AnyQuantumCircuit`
+  alias (uniqc `Circuit` / OriginIR `str` / OpenQASM 2.0 `str` /
+  `qiskit.QuantumCircuit` / `pyqpanda3` circuit) and normalize internally
+  via `normalize_to_circuit()`. `NormalizedCircuit.original_format` is
+  renamed to `NormalizedCircuit.type`.
+- **`[qiskit]` extra removed** — `qiskit`, `qiskit-aer`, and
+  `qiskit-ibm-runtime` are now part of the **core dependencies** of
+  `unified-quantum`. Users no longer need to install
+  `unified-quantum[qiskit]`; a plain `pip install unified-quantum` is
+  enough for compile / IBM Quantum / Qiskit-backed paths. If
+  `import qiskit` fails after install, the environment is broken —
+  reinstall with `pip install --upgrade unified-quantum`.
+- **`[quafu]` extra removed; Quafu support archived** — the Quafu adapter
+  code is retained for backwards compatibility but is now **deprecated**
+  and emits a `DeprecationWarning` at import time. The `[quafu]` extra is
+  no longer available. Users who still need Quafu must install `pyquafu`
+  directly with `pip install pyquafu` and accept that it requires
+  `numpy<2`. Future releases do not guarantee consistency or completeness
+  of Quafu-related code, and support may stop at any time.
+- **`submit_task` rejects bare `dummy:`-less platform strings** —
+  `submit_task` now enforces a `provider:chip-name` format on `backend=`.
+  Bare `"originq"` / `"ibm"` strings raise; pass `originq:WK_C180`,
+  `ibm:ibm_fez`, or a `dummy:...` rule string instead. `auto_compile` is
+  fixed to actually run when no `compile_options` are provided.
+
+### Added
+
+- **`uniqc doctor` CLI** — environment diagnostics command (
+  `uv run uniqc doctor`) that checks Python version, optional dependency
+  groups, configured tokens, cached backends, and known broken-import
+  shims. Use this as the first step when triaging install / config
+  issues.
+- **Parallel-CZ XEB calibration module** — new
+  `uniqc.calibration.xeb.parallel_cz` module and a strict pre-flight
+  policy (the calibration entry-points refuse to dispatch experiments
+  whose chip-level prerequisites are not satisfied, instead of failing
+  silently downstream). Exposed through `uniqc calibrate xeb`.
+- **`uniqc.get_platform_task_ids` / `uniqc task shards` continued** —
+  schema and CLI introduced in `v0.0.12` are kept; the new
+  `Simulator`/`AnyQuantumCircuit` paths and the v0.0.13 batch-result
+  flatten fix all preserve the `uqt_*` indirection layer.
+- **Top-level result helpers** — `uniqc.get_result` and
+  `uniqc.poll_result` (in addition to the existing `wait_for_result`)
+  are now re-exported from the `uniqc` namespace, mirroring the new
+  async-result API.
+- **`Circuit.to_qiskit_circuit()` / `Circuit.to_pyqpanda3_circuit()`** —
+  first-class converters from uniqc `Circuit` to other in-process
+  circuit types, plus assorted previously-missing gates wired into
+  the unified normalize path.
+- **Fake-backend tests** — new fake-backend test fixtures broaden CLI /
+  adapter coverage without requiring real cloud credentials.
+- **Chip-cache refresh paths for IBM / Quafu / Quark** —
+  `uniqc backend update --platform ibm|quafu|quark` now actually
+  refreshes the on-disk chip cache via each adapter's
+  `get_chip_characterization` (previously raised "Cache refresh not
+  implemented for provider …").
+- **Doc-site auxiliary scripts and prose** — `uniqc-build-docs` skill
+  for local Sphinx builds; deep-prose pages for `simulation.md`,
+  `submit_task.md`, `compiler_options_region.md`,
+  `platform_conventions.md`, `installation.md`, `best_practices.md`,
+  and the four section-index pages.
 
 ### Changed
 
-- Updated docstrings, error messages, troubleshooting hints, README tables and
-  installation/task_manager/submit_task/best_practices/platform_conventions/
-  compiler_options_region docs to remove `pip install unified-quantum[qiskit]`
-  and `pip install unified-quantum[quafu]` references and replace them with
-  the appropriate guidance (qiskit is core; quafu is archived/install pyquafu
-  manually).
-- `uniqc.backend_adapter.task.optional_deps.require()` now accepts an optional
-  `install_hint` and special-cases the legacy `extra="quafu"` argument so that
-  callers automatically get the deprecation/`pip install pyquafu` message.
-- `MissingDependencyError` raised from the Quafu adapter / cloud-platform SDK
-  paths now points at `pip install pyquafu` instead of a non-existent extra.
+- **CLI overhaul** — `_dummy_backend_id()` is renamed to
+  `_normalize_backend_id()` with unified logic for dummy + real
+  backends; `_submit_single`, `_submit_batch`, and `_handle_dry_run`
+  are simplified accordingly. All `--ai-hints` / `--ai-hint` text in
+  `uniqc.cli.refs` uses the new `--backend` syntax. `uniqc task list`
+  threads `--limit` / `--offset` through to the SQLite store, and
+  `uniqc task clear` uses `store.count()` instead of fully
+  materialising the cache (matters once you have hundreds of cached
+  tasks).
+- **API error messages** — every public-facing error / warning is now
+  enriched with a doc link and a troubleshooting hint pointing at a
+  specific API page (instead of the doc-site root). Affects
+  `MissingDependencyError`, `TopologyError`, `UnsupportedGateError`,
+  and the cloud-platform adapters.
+- **Quafu / IBM bitstring convention** — both adapters now enforce the
+  `c[0] = LSB` bitstring convention end-to-end so per-bit indexing
+  matches OriginQ, the dummy backend, and the simulator.
+- **Documentation structure** — site moved from a 6-area layout to an
+  8 chapter-numbered structure under `docs/source/<N>_<chapter>/`,
+  with examples reorganised under `examples/<N>_<chapter>/`. The build
+  is now a two-step pipeline (`pre-doc-execution` runs every example
+  end-to-end, then `sphinx-build` produces HTML), and the theme is
+  switched to Furo. `make html` is the canonical entry point.
+- **Quafu visibility on the doc site** — the public site / front-end
+  surfaces only `originq` / `ibm` / `quark` / `dummy` and hides Quafu;
+  the `uniqc submit` / `compile_for_backend` paths still work for
+  Quafu, but it is no longer a recommended option.
+- Updated docstrings, error messages, troubleshooting hints, README
+  tables and installation / task_manager / submit_task / best_practices
+  / platform_conventions / compiler_options_region docs to remove
+  `pip install unified-quantum[qiskit]` and
+  `pip install unified-quantum[quafu]` references and replace them
+  with the appropriate guidance (qiskit is core; quafu is archived /
+  install pyquafu manually).
+- `uniqc.backend_adapter.task.optional_deps.require()` now accepts an
+  optional `install_hint` and special-cases the legacy `extra="quafu"`
+  argument so that callers automatically get the deprecation /
+  `pip install pyquafu` message.
+- `MissingDependencyError` raised from the Quafu adapter /
+  cloud-platform SDK paths now points at `pip install pyquafu` instead
+  of a non-existent extra.
+
+### Fixed
+
+- **IBM backend discovery silently broken** —
+  `_build_adapter(Platform.IBM)` returned a bare `QiskitAdapter`,
+  whose inherited `list_backends` raised `NotImplementedError`; the
+  generic `except Exception` in `fetch_platform_backends` swallowed
+  it and `uniqc backend update --platform ibm` reported success while
+  the cache stayed days stale. `list_backends` and
+  `get_chip_characterization` are moved onto `QiskitAdapter` (the
+  canonical IBM adapter today); the deprecation-shim `IBMAdapter`
+  delegates to it.
+- **Qiskit `query_batch` produced nested results** — when a single
+  Sampler job covered multiple PUBs (IBM's native batch),
+  `QiskitAdapter.query_batch` returned `list[list[dict]]` instead of a
+  flat `list[dict]`, breaking `pytest --real-cloud-test`. Mirror the
+  OriginQ adapter pattern: extend if the per-job payload is a list,
+  append if it is a dict.
+- **`dummy:originq:WK_C180` skipped basis-gate compile** —
+  `_compile_for_chip_backed_dummy` returned the source IR verbatim
+  whenever active qubits were inside the chip's `available_qubits`,
+  so a Bell circuit reached the simulator as raw H + CNOT and raised
+  `TopologyError("Unsupported topology")`. Drop the unconditional
+  early-return and rely on the `available_qubits`-based coupling-map
+  filter already in `compile_with_config`.
+- **`uniqc submit ... --wait` table empty** —
+  `extract_counts_and_probs` only handled raw `dict` / `list` payloads
+  but `wait_for_result` returns a `UnifiedResult` (single circuit) or
+  `list[UnifiedResult]` (native batch). The helper now unwraps both,
+  with regression tests.
+- **`uniqc submit ... --backend originq:WK_C180 --dry-run`** —
+  previously raised
+  `OriginQCircuitAdapter object has no attribute dry_run` because the
+  non-dummy dry-run path resolved a translation-only `CircuitAdapter`.
+  Resolve through `backend_module.get_backend(backend).adapter` so
+  `dry_run` is available on every supported provider.
+- **`fetch_platform_backends` clobbered cache on silent SDK failure** —
+  when an SDK call returned 0 backends (e.g. IBM credentials missing
+  / wrong instance), the previous code persisted a fresh empty list
+  on top of an existing cache and reported success. Keep the existing
+  cache and report `fetched_newly=False` so
+  `/api/backends/refresh` surfaces a warning.
+- **`NoisySimulator` MRO bypassed noise injection** — the previous
+  multiple-inheritance order silently dropped the noise-injection
+  hooks on some `NoisySimulator` paths.
+- **`UnifiedResult` JSON serialisation** — `uniqc submit ... --json`
+  now correctly serialises `UnifiedResult` payloads instead of falling
+  through to the default repr.
+- **MPS form flattening on the CLI** — bare `dummy` is rejected,
+  `dummy:mps:linear-N` parses cleanly, and the form-string layout
+  matches the documented one in `submit_task.md`.
+- **OriginQ failure-message propagation** (carried through from
+  `v0.0.12`) — error strings nested under `result["result"]["error"]`
+  are now surfaced on `TaskInfo.error_message` and
+  `TaskShard.error_message` for both single tasks and batches.
+- **Doc commands using `--platform`** — 8 user-facing doc commands
+  across `0_quickstart/end_to_end.md`, `4_cli/{workflow,walkthrough,
+  backend}.md`, `docs/index.md`, `examples/3_best_practices/...` and
+  `examples/4_cli/cli_example/...` were rewritten to the canonical
+  `--backend <provider>:<chip>` / `--backend dummy:local:...` form.
+- Test-suite pinning: `least_qubit_remapping=False` restored on
+  `test_random_QASM` and `test_benchmark` so QASM benchmarks compare
+  apples-to-apples; bitstring-endianness test on `dummy:originq` now
+  gates on OriginQ credentials so it doesn't fail in the open-source
+  CI lane.
+- `pybind11-stubgen` added to `[dependency-groups].dev` so
+  `scripts/stubgen.py` works from a fresh dev install.
+
+### Migration notes
+
+- **CLI**: replace every `uniqc submit ... --platform <p> [--backend <b>]`
+  invocation with `uniqc submit ... --backend <provider>:<chip>` (or
+  `--backend dummy:local:simulator`). Other `--platform` flags
+  (`uniqc backend update --platform`, `uniqc task list --platform`,
+  `uniqc result --platform`) are unchanged.
+- **Python API**: replace `from uniqc.simulator import OriginIR_Simulator,
+  QASM_Simulator` with `from uniqc.simulator import Simulator,
+  NoisySimulator`, drop `program_type=`, and pass any
+  `AnyQuantumCircuit` value directly.
+- **Install**: drop `[qiskit]` and `[quafu]` from `pip install
+  unified-quantum[...]`; if you previously relied on the `[quafu]`
+  extra, run `pip install pyquafu` separately and pin `numpy<2`.
+- **Submit**: callers that built `submit_task(backend="originq", ...)`
+  must now spell the chip explicitly:
+  `submit_task(backend="originq:WK_C180", ...)`. Use
+  `uniqc backend list --platform originq` to find available chips.
 
 ## [0.0.12] - 2026-05-07
 

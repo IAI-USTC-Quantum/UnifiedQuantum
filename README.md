@@ -65,12 +65,12 @@ open('circuit.ir', 'w').write(c.originir)
 uniqc simulate circuit.ir --shots 1000
 
 # 提交到云端
-uniqc submit circuit.ir --platform originq --shots 1000
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # dummy backend 编号规则
-uniqc submit circuit.ir --platform dummy --shots 1000
-uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000
-uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
+uniqc submit circuit.ir --backend dummy:local:simulator --shots 1000
+uniqc submit circuit.ir --backend dummy:local:virtual-line-3 --shots 1000
+uniqc submit circuit.ir --backend dummy:originq:WK_C180 --shots 1000
 
 # 查询任务结果
 uniqc result <task_id>
@@ -229,7 +229,7 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --sk
 uniqc simulate circuit.ir --shots 1000
 
 # 提交到云端（支持 originq / quafu / ibm / dummy）
-uniqc submit circuit.ir --platform originq --shots 1000
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # 查询任务结果
 uniqc result <task_id>

@@ -65,12 +65,12 @@ open('circuit.ir', 'w').write(c.originir)
 uniqc simulate circuit.ir --shots 1000
 
 # Submit to cloud
-uniqc submit circuit.ir --platform originq --shots 1000
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # Dummy backend id conventions
-uniqc submit circuit.ir --platform dummy --shots 1000
-uniqc submit circuit.ir --platform dummy --backend virtual-line-3 --shots 1000
-uniqc submit circuit.ir --platform dummy --backend originq:WK_C180 --shots 1000
+uniqc submit circuit.ir --backend dummy:local:simulator --shots 1000
+uniqc submit circuit.ir --backend dummy:local:virtual-line-3 --shots 1000
+uniqc submit circuit.ir --backend dummy:originq:WK_C180 --shots 1000
 
 # Query result
 uniqc result <task_id>
@@ -211,7 +211,7 @@ uniqc --help
 uniqc simulate circuit.ir --shots 1000
 
 # Submit to cloud (originq / quafu / ibm / dummy)
-uniqc submit circuit.ir --platform originq --shots 1000
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # Query result
 uniqc result <task_id>

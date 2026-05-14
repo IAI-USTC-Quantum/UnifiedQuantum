@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": " Quantum Phase Estimation\n Precision qubits: 4\n Phase precision:  1/16 = 0.0625\n Unitary: t\n\n Measurement results:\n   |0111⟩  prob= 42.2%  phase=0.4375 ← most likely\n   |0000⟩  prob= 40.8%  phase=0.0000\n   |0011⟩  prob=  4.9%  phase=0.1875\n   |0100⟩  prob=  4.9%  phase=0.2500\n   |0010⟩  prob=  2.1%  phase=0.1250\n   |0110⟩  prob=  1.8%  phase=0.3750\n   |0101⟩  prob=  1.7%  phase=0.3125\n   |0001⟩  prob=  1.6%  phase=0.0625\n\n Estimated phase:  0.4375\n True phase:       0.0000\n Absolute error:   0.4375\n  ✓ QPE complete.\n",
+  "stdout": " Quantum Phase Estimation\n Precision qubits: 4\n Phase precision:  1/16 = 0.0625\n Unitary: t\n\n Measurement results:\n   |0111⟩  prob= 41.9%  phase=0.4375 ← most likely\n   |0000⟩  prob= 39.9%  phase=0.0000\n   |0100⟩  prob=  5.7%  phase=0.2500\n   |0011⟩  prob=  5.0%  phase=0.1875\n   |0010⟩  prob=  2.3%  phase=0.1250\n   |0101⟩  prob=  2.0%  phase=0.3125\n   |0001⟩  prob=  1.8%  phase=0.0625\n   |0110⟩  prob=  1.5%  phase=0.3750\n\n Estimated phase:  0.4375\n True phase:       0.0000\n Absolute error:   0.4375\n  ✓ QPE complete.\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.004
+  "duration_seconds": 0.005
 }

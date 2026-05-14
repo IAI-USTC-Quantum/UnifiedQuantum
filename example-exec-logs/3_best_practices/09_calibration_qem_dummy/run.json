@@ -3,18 +3,20 @@
   "chapter": "3_best_practices",
   "name": "09_calibration_qem_dummy",
   "title": "09 — Calibration + QEM",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
+  "verdict": "pass",
+  "skip_reason": null,
   "require": [
     "matplotlib"
   ],
   "ignored_warning_patterns": [],
-  "stdout": null,
-  "stderr": null,
-  "warnings": null,
-  "figure_files": null,
-  "offending_lines": null,
-  "ignored_lines": null,
+  "stdout": "assignment fidelity: 0.9\nconfusion matrix: ((0.92, 0.12), (0.08, 0.88))\nobserved: {0: 24, 1: 176}\ncorrected: {0: 0.0, 1: 200.0}\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [
+    "figure-01.png"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
   "exception": null,
-  "duration_seconds": null
+  "duration_seconds": 0.114
 }
