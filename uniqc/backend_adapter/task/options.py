@@ -30,11 +30,13 @@ __all__ = [
     "QuarkOptions",
     "IBMOptions",
     "DummyOptions",
+    "UnifiedOptions",
     "BackendOptionsFactory",
     "BackendOptionsError",
 ]
 
 import dataclasses
+import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import Platform
@@ -273,6 +275,137 @@ class DummyOptions(BackendOptions):
         return kwargs
 
 
+@dataclasses.dataclass
+class UnifiedOptions:
+    """Cross-platform task-submission options.
+
+    ``UnifiedOptions`` lets you write backend-agnostic submission code: pass
+    the same instance to :func:`uniqc.submit_task` against any platform and
+    uniqc translates the high-level intent (optimise, mitigate readout,
+    auto-map qubits) into each platform's specific
+    :class:`BackendOptions` payload.
+
+    Translation table — ``warn`` / ``raise`` indicates the option is not
+    supported on that platform; the behaviour is governed by ``strict``
+    (default ``False`` → :func:`warnings.warn`; ``True`` → raise
+    :class:`BackendOptionsError`):
+
+    ===========================  ===================================  ========================  =========================  ====================================
+    Unified option               OriginQ                              Quafu                     Quark                      IBM
+    ===========================  ===================================  ========================  =========================  ====================================
+    ``optimize_level=0``         ``circuit_optimize=False``           ignored (no knob)         ``compile=False``          ``circuit_optimize=False``
+    ``optimize_level>=1``        ``circuit_optimize=True``            ``auto_mapping=True``     ``compile=True``           ``circuit_optimize=True``
+    ``error_mitigation=True``    ``measurement_amend=True``           warn / raise              ``correct=True``           warn / raise
+    ``auto_mapping=True``        ``auto_mapping=True``                ``auto_mapping=True``     warn / raise               ``auto_mapping=True``
+    ``backend_name``             ``backend_name=...``                 ``chip_id=...``           ``chip_id=...``            ``chip_id=...``
+    ``shots``                    forwarded                            forwarded                 forwarded                  forwarded
+    ===========================  ===================================  ========================  =========================  ====================================
+
+    Per-platform :class:`BackendOptions` instances remain a fully-supported
+    "escape hatch" for platform-specific knobs that have no unified
+    counterpart (Quark's ``open_dd``, Quafu's ``group_name``, IBM's
+    ``task_name`` etc.).
+
+    Parameters
+    ----------
+    optimize_level :
+        Cross-platform optimisation strength.  ``0`` disables compilation /
+        optimisation on every platform that exposes such a knob.  Any value
+        ``>= 1`` enables it.  Higher integers are reserved for future use
+        by platforms that distinguish multiple optimisation tiers; for now
+        ``>= 1`` is treated identically across platforms.
+    error_mitigation :
+        Enable readout-error mitigation when the platform supports it.
+    auto_mapping :
+        Enable automatic logical-to-physical qubit mapping.
+    shots :
+        Number of measurement shots.  Forwarded verbatim.
+    backend_name :
+        Optional chip identifier.  Translated to the platform's native
+        chip-selection key (``backend_name`` on OriginQ, ``chip_id``
+        elsewhere).  When ``None`` the platform's default chip is used.
+    strict :
+        When ``True``, unsupported options raise
+        :class:`BackendOptionsError`.  When ``False`` (default), they are
+        emitted as :class:`UserWarning` and silently dropped.
+    """
+
+    optimize_level: int = 1
+    error_mitigation: bool = False
+    auto_mapping: bool = True
+    shots: int = 1000
+    backend_name: str | None = None
+    strict: bool = False
+
+    def _unsupported(self, option: str, platform: str) -> None:
+        msg = (
+            f"UnifiedOptions: option {option!r} is not supported on platform "
+            f"{platform!r}; "
+            f"{'raising as strict=True is set' if self.strict else 'silently ignored'}."
+        )
+        if self.strict:
+            raise BackendOptionsError(msg)
+        warnings.warn(msg, UserWarning, stacklevel=3)
+
+    def to_platform_options(self, platform: str) -> "BackendOptions":
+        """Translate to the platform-specific :class:`BackendOptions` subclass.
+
+        Unknown platforms raise :class:`BackendOptionsError`.  Unsupported
+        options trigger :func:`warnings.warn` (or
+        :class:`BackendOptionsError` when ``strict=True``).
+        """
+        platform_lower = platform.lower()
+        optimize = bool(self.optimize_level >= 1)
+
+        if platform_lower == "originq":
+            return OriginQOptions(
+                shots=self.shots,
+                backend_name=self.backend_name or "originq:WK_C180",
+                circuit_optimize=optimize,
+                measurement_amend=bool(self.error_mitigation),
+                auto_mapping=bool(self.auto_mapping),
+            )
+        if platform_lower == "quafu":
+            if self.error_mitigation:
+                self._unsupported("error_mitigation", "quafu")
+            return QuafuOptions(
+                shots=self.shots,
+                chip_id=self.backend_name or "ScQ-P18",
+                auto_mapping=bool(self.auto_mapping or optimize),
+            )
+        if platform_lower == "quark":
+            if self.auto_mapping:
+                self._unsupported("auto_mapping", "quark")
+            return QuarkOptions(
+                shots=self.shots,
+                chip_id=self.backend_name or "Baihua",
+                compile=optimize,
+                correct=bool(self.error_mitigation) or None,
+            )
+        if platform_lower == "ibm":
+            if self.error_mitigation:
+                self._unsupported("error_mitigation", "ibm")
+            return IBMOptions(
+                shots=self.shots,
+                chip_id=self.backend_name,
+                auto_mapping=bool(self.auto_mapping),
+                circuit_optimize=optimize,
+            )
+        if platform_lower == "dummy":
+            return DummyOptions(shots=self.shots)
+        raise BackendOptionsError(
+            f"UnifiedOptions: unknown platform {platform_lower!r}. "
+            f"Available: ['originq', 'quafu', 'quark', 'ibm', 'dummy']"
+        )
+
+    def to_kwargs(self, platform: str) -> dict[str, Any]:
+        """Render as a ``**kwargs`` dict for the given platform.
+
+        Convenience shortcut for ``self.to_platform_options(platform).to_kwargs()``.
+        """
+        return self.to_platform_options(platform).to_kwargs()
+
+
 class BackendOptionsFactory:
     """Factory for constructing :class:`BackendOptions` from various input forms.
 
@@ -405,7 +538,7 @@ class BackendOptionsFactory:
     @classmethod
     def normalize_options(
         cls,
-        options: BackendOptions | dict[str, Any] | None,
+        options: "BackendOptions | UnifiedOptions | dict[str, Any] | None",
         platform: str,
     ) -> BackendOptions:
         """Normalise mixed input to a validated :class:`BackendOptions` instance.
@@ -415,8 +548,10 @@ class BackendOptionsFactory:
         Parameters
         ----------
         options :
-            Either a :class:`BackendOptions` instance, a plain dict (treated as
-            ``**kwargs``), or ``None`` (returns platform defaults).
+            Either a :class:`BackendOptions` instance, a
+            :class:`UnifiedOptions` instance (translated to the platform's
+            specific options), a plain dict (treated as ``**kwargs``), or
+            ``None`` (returns platform defaults).
         platform :
             Platform name.
 
@@ -428,12 +563,18 @@ class BackendOptionsFactory:
         Raises
         ------
         BackendOptionsError
-            If ``options`` is not a :class:`BackendOptions`, dict, or ``None``.
+            If ``options`` is not a :class:`BackendOptions`,
+            :class:`UnifiedOptions`, dict, or ``None``.
         """
         if options is None:
             return cls.create_default(platform)
         if isinstance(options, BackendOptions):
             return options
+        if isinstance(options, UnifiedOptions):
+            return options.to_platform_options(platform)
         if isinstance(options, dict):
             return cls.from_kwargs(platform, options)
-        raise BackendOptionsError(f"options must be BackendOptions, dict, or None; got {type(options).__name__}")
+        raise BackendOptionsError(
+            f"options must be BackendOptions, UnifiedOptions, dict, or None; "
+            f"got {type(options).__name__}"
+        )

@@ -50,6 +50,7 @@ from .backend_adapter.task.options import (
     OriginQOptions,
     QuafuOptions,
     QuarkOptions,
+    UnifiedOptions,
 )
 from .backend_adapter.task.result_types import UnifiedResult
 from .backend_adapter.task.store import TaskStatus
@@ -304,6 +305,7 @@ __all__ = [
     "TopologyError",
     "TorchQuantumLayer",
     "TranspilerConfig",
+    "UnifiedOptions",
     "UnifiedQuantumError",
     "UnifiedResult",
     "UnsupportedGateError",
