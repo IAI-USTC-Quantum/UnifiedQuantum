@@ -42,9 +42,10 @@ class ADAPTVQEResult:
 def _build_adapt_circuit(
     operators: List[Tuple[str, float]],
     params: np.ndarray,
+    n_qubits: int = 1,
 ) -> Circuit:
     """Build the ADAPT ansatz circuit from selected operators and parameters."""
-    circuit = Circuit()
+    circuit = Circuit(n_qubits)
 
     for i, (pauli_str, coeff) in enumerate(operators):
         theta = float(params[i]) if i < len(params) else 0.0
@@ -162,12 +163,12 @@ def adapt_vqe(
     for iteration in range(max_iterations):
         # Build current ansatz circuit
         if selected_operators:
-            current_circuit = _build_adapt_circuit(selected_operators, params)
+            current_circuit = _build_adapt_circuit(selected_operators, params, n_qubits)
             current_energy = _energy(current_circuit, hamiltonian, shots)
             history.append(current_energy)
         else:
             current_energy = 0.0
-            current_circuit = Circuit()
+            current_circuit = Circuit(n_qubits)
 
         if verbose:
             print(f"Iter {iteration + 1}: E = {current_energy:.8f}, "
@@ -183,6 +184,7 @@ def adapt_vqe(
                     (pauli_str, coeff),
                     hamiltonian,
                     shots,
+                    n_qubits=n_qubits,
                 )
                 gradients.append((i, pauli_str, coeff, gradient))
             except Exception:
@@ -228,8 +230,8 @@ def adapt_vqe(
                 test_params_minus = new_params.copy()
                 test_params_minus[j] -= eps
 
-                circ_plus = _build_adapt_circuit(selected_operators, test_params_plus)
-                circ_minus = _build_adapt_circuit(selected_operators, test_params_minus)
+                circ_plus = _build_adapt_circuit(selected_operators, test_params_plus, n_qubits)
+                circ_minus = _build_adapt_circuit(selected_operators, test_params_minus, n_qubits)
 
                 e_plus = _energy(circ_plus, hamiltonian, shots)
                 e_minus = _energy(circ_minus, hamiltonian, shots)
@@ -243,7 +245,7 @@ def adapt_vqe(
 
     # Final energy
     if selected_operators:
-        final_circuit = _build_adapt_circuit(selected_operators, params)
+        final_circuit = _build_adapt_circuit(selected_operators, params, n_qubits)
         final_energy = _energy(final_circuit, hamiltonian, shots)
     else:
         final_energy = 0.0

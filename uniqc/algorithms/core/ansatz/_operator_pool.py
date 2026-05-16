@@ -147,6 +147,8 @@ def compute_operator_gradient(
     operator: Tuple[str, float],
     hamiltonian: List[Tuple[str, float]],
     shots: Optional[int] = None,
+    *,
+    n_qubits: Optional[int] = None,
 ) -> float:
     """Compute the gradient of energy with respect to an operator's parameter.
 
@@ -158,6 +160,7 @@ def compute_operator_gradient(
         operator: The (pauli_string, coefficient) operator to compute gradient for.
         hamiltonian: Full Hamiltonian as list of (pauli_string, coefficient).
         shots: Number of shots for measurement. ``None`` uses statevector.
+        n_qubits: Total number of qubits. Inferred from *circuit* when ``None``.
 
     Returns:
         Absolute value of the gradient magnitude.
@@ -166,25 +169,27 @@ def compute_operator_gradient(
         This computes the gradient of ⟨H⟩ with respect to the angle parameter
         of the given operator in the ansatz circuit.
     """
-    from uniqc.simulator import Simulator
+    from uniqc.algorithms.core.ansatz._pauli_unitary import _parse_pauli_string
 
     pauli_str, coeff = operator
     shift = np.pi / 4
 
-    # Create two copies of the circuit with shifted parameters
-    sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
+    if n_qubits is None:
+        n_qubits = circuit.max_qubit + 1
+        # Also check the hamiltonian for larger qubit indices
+        for p, _ in hamiltonian:
+            for op, q in _parse_pauli_string(p):
+                n_qubits = max(n_qubits, q + 1)
 
     # Build circuit with +shift
-    circ_plus = Circuit()
+    circ_plus = Circuit(n_qubits)
     circ_plus.add_circuit(circuit)
     _apply_cost_unitary(circ_plus, [(pauli_str, coeff)], shift)
-    circ_plus.measure_all()
 
     # Build circuit with -shift
-    circ_minus = Circuit()
+    circ_minus = Circuit(n_qubits)
     circ_minus.add_circuit(circuit)
     _apply_cost_unitary(circ_minus, [(pauli_str, coeff)], -shift)
-    circ_minus.measure_all()
 
     # Compute energies
     def energy(c: Circuit) -> float:

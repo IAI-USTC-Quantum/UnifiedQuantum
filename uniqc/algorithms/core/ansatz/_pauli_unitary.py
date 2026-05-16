@@ -14,21 +14,35 @@ __all__ = ["_parse_pauli_string", "_apply_cost_unitary"]
 
 
 def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
-    """Parse a Pauli string like 'Z0Z1' or 'X0Y1Z2' into [(op, qubit), ...]."""
-    terms = []
-    current_op = None
-    current_idx = ""
-    for ch in pauli_string:
-        if ch in "XYZI":
-            if current_op is not None:
-                terms.append((current_op, int(current_idx)))
-            current_op = ch
-            current_idx = ""
-        elif ch.isdigit():
-            current_idx += ch
-    if current_op is not None:
-        terms.append((current_op, int(current_idx)))
-    return terms
+    """Parse a Pauli string into [(op, qubit), ...].
+
+    Supports two formats:
+
+    * **Indexed** (``'Z0Z1'``, ``'X0Y1Z2'``) — operator-digit pairs; qubits
+      not listed are identity.
+    * **Compact** (``'IX'``, ``'ZZ'``, ``'XYZ'``) — one character per qubit
+      in left-to-right order; ``position`` == ``qubit index``.
+    """
+    # Indexed format: contains digits (e.g. "Z0Z1", "X0Y2")
+    if any(ch.isdigit() for ch in pauli_string):
+        terms: List[Tuple[str, int]] = []
+        current_op: str | None = None
+        current_idx = ""
+        for ch in pauli_string:
+            if ch in "XYZI":
+                if current_op is not None:
+                    terms.append((current_op, int(current_idx)))
+                current_op = ch
+                current_idx = ""
+            elif ch.isdigit():
+                current_idx += ch
+        if current_op is not None:
+            terms.append((current_op, int(current_idx)))
+        return terms
+
+    # Compact format: one letter per qubit (e.g. "IX", "ZZ", "XYZ")
+    upper = pauli_string.upper()
+    return [(ch, i) for i, ch in enumerate(upper) if ch in "XYZ"]
 
 
 def _apply_cost_unitary(

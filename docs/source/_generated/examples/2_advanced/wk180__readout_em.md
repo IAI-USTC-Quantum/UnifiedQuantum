@@ -1,7 +1,7 @@
 ### WK180 readout EM example for UnifiedQuantum.
 
 *Source*: ``examples/2_advanced/wk180/readout_em.py``  
-*Status*: **not-executed**
+*Status*: **skip** — missing requirements: originq (pyqpanda3 + originq token configured)
 
 This example demonstrates calibrating and applying readout error mitigation
 on the WK180 quantum processor from OriginQ.
@@ -20,6 +20,6 @@ Usage:
 ```
 
 :::{note}
-Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
+Example skipped during pre-doc-execution: missing requirements: originq (pyqpanda3 + originq token configured)
 :::
 
