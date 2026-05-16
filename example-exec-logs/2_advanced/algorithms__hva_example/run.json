@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/algorithms/hva_example.py",
+  "chapter": "2_advanced",
+  "name": "algorithms__hva_example",
+  "title": "Hamiltonian Variational Ansatz (HVA) -- complete example.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "\n============================================================\nHVA Example (p=2, iterations=20)\n============================================================\n============================================================\nDemo 1: Basic HVA Construction\n============================================================\n\n  Hamiltonian groups:\n    Group 1 (hopping): [('X0X1', 1.0), ('Y0Y1', 1.0)]\n    Group 2 (interaction): [('Z0Z1', 0.5)]\n\n  HVA configuration:\n    Layers (p): 2\n    Groups: 2\n    Parameters: 4 (2 groups x 2 layers)\n\n  HVA circuit:\n    Qubits used: 2\n    Gate count: 42\n\n  Statevector norm: 1.0000000000\n\n============================================================\nDemo 2: HVA with Hartree-Fock Initial State\n============================================================\n\n  Hamiltonian groups: 3 groups\n    Group 1: X hopping\n    Group 2: Y hopping\n    Group 3: ZZ interactions\n\n  Without Hartree-Fock:\n    Initial state: |0000>\n\n  Circuit:\n    Qubits used: 3\n    Gate count: 84\n\n  With Hartree-Fock:\n    Initial state: |1100>\n\n  Circuit:\n    Qubits used: 3\n    Gate count: 86\n\n  Without HF norm: 1.0000000000\n  With HF norm: 1.0000000000\n\n============================================================\nDemo 3: HVA Energy Optimization\n============================================================\n\n  Hamiltonian: H = -Z0Z1 + 0.5*I\n  Expected ground state: |00> or |11>\n  Expected energy: -0.5\n\n  Optimization (coordinate descent):\n    Iter  0: E = -0.500000\n    Iter  5: E = -0.500000\n    Iter 10: E = -0.500000\n    Iter 15: E = -0.500000\n\n  Final energy: -0.500000\n  Expected:     -0.500000\n  Accuracy:     0.000000\n\n============================================================\nDemo Complete\n============================================================\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.028
+}
