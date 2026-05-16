@@ -16,7 +16,7 @@
 
 `task_manager` 模块提供了高层次的 API 来管理量子计算任务：
 
-- **统一接口**：支持 OriginQ、Quafu、IBM Quantum 和本地 Dummy 模拟器
+- **统一接口**：支持 OriginQ、IBM Quantum 和本地 Dummy 模拟器
 - **本地缓存**：自动保存任务状态和结果，支持离线查询
 - **批量操作**：支持批量提交和批量查询
 - **Dummy 模式**：开发测试时可使用本地模拟代替真实平台
@@ -39,7 +39,7 @@ pip install unified-quantum[quark]
 pip install unified-quantum[all]
 ```
 
-`[all]` 不包含 `pyquafu`：Quafu 已归档（`[quafu]` extra 已移除），其旧 SDK 依赖 `numpy<2` 会引入环境降级风险。如仍需使用 Quafu，请直接 `pip install pyquafu` 并自行承担风险；后续版本不保证 Quafu 相关代码的一致性和完整性，支持可能随时停止。
+`[all]` 会安装当前维护的可选功能依赖。
 
 ### 配置云平台凭据
 
@@ -93,7 +93,7 @@ from uniqc import submit_task
 
 task_id = submit_task(
     circuit,              # Circuit 对象、OriginIR 字符串、QASM 字符串或 qiskit.QuantumCircuit
-    backend='originq:WK_C180',  # 平台选择：'originq:chip', 'quafu:chip', 'ibm:chip', 'dummy:local:simulator'
+    backend='originq:WK_C180',  # 平台选择：'originq:chip', 'ibm:chip', 'dummy:local:simulator'
     shots=1000,           # 测量次数
     **kwargs              # 其他平台相关参数
 )
@@ -104,7 +104,7 @@ task_id = submit_task(
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `circuit` | Circuit \| str \| qiskit.QuantumCircuit | 量子线路（自动检测并转换为内部 Circuit） |
-| `backend` | str | 平台标识：`'originq:WK_C180'`, `'quafu:ScQ-P10'`, `'ibm:ibm_brisbane'`, `'dummy:local:simulator'` |
+| `backend` | str | 平台标识：`'originq:WK_C180'`, `'ibm:ibm_brisbane'`, `'dummy:local:simulator'` |
 | `shots` | int | 测量次数，默认 1000 |
 | `chip_id` | str | 目标芯片 ID（可选） |
 
@@ -320,8 +320,8 @@ persistence.clear_completed()
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError
 
 try:
-    from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-    adapter = QuafuAdapter()
+    from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
+    adapter = QiskitAdapter()
 except MissingDependencyError as e:
     print(f"Missing dependency: {e.package}")
     print(f"Install with: pip install unified-quantum[{e.extra}]")
@@ -340,15 +340,15 @@ except MissingDependencyError as e:
 
 ## 平台对比 {#guide-task-manager-platform-comparison}
 
-| 特性 | OriginQ | Quafu | IBM | Dummy |
-|------|---------|-------|-----|-------|
-| 输入格式 | OriginIR string | quafu.QuantumCircuit | qiskit.QuantumCircuit | OriginIR string |
-| 结果格式 | `{"00": 512}` | `{"counts": {...}, "probabilities": {...}}` | `[{"00": 512}, ...]` | `{"00": 512}` |
-| 真机支持 | ✓ | ✓ | ✓ | ✗ |
-| 噪声模拟 | ✗ | ✗ | ✗ | ✓ |
-| 提交模式 | 异步 | 异步（`wait=` 可选） | 同步 | 同步 |
-| 网络要求 | 需要 | 需要 | 需要 | 不需要 |
-| 适用场景 | 生产环境 | BAQIS ScQ 系列 | 国际平台 | 开发测试 |
+| 特性 | OriginQ | IBM | Dummy |
+|------|---------|-----|-------|
+| 输入格式 | OriginIR string | qiskit.QuantumCircuit | OriginIR string |
+| 结果格式 | `{"00": 512}` | `[{"00": 512}, ...]` | `{"00": 512}` |
+| 真机支持 | ✓ | ✓ | ✗ |
+| 噪声模拟 | ✗ | ✗ | ✓ |
+| 提交模式 | 异步 | 同步 | 同步 |
+| 网络要求 | 需要 | 需要 | 不需要 |
+| 适用场景 | 生产环境 | 国际平台 | 开发测试 |
 
 ## 下一步 {#guide-task-manager-next-steps}
 

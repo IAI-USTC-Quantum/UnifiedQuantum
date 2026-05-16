@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import pytest
 
 from uniqc.backend_adapter.backend_info import Platform
@@ -13,6 +15,7 @@ from uniqc.backend_adapter.task.options import (
     OriginQOptions,
     QuafuOptions,
     QuarkOptions,
+    UnifiedOptions,
 )
 
 
@@ -230,3 +233,162 @@ class TestBackendOptionsFactory:
         assert opts.shots == 500
         # shots should not appear in to_kwargs
         assert "shots" not in opts.to_kwargs()
+
+
+class TestUnifiedOptions:
+    """Tests for the cross-platform UnifiedOptions translation layer."""
+
+    def test_defaults(self):
+        u = UnifiedOptions()
+        assert u.optimize_level == 1
+        assert u.error_mitigation is False
+        assert u.auto_mapping is True
+        assert u.shots == 1000
+        assert u.backend_name is None
+        assert u.strict is False
+
+    def test_translate_to_originq_full(self):
+        u = UnifiedOptions(
+            optimize_level=2,
+            error_mitigation=True,
+            auto_mapping=True,
+            shots=500,
+            backend_name="originq:WK_C180",
+        )
+        opts = u.to_platform_options("originq")
+        assert isinstance(opts, OriginQOptions)
+        assert opts.shots == 500
+        assert opts.backend_name == "originq:WK_C180"
+        assert opts.circuit_optimize is True
+        assert opts.measurement_amend is True
+        assert opts.auto_mapping is True
+
+    def test_translate_to_originq_optimize_level_zero(self):
+        u = UnifiedOptions(optimize_level=0, auto_mapping=False)
+        opts = u.to_platform_options("originq")
+        assert opts.circuit_optimize is False
+        assert opts.measurement_amend is False
+        assert opts.auto_mapping is False
+
+    def test_translate_to_quafu_optimize_drives_auto_mapping(self):
+        u = UnifiedOptions(optimize_level=2, auto_mapping=False)
+        opts = u.to_platform_options("quafu")
+        assert isinstance(opts, QuafuOptions)
+        # Quafu has no separate "optimize" knob; optimize_level>=1 enables auto_mapping.
+        assert opts.auto_mapping is True
+
+    def test_translate_to_quafu_disables_auto_mapping(self):
+        u = UnifiedOptions(optimize_level=0, auto_mapping=False)
+        opts = u.to_platform_options("quafu")
+        assert opts.auto_mapping is False
+
+    def test_translate_to_quafu_with_backend_name(self):
+        u = UnifiedOptions(backend_name="ScQ-P10")
+        opts = u.to_platform_options("quafu")
+        assert opts.chip_id == "ScQ-P10"
+
+    def test_translate_to_quafu_warns_on_error_mitigation(self):
+        u = UnifiedOptions(error_mitigation=True, auto_mapping=False)
+        with pytest.warns(UserWarning, match="error_mitigation"):
+            opts = u.to_platform_options("quafu")
+        assert isinstance(opts, QuafuOptions)
+
+    def test_translate_to_quark_full(self):
+        u = UnifiedOptions(
+            optimize_level=1,
+            error_mitigation=True,
+            auto_mapping=False,
+            backend_name="Baihua",
+        )
+        opts = u.to_platform_options("quark")
+        assert isinstance(opts, QuarkOptions)
+        assert opts.chip_id == "Baihua"
+        assert opts.compile is True
+        assert opts.correct is True
+
+    def test_translate_to_quark_warns_on_auto_mapping(self):
+        u = UnifiedOptions(auto_mapping=True)
+        with pytest.warns(UserWarning, match="auto_mapping"):
+            u.to_platform_options("quark")
+
+    def test_translate_to_quark_optimize_zero(self):
+        u = UnifiedOptions(optimize_level=0, auto_mapping=False)
+        opts = u.to_platform_options("quark")
+        assert opts.compile is False
+        assert opts.correct is None
+
+    def test_translate_to_ibm_full(self):
+        u = UnifiedOptions(
+            optimize_level=2,
+            auto_mapping=True,
+            backend_name="ibm_brisbane",
+        )
+        opts = u.to_platform_options("ibm")
+        assert isinstance(opts, IBMOptions)
+        assert opts.chip_id == "ibm_brisbane"
+        assert opts.auto_mapping is True
+        assert opts.circuit_optimize is True
+
+    def test_translate_to_ibm_warns_on_error_mitigation(self):
+        u = UnifiedOptions(error_mitigation=True)
+        with pytest.warns(UserWarning, match="error_mitigation"):
+            u.to_platform_options("ibm")
+
+    def test_translate_to_dummy(self):
+        u = UnifiedOptions(shots=2000)
+        opts = u.to_platform_options("dummy")
+        assert isinstance(opts, DummyOptions)
+        assert opts.shots == 2000
+
+    def test_strict_raises_on_unsupported(self):
+        u = UnifiedOptions(error_mitigation=True, strict=True)
+        with pytest.raises(BackendOptionsError, match="error_mitigation"):
+            u.to_platform_options("quafu")
+        with pytest.raises(BackendOptionsError, match="error_mitigation"):
+            u.to_platform_options("ibm")
+
+    def test_strict_raises_on_quark_auto_mapping(self):
+        u = UnifiedOptions(auto_mapping=True, strict=True)
+        with pytest.raises(BackendOptionsError, match="auto_mapping"):
+            u.to_platform_options("quark")
+
+    def test_translate_unknown_platform_raises(self):
+        u = UnifiedOptions()
+        with pytest.raises(BackendOptionsError, match="unknown platform"):
+            u.to_platform_options("nonexistent")
+
+    def test_to_kwargs_dispatches(self):
+        u = UnifiedOptions(backend_name="originq:WK_C180", optimize_level=2)
+        kwargs = u.to_kwargs("originq")
+        assert kwargs["circuit_optimize"] is True
+        assert kwargs["backend_name"] == "originq:WK_C180"
+
+    def test_no_warning_when_unsupported_options_off(self):
+        # Unsupported options that are False should NOT warn — only when truthy.
+        u = UnifiedOptions(error_mitigation=False, auto_mapping=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            u.to_platform_options("quafu")
+            u.to_platform_options("ibm")
+            u.to_platform_options("quark")
+
+
+class TestUnifiedOptionsViaFactory:
+    """UnifiedOptions must be accepted by BackendOptionsFactory.normalize_options."""
+
+    def test_normalize_options_with_unified(self):
+        u = UnifiedOptions(optimize_level=2, backend_name="originq:WK_C180")
+        opts = BackendOptionsFactory.normalize_options(u, "originq")
+        assert isinstance(opts, OriginQOptions)
+        assert opts.circuit_optimize is True
+
+    def test_normalize_options_with_unified_quafu_translates(self):
+        u = UnifiedOptions(optimize_level=1, auto_mapping=False)
+        opts = BackendOptionsFactory.normalize_options(u, "quafu")
+        assert isinstance(opts, QuafuOptions)
+        # optimize_level>=1 lifts Quafu's auto_mapping.
+        assert opts.auto_mapping is True
+
+    def test_normalize_options_invalid_type_message_lists_unified(self):
+        with pytest.raises(BackendOptionsError, match="UnifiedOptions"):
+            BackendOptionsFactory.normalize_options(object(), "originq")

@@ -9,7 +9,7 @@
     "matplotlib"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "step=00 theta=0.200 <Z>=0.975 grad=-0.220\nstep=04 theta=0.498 <Z>=0.895 grad=-0.455\nstep=08 theta=1.126 <Z>=0.445 grad=-0.882\nstep=12 theta=2.077 <Z>=-0.480 grad=-0.853\nstep=16 theta=2.751 <Z>=-0.895 grad=-0.392\nfinal theta: 2.9144\n",
+  "stdout": "step=00 theta=0.200 <Z>=0.985 grad=-0.220\nstep=04 theta=0.466 <Z>=0.915 grad=-0.478\nstep=08 theta=1.065 <Z>=0.450 grad=-0.858\nstep=12 theta=2.014 <Z>=-0.490 grad=-0.897\nstep=16 theta=2.717 <Z>=-0.930 grad=-0.350\nfinal theta: 2.8769\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [
@@ -18,5 +18,5 @@
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.121
+  "duration_seconds": 0.134
 }

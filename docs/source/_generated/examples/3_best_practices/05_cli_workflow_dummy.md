@@ -3,12 +3,12 @@
 *Source*: ``examples/3_best_practices/05_cli_workflow_dummy.py``  
 *Status*: **pass**
 
-通过 ``subprocess.run`` 执行 CLI：写出 OriginIR 文件，``uniqc submit --platform dummy --wait``，
+通过 ``subprocess.run`` 执行 CLI：写出 OriginIR 文件，``uniqc submit --backend dummy --wait``，
 并展示返回结果。
 
-* ``--platform dummy`` 默认对应无约束、无噪声的 ``dummy``；
-* 可通过 ``--backend virtual-line-3`` 指定虚拟拓扑；
-* 也可通过 ``--backend originq:WK_C180`` 走真实 backend compile/transpile + 本地含噪执行。
+* ``--backend dummy``（默认）对应无约束、无噪声的 ``dummy:local:simulator``；
+* 可通过 ``--backend dummy:local:virtual-line-3`` 指定虚拟拓扑；
+* 也可通过 ``--backend dummy:originq:WK_C180`` 走真实 backend compile/transpile + 本地含噪执行。
 
 **Source code**
 
@@ -19,10 +19,10 @@
 **Stdout**
 
 ```text
-command: /home/agony/projects/uniqc-skill-dev/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-4_hlcsx4/bell.originir -p dummy -s 64 --wait --format json
+command: /home/agony/projects/uniqc-dev/UnifiedQuantum/.venv/bin/python3 -m uniqc.cli submit /tmp/uniqc-bp-cli-85n8cmug/bell.originir --backend dummy -s 64 --wait --format json
 {
-  "task_id": "uqt_86398f37f7bf4742a7cc6aa7506e7b9e",
-  "platform": "dummy",
+  "task_id": "uqt_6a37073ab1cd43c8b45dfd601fad855d",
+  "backend": "dummy:local:simulator",
   "shots": 64
 }
 {
@@ -36,7 +36,7 @@ command: /home/agony/projects/uniqc-skill-dev/UnifiedQuantum/.venv/bin/python3 -
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_86398f37f7bf4742a7cc6aa7506e7b9e",
+  "task_id": "uqt_6a37073ab1cd43c8b45dfd601fad855d",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null

@@ -9,7 +9,7 @@
     "originq"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "dummy dry-run success: True\ndetails: Dry-run passed for dummy simulator: OriginIR is valid. Qubits=1, shots=100\noriginq API: submit_task(circuit, backend='originq', shots=1000, backend_name='PQPUMESH8')\nquafu API: submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')\nibm API: submit_task(circuit, backend='ibm', shots=1000, chip_id='ibm_fez')\nCLI dry-run: uniqc submit bell.originir -p quafu -b ScQ-P18 --dry-run\n",
+  "stdout": "dummy dry-run success: True\ndetails: Dry-run passed for dummy simulator: OriginIR is valid. Qubits=1, shots=100\noriginq API: submit_task(circuit, backend='originq', shots=1000, backend_name='PQPUMESH8')\nquafu API: submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')\nibm API: submit_task(circuit, backend='ibm', shots=1000, chip_id='ibm_fez')\nCLI dry-run: uniqc submit bell.originir --backend quafu:ScQ-P18 --dry-run\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

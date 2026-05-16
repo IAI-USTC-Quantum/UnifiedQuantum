@@ -26,7 +26,7 @@ def main() -> None:
         "originq API": "submit_task(circuit, backend='originq', shots=1000, backend_name='PQPUMESH8')",
         "quafu API": "submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')",
         "ibm API": "submit_task(circuit, backend='ibm', shots=1000, chip_id='ibm_fez')",
-        "CLI dry-run": "uniqc submit bell.originir -p quafu -b ScQ-P18 --dry-run",
+        "CLI dry-run": "uniqc submit bell.originir --backend quafu:ScQ-P18 --dry-run",
     }
     for name, snippet in cloud_templates.items():
         print(f"{name}: {snippet}")

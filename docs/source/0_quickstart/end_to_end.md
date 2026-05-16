@@ -19,7 +19,7 @@ print(wait_for_result(task_id))
 或 CLI：
 
 ```bash
-uniqc submit circuit.ir -p originq -b WK_C180 -s 1000 --wait
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000 --wait
 ```
 
 ## 验证环境

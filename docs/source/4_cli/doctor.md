@@ -18,7 +18,7 @@ uniqc doctor
 
 ### 2. 依赖
 
-检查核心依赖（`numpy`、`typer`、`rich`、`scipy`、`pyyaml`）和可选依赖（`pyqpanda3`、`pyquafu`、`qiskit` 等）的安装状态和版本。
+检查核心依赖（`numpy`、`typer`、`rich`、`scipy`、`pyyaml`）和可选依赖（`pyqpanda3`、`qiskit` 等）的安装状态和版本。
 
 ### 3. 配置文件
 
@@ -74,7 +74,6 @@ uniqc doctor
 ┌──────────────────────────────────────────────┐
 │ Group          Package              Version   │
 │ originq        pyqpanda3            3.x.x     │
-│ quafu          pyquafu              0.4.x     │
 │ quark          quarkstudio          x.x.x     │
 │                quarkcircuit          x.x.x     │
 │ qiskit         qiskit               1.x.x     │
@@ -94,7 +93,6 @@ uniqc doctor
 ┌──────────────────────────────────────────┐
 │ Platform  Token/Key          Status      │
 │ originq   abc123****         configured  │
-│ quafu     xyz789****         configured  │
 │ quark     qrk456****         configured  │
 │ ibm       ibm012****         configured  │
 └──────────────────────────────────────────┘
@@ -114,7 +112,6 @@ uniqc doctor
 ┌──────────────────────────────────────────┐
 │ Platform  Backends  Age    Stale?        │
 │ originq   5         0.5h   no            │
-│ quafu     3         2.1h   no            │
 │ ibm       8         25.3h  yes           │
 └──────────────────────────────────────────┘
 
@@ -124,10 +121,6 @@ uniqc doctor
  ✓ Connectivity OK — 5 backend(s) fetched
  ✓ wuyuan:d5: calibration OK (calibrated_at=2026-05-10T08:00:00Z)
  ✓ WK_C180: calibration OK (calibrated_at=2026-05-10T06:30:00Z)
-
- Platform: quafu
- ✓ Connectivity OK — 3 backend(s) fetched
- ✓ ScQ-P18: calibration OK (calibrated_at=2026-05-09T22:00:00Z)
 
  Platform: quark
  ✓ Connectivity OK — 2 backend(s) fetched

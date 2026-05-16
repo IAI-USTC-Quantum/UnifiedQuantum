@@ -119,13 +119,17 @@ MEASURE q[1], c[1]
 
 - `uv run uniqc circuit <file> --info`
 - `uv run uniqc simulate <file>`
-- `uv run uniqc submit <file> --platform dummy --wait`
-- `uv run uniqc submit <file> --platform dummy --backend virtual-line-3 --wait`
-- `uv run uniqc submit <file> --platform dummy --backend originq:WK_C180 --dry-run`
+- `uv run uniqc submit <file> --backend dummy:local:simulator --wait`
+- `uv run uniqc submit <file> --backend dummy:local:virtual-line-3 --wait`
+- `uv run uniqc submit <file> --backend dummy:originq:WK_C180 --dry-run`
 - `uv run uniqc backend update --platform originq`
 - `uv run uniqc backend list --platform originq`
 - `uv run uniqc backend show originq:WK_C180`
 - `uv run uniqc backend chip-display originq/WK_C180 --update`
+
+Note: `uniqc submit` takes a single `--backend BACKEND_ID` flag (no
+`--platform` option). `uniqc backend list/update`, `uniqc task list`, and
+`uniqc result` *do* accept `--platform`.
 
 Confirm the docs match the help output and actual behavior. Do not recommend `python -m uniqc`; the supported module fallback is `python -m uniqc.cli`. There is no `uniqc workflow` CLI subcommand; `docs/source/cli/workflow.md` is a workflow guide page, and interactive next-step guidance is exposed by `--ai-hints` / `--ai-hint`.
 

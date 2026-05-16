@@ -8,7 +8,8 @@ from uniqc.circuit_builder.originir_spec import (available_originir_gates,
                                                generate_sub_gateset_originir,
                                                generate_sub_error_channel_originir)
 
-from uniqc.simulator import NoisySimulator, Simulator
+from uniqc.simulator import NoisySimulator
+from uniqc.simulator import Simulator
 from uniqc.test._utils import uniq_test, NotMatchError
 
 def compare_density_operator(circuit, backend_1 = 'density_operator', backend_2 = 'density_operator_qutip', noisy = False):

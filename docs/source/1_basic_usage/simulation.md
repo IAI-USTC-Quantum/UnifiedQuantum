@@ -10,9 +10,10 @@
 
 - 如何把已有线路送入模拟器
 - 如何查看概率测量、状态向量、多次采样等不同输出
-- 如何区分 OriginIR、QASM、Opcode 等不同模拟入口
+- 如何选择 Simulator、OpcodeSimulator 等不同模拟入口
 - 如何根据目标选择 statevector、density matrix、density matrix_qutip 等后端
 - 如何在本地验证时识别已知限制与风险
+- `uniqc.simulator` 与 `Backend=dummy` 有什么区别、该用哪个
 
 ## 前置条件
 
@@ -28,12 +29,12 @@
 
 建议按以下顺序阅读本页内容：
 
-1. **OriginIR 模拟器** — 先跑通最常见的本地模拟路径
+1. **Simulator** — 先跑通最常见的本地模拟路径
 2. **概率测量 / 状态向量 / 多次采样** — 理解不同输出类型分别回答什么问题
-3. **QASM 模拟器** — 当你的输入是 OpenQASM 2.0 时使用
-4. **Opcode 模拟器** — 需要底层控制或特定后端时再进入
-5. **带噪声模拟** — 当你需要加入噪声模型时阅读
-6. **后端对比** — 根据验证目标选择不同后端
+3. **Opcode 模拟器** — 需要底层控制或特定后端时再进入
+4. **带噪声模拟** — 当你需要加入噪声模型时阅读
+5. **后端对比** — 根据验证目标选择不同后端
+6. **simulator vs dummy** — `uniqc.simulator` 与 `Backend=dummy` 的区别与选择
 7. **已知限制** — 在使用 density matrix 或复杂噪声路径前优先确认
 
 ## 本地模拟入口总览 {#guide-simulation-entry-overview}
@@ -42,20 +43,41 @@
 
 | 本地模拟入口 | 输入形式 | 适合先看什么问题 |
 | --- | --- | --- |
-| {class}`uniqc.simulator.Simulator` | `originir` 字符串 | 已经用 {class}`uniqc.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果 |
-| {class}`uniqc.simulator.Simulator` | `qasm` 字符串 | 你的线路来自 OpenQASM 2.0，或准备沿着 QASM 路径与外部工具互操作 |
+| {class}`uniqc.simulator.Simulator` | `AnyQuantumCircuit`（`Circuit` 对象、`originir` 字符串或 `qasm` 字符串） | 已经用 {class}`uniqc.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果；也适用于 OpenQASM 2.0 输入，`Simulator` 会自动检测格式 |
 | {class}`uniqc.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
-| {class}`uniqc.simulator.NoisySimulator` | `originir` 字符串 + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
-| `MPSSimulator`（见 [MPS 模拟器](../advanced/mps_simulator.md)） | `originir` 字符串 + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
+| {class}`uniqc.simulator.NoisySimulator` | `AnyQuantumCircuit` + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
+| `MPSSimulator`（见 [MPS 模拟器](../advanced/mps_simulator.md)） | `AnyQuantumCircuit` + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
 | `TorchQuantumSimulator`（需要 `unified-quantum[pytorch]` 与 git 安装的 `torchquantum`） | `Circuit` / `originir` | 想把模拟接入 PyTorch 计算图、做端到端可微分实验 |
 
 > `MPSSimulator` 与 `TorchQuantumSimulator` 也可通过统一工厂入口构造：`create_simulator(backend='mps')` / `create_simulator(backend='torchquantum')`。
 
 如果你还在决定线路该如何表达，先回到 [构建量子线路](circuit.md#guide-circuit-when-to-read)；如果你已经完成本地验证，准备提交到云平台或真机执行，转到 [提交任务](submit_task.md#guide-submit-task-entry-overview)。
 
-## OriginIR 模拟器 {#guide-simulation-originir}
+## uniqc.simulator 与 Backend=dummy 的区别 {#guide-simulation-vs-dummy}
 
-最常用的模拟器，直接模拟 OriginIR 格式的线路。
+`uniqc.simulator`（`Simulator` / `NoisySimulator`）与 `submit_task(backend='dummy:*')` 都在本地用经典计算模拟量子线路，但面向不同场景。
+
+| 维度 | `uniqc.simulator` | `Backend=dummy` |
+| --- | --- | --- |
+| 入口方式 | `Simulator().simulate_pmeasure(code)` | `submit_task(circuit, backend='dummy:*')` |
+| 工作流程 | 直接调用本地模拟方法 | 经过 submit → query → wait 任务管道（与真实后端一致） |
+| 噪声控制 | 通过 `NoisySimulator` + `ErrorLoader` 手动配置噪声参数 | 自动从 `chip_characterization` 校准数据派生噪声模型 |
+| 输出类型 | pmeasure / statevector / density_matrix / shots | `UnifiedResult`（与真实后端输出格式一致） |
+| 适用场景 | 快速调试、算法验证、查看中间态 | 验证编译→提交→查询的完整链路 |
+| 后端选择 | `statevector` / `density_matrix` / `density_matrix_qutip` | `dummy:local:simulator` 或 `dummy:<platform>:<backend>` |
+
+**选择建议**：
+
+- **快速验证概率分布或状态向量** → 用 `Simulator`，可直接拿到 pmeasure、statevector 等中间结果。
+- **验证从编译到结果获取的完整链路** → 用 `submit_task(backend='dummy:*')`，走与真实提交相同的管道。
+- **需要噪声但想手动配置** → 用 `NoisySimulator` + `ErrorLoader`。
+- **需要噪声且想模拟真实芯片特征** → 用 `submit_task(backend='dummy:<platform>:<backend>')`，噪声自动从 chip 校准数据派生。
+
+> `Backend=dummy` 的详细用法见 [提交任务 — Dummy 模式](submit_task.md#guide-submit-task-dummy)。
+
+## Simulator {#guide-simulation-originir}
+
+最常用的模拟器，统一接受 `Circuit` 对象、`originir` 字符串或 `qasm` 字符串，并自动检测输入格式。无论是 OriginIR 还是 OpenQASM 2.0 线路，都可以直接使用同一个 `Simulator` 类。
 
 ```python
 from uniqc import Circuit
@@ -88,17 +110,6 @@ sv = sim.simulate_statevector(circuit.originir)
 ```python
 result = sim.simulate_shots(circuit.originir, shots=1000)
 # 返回 1000 次采样的统计结果
-```
-
-## QASM 模拟器 {#guide-simulation-qasm}
-
-模拟 OpenQASM 2.0 格式的线路。
-
-```python
-from uniqc.simulator import Simulator
-
-sim = Simulator()
-prob = sim.simulate_pmeasure(qasm_str)
 ```
 
 ## Opcode 模拟器与本地模拟后端 {#guide-simulation-opcode}
@@ -165,7 +176,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 - {mod}`uniqc.simulator` — 模拟器模块
 - {class}`uniqc.simulator.OpcodeSimulator`
 - {class}`uniqc.simulator.Simulator`
-- {class}`uniqc.simulator.Simulator`
+- {class}`uniqc.simulator.NoisySimulator`
 - `uniqc.simulator.mps_simulator.MPSSimulator` / `MPSConfig` — MPS 后端，详见 [MPS 模拟器](../advanced/mps_simulator.md)
 - `uniqc.simulator.torchquantum_simulator.TorchQuantumSimulator` — 基于 torchquantum 的可微分后端（需要 `unified-quantum[pytorch]` extra 以及 git 安装的 `torchquantum`）
 - `create_simulator(backend=...)` — 统一工厂入口，`backend` 支持 `'statevector' | 'density_matrix' | 'mps' | 'torchquantum'` 等

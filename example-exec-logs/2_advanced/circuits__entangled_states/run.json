@@ -9,7 +9,7 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.5049 █████████████████████████\n   |1111⟩: 0.4951 ████████████████████████\n\n Dominant basis states (2):\n   |0000⟩: 0.5049\n   |1111⟩: 0.4951\n",
+  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.5024 █████████████████████████\n   |1111⟩: 0.4976 ████████████████████████\n\n Dominant basis states (2):\n   |0000⟩: 0.5024\n   |1111⟩: 0.4976\n",
   "stderr": "",
   "warnings": [
     "DeprecationWarning: ghz_state(circuit, ...) (in-place form) is deprecated and will be removed in a future release. Use the fragment form `ghz_state(n_qubits, ...) -> Circuit` and merge with `circuit.add_circuit(fragment)`. (entangled_states.py:52)"

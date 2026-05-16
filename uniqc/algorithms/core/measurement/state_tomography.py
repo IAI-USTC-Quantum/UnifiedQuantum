@@ -109,7 +109,7 @@ def state_tomography(
     # Build a reduced circuit that only uses the selected qubits
     # We achieve this by generating the full QASM and letting the simulator
     # handle the qubit remapping (least_qubit_remapping=False keeps indices).
-    sim = Simulator(least_qubit_remapping=False)
+    sim = Simulator()
 
     # Pre-compute the 3^n basis settings
     from itertools import product

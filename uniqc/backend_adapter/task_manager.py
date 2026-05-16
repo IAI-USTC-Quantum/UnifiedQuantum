@@ -101,7 +101,11 @@ from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_SUCCESS,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.options import BackendOptions, BackendOptionsFactory
+from uniqc.backend_adapter.task.options import (
+    BackendOptions,
+    BackendOptionsFactory,
+    UnifiedOptions,
+)
 from uniqc.backend_adapter.task.result_types import DryRunResult, UnifiedResult
 from uniqc.backend_adapter.task.store import (
     DEFAULT_CACHE_DIR,
@@ -383,13 +387,18 @@ def dry_run_task(
             )
         forwarded_kwargs = dict(kwargs)
     else:
-        # Reuse the same adapter resolver as submit_task so that
-        # 'originq:WK_C180' works in both APIs.
+        # Reuse the same backend resolver as submit_task so that
+        # 'originq:WK_C180' works in both APIs. We need the platform
+        # ``QuantumAdapter`` (which implements ``dry_run``), not the
+        # circuit-translation ``CircuitAdapter`` returned by
+        # ``_get_adapter`` — those two adapter hierarchies are distinct
+        # despite the shared name.
         platform = backend.split(":", 1)[0] if ":" in backend else backend
         chip = backend.split(":", 1)[1] if ":" in backend else None
         try:
-            adapter = _get_adapter(backend)
-        except BackendNotFoundError as e:
+            backend_instance = backend_module.get_backend(backend)
+            adapter = backend_instance.adapter
+        except ValueError as e:
             return DryRunResult(
                 success=False,
                 details=str(e),
@@ -528,6 +537,9 @@ def list_tasks(
     status: str | None = None,
     backend: str | None = None,
     cache_dir: Path | None = None,
+    *,
+    limit: int | None = None,
+    offset: int | None = None,
 ) -> list[TaskInfo]:
     """List tasks from the local cache.
 
@@ -535,11 +547,17 @@ def list_tasks(
         status: Filter by status (optional).
         backend: Filter by backend (optional).
         cache_dir: Optional custom cache directory.
+        limit: If set, push a SQL ``LIMIT`` to the underlying store so very
+            large caches (thousands of tasks, gigabytes of result blobs) do
+            not have to be fully materialised in memory before being sliced.
+        offset: SQL ``OFFSET`` for paginated reads. Implies ``limit``.
 
     Returns:
         List of TaskInfo objects matching the filters, newest first.
     """
-    return _store(cache_dir).list(status=status, backend=backend)
+    return _store(cache_dir).list(
+        status=status, backend=backend, limit=limit, offset=offset
+    )
 
 
 def clear_completed_tasks(
@@ -730,10 +748,34 @@ def _prepare_circuit_for_submission(
 
     language = resolve_submit_language(backend)
 
+    # --- Auto-decompose OriginIR-native gates with no QASM 2.0 stdlib name ---
+    # RPhi / PHASE2Q / UU15 etc. are mathematically expressible in qelib1.inc
+    # via the IR-level rewrite in ``uniqc.compile.decompose``.  We attempt
+    # the rewrite up-front so that subsequent language and basis checks see
+    # only QASM2-friendly opcodes.  Controlled wrappings (rare) still trigger
+    # the hard block below because ``decompose_for_qasm2`` cannot lift them.
+    if language is not None and language.upper() in {"QASM2", "OPENQASM2", "OPENQASM 2.0"}:
+        from uniqc.compile.decompose import (
+            QASM2_UNREPRESENTABLE_GATES,
+            decompose_for_qasm2,
+        )
+
+        if any(
+            str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES
+            for op in circuit.opcode_list
+        ):
+            try:
+                circuit = decompose_for_qasm2(circuit)
+            except (NotImplementedError, ValueError):
+                # Fall through to the language check below, which will
+                # surface the original "not expressible" error.
+                pass
+
     # --- Hard block: IR language compatibility (never skippable) ---
-    # Gates like RPhi/RPHI90/PHASE2Q/UU15 cannot be expressed in QASM2;
-    # submitting them to QASM2-only platforms (Quafu/Quark/IBM) will always
-    # fail at the cloud backend.
+    # Anything that survives the decomposition pass above and still maps to
+    # gate names QASM 2.0 cannot represent is a real failure (typically
+    # controlled-RPhi or future OriginIR-only gates).  Cloud backends would
+    # reject these too.
     _lang_report = compatibility_report(circuit, backend_info=None, language=language)
     if _lang_report.errors:
         from uniqc.exceptions import UnsupportedGateError
@@ -843,21 +885,6 @@ def _backend_info_from_chip(spec: Any):
     )
 
 
-def _active_qubits_from_originir(originir: str) -> set[int]:
-    """Best-effort scan of an OriginIR string for qubits actually touched
-    by gates (not counting unused logical slots from a generous QINIT)."""
-    import re
-    pattern = re.compile(r"q\[(\d+)\]")
-    active: set[int] = set()
-    for line in originir.splitlines():
-        s = line.strip()
-        if not s or s.startswith("QINIT") or s.startswith("CREG"):
-            continue
-        for m in pattern.finditer(s):
-            active.add(int(m.group(1)))
-    return active
-
-
 def _compile_for_chip_backed_dummy(
     circuit: Circuit,
     spec: Any,
@@ -876,14 +903,13 @@ def _compile_for_chip_backed_dummy(
     When ``available_qubits`` is given (typically forwarded from the
     user's ``submit_task`` kwargs that already constrain the dummy
     simulator), the layout pass is restricted to that physical-qubit
-    subset so the relayout cannot land on chip-but-disabled qubits. As
-    an additional safety rule, if the source circuit's actually-touched
-    qubits are all already inside ``available_qubits``, the IR is
-    passed through verbatim regardless of ``local_compile`` — the user
-    has hand-picked a valid layout and we MUST NOT silently relabel
-    onto different physical qubits (the original bug that prompted
-    NEW-U1 / NEW-U2: q[58] silently moved to q[13] on a chip whose
-    q[13] had been excluded as bad).
+    subset so the relayout cannot land on chip-but-disabled qubits — the
+    ``compile_with_config`` call drops every coupling-map edge that
+    touches a forbidden qubit, which is the same protection that
+    originally prompted NEW-U1 / NEW-U2 (q[58] silently moved to q[13]
+    on a chip whose q[13] had been excluded as bad). Users who really
+    do want byte-identical pass-through despite chip-backed dummy
+    semantics can opt out with ``local_compile=0``.
     """
     enriched = dict(metadata or {})
 
@@ -899,14 +925,6 @@ def _compile_for_chip_backed_dummy(
         return source_originir, enriched
     if spec.source_platform is None or spec.chip_characterization is None:
         return source_originir, enriched
-    if effective_available is not None:
-        active = _active_qubits_from_originir(source_originir)
-        allowed = {int(q) for q in effective_available}
-        if active and active.issubset(allowed):
-            # User picked the layout. Don't relabel.
-            enriched.setdefault("compile_passthrough_reason",
-                                "active qubits already inside available_qubits")
-            return source_originir, enriched
 
     from uniqc.compile import compile as compile_circuit
 
@@ -931,7 +949,7 @@ def submit_task(
     backend: str,
     shots: int = 1000,
     metadata: dict | None = None,
-    options: BackendOptions | dict | None = None,
+    options: BackendOptions | UnifiedOptions | dict | None = None,
     *,
     local_compile: int = 1,
     cloud_compile: int = 1,
@@ -959,8 +977,11 @@ def submit_task(
         shots: Number of measurement shots.
         metadata: Optional metadata to store with the task.
         options: Optional typed backend options. Accepts a
-            :class:`BackendOptions` instance, a plain dict (treated as
-            ``**kwargs``), or ``None`` for platform defaults.
+            :class:`BackendOptions` instance, a :class:`UnifiedOptions`
+            instance (auto-translated to the platform's specific options
+            with cross-platform semantics for ``optimize_level`` /
+            ``error_mitigation`` / ``auto_mapping``), a plain dict
+            (treated as ``**kwargs``), or ``None`` for platform defaults.
         local_compile: Local qiskit transpile pass strength.
 
             - ``0`` — no local transpile. The circuit is shipped as-authored
@@ -1004,8 +1025,11 @@ def submit_task(
             name (bare ``'provider'``) or is otherwise unrecognised.
         BackendNotAvailableError: If the backend is not available.
         UnsupportedGateError: If the circuit uses gates that cannot be
-            expressed in the backend's IR language (hard block — never
-            skippable, no amount of local/cloud compile can help).
+            expressed in the backend's IR language and cannot be
+            auto-decomposed (hard block — most OriginIR-native gates
+            such as ``RPhi``/``PHASE2Q``/``UU15`` are auto-rewritten via
+            :mod:`uniqc.compile.decompose` before this check; only
+            controlled wrappings or unrecognised gates fall through).
         AuthenticationError: If authentication fails.
         InsufficientCreditsError: If account has insufficient credits.
         QuotaExceededError: If usage quota is exceeded.
@@ -1277,7 +1301,7 @@ def submit_batch(
     circuits: list[Circuit | str],
     backend: str,
     shots: int = 1000,
-    options: BackendOptions | dict | None = None,
+    options: BackendOptions | UnifiedOptions | dict | None = None,
     *,
     local_compile: int = 1,
     cloud_compile: int = 1,
@@ -2248,9 +2272,14 @@ class TaskManager:
         self,
         status: str | None = None,
         backend: str | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[TaskInfo]:
         """List tasks from cache."""
-        return list_tasks(status, backend, cache_dir=self._cache_dir)
+        return list_tasks(
+            status, backend, cache_dir=self._cache_dir, limit=limit, offset=offset,
+        )
 
     def clear_completed(self) -> int:
         """Clear completed tasks from cache."""

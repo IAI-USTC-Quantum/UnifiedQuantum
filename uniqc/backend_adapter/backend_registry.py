@@ -382,6 +382,30 @@ def fetch_platform_backends(
         raw = adapter.list_backends()
         normaliser = _NORMALISERS[platform]
         backends = normaliser(raw)
+        # If the SDK call succeeded but returned 0 backends, that almost
+        # always means the call silently failed — bad credentials, wrong
+        # account/instance, network glitches handled by the SDK, etc.
+        # Don't overwrite a non-empty cache with an empty list and don't
+        # claim a fresh fetch happened: callers (e.g. the gateway
+        # ``/refresh`` route) rely on ``fetched_newly`` to surface a
+        # warning instead of reporting silent success.
+        if not backends:
+            cached = get_cached_backends(platform)
+            if cached:
+                logger.warning(
+                    "Platform %s returned 0 backends from a successful API call; "
+                    "keeping the existing cache (%d entries). This usually "
+                    "means credentials, instance, or network are misconfigured.",
+                    platform.value,
+                    len(cached),
+                )
+                return cached, False
+            logger.warning(
+                "Platform %s returned 0 backends and no cache exists. "
+                "Verify credentials, account/instance selection, and network.",
+                platform.value,
+            )
+            return [], False
         update_cache(platform, backends)
         fetched_newly = True
         logger.debug("Fetched %d %s backends from API", len(backends), platform.value)
