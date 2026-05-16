@@ -78,7 +78,16 @@ from .calibration import (
     load_calibration_result,
     save_calibration_result,
 )
-from .algorithms.core.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+from .algorithms.core.ansatz import (
+    hea,
+    hea_param_count,
+    hva,
+    qaoa_ansatz,
+    uccsd_ansatz,
+    EntanglingGate,
+    EntanglementTopology,
+    RotationGate,
+)
 from .algorithms.core.circuits import (
     amplitude_estimation_circuit,
     amplitude_estimation_result,
@@ -243,6 +252,8 @@ __all__ = [
     "ConfigError",
     "ConfigValidationError",
     "CompilationResult",
+    "EntanglingGate",
+    "EntanglementTopology",
     "DummyBackend",
     "DummyOptions",
     "IBMCircuitAdapter",
@@ -358,6 +369,8 @@ __all__ = [
     "grover_oracle",
     "hadamard_superposition",
     "hea",
+    "hea_param_count",
+    "hva",
     "is_compatible",
     "kv2list",
     "list_backends",
@@ -381,6 +394,7 @@ __all__ = [
     "query_task",
     "readout_em_workflow",
     "rotation_prepare",
+    "RotationGate",
     "save_calibration_result",
     "save_task",
     "shadow_expectation",

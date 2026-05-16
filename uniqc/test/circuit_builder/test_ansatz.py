@@ -5,7 +5,16 @@ import pytest
 
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
-from uniqc.algorithms.core.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+from uniqc.algorithms.core.ansatz import (
+    hea,
+    hva,
+    qaoa_ansatz,
+    uccsd_ansatz,
+    hea_param_count,
+    EntanglingGate,
+    EntanglementTopology,
+    RotationGate,
+)
 
 
 def _statevector(circuit: Circuit) -> np.ndarray:
@@ -109,3 +118,149 @@ class TestUCCSD:
         c = uccsd_ansatz(n_qubits=4, n_electrons=2, params=np.ones(5) * 0.1)
         sv = _statevector(c)
         assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+
+class TestEnhancedHEA:
+
+    def run_test_backward_compat(self):
+        # Default HEA should work the same as before
+        c = hea(n_qubits=4, depth=2)
+        assert c.max_qubit + 1 == 4
+        # Default is RZ+RY rotations: 2 * n_qubits * depth = 16 params
+        params = np.zeros(16)
+        c = hea(n_qubits=4, depth=2, params=params)
+        assert c.max_qubit + 1 == 4
+
+    def run_test_custom_rotation_gates(self):
+        # Rx+Rz gates: 2 params per qubit per layer
+        params = np.zeros(2 * 4 * 2)  # 2 gates * 4 qubits * 2 layers
+        c = hea(n_qubits=4, depth=2, rotation_gates=["rx", "rz"], params=params)
+        assert c.max_qubit + 1 == 4
+
+        # Rx+Ry+Rz gates: 3 params per qubit per layer
+        params = np.zeros(3 * 4 * 2)
+        c = hea(n_qubits=4, depth=2, rotation_gates=["rx", "ry", "rz"], params=params)
+        assert c.max_qubit + 1 == 4
+
+    def run_test_cz_gate(self):
+        # CZ entangling gate
+        c = hea(n_qubits=4, depth=2, entangling_gate="cz")
+        assert c.max_qubit + 1 == 4
+
+    def run_test_linear_topology(self):
+        c = hea(n_qubits=4, depth=1, topology="linear")
+        assert c.max_qubit + 1 == 4
+        # Linear topology: 3 edges for 4 qubits
+
+    def run_test_brickwork_topology(self):
+        c = hea(n_qubits=4, depth=1, topology="brickwork")
+        assert c.max_qubit + 1 == 4
+
+    def run_test_custom_edges(self):
+        c = hea(n_qubits=4, depth=1, topology="custom", custom_edges=[(0, 1), (2, 3)])
+        assert c.max_qubit + 1 == 4
+
+    def run_test_xx_parametric_gate(self):
+        # XX gate consumes extra params per edge
+        # For 4 qubits ring topology: 4 edges, so 4 extra params per layer
+        # Total: 2*4*1 (rotations) + 4*1 (XX params) = 12 params
+        n_params = hea_param_count(4, depth=1, entangling_gate="xx")
+        assert n_params == 12
+        params = np.zeros(n_params)
+        c = hea(n_qubits=4, depth=1, entangling_gate="xx", params=params)
+        assert c.max_qubit + 1 == 4
+
+    def run_test_statevector_validity(self):
+        c = hea(n_qubits=3, depth=1, rotation_gates=["rx", "ry"])
+        sv = _statevector(c)
+        assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+    def run_test_enum_gates(self):
+        c = hea(n_qubits=3, depth=1, rotation_gates=[RotationGate.RX], entangling_gate=EntanglingGate.CNOT)
+        assert c.max_qubit + 1 == 3
+        sv = _statevector(c)
+        assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+
+class TestQAOAVariants:
+
+    def run_test_xy_mixer(self):
+        H = [("Z0Z1", 1.0)]
+        c = qaoa_ansatz(H, p=1, mixer="xy")
+        assert c.max_qubit + 1 >= 2
+
+    def run_test_multi_angle(self):
+        H = [("Z0Z1", 1.0), ("Z1Z2", 0.5)]
+        c = qaoa_ansatz(H, p=1, multi_angle=True)
+        assert c.max_qubit + 1 >= 3
+
+    def run_test_statevector_validity(self):
+        H = [("Z0Z1", 1.0)]
+        c = qaoa_ansatz(H, p=1, mixer="xy")
+        sv = _statevector(c)
+        assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+
+class TestHVA:
+
+    def run_test_basic(self):
+        groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
+        c = hva(groups, p=2)
+        assert c.max_qubit + 1 >= 3
+
+    def run_test_param_count(self):
+        groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)], [("Z0Z2", 0.3)]]
+        # 3 groups * 2 layers = 6 params
+        c = hva(groups, p=2, params=np.zeros(6))
+        assert c.max_qubit + 1 >= 3
+
+    def run_test_hf_state(self):
+        groups = [[("Z0Z1", 1.0)]]
+        c = hva(groups, p=1, hf_state=[0, 1])
+        assert c.max_qubit + 1 >= 2
+
+    def run_test_statevector_validity(self):
+        groups = [[("Z0Z1", 1.0)]]
+        c = hva(groups, p=1)
+        sv = _statevector(c)
+        assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+
+class TestTopologyGenerator:
+
+    def run_test_linear_edges(self):
+        from uniqc.algorithms.core.ansatz._topology import generate_edges
+        edges = generate_edges([0, 1, 2, 3], EntanglementTopology.LINEAR)
+        assert len(edges) == 3
+        assert (0, 1) in edges
+        assert (1, 2) in edges
+        assert (2, 3) in edges
+
+    def run_test_ring_edges(self):
+        from uniqc.algorithms.core.ansatz._topology import generate_edges
+        edges = generate_edges([0, 1, 2, 3], EntanglementTopology.RING)
+        assert len(edges) == 4
+        assert (0, 1) in edges
+        assert (1, 2) in edges
+        assert (2, 3) in edges
+        assert (3, 0) in edges
+
+    def run_test_full_edges(self):
+        from uniqc.algorithms.core.ansatz._topology import generate_edges
+        edges = generate_edges([0, 1, 2], EntanglementTopology.FULL)
+        assert len(edges) == 3
+        assert (0, 1) in edges
+        assert (0, 2) in edges
+        assert (1, 2) in edges
+
+    def run_test_brickwork_alternation(self):
+        from uniqc.algorithms.core.ansatz._topology import generate_edges
+        edges_even = generate_edges([0, 1, 2, 3], EntanglementTopology.BRICKWORK, layer_index=0)
+        edges_odd = generate_edges([0, 1, 2, 3], EntanglementTopology.BRICKWORK, layer_index=1)
+        # Even: (0,1), (2,3)
+        # Odd: (1,2)
+        assert (0, 1) in edges_even
+        assert (2, 3) in edges_even
+        assert len(edges_even) == 2
+        assert (1, 2) in edges_odd
+        assert len(edges_odd) == 1
