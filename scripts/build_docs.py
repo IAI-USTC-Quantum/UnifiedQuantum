@@ -612,12 +612,30 @@ def process(specs: list[ExampleSpec], fail_on_warnings: bool) -> int:
             }
         )
 
-    (LOGS_ROOT / "index.json").write_text(
+    # When using --only, preserve results from chapters that were not
+    # re-processed in this run so the index remains complete.
+    index_path = LOGS_ROOT / "index.json"
+    chapters_processed = {s.chapter for s in specs}
+    existing_by_chapter: dict[str, list[dict[str, Any]]] = {}
+    if index_path.exists():
+        try:
+            existing = json.loads(index_path.read_text(encoding="utf-8"))
+            for rec in existing.get("results", []):
+                existing_by_chapter.setdefault(rec["chapter"], []).append(rec)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    merged: list[dict[str, Any]] = list(summary)
+    for chapter, recs in existing_by_chapter.items():
+        if chapter not in chapters_processed:
+            merged.extend(recs)
+
+    index_path.write_text(
         json.dumps(
             {
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "real_cloud": _RUNTIME_OPTIONS["real_cloud"],
-                "results": summary,
+                "results": merged,
             },
             ensure_ascii=False,
             indent=2,
