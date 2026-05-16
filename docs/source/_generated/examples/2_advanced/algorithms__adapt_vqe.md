@@ -35,41 +35,41 @@ Hamiltonian: [('ZZ', -1.0), ('II', 0.5)]
 Iter 1: E = 0.00000000, n_operators = 0
   Best operator: YI, gradient = 1.00000000
 Iter 2: E = -0.50000000, n_operators = 1
-  Best operator: IY, gradient = 1.00000000
+  Best operator: YI, gradient = 1.00000000
 Iter 3: E = -0.50000000, n_operators = 2
   Best operator: YI, gradient = 1.00000000
-Iter 4: E = -0.50000000, n_operators = 3
-  Best operator: YI, gradient = 1.00000000
+Iter 4: E = -0.49998990, n_operators = 3
+  Best operator: YI, gradient = 0.99998990
 Iter 5: E = -0.50000000, n_operators = 4
-  Best operator: YI, gradient = 1.00000000
+  Best operator: IY, gradient = 1.00000000
 Iter 6: E = -0.50000000, n_operators = 5
-  Best operator: IY, gradient = 1.00000000
-Iter 7: E = -0.50000000, n_operators = 6
   Best operator: YI, gradient = 1.00000000
+Iter 7: E = -0.49960312, n_operators = 6
+  Best operator: YI, gradient = 0.99960312
 Iter 8: E = -0.50000000, n_operators = 7
-  Best operator: IY, gradient = 1.00000000
-Iter 9: E = -0.49997010, n_operators = 8
-  Best operator: YI, gradient = 0.99997010
-Iter 10: E = -0.49999999, n_operators = 9
-  Best operator: YI, gradient = 0.99999999
+  Best operator: YI, gradient = 1.00000000
+Iter 9: E = -0.50000000, n_operators = 8
+  Best operator: YI, gradient = 1.00000000
+Iter 10: E = -0.50000000, n_operators = 9
+  Best operator: YI, gradient = 1.00000000
 ------------------------------------------------------------
-Final energy: -0.49971833
+Final energy: -0.50000000
 Selected 10 operators
 
 ============================================================
 ADAPT-VQE Results:
-  Energy: -0.49971833
+  Energy: -0.50000000
   Iterations: 10
   Converged: False
   Selected operators: 10
     YI (coeff=1.00)
-    IY (coeff=1.00)
     YI (coeff=1.00)
     YI (coeff=1.00)
     YI (coeff=1.00)
     IY (coeff=1.00)
     YI (coeff=1.00)
-    IY (coeff=1.00)
+    YI (coeff=1.00)
+    YI (coeff=1.00)
     YI (coeff=1.00)
     YI (coeff=1.00)
 

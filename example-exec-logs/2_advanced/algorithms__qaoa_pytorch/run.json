@@ -3,18 +3,18 @@
   "chapter": "2_advanced",
   "name": "algorithms__qaoa_pytorch",
   "title": "QAOA for MaxCut using TorchQuantum backend with native PyTorch autograd.",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
+  "verdict": "pass",
+  "skip_reason": null,
   "require": [
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": null,
-  "stderr": null,
-  "warnings": null,
-  "figure_files": null,
-  "offending_lines": null,
-  "ignored_lines": null,
+  "stdout": "============================================================\nQAOA for MaxCut — TorchQuantum Backend\n============================================================\n\nGraph: Triangle (3 nodes, 3 edges)\nEdges: [(0, 1), (1, 2), (0, 2)]\nQAOA depth p=2\nMax cut value (exact): 2.0\n\n  Iter   20 | Cut value: 1.988326\n  Iter   40 | Cut value: 1.998136\n  Iter   60 | Cut value: 1.999773\n  Iter   80 | Cut value: 1.999964\n  Iter  100 | Cut value: 1.999994\n\nFinal cut value: 1.999994\nOptimal gammas: [-0.013208533637225628, -1.2689504623413086]\nOptimal betas:  [1.1404902935028076, -0.3206617832183838]\nApproximation ratio: 1.0000\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
   "exception": null,
-  "duration_seconds": null
+  "duration_seconds": 0.881
 }

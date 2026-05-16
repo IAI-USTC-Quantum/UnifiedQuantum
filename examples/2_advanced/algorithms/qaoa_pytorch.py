@@ -4,7 +4,6 @@ Demonstrates Quantum Approximate Optimization Algorithm on a triangle graph
 with Adam optimizer, using TorchQuantum's differentiable simulation.
 
 [doc-require: torchquantum]
-[doc-skip-execute]
 """
 
 try:

@@ -4,7 +4,6 @@ Demonstrates a hybrid architecture: Classical encoder → Quantum circuit
 → Classical decoder, for 2D binary classification.
 
 [doc-require: torchquantum]
-[doc-skip-execute]
 """
 
 try:

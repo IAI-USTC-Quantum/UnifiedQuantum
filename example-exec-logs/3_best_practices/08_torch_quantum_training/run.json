@@ -10,14 +10,14 @@
     "matplotlib"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "torch parameter: Parameter containing:\ntensor(2.7685, requires_grad=True)\nlast rows: [(13, 2.434000015258789, -0.51, -0.815), (14, 2.6207499504089355, -0.76, -0.6225), (15, 2.7684998512268066, -0.895, -0.4925)]\n",
+  "stdout": "torch parameter: Parameter containing:\ntensor(2.6620, requires_grad=True)\nlast rows: [(13, 2.2690000534057617, -0.485, -0.9), (14, 2.49399995803833, -0.63, -0.75), (15, 2.6619999408721924, -0.815, -0.56)]\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [
-    "figure-01.png"
+    "figure-01.svg"
   ],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.673
+  "duration_seconds": 0.133
 }

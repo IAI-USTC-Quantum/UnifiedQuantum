@@ -4,7 +4,6 @@ Demonstrates a Quantum Convolutional Neural Network for classifying
 quantum states (GHZ vs product states) with native PyTorch autograd.
 
 [doc-require: torchquantum]
-[doc-skip-execute]
 """
 
 try:

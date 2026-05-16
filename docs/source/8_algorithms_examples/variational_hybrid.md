@@ -16,6 +16,25 @@
 ```{include} ../_generated/examples/2_advanced/algorithms__qaoa_pytorch.md
 ```
 
+```{include} ../_generated/examples/2_advanced/algorithms__qaoa_variants.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__adapt_vqe.md
+```
+
+## Ansatz 配置
+
+```{include} ../_generated/examples/2_advanced/algorithms__hea_options.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__hva_example.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__parameters_demo.md
+```
+
+## 量子‑经典混合模型
+
 ```{include} ../_generated/examples/2_advanced/algorithms__hybrid_model.md
 ```
 

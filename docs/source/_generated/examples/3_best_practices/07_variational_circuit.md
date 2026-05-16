@@ -15,15 +15,15 @@
 **Stdout**
 
 ```text
-step=00 theta=0.200 <Z>=0.985 grad=-0.220
-step=04 theta=0.466 <Z>=0.915 grad=-0.478
-step=08 theta=1.065 <Z>=0.450 grad=-0.858
-step=12 theta=2.014 <Z>=-0.490 grad=-0.897
-step=16 theta=2.717 <Z>=-0.930 grad=-0.350
-final theta: 2.8769
+step=00 theta=0.200 <Z>=0.985 grad=-0.225
+step=04 theta=0.473 <Z>=0.910 grad=-0.458
+step=08 theta=1.091 <Z>=0.475 grad=-0.878
+step=12 theta=2.044 <Z>=-0.490 grad=-0.900
+step=16 theta=2.741 <Z>=-0.920 grad=-0.435
+final theta: 2.9175
 ```
 
 **Figures**
 
-![07 — 简单变分量子线路 — figure-01.png](../_generated/examples/3_best_practices/figures/07_variational_circuit/figure-01.png)
+![07 — 简单变分量子线路 — figure-01.svg](../_generated/examples/3_best_practices/figures/07_variational_circuit/figure-01.svg)
 

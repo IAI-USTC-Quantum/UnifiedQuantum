@@ -25,5 +25,5 @@ non-zero states: {'0000': 0.24999999999999978, '0111': 0.2499999999999998, '1011
 
 **Figures**
 
-![02 — Named Circuit 与可复用线路 — figure-01.png](../_generated/examples/3_best_practices/figures/02_named_circuit_and_reuse/figure-01.png)
+![02 — Named Circuit 与可复用线路 — figure-01.svg](../_generated/examples/3_best_practices/figures/02_named_circuit_and_reuse/figure-01.svg)
 

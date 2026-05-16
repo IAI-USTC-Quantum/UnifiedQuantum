@@ -16,15 +16,15 @@
 **Stdout**
 
 ```text
-gamma=0.20 beta=0.20 <ZZ>=+0.3242
-gamma=0.20 beta=0.40 <ZZ>=+0.3828
-gamma=0.20 beta=0.60 <ZZ>=+0.2500
-gamma=0.40 beta=0.20 <ZZ>=+0.4766
-gamma=0.40 beta=0.40 <ZZ>=+0.6758
-gamma=0.40 beta=0.60 <ZZ>=+0.4492
-gamma=0.60 beta=0.20 <ZZ>=+0.7148
-gamma=0.60 beta=0.40 <ZZ>=+0.9258
-gamma=0.60 beta=0.60 <ZZ>=+0.5586
-best: (0.2, 0.6, 0.25)
+gamma=0.20 beta=0.20 <ZZ>=+0.3320
+gamma=0.20 beta=0.40 <ZZ>=+0.3750
+gamma=0.20 beta=0.60 <ZZ>=+0.3047
+gamma=0.40 beta=0.20 <ZZ>=+0.5742
+gamma=0.40 beta=0.40 <ZZ>=+0.7539
+gamma=0.40 beta=0.60 <ZZ>=+0.4648
+gamma=0.60 beta=0.20 <ZZ>=+0.6172
+gamma=0.60 beta=0.40 <ZZ>=+0.9375
+gamma=0.60 beta=0.60 <ZZ>=+0.5859
+best: (0.2, 0.6, 0.3046875)
 ```
 

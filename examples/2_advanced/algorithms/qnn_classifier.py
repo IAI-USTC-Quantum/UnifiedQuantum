@@ -4,7 +4,6 @@ Demonstrates a Quantum Neural Network for binary classification on
 a synthetic moons dataset with native PyTorch autograd.
 
 [doc-require: torchquantum]
-[doc-skip-execute]
 """
 
 try:

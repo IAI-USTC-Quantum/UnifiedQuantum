@@ -19,12 +19,12 @@
 **Stdout**
 
 ```text
-task_id: uqt_5595d8f700c2495f95dd807b88d1af10
+task_id: uqt_b19692f7129b4b96b22186c6fefa260b
 status: success
-counts: UnifiedResult(counts={'00': 64, '11': 64}, probabilities={'00': 0.5, '11': 0.5}, shots=128, platform='dummy', task_id='uqt_5595d8f700c2495f95dd807b88d1af10', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+counts: UnifiedResult(counts={'00': 64, '11': 64}, probabilities={'00': 0.5, '11': 0.5}, shots=128, platform='dummy', task_id='uqt_b19692f7129b4b96b22186c6fefa260b', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 ```
 
 **Figures**
 
-![04 — Python API 提交、取回与可视化 — figure-01.png](../_generated/examples/3_best_practices/figures/04_api_submit_dummy_result/figure-01.png)
+![04 — Python API 提交、取回与可视化 — figure-01.svg](../_generated/examples/3_best_practices/figures/04_api_submit_dummy_result/figure-01.svg)
 

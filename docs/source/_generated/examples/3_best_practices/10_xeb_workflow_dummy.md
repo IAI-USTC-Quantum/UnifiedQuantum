@@ -24,5 +24,5 @@ depths: (1, 2, 3)
 
 **Figures**
 
-![10 — XEB workflow — figure-01.png](../_generated/examples/3_best_practices/figures/10_xeb_workflow_dummy/figure-01.png)
+![10 — XEB workflow — figure-01.svg](../_generated/examples/3_best_practices/figures/10_xeb_workflow_dummy/figure-01.svg)
 

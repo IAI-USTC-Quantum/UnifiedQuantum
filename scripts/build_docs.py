@@ -275,11 +275,11 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
     figures_dir = log_dir / "figures"
     figures_dir.mkdir(exist_ok=True)
     # Wipe any leftover figures from a previous run.
-    for old in figures_dir.glob("*.png"):
+    for old in figures_dir.glob("*.svg"):
         old.unlink()
     docs_figures_dir = DOCS_GENERATED_ROOT / spec.chapter / "figures" / spec.name
     if docs_figures_dir.exists():
-        for old in docs_figures_dir.glob("*.png"):
+        for old in docs_figures_dir.glob("*.svg"):
             old.unlink()
     docs_figures_dir.mkdir(parents=True, exist_ok=True)
 
@@ -328,9 +328,9 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
             import matplotlib.pyplot as plt
             for idx, fig_num in enumerate(plt.get_fignums(), start=1):
                 fig = plt.figure(fig_num)
-                fname = f"figure-{idx:02d}.png"
-                fig.savefig(figures_dir / fname, format="png", bbox_inches="tight", dpi=120)
-                fig.savefig(docs_figures_dir / fname, format="png", bbox_inches="tight", dpi=120)
+                fname = f"figure-{idx:02d}.svg"
+                fig.savefig(figures_dir / fname, format="svg", bbox_inches="tight")
+                fig.savefig(docs_figures_dir / fname, format="svg", bbox_inches="tight")
                 figure_files.append(fname)
             plt.close("all")
         except Exception:
