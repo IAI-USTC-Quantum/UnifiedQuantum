@@ -24,6 +24,7 @@ from .opcode import (
 )
 
 if TYPE_CHECKING:
+    from .parameter import Parameters
     from .qubit import Qubit, QReg, QRegSlice
 
     try:
@@ -209,6 +210,8 @@ class Circuit:
         self._active_dagger: bool = False
         # Stack used by set_control / unset_control to remember each push size.
         self._control_stack: list[tuple[int, ...]] = []
+        # Named parameters attached to this circuit (for parametric circuits)
+        self._params: "Parameters | None" = None
 
         # Handle qregs parameter
         if qregs is not None:

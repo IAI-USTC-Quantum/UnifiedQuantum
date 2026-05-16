@@ -162,6 +162,7 @@ def extract_counts_and_probs(
 
     Task results arrive in several different shapes depending on the adapter:
 
+    - :class:`UnifiedResult` (single circuit) or ``list[UnifiedResult]`` (batch)
     - ``{"counts": {...}, "probabilities": {...}}`` (dummy / quafu)
     - ``{"counts": {...}}`` or ``{"probabilities": {...}}`` alone
     - ``[{"key": "0x..", "value": prob}, ...]`` (originq single task)
@@ -173,6 +174,47 @@ def extract_counts_and_probs(
     be empty when the backend only exposed probabilities and ``shots`` was
     not provided.
     """
+    # ---- UnifiedResult / list[UnifiedResult] ------------------------------
+    # ``wait_for_result`` / ``query_task`` return UnifiedResult dataclasses
+    # (or lists of them for native batches). Handle them up-front so the
+    # rest of the helper continues to operate on plain dicts/lists.
+    from uniqc.backend_adapter.task.result_types import UnifiedResult
+
+    if isinstance(result, UnifiedResult):
+        counts = {str(k): int(v) for k, v in (result.counts or {}).items()}
+        probs = {str(k): float(v) for k, v in (result.probabilities or {}).items()}
+        if counts and not probs:
+            total = sum(counts.values()) or 1
+            probs = {k: v / total for k, v in counts.items()}
+        elif probs and not counts and (shots or result.shots):
+            n = int(shots or result.shots)
+            counts = {k: int(round(p * n)) for k, p in probs.items()}
+        return counts, probs
+
+    if (
+        isinstance(result, list)
+        and result
+        and all(isinstance(r, UnifiedResult) for r in result)
+    ):
+        merged_counts: dict[str, int] = {}
+        merged_probs_sum: dict[str, float] = {}
+        for r in result:
+            for k, v in (r.counts or {}).items():
+                merged_counts[str(k)] = merged_counts.get(str(k), 0) + int(v)
+            for k, v in (r.probabilities or {}).items():
+                merged_probs_sum[str(k)] = merged_probs_sum.get(str(k), 0.0) + float(v)
+        if merged_counts:
+            total = sum(merged_counts.values()) or 1
+            return merged_counts, {k: v / total for k, v in merged_counts.items()}
+        if merged_probs_sum:
+            n_circ = len(result) or 1
+            probs = {k: v / n_circ for k, v in merged_probs_sum.items()}
+            counts = (
+                {k: int(round(p * shots)) for k, p in probs.items()} if shots else {}
+            )
+            return counts, probs
+        return {}, {}
+
     if not result:
         return {}, {}
 

@@ -3,18 +3,18 @@
   "chapter": "3_best_practices",
   "name": "06_cloud_backend_template",
   "title": "06 — 云后端提交模板与 dry-run",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
+  "verdict": "pass",
+  "skip_reason": null,
   "require": [
     "originq"
   ],
   "ignored_warning_patterns": [],
-  "stdout": null,
-  "stderr": null,
-  "warnings": null,
-  "figure_files": null,
-  "offending_lines": null,
-  "ignored_lines": null,
+  "stdout": "dummy dry-run success: True\ndetails: Dry-run passed for dummy simulator: OriginIR is valid. Qubits=1, shots=100\noriginq API: submit_task(circuit, backend='originq', shots=1000, backend_name='PQPUMESH8')\nquafu API: submit_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')\nibm API: submit_task(circuit, backend='ibm', shots=1000, chip_id='ibm_fez')\nCLI dry-run: uniqc submit bell.originir --backend quafu:ScQ-P18 --dry-run\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
   "exception": null,
-  "duration_seconds": null
+  "duration_seconds": 0.0
 }

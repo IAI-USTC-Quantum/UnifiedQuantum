@@ -1,7 +1,7 @@
 ### 08 — Torch 集成后的量子线路
 
 *Source*: ``examples/3_best_practices/08_torch_quantum_training.py``  
-*Status*: **skip** — missing requirements: pytorch (torch installed), matplotlib (matplotlib installed)
+*Status*: **pass**
 
 用 PyTorch 管理参数和优化器，量子期望值由 UnifiedQuantum 线路和模拟器计算，梯度
 使用 parameter-shift 写回。
@@ -12,7 +12,15 @@
 :language: python
 ```
 
-:::{note}
-Example skipped during pre-doc-execution: missing requirements: pytorch (torch installed), matplotlib (matplotlib installed)
-:::
+**Stdout**
+
+```text
+torch parameter: Parameter containing:
+tensor(2.7685, requires_grad=True)
+last rows: [(13, 2.434000015258789, -0.51, -0.815), (14, 2.6207499504089355, -0.76, -0.6225), (15, 2.7684998512268066, -0.895, -0.4925)]
+```
+
+**Figures**
+
+![08 — Torch 集成后的量子线路 — figure-01.png](../_generated/examples/3_best_practices/figures/08_torch_quantum_training/figure-01.png)
 

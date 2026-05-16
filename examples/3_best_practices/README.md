@@ -11,7 +11,7 @@ header (`[doc-require: ...]`, `[doc-warning-ignore: ...]`, ...) consumed by
 | `02_named_circuit_and_reuse.py` | `@circuit_def`, named registers, composition |
 | `03_compile_region_dummy_backend.py` | `compile(...)` to a virtual-line-3 backend |
 | `04_api_submit_dummy_result.py` | `submit_task` → `wait_for_result` on `dummy:local:simulator` |
-| `05_cli_workflow_dummy.py` | `uniqc submit --platform dummy` end-to-end via subprocess |
+| `05_cli_workflow_dummy.py` | `uniqc submit --backend dummy:local:simulator` end-to-end via subprocess |
 | `06_cloud_backend_template.py` | safe template: `dry_run_task` then real-cloud snippets |
 | `07_variational_circuit.py` | parameter-shift loop minimizing `<Z>` |
 | `08_torch_quantum_training.py` | torch optimizer + parameter-shift gradient |

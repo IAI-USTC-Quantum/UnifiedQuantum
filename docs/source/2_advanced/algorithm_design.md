@@ -11,13 +11,27 @@ Variational algorithms expose a parameterised **ansatz** factory that
 returns a fresh :class:`~uniqc.circuit_builder.Circuit`.
 
 ```python
-from uniqc.algorithms import hea, qaoa_ansatz, uccsd_ansatz, vqd_ansatz
+from uniqc.algorithms import hea, hva, qaoa_ansatz, uccsd_ansatz, vqd_ansatz
 import numpy as np
 
-c = hea(n_qubits=4, n_layers=2, params=np.zeros(8))
+# Default HEA (backward-compatible)
+c = hea(n_qubits=4, depth=2, params=np.zeros(16))
+
+# Enhanced HEA: custom rotations, gates, and topology
+c = hea(n_qubits=4, depth=2,
+        rotation_gates=["rx", "ry", "rz"],
+        entangling_gate="cz",
+        topology="linear")
+
+# Parametric entangling gate (extra params per edge)
+c = hea(n_qubits=4, depth=2, entangling_gate="xx", topology="ring")
+
+# HVA with commuting Hamiltonian groups
+groups = [[("X0X1", 1.0), ("Y0Y1", 1.0)], [("Z0Z1", 0.5)]]
+c = hva(groups, p=2)
 ```
 
-Names: `hea`, `qaoa_ansatz`, `uccsd_ansatz`, `vqd_ansatz`.
+Names: `hea`, `hva`, `qaoa_ansatz`, `uccsd_ansatz`, `vqd_ansatz`.
 
 ## 2. State preparation — `_circuit` suffix
 
@@ -97,3 +111,36 @@ function intended for documentation and quick smoke-tests.  They are
 from uniqc.algorithms.core.circuits.qft import qft_example
 c = qft_example()
 ```
+
+## 6. Parameter management
+
+All ansatz functions accept either `np.ndarray` (backward-compatible) or
+`Parameters` objects for symbolic parameter management.
+
+```python
+from uniqc.circuit_builder import Parameters
+from uniqc.algorithms.core.ansatz import hea, hea_param_count
+
+# Auto-generation: when params=None, a named Parameters object is created
+c = hea(n_qubits=4, depth=2)
+print(c._params.name)  # "theta_hea"
+print(len(c._params))  # 16
+
+# Manual Parameters: create, bind, and use
+n_params = hea_param_count(n_qubits=4, depth=2,
+                          rotation_gates=["rx", "ry", "rz"])
+params = Parameters("my_ansatz", size=n_params)
+params.bind([0.1] * n_params)
+c = hea(n_qubits=4, depth=2, params=params)
+
+# QAOA uses separate betas and gammas
+c = qaoa_ansatz(H, p=2)
+print(c._params["betas"].name)  # "betas_qaoa"
+print(c._params["gammas"].name) # "gammas_qaoa"
+```
+
+Benefits of `Parameters`:
+- Named parameters for debugging and gradient tracking
+- Symbolic arithmetic via sympy expressions
+- Rebindable values for multiple optimization runs
+- See: `examples/2_advanced/algorithms/parameters_demo.py`

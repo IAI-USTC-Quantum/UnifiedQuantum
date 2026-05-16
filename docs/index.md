@@ -36,7 +36,7 @@ print(wait_for_result(task_id))
 
 ```bash
 uniqc simulate circuit.ir --shots 1000
-uniqc submit circuit.ir -p originq -b WK_C180 --shots 1000 --wait
+uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000 --wait
 ```
 
 ## 章节导航

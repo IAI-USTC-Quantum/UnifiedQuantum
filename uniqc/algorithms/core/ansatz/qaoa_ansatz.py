@@ -6,82 +6,15 @@ combinatorial optimisation problems.
 
 __all__ = ["qaoa_ansatz"]
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
 
+from ._pauli_unitary import _parse_pauli_string, _apply_cost_unitary
 
-def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
-    """Parse a Pauli string like 'Z0Z1' or 'X0Y1Z2' into [(op, qubit), ...]."""
-    terms = []
-    current_op = None
-    current_idx = ""
-    for ch in pauli_string:
-        if ch in "XYZI":
-            if current_op is not None:
-                terms.append((current_op, int(current_idx)))
-            current_op = ch
-            current_idx = ""
-        elif ch.isdigit():
-            current_idx += ch
-    if current_op is not None:
-        terms.append((current_op, int(current_idx)))
-    return terms
-
-
-def _apply_cost_unitary(
-    circuit: Circuit,
-    hamiltonian_terms: List[Tuple[str, float]],
-    gamma: float,
-) -> None:
-    """Apply the cost-function unitary exp(-i γ H_C).
-
-    For each Pauli string with coefficient h, applies exp(-i γ h P).
-    """
-    for pauli_str, coeff in hamiltonian_terms:
-        angle = 2 * gamma * coeff
-        terms = _parse_pauli_string(pauli_str)
-
-        # Filter out identity terms
-        non_id = [(op, q) for op, q in terms if op != "I"]
-        if not non_id:
-            continue
-
-        # Apply basis rotation for non-Z terms, then CNOT cascade, Rz, undo
-        # Step 1: Rotate non-Z qubits to Z basis
-        # Note: Y-basis rotation uses H·Rz(-π/2) (equivalent to S†·H).
-        # When the angle happens to be exactly 0, Circuit.rz omits the
-        # parameter, which crashes the OriginIR parser.  We therefore skip
-        # the gate entirely when the angle is negligible.
-        for op, q in non_id:
-            if op == "X":
-                circuit.h(q)
-            elif op == "Y":
-                _angle = -np.pi / 2
-                circuit.rz(q, float(_angle))
-                circuit.h(q)
-
-        # Step 2: CNOT cascade
-        for i in range(len(non_id) - 1):
-            circuit.cx(non_id[i][1], non_id[i + 1][1])
-
-        # Step 3: Rz on last qubit
-        if abs(angle) > 1e-15:
-            circuit.rz(non_id[-1][1], float(angle))
-
-        # Step 4: Undo CNOT cascade
-        for i in range(len(non_id) - 2, -1, -1):
-            circuit.cx(non_id[i][1], non_id[i + 1][1])
-
-        # Step 5: Undo basis rotations
-        for op, q in non_id:
-            if op == "X":
-                circuit.h(q)
-            elif op == "Y":
-                _angle = np.pi / 2
-                circuit.rz(q, float(_angle))
-                circuit.h(q)
+if TYPE_CHECKING:
+    from uniqc.circuit_builder.parameter import Parameters
 
 
 def _apply_mixer_unitary(
@@ -102,14 +35,18 @@ def qaoa_ansatz(
     cost_hamiltonian: List[Tuple[str, float]],
     p: int = 1,
     qubits: Optional[List[int]] = None,
-    betas: Optional[np.ndarray] = None,
-    gammas: Optional[np.ndarray] = None,
+    betas: Optional[Union["Parameters", np.ndarray]] = None,
+    gammas: Optional[Union["Parameters", np.ndarray]] = None,
+    *,
+    mixer: str = "x",
+    initial_state: Optional["Circuit"] = None,
+    multi_angle: bool = False,
 ) -> Circuit:
     """Build a QAOA ansatz circuit.
 
     The ansatz alternates between the cost unitary
     :math:`U_C(\\gamma) = e^{-i\\gamma H_C}` and the mixer unitary
-    :math:`U_M(\\beta) = e^{-i\\beta \\sum X_i}` for *p* layers.
+    :math:`U_M(\\beta)` for *p* layers.
 
     Args:
         cost_hamiltonian: List of ``(pauli_string, coefficient)`` tuples.
@@ -118,6 +55,12 @@ def qaoa_ansatz(
         qubits: Qubit indices.  ``None`` → auto-detect from hamiltonian.
         betas: Mixer angles, length *p*.  ``None`` → random.
         gammas: Cost angles, length *p*.  ``None`` → random.
+        mixer: Mixer type. Options:
+            - ``"x"``: Standard X mixer: :math:`\\sum X_i` (default)
+            - ``"xy"``: XY mixer for constrained optimization
+        initial_state: Custom initial state circuit.  ``None`` → uniform superposition (Hadamards).
+        multi_angle: If ``True``, use MA-QAOA: each Pauli term gets its own gamma
+            and each qubit gets its own beta. Overrides *betas* and *gammas*.
 
     Returns:
         A :class:`Circuit` object.
@@ -129,6 +72,15 @@ def qaoa_ansatz(
         >>> from uniqc.algorithms.core.ansatz import qaoa_ansatz
         >>> H = [("Z0Z1", 1.0), ("Z1Z2", 1.0), ("Z0Z2", 0.5)]
         >>> c = qaoa_ansatz(H, p=2)
+
+        XY mixer for constrained optimization:
+        >>> c = qaoa_ansatz(H, p=2, mixer="xy")
+
+        Warm-start with custom initial state:
+        >>> from uniqc.circuit_builder import Circuit
+        >>> init = Circuit()
+        >>> init.x(0)  # custom initial state
+        >>> c = qaoa_ansatz(H, p=2, initial_state=init)
     """
     # Determine qubit set
     all_qubits = set()
@@ -142,28 +94,115 @@ def qaoa_ansatz(
     else:
         qubits = list(qubits)
 
-    if betas is None:
-        betas = np.random.uniform(0, np.pi, size=p)
-    if gammas is None:
-        gammas = np.random.uniform(0, np.pi, size=p)
+    n_terms = len(cost_hamiltonian)
 
-    betas = np.asarray(betas)
-    gammas = np.asarray(gammas)
+    # Import Parameters for auto-generation
+    from uniqc.circuit_builder.parameter import Parameters as ParamClass
 
-    if len(betas) != p:
-        raise ValueError(format_enriched_message(f"betas length ({len(betas)}) must equal p ({p})", "circuit_validation"))
-    if len(gammas) != p:
-        raise ValueError(format_enriched_message(f"gammas length ({len(gammas)}) must equal p ({p})", "circuit_validation"))
+    def _validate_and_convert_params(
+        params: Optional[Union[ParamClass, np.ndarray]],
+        expected_len: int,
+        name: str,
+    ) -> ParamClass:
+        """Validate and convert params to Parameters object."""
+        if params is None:
+            # Auto-generate named Parameters
+            p_obj = ParamClass(f"{name}_qaoa", size=expected_len)
+            rng = np.random.default_rng(0)
+            p_obj.bind(list(rng.uniform(0, np.pi, size=expected_len)))
+            return p_obj
+        elif isinstance(params, ParamClass):
+            if len(params) != expected_len:
+                raise ValueError(
+                    format_enriched_message(
+                        f"{name} requires {expected_len} parameters, got {len(params)}",
+                        "circuit_validation",
+                    )
+                )
+            if not params[0].is_bound:
+                rng = np.random.default_rng(0)
+                params.bind(list(rng.uniform(0, np.pi, size=expected_len)))
+            return params
+        else:
+            # Convert np.ndarray to Parameters
+            params_arr = np.asarray(params)
+            if len(params_arr) != expected_len:
+                raise ValueError(
+                    format_enriched_message(
+                        f"{name} requires {expected_len} parameters, got {len(params_arr)}",
+                        "circuit_validation",
+                    )
+                )
+            p_obj = ParamClass(f"{name}_qaoa", size=expected_len)
+            p_obj.bind(list(params_arr.flatten()))
+            return p_obj
+
+    # Handle multi-angle QAOA (MA-QAOA)
+    if multi_angle:
+        total_gammas = n_terms * p
+        total_betas = n_qubits * p
+        gammas = _validate_and_convert_params(gammas, total_gammas, "gammas")
+        betas = _validate_and_convert_params(betas, total_betas, "betas")
+    else:
+        # Standard QAOA
+        gammas = _validate_and_convert_params(gammas, p, "gammas")
+        betas = _validate_and_convert_params(betas, p, "betas")
 
     circuit = Circuit()
 
-    # Initial state: Hadamard on all qubits (uniform superposition)
-    for q in qubits:
-        circuit.h(q)
+    # Initial state
+    if initial_state is not None:
+        circuit.add_circuit(initial_state)
+    else:
+        for q in qubits:
+            circuit.h(q)
 
     # QAOA layers
     for layer in range(p):
-        _apply_cost_unitary(circuit, cost_hamiltonian, float(gammas[layer]))
-        _apply_mixer_unitary(circuit, n_qubits, qubits, float(betas[layer]))
+        if multi_angle:
+            # MA-QAOA: cost unitary with per-term gammas
+            for t, (pauli_str, coeff) in enumerate(cost_hamiltonian):
+                gamma = gammas[layer * n_terms + t].evaluate()
+                _apply_cost_unitary(circuit, [(pauli_str, coeff)], gamma)
+            # MA-QAOA: mixer with per-qubit betas
+            for i, q in enumerate(qubits):
+                beta = betas[layer * n_qubits + i].evaluate()
+                circuit.h(q)
+                if abs(2 * beta) > 1e-15:
+                    circuit.rz(q, float(2 * beta))
+                circuit.h(q)
+        else:
+            # Standard QAOA
+            _apply_cost_unitary(circuit, cost_hamiltonian, gammas[layer].evaluate())
+            if mixer == "xy":
+                _apply_xy_mixer(circuit, qubits, betas[layer].evaluate())
+            else:
+                _apply_mixer_unitary(circuit, n_qubits, qubits, betas[layer].evaluate())
+
+    # Attach parameters to circuit for traceability
+    circuit._params = {"betas": betas, "gammas": gammas}
 
     return circuit
+
+
+def _apply_xy_mixer(
+    circuit: Circuit,
+    qubits: List[int],
+    beta: float,
+) -> None:
+    """Apply the XY mixer: exp(-i β Σ_{i} (XX_i,i+1 + YY_i,i+1)).
+
+    For each adjacent pair (i, i+1), applies Rxx(2β) + Ryy(2β).
+    This preserves the number of excitations, useful for constrained optimization.
+    """
+    if abs(beta) < 1e-15:
+        return
+
+    for i in range(len(qubits) - 1):
+        u, v = qubits[i], qubits[i + 1]
+        # Rxx(2β)
+        if abs(2 * beta) > 1e-15:
+            circuit.xx(u, v, float(2 * beta))
+        # Ryy(2β)
+        if abs(2 * beta) > 1e-15:
+            circuit.yy(u, v, float(2 * beta))

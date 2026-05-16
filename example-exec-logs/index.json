@@ -1,73 +1,7 @@
 {
-  "generated_at": "2026-05-10T16:15:03Z",
+  "generated_at": "2026-05-16T11:46:15Z",
   "real_cloud": false,
   "results": [
-    {
-      "example": "examples/0_quickstart/01_quickstart.py",
-      "chapter": "0_quickstart",
-      "name": "01_quickstart",
-      "title": "01 — Quickstart: install, simulate, submit",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.731,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
-    {
-      "example": "examples/1_basic_usage/01_circuit_basics.py",
-      "chapter": "1_basic_usage",
-      "name": "01_circuit_basics",
-      "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.0,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
-    {
-      "example": "examples/1_basic_usage/02_local_simulation.py",
-      "chapter": "1_basic_usage",
-      "name": "02_local_simulation",
-      "title": "02 — Local simulation paths",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.002,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
-    {
-      "example": "examples/1_basic_usage/03_submit_and_postprocess.py",
-      "chapter": "1_basic_usage",
-      "name": "03_submit_and_postprocess",
-      "title": "03 — Submit to dummy + result post-processing",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.016,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
-    {
-      "example": "examples/1_basic_usage/04_config.py",
-      "chapter": "1_basic_usage",
-      "name": "04_config",
-      "title": "04 — Configuration: ``uniqc config`` + ``~/.uniqc/config.yaml``",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.002,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
-    {
-      "example": "examples/1_basic_usage/05_visualize.py",
-      "chapter": "1_basic_usage",
-      "name": "05_visualize",
-      "title": "05 — Visualize circuits and results",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
-      "n_offending": 0,
-      "n_ignored": 0
-    },
     {
       "example": "examples/2_advanced/01_compile_options.py",
       "chapter": "2_advanced",
@@ -75,7 +9,7 @@
       "title": "01 — Compile internals: levels, basis gates, virtual backends",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.086,
+      "duration_seconds": 0.755,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -97,7 +31,7 @@
       "title": "03 — Variational quantum algorithm: a tiny QAOA loop",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.004,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -108,7 +42,7 @@
       "title": "04 — Dummy chip noise: ``dummy:<platform>:<backend>``",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.146,
+      "duration_seconds": 0.173,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -119,7 +53,7 @@
       "title": "05 — Calibration: 1q XEB on a noisy dummy backend",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.187,
+      "duration_seconds": 0.241,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -141,7 +75,18 @@
       "title": "07 — Matrix-product-state simulator on a long linear chain",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 14.518,
+      "duration_seconds": 15.034,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/2_advanced/algorithms/adapt_vqe.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__adapt_vqe",
+      "title": "ADAPT-VQE Example.",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 1.984,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -157,6 +102,28 @@
       "n_ignored": 0
     },
     {
+      "example": "examples/2_advanced/algorithms/hea_options.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__hea_options",
+      "title": "Hardware-Efficient Ansatz (HEA) -- Configuration Options.",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.005,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/2_advanced/algorithms/hva_example.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__hva_example",
+      "title": "Hamiltonian Variational Ansatz (HVA) -- complete example.",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.027,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
       "example": "examples/2_advanced/algorithms/hybrid_model.py",
       "chapter": "2_advanced",
       "name": "algorithms__hybrid_model",
@@ -168,13 +135,24 @@
       "n_ignored": 0
     },
     {
+      "example": "examples/2_advanced/algorithms/parameters_demo.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__parameters_demo",
+      "title": "Symbolic Parameters for Variational Circuits.",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.02,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
       "example": "examples/2_advanced/algorithms/qaoa.py",
       "chapter": "2_advanced",
       "name": "algorithms__qaoa",
       "title": "Quantum Approximate Optimization Algorithm (QAOA) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.206,
+      "duration_seconds": 0.228,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -186,6 +164,17 @@
       "verdict": "skip",
       "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
       "duration_seconds": null,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/2_advanced/algorithms/qaoa_variants.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__qaoa_variants",
+      "title": "QAOA Variants -- XY Mixer, Warm-Start, and MA-QAOA.",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -218,7 +207,7 @@
       "title": "Quantum Phase Estimation (QPE) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.004,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -229,7 +218,7 @@
       "title": "Variational Quantum Eigensolver (VQE) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.209,
+      "duration_seconds": 0.187,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -328,7 +317,7 @@
       "title": "Variational Quantum Deflation (VQD) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.429,
+      "duration_seconds": 0.447,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -350,7 +339,7 @@
       "title": "Full quantum state tomography — measurement example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.011,
+      "duration_seconds": 0.015,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -399,6 +388,72 @@
       "n_ignored": 0
     },
     {
+      "example": "examples/0_quickstart/01_quickstart.py",
+      "chapter": "0_quickstart",
+      "name": "01_quickstart",
+      "title": "01 — Quickstart: install, simulate, submit",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 2.727,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/1_basic_usage/01_circuit_basics.py",
+      "chapter": "1_basic_usage",
+      "name": "01_circuit_basics",
+      "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.0,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/1_basic_usage/02_local_simulation.py",
+      "chapter": "1_basic_usage",
+      "name": "02_local_simulation",
+      "title": "02 — Local simulation paths",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.002,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/1_basic_usage/03_submit_and_postprocess.py",
+      "chapter": "1_basic_usage",
+      "name": "03_submit_and_postprocess",
+      "title": "03 — Submit to dummy + result post-processing",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.019,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/1_basic_usage/04_config.py",
+      "chapter": "1_basic_usage",
+      "name": "04_config",
+      "title": "04 — Configuration: ``uniqc config`` + ``~/.uniqc/config.yaml``",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.002,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/1_basic_usage/05_visualize.py",
+      "chapter": "1_basic_usage",
+      "name": "05_visualize",
+      "title": "05 — Visualize circuits and results",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.097,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
       "example": "examples/3_best_practices/00_config_and_backend_cache.py",
       "chapter": "3_best_practices",
       "name": "00_config_and_backend_cache",
@@ -414,9 +469,9 @@
       "chapter": "3_best_practices",
       "name": "01_bare_circuit_simulation",
       "title": "01 — 裸 Circuit、本地模拟与结果可视化",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.096,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -425,9 +480,9 @@
       "chapter": "3_best_practices",
       "name": "02_named_circuit_and_reuse",
       "title": "02 — Named Circuit 与可复用线路",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.094,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -438,7 +493,7 @@
       "title": "03 — 编译、拓扑与虚拟后端",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.009,
+      "duration_seconds": 0.01,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -447,9 +502,9 @@
       "chapter": "3_best_practices",
       "name": "04_api_submit_dummy_result",
       "title": "04 — Python API 提交、取回与可视化",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.115,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -460,7 +515,7 @@
       "title": "05 — CLI 提交完整链路",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.919,
+      "duration_seconds": 3.874,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -469,9 +524,9 @@
       "chapter": "3_best_practices",
       "name": "06_cloud_backend_template",
       "title": "06 — 云后端提交模板与 dry-run",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.0,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -480,9 +535,9 @@
       "chapter": "3_best_practices",
       "name": "07_variational_circuit",
       "title": "07 — 简单变分量子线路",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.134,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -491,9 +546,9 @@
       "chapter": "3_best_practices",
       "name": "08_torch_quantum_training",
       "title": "08 — Torch 集成后的量子线路",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: pytorch (torch installed), matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.673,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -502,9 +557,9 @@
       "chapter": "3_best_practices",
       "name": "09_calibration_qem_dummy",
       "title": "09 — Calibration + QEM",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.114,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -513,9 +568,9 @@
       "chapter": "3_best_practices",
       "name": "10_xeb_workflow_dummy",
       "title": "10 — XEB workflow",
-      "verdict": "skip",
-      "skip_reason": "missing requirements: matplotlib (matplotlib installed)",
-      "duration_seconds": null,
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.14,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -526,7 +581,7 @@
       "title": "01 — CLI walkthrough: all the ``uniqc`` subcommands",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 4.394,
+      "duration_seconds": 17.734,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -537,7 +592,7 @@
       "title": "01 — Gateway / WebUI: programmatic launch and persistence",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.142,
+      "duration_seconds": 0.168,
       "n_offending": 0,
       "n_ignored": 0
     }

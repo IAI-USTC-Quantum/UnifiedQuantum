@@ -4,6 +4,15 @@ from .compiler import TranspilerConfig as TranspilerConfig
 from .compiler import compile as compile
 from .converter import convert_oir_to_qasm as convert_oir_to_qasm
 from .converter import convert_qasm_to_oir as convert_qasm_to_oir
+from .decompose import (
+    QASM2_UNREPRESENTABLE_GATES as QASM2_UNREPRESENTABLE_GATES,
+)
+from .decompose import (
+    decompose_for_qasm2 as decompose_for_qasm2,
+)
+from .decompose import (
+    decompose_opcode_for_qasm2 as decompose_opcode_for_qasm2,
+)
 from .policy import (
     PLATFORM_BASIS_GATES as PLATFORM_BASIS_GATES,
 )

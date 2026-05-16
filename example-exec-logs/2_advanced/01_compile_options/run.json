@@ -10,6 +10,7 @@
   "stdout": "== compile target: dummy:virtual-line-4 ==\nQINIT 4\nCREG 2\nRZ q[0], (1.5707963267948966)\nSX q[0]\nRZ q[0], (1.5707963267948966)\nRZ q[1], (1.5707963267948966)\nSX q[1]\nRZ q[1], (3.141592653589793)\nCZ q[0], q[1]\nSX q[1]\nRZ q[1], (1.5707963267948966)\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\n\n== compile target: dummy:virtual-grid-2x2 ==\nQINIT 4\nCREG 2\nRZ q[0], (1.5707963267948966)\nSX q[0]\nRZ q[0], (1.5707963267948966)\nRZ q[1], (1.5707963267948966)\nSX q[1]\nRZ q[1], (3.141592653589793)\nCZ q[0], q[1]\nSX q[1]\nRZ q[1], (1.5707963267948966)\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\n\n",
   "stderr": "",
   "warnings": [
+    "DeprecationWarning: uniqc.backend_adapter.task.adapters.quafu_adapter is deprecated; the Quafu platform SDK (pyquafu) is no longer maintained and the [quafu] extra has been removed. Install pyquafu manually if needed (pip install pyquafu, requires numpy<2). (__init__.py:43)",
     "DeprecationWarning: Since backends now support running jobs that contain both fractional gates and dynamic circuit, IBMFractionalTranslationPlugin is deprecated as of qiskit-ibm-runtime 0.42.0 and will be removed no sooner than 3 months after the release date. Use IBMDynamicFractionalTranslationPlugin instead. (extension.py:340)",
     "DeprecationWarning: Since backends now support running jobs that contain both fractional gates and dynamic circuit, IBMFractionalTranslationPlugin is deprecated as of qiskit-ibm-runtime 0.42.0 and will be removed no sooner than 3 months after the release date. Use IBMDynamicFractionalTranslationPlugin instead. (extension.py:340)",
     "DeprecationWarning: Since backends now support running jobs that contain both fractional gates and dynamic circuit, IBMFractionalTranslationPlugin is deprecated as of qiskit-ibm-runtime 0.42.0 and will be removed no sooner than 3 months after the release date. Use IBMDynamicFractionalTranslationPlugin instead. (extension.py:340)",
@@ -19,5 +20,5 @@
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.086
+  "duration_seconds": 0.755
 }

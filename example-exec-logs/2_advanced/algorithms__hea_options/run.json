@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/algorithms/hea_options.py",
+  "chapter": "2_advanced",
+  "name": "algorithms__hea_options",
+  "title": "Hardware-Efficient Ansatz (HEA) -- Configuration Options.",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "\n============================================================\nHEA Configuration Demo (n_qubits=4, depth=2)\n============================================================\n============================================================\nDemo 1: Rotation Gate Configurations\n============================================================\n\n  Default (RZ + RY):\n    Parameters: 16\n\n  RZ+RY circuit:\n    Qubits used: 4\n    Gate count: 24\n\n  RX only:\n    Parameters: 8\n\n  RX circuit:\n    Qubits used: 4\n    Gate count: 16\n\n  RX + RY + RZ (full):\n    Parameters: 24\n\n  Full rotation circuit:\n    Qubits used: 4\n    Gate count: 32\n\n  RZ+RY statevector norm: 1.0000000000\n\n  RX statevector norm: 1.0000000000\n\n  RX+RY+RZ statevector norm: 1.0000000000\n\n============================================================\nDemo 2: Entangling Gate Configurations\n============================================================\n\n  Non-parametric gates:\n    CNOT    :  16 params\n\n  CNOT circuit:\n    Qubits used: 4\n    Gate count: 24\n    CZ      :  16 params\n\n  CZ circuit:\n    Qubits used: 4\n    Gate count: 24\n    ISWAP   :  16 params\n\n  ISWAP circuit:\n    Qubits used: 4\n    Gate count: 24\n\n  Parametric gates (extra params per edge):\n    CRX     :  24 params\n\n  CRX circuit:\n    Qubits used: 4\n    Gate count: 24\n    XX      :  24 params\n\n  XX circuit:\n    Qubits used: 4\n    Gate count: 24\n    YY      :  24 params\n\n  YY circuit:\n    Qubits used: 4\n    Gate count: 24\n    ZZ      :  24 params\n\n  ZZ circuit:\n    Qubits used: 4\n    Gate count: 24\n\n  CNOT statevector norm: 1.0000000000\n\n  CZ statevector norm: 1.0000000000\n\n  CRX statevector norm: 1.0000000000\n\n  XX statevector norm: 1.0000000000\n\n============================================================\nDemo 3: Entanglement Topologies\n============================================================\n\n  LINEAR    :\n    Parameters: 16\n\n  LINEAR circuit:\n    Qubits used: 4\n    Gate count: 22\n\n  RING      :\n    Parameters: 16\n\n  RING circuit:\n    Qubits used: 4\n    Gate count: 24\n\n  FULL      :\n    Parameters: 16\n\n  FULL circuit:\n    Qubits used: 4\n    Gate count: 28\n\n  STAR      :\n    Parameters: 16\n\n  STAR circuit:\n    Qubits used: 4\n    Gate count: 22\n\n  BRICKWORK :\n    Parameters: 16\n\n  BRICKWORK circuit:\n    Qubits used: 4\n    Gate count: 19\n\n  CUSTOM (user-defined edges):\n    Edges: [(0, 1), (0, 2), (0, 3)]\n    Parameters: 16\n\n  Custom circuit:\n    Qubits used: 4\n    Gate count: 22\n\n============================================================\nDemo Complete\n============================================================\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.005
+}
