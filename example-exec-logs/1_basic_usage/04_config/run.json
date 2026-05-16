@@ -7,7 +7,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "written to: /tmp/uniqc-config-demo-ecrqvn27/config.yaml\nactive profile: demo\noriginq token (redacted): originq-token-redacted\nvalidation errors: []\n\nCLI equivalents:\n  uniqc config init\n  uniqc config set originq.token YOUR_TOKEN\n  uniqc config set ibm.proxy.http http://proxy.example.com:8080\n  uniqc config validate\n",
+  "stdout": "written to: /tmp/uniqc-config-demo-2a8vwdbh/config.yaml\nactive profile: demo\noriginq token (redacted): originq-token-redacted\nvalidation errors: []\n\nCLI equivalents:\n  uniqc config init\n  uniqc config set originq.token YOUR_TOKEN\n  uniqc config set ibm.proxy.http http://proxy.example.com:8080\n  uniqc config validate\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

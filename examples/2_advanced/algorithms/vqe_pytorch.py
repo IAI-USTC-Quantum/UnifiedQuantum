@@ -4,7 +4,6 @@ Demonstrates variational quantum eigensolver with Adam optimizer,
 using TorchQuantum's differentiable simulation (no parameter-shift rule).
 
 [doc-require: torchquantum]
-[doc-skip-execute]
 """
 
 try:

@@ -23,5 +23,5 @@ corrected: {0: 0.0, 1: 200.0}
 
 **Figures**
 
-![09 — Calibration + QEM — figure-01.png](../_generated/examples/3_best_practices/figures/09_calibration_qem_dummy/figure-01.png)
+![09 — Calibration + QEM — figure-01.svg](../_generated/examples/3_best_practices/figures/09_calibration_qem_dummy/figure-01.svg)
 

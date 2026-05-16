@@ -13,10 +13,10 @@
   "stderr": "",
   "warnings": [],
   "figure_files": [
-    "figure-01.png"
+    "figure-01.svg"
   ],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.094
+  "duration_seconds": 0.08
 }

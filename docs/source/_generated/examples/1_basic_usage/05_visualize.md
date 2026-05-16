@@ -20,11 +20,11 @@ Uses ``Simulator`` (unified simulator class from ``uniqc.simulator``).
 **Stdout**
 
 ```text
-counts: {7: 484, 0: 540}
-probabilities: {'111': 0.47265625, '000': 0.52734375}
+counts: {0: 531, 7: 493}
+probabilities: {'000': 0.5185546875, '111': 0.4814453125}
 ```
 
 **Figures**
 
-![05 — Visualize circuits and results — figure-01.png](../_generated/examples/1_basic_usage/figures/05_visualize/figure-01.png)
+![05 — Visualize circuits and results — figure-01.svg](../_generated/examples/1_basic_usage/figures/05_visualize/figure-01.svg)
 

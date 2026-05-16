@@ -9,14 +9,14 @@
     "matplotlib"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "counts: {7: 484, 0: 540}\nprobabilities: {'111': 0.47265625, '000': 0.52734375}\n",
+  "stdout": "counts: {0: 531, 7: 493}\nprobabilities: {'000': 0.5185546875, '111': 0.4814453125}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [
-    "figure-01.png"
+    "figure-01.svg"
   ],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.097
+  "duration_seconds": 0.083
 }

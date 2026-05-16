@@ -35,5 +35,5 @@ probabilities: {'00': 0.4999999999999999, '11': 0.4999999999999999}
 
 **Figures**
 
-![01 — 裸 Circuit、本地模拟与结果可视化 — figure-01.png](../_generated/examples/3_best_practices/figures/01_bare_circuit_simulation/figure-01.png)
+![01 — 裸 Circuit、本地模拟与结果可视化 — figure-01.svg](../_generated/examples/3_best_practices/figures/01_bare_circuit_simulation/figure-01.svg)
 

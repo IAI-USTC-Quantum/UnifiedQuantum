@@ -16,11 +16,11 @@
 
 ```text
 torch parameter: Parameter containing:
-tensor(2.7685, requires_grad=True)
-last rows: [(13, 2.434000015258789, -0.51, -0.815), (14, 2.6207499504089355, -0.76, -0.6225), (15, 2.7684998512268066, -0.895, -0.4925)]
+tensor(2.6620, requires_grad=True)
+last rows: [(13, 2.2690000534057617, -0.485, -0.9), (14, 2.49399995803833, -0.63, -0.75), (15, 2.6619999408721924, -0.815, -0.56)]
 ```
 
 **Figures**
 
-![08 — Torch 集成后的量子线路 — figure-01.png](../_generated/examples/3_best_practices/figures/08_torch_quantum_training/figure-01.png)
+![08 — Torch 集成后的量子线路 — figure-01.svg](../_generated/examples/3_best_practices/figures/08_torch_quantum_training/figure-01.svg)
 
