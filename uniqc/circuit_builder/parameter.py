@@ -171,13 +171,13 @@ class Parameters:
 
         Args:
             name: Base name for parameters
-            size: Number of parameters in the array
+            size: Number of parameters in the array (can be 0 for empty parameter sets)
 
         Raises:
-            ValueError: If size is not positive
+            ValueError: If size is negative
         """
-        if size <= 0:
-            raise ValueError(f"Parameters size must be positive, got {size}")
+        if size < 0:
+            raise ValueError(f"Parameters size must be non-negative, got {size}")
         self._name = name
         self._params: list[Parameter] = [Parameter(f"{name}_{i}") for i in range(size)]
 

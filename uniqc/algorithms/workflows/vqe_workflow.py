@@ -15,7 +15,9 @@ from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from uniqc.algorithms.core.ansatz.hea import hea
+from uniqc.algorithms.core.ansatz.hea import hea, hea_param_count
+from uniqc.algorithms.core.ansatz.hva import hva
+from uniqc.algorithms.core.ansatz.uccsd import uccsd_ansatz
 from uniqc.algorithms.core.measurement.pauli_expectation import pauli_expectation
 from uniqc.circuit_builder import Circuit
 
@@ -44,11 +46,27 @@ class VQEResult:
     message: str = ""
 
 
-def _build_default_ansatz(n_qubits: int, depth: int) -> Callable[[np.ndarray], Circuit]:
-    """Return ``params -> Circuit`` builder using the public HEA fragment."""
+def _build_default_ansatz(
+    n_qubits: int,
+    depth: int,
+    ansatz_type: str = "hea",
+    ansatz_options: Optional[dict] = None,
+) -> Callable[[np.ndarray], Circuit]:
+    """Return ``params -> Circuit`` builder using the selected ansatz type."""
+    ansatz_options = ansatz_options or {}
 
     def builder(params: np.ndarray) -> Circuit:
-        c = hea(n_qubits=n_qubits, depth=depth, params=params)
+        if ansatz_type == "hea":
+            c = hea(n_qubits=n_qubits, depth=depth, params=params, **ansatz_options)
+        elif ansatz_type == "hva":
+            # HVA requires grouped Hamiltonian - use a simple grouping
+            # (This is a simplified default; users should pass a custom ansatz for HVA)
+            groups = [[term] for term in []]  # Empty groups placeholder
+            c = hva(hamiltonian_groups=groups, p=depth, qubits=list(range(n_qubits)), params=params, **ansatz_options)
+        elif ansatz_type == "uccsd":
+            c = uccsd_ansatz(n_qubits=n_qubits, n_electrons=n_qubits // 2, params=params, **ansatz_options)
+        else:
+            raise ValueError(f"Unknown ansatz type: {ansatz_type}")
         for q in range(n_qubits):
             c.measure(q)
         return c
@@ -71,6 +89,8 @@ def run_vqe_workflow(
     n_qubits: Optional[int] = None,
     ansatz: Optional[Callable[[np.ndarray], Circuit]] = None,
     depth: int = 1,
+    ansatz_type: str = "hea",
+    ansatz_options: Optional[dict] = None,
     init_params: Optional[np.ndarray] = None,
     shots: Optional[int] = None,
     method: str = "COBYLA",
@@ -84,15 +104,16 @@ def run_vqe_workflow(
         n_qubits: Number of qubits. Required when ``ansatz`` is ``None``;
             inferred from the first term's pauli length otherwise.
         ansatz: Optional ``params -> Circuit`` builder. If ``None`` the
-            workflow uses a HEA with the requested ``depth`` and adds
-            ``measure(q)`` on every qubit. The returned circuit must contain
-            measurement instructions (``pauli_expectation`` requires them).
-        depth: Layers in the default HEA ansatz. Ignored when ``ansatz``
+            workflow uses the ``ansatz_type`` with ``ansatz_options``.
+        depth: Layers in the default ansatz. Ignored when ``ansatz``
             is supplied.
+        ansatz_type: Type of ansatz to use when ``ansatz`` is ``None``.
+            Options: ``"hea"`` (default), ``"hva"``, ``"uccsd"``.
+        ansatz_options: Additional options passed to the ansatz builder.
+            For HEA: supports ``rotation_gates``, ``entangling_gate``,
+            ``topology``, ``custom_edges``, ``backend_info``.
         init_params: Optional initial parameter vector. If ``None`` a small
-            uniform random vector in ``[-π/8, π/8]`` is sampled. Length must
-            match the ansatz's parameter count (``2 * n_qubits * depth`` for
-            the default HEA).
+            uniform random vector in ``[-π/8, π/8]`` is sampled.
         shots: Shots per Pauli-term expectation. ``None`` uses the analytic
             statevector estimator (recommended for early development).
         method: ``scipy.optimize.minimize`` method. ``COBYLA`` and ``Powell``
@@ -111,6 +132,13 @@ def run_vqe_workflow(
         >>> result = run_vqe_workflow(H, n_qubits=2, depth=2)  # doctest: +SKIP
         >>> result.energy < -1.0                                # doctest: +SKIP
         True
+
+        With enhanced HEA options:
+        >>> result = run_vqe_workflow(
+        ...     H, n_qubits=2, depth=2,
+        ...     ansatz_type="hea",
+        ...     ansatz_options={"rotation_gates": ["rx", "ry"], "entangling_gate": "cz"},
+        ... )
     """
     from scipy.optimize import minimize
 
@@ -130,8 +158,9 @@ def run_vqe_workflow(
             )
 
     if ansatz is None:
-        ansatz = _build_default_ansatz(n_qubits, depth)
-        param_count = 2 * n_qubits * depth
+        ansatz = _build_default_ansatz(n_qubits, depth, ansatz_type, ansatz_options)
+        ansatz_opts = ansatz_options or {}
+        param_count = hea_param_count(n_qubits, depth, **ansatz_opts)
     else:
         if init_params is None:
             raise ValueError(

@@ -35,6 +35,18 @@
 ```{include} ../_generated/examples/2_advanced/algorithms__qnn_classifier.md
 ```
 
+```{include} ../_generated/examples/2_advanced/algorithms__hea_options.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__qaoa_variants.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__hva_example.md
+```
+
+```{include} ../_generated/examples/2_advanced/algorithms__parameters_demo.md
+```
+
 ## 线路片段
 
 ```{include} ../_generated/examples/2_advanced/circuits__amplitude_estimation.md
