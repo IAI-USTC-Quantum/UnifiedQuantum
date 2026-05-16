@@ -264,3 +264,119 @@ class TestTopologyGenerator:
         assert len(edges_even) == 2
         assert (1, 2) in edges_odd
         assert len(edges_odd) == 1
+
+
+class TestAnsatzParameters:
+    """Tests for ansatz parameter integration with Parameters class."""
+
+    def run_test_hea_auto_generates_parameters(self):
+        """HEA should auto-generate Parameters when params=None."""
+        from uniqc.circuit_builder.parameter import Parameters
+        c = hea(n_qubits=2, depth=1)
+        assert c._params is not None
+        assert isinstance(c._params, Parameters)
+        # Default: RZ+RY gates = 2 * n_qubits * depth = 4
+        assert len(c._params) == 4
+        assert c._params.name == "theta_hea"
+
+    def run_test_hea_with_parameters_object(self):
+        """HEA should accept Parameters object as input."""
+        from uniqc.circuit_builder.parameter import Parameters
+        params = Parameters("my_theta", size=4)  # 2 * 2 * 1 = 4
+        params.bind([0.1] * 4)
+        c = hea(n_qubits=2, depth=1, params=params)
+        assert c._params is params  # Same object returned
+        assert c._params.name == "my_theta"
+
+    def run_test_hea_with_numpy_backward_compat(self):
+        """HEA should still accept numpy arrays for backward compatibility."""
+        import numpy as np
+        c = hea(n_qubits=2, depth=1, params=np.zeros(4))
+        assert c._params is not None
+        sv = _statevector(c)
+        assert abs(np.linalg.norm(sv) - 1.0) < 1e-10
+
+    def run_test_qaoa_parameters(self):
+        """QAOA should auto-generate Parameters for betas and gammas."""
+        from uniqc.circuit_builder.parameter import Parameters
+        H = [("Z0Z1", 1.0)]
+        c = qaoa_ansatz(H, p=1)
+        assert c._params is not None
+        assert "betas" in c._params
+        assert "gammas" in c._params
+        assert isinstance(c._params["betas"], Parameters)
+        assert isinstance(c._params["gammas"], Parameters)
+        assert len(c._params["betas"]) == 1
+        assert len(c._params["gammas"]) == 1
+
+    def run_test_qaoa_with_parameters(self):
+        """QAOA should accept Parameters objects."""
+        from uniqc.circuit_builder.parameter import Parameters
+        betas = Parameters("beta", size=1)
+        gammas = Parameters("gamma", size=1)
+        betas.bind([0.5])
+        gammas.bind([0.3])
+        H = [("Z0Z1", 1.0)]
+        c = qaoa_ansatz(H, p=1, betas=betas, gammas=gammas)
+        assert c._params["betas"] is betas
+        assert c._params["gammas"] is gammas
+
+    def run_test_hva_parameters(self):
+        """HVA should auto-generate Parameters."""
+        from uniqc.circuit_builder.parameter import Parameters
+        groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
+        c = hva(groups, p=1)
+        assert c._params is not None
+        assert isinstance(c._params, Parameters)
+        assert len(c._params) == 2  # 2 groups * 1 layer
+        assert c._params.name == "theta_hva"
+
+    def run_test_hva_with_parameters(self):
+        """HVA should accept Parameters object."""
+        from uniqc.circuit_builder.parameter import Parameters
+        params = Parameters("my_hva", size=2)
+        params.bind([0.1, 0.2])
+        groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
+        c = hva(groups, p=1, params=params)
+        assert c._params is params
+        assert c._params.name == "my_hva"
+
+    def run_test_uccsd_parameters(self):
+        """UCCSD should auto-generate Parameters (zero-initialized)."""
+        from uniqc.circuit_builder.parameter import Parameters
+        c = uccsd_ansatz(n_qubits=4, n_electrons=2)
+        assert c._params is not None
+        assert isinstance(c._params, Parameters)
+        # 5 params: 2*2=4 singles + 1 double for (0,1)->(2,3)
+        assert len(c._params) == 5
+        assert c._params.name == "theta_uccsd"
+
+    def run_test_uccsd_with_parameters(self):
+        """UCCSD should accept Parameters object."""
+        from uniqc.circuit_builder.parameter import Parameters
+        params = Parameters("my_uccsd", size=5)
+        params.bind([0.1] * 5)
+        c = uccsd_ansatz(n_qubits=4, n_electrons=2, params=params)
+        assert c._params is params
+        assert c._params.name == "my_uccsd"
+
+    def run_test_hea_parameter_rebinding(self):
+        """Parameters should be rebindable after circuit creation."""
+        from uniqc.circuit_builder.parameter import Parameters
+        c = hea(n_qubits=2, depth=1)
+        # Bind new values
+        new_values = [0.5] * len(c._params)
+        c._params.bind(new_values)
+        # Create circuit with new values
+        c2 = hea(n_qubits=2, depth=1, params=c._params)
+        assert c2._params[0].is_bound
+        assert abs(c2._params[0].evaluate() - 0.5) < 1e-10
+
+    def run_test_ma_qaoa_parameters(self):
+        """MA-QAOA should handle multi-angle Parameters correctly."""
+        from uniqc.circuit_builder.parameter import Parameters
+        H = [("Z0Z1", 1.0), ("Z1Z2", 0.5)]
+        c = qaoa_ansatz(H, p=2, multi_angle=True)
+        # 2 terms * 2 layers = 4 gammas, 3 qubits * 2 layers = 6 betas
+        assert len(c._params["gammas"]) == 4
+        assert len(c._params["betas"]) == 6

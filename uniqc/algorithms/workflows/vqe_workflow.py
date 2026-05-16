@@ -159,7 +159,8 @@ def run_vqe_workflow(
 
     if ansatz is None:
         ansatz = _build_default_ansatz(n_qubits, depth, ansatz_type, ansatz_options)
-        param_count = hea_param_count(n_qubits, depth, **ansatz_options)
+        ansatz_opts = ansatz_options or {}
+        param_count = hea_param_count(n_qubits, depth, **ansatz_opts)
     else:
         if init_params is None:
             raise ValueError(

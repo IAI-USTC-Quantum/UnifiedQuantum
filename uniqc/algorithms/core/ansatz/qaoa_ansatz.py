@@ -6,12 +6,15 @@ combinatorial optimisation problems.
 
 __all__ = ["qaoa_ansatz"]
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
 
 from ._pauli_unitary import _parse_pauli_string, _apply_cost_unitary
+
+if TYPE_CHECKING:
+    from uniqc.circuit_builder.parameter import Parameters
 
 
 def _apply_mixer_unitary(
@@ -32,8 +35,8 @@ def qaoa_ansatz(
     cost_hamiltonian: List[Tuple[str, float]],
     p: int = 1,
     qubits: Optional[List[int]] = None,
-    betas: Optional[np.ndarray] = None,
-    gammas: Optional[np.ndarray] = None,
+    betas: Optional[Union["Parameters", np.ndarray]] = None,
+    gammas: Optional[Union["Parameters", np.ndarray]] = None,
     *,
     mixer: str = "x",
     initial_state: Optional["Circuit"] = None,
@@ -93,51 +96,57 @@ def qaoa_ansatz(
 
     n_terms = len(cost_hamiltonian)
 
+    # Import Parameters for auto-generation
+    from uniqc.circuit_builder.parameter import Parameters as ParamClass
+
+    def _validate_and_convert_params(
+        params: Optional[Union[ParamClass, np.ndarray]],
+        expected_len: int,
+        name: str,
+    ) -> ParamClass:
+        """Validate and convert params to Parameters object."""
+        if params is None:
+            # Auto-generate named Parameters
+            p_obj = ParamClass(f"{name}_qaoa", size=expected_len)
+            rng = np.random.default_rng(0)
+            p_obj.bind(list(rng.uniform(0, np.pi, size=expected_len)))
+            return p_obj
+        elif isinstance(params, ParamClass):
+            if len(params) != expected_len:
+                raise ValueError(
+                    format_enriched_message(
+                        f"{name} requires {expected_len} parameters, got {len(params)}",
+                        "circuit_validation",
+                    )
+                )
+            if not params[0].is_bound:
+                rng = np.random.default_rng(0)
+                params.bind(list(rng.uniform(0, np.pi, size=expected_len)))
+            return params
+        else:
+            # Convert np.ndarray to Parameters
+            params_arr = np.asarray(params)
+            if len(params_arr) != expected_len:
+                raise ValueError(
+                    format_enriched_message(
+                        f"{name} requires {expected_len} parameters, got {len(params_arr)}",
+                        "circuit_validation",
+                    )
+                )
+            p_obj = ParamClass(f"{name}_qaoa", size=expected_len)
+            p_obj.bind(list(params_arr.flatten()))
+            return p_obj
+
     # Handle multi-angle QAOA (MA-QAOA)
     if multi_angle:
-        # MA-QAOA: each term gets its own gamma, each qubit gets its own beta
         total_gammas = n_terms * p
         total_betas = n_qubits * p
-        if gammas is not None:
-            if len(gammas) != total_gammas:
-                raise ValueError(
-                    format_enriched_message(
-                        f"MA-QAOA requires {total_gammas} gammas (n_terms={n_terms} × p={p}), "
-                        f"got {len(gammas)}",
-                        "circuit_validation",
-                    )
-                )
-        else:
-            gammas = np.random.uniform(0, np.pi, size=total_gammas)
-        if betas is not None:
-            if len(betas) != total_betas:
-                raise ValueError(
-                    format_enriched_message(
-                        f"MA-QAOA requires {total_betas} betas (n_qubits={n_qubits} × p={p}), "
-                        f"got {len(betas)}",
-                        "circuit_validation",
-                    )
-                )
-        else:
-            betas = np.random.uniform(0, np.pi, size=total_betas)
+        gammas = _validate_and_convert_params(gammas, total_gammas, "gammas")
+        betas = _validate_and_convert_params(betas, total_betas, "betas")
     else:
         # Standard QAOA
-        if betas is None:
-            betas = np.random.uniform(0, np.pi, size=p)
-        if gammas is None:
-            gammas = np.random.uniform(0, np.pi, size=p)
-
-        if len(betas) != p:
-            raise ValueError(
-                format_enriched_message(f"betas length ({len(betas)}) must equal p ({p})", "circuit_validation")
-            )
-        if len(gammas) != p:
-            raise ValueError(
-                format_enriched_message(f"gammas length ({len(gammas)}) must equal p ({p})", "circuit_validation")
-            )
-
-    betas = np.asarray(betas)
-    gammas = np.asarray(gammas)
+        gammas = _validate_and_convert_params(gammas, p, "gammas")
+        betas = _validate_and_convert_params(betas, p, "betas")
 
     circuit = Circuit()
 
@@ -153,22 +162,25 @@ def qaoa_ansatz(
         if multi_angle:
             # MA-QAOA: cost unitary with per-term gammas
             for t, (pauli_str, coeff) in enumerate(cost_hamiltonian):
-                gamma = float(gammas[layer * n_terms + t])
+                gamma = gammas[layer * n_terms + t].evaluate()
                 _apply_cost_unitary(circuit, [(pauli_str, coeff)], gamma)
             # MA-QAOA: mixer with per-qubit betas
             for i, q in enumerate(qubits):
-                beta = float(betas[layer * n_qubits + i])
+                beta = betas[layer * n_qubits + i].evaluate()
                 circuit.h(q)
                 if abs(2 * beta) > 1e-15:
                     circuit.rz(q, float(2 * beta))
                 circuit.h(q)
         else:
             # Standard QAOA
-            _apply_cost_unitary(circuit, cost_hamiltonian, float(gammas[layer]))
+            _apply_cost_unitary(circuit, cost_hamiltonian, gammas[layer].evaluate())
             if mixer == "xy":
-                _apply_xy_mixer(circuit, qubits, float(betas[layer]))
+                _apply_xy_mixer(circuit, qubits, betas[layer].evaluate())
             else:
-                _apply_mixer_unitary(circuit, n_qubits, qubits, float(betas[layer]))
+                _apply_mixer_unitary(circuit, n_qubits, qubits, betas[layer].evaluate())
+
+    # Attach parameters to circuit for traceability
+    circuit._params = {"betas": betas, "gammas": gammas}
 
     return circuit
 

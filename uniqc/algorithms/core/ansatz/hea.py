@@ -6,10 +6,13 @@ entangling gates, and entanglement topologies, suitable for NISQ devices.
 
 __all__ = ["hea", "hea_param_count"]
 
-from typing import Callable, List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, List, Optional, Tuple, Union, TYPE_CHECKING, overload
 import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+
+if TYPE_CHECKING:
+    from uniqc.circuit_builder.parameter import Parameters
 
 from ._types import EntanglingGate, EntanglementTopology, RotationGate
 from ._topology import generate_edges, count_edges_per_layer
@@ -186,7 +189,7 @@ def hea(
     n_qubits: int,
     depth: int = 1,
     qubits: Optional[List[int]] = None,
-    params: Optional[np.ndarray] = None,
+    params: Optional[Union["Parameters", np.ndarray]] = None,
     *,
     rotation_gates: Optional[List[str | RotationGate]] = None,
     entangling_gate: Optional[str | EntanglingGate] = None,
@@ -283,11 +286,19 @@ def hea(
 
     n_params = rot_params_per_layer * depth + sum(ent_params_per_layer)
 
-    # Initialize params
+    # Import Parameters for auto-generation
+    from uniqc.circuit_builder.parameter import Parameters as ParamClass
+
+    # Initialize params - accept both Parameters and np.ndarray
     if params is None:
-        params = np.random.uniform(0, 2 * np.pi, size=n_params)
-    else:
-        params = np.asarray(params)
+        # Auto-generate named Parameters
+        params = ParamClass("theta_hea", size=n_params)
+        # Initialize with random values for immediate use
+        rng = np.random.default_rng(0)
+        param_values = rng.uniform(0, 2 * np.pi, size=n_params)
+        params.bind(list(param_values))
+    elif isinstance(params, ParamClass):
+        # Validate size
         if len(params) != n_params:
             raise ValueError(
                 format_enriched_message(
@@ -296,6 +307,24 @@ def hea(
                     "circuit_validation",
                 )
             )
+        # Ensure Parameters are bound for gate evaluation
+        if not params[0].is_bound:
+            rng = np.random.default_rng(0)
+            param_values = rng.uniform(0, 2 * np.pi, size=n_params)
+            params.bind(list(param_values))
+    else:
+        # Convert np.ndarray to list for Parameters
+        params_arr = np.asarray(params)
+        if len(params_arr) != n_params:
+            raise ValueError(
+                format_enriched_message(
+                    f"Expected {n_params} parameters, got {len(params_arr)}. "
+                    f"rot_params={rot_params_per_layer * depth}, ent_params={sum(ent_params_per_layer)}",
+                    "circuit_validation",
+                )
+            )
+        params = ParamClass("theta_hea", size=n_params)
+        params.bind(list(params_arr.flatten()))
 
     circuit = Circuit()
     idx = 0
@@ -305,8 +334,9 @@ def hea(
         # Single-qubit rotations
         for q in qubits:
             for _ in rot_gates:
-                if abs(params[idx]) > 1e-15:
-                    _apply_rotation(circuit, q, rot_gates[idx % len(rot_gates)], float(params[idx]))
+                val = params[idx].evaluate()
+                if abs(val) > 1e-15:
+                    _apply_rotation(circuit, q, rot_gates[idx % len(rot_gates)], val)
                 idx += 1
 
         # Entangling layer
@@ -315,7 +345,7 @@ def hea(
 
         for u, v in edges:
             if ent_gate.is_parametric:
-                theta = float(params[idx]) if idx < len(params) else 0.0
+                theta = params[idx].evaluate() if idx < len(params) else 0.0
                 idx += 1
             else:
                 theta = 0.0
@@ -324,6 +354,9 @@ def hea(
                 ent_func(circuit, u, v, theta * 2)
             else:
                 ent_func(circuit, u, v, theta)
+
+    # Attach parameters to circuit for traceability
+    circuit._params = params
 
     return circuit
 

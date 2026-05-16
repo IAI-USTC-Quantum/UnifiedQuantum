@@ -6,7 +6,7 @@ terms, suitable for quantum chemistry simulations.
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 import numpy as np
 from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
@@ -15,12 +15,15 @@ from ._pauli_unitary import _apply_cost_unitary
 
 __all__ = ["hva"]
 
+if TYPE_CHECKING:
+    from uniqc.circuit_builder.parameter import Parameters
+
 
 def hva(
     hamiltonian_groups: List[List[Tuple[str, float]]],
     p: int = 1,
     qubits: Optional[List[int]] = None,
-    params: Optional[np.ndarray] = None,
+    params: Optional[Union["Parameters", np.ndarray]] = None,
     hf_state: Optional[List[int]] = None,
 ) -> Circuit:
     """Build a Hamiltonian Variational Ansatz (HVA) circuit.
@@ -78,10 +81,15 @@ def hva(
     n_groups = len(hamiltonian_groups)
     n_params = n_groups * p
 
+    # Import Parameters for auto-generation
+    from uniqc.circuit_builder.parameter import Parameters as ParamClass
+
     if params is None:
-        params = np.random.uniform(0, np.pi, size=n_params)
-    else:
-        params = np.asarray(params)
+        # Auto-generate named Parameters
+        params = ParamClass("theta_hva", size=n_params)
+        rng = np.random.default_rng(0)
+        params.bind(list(rng.uniform(0, np.pi, size=n_params)))
+    elif isinstance(params, ParamClass):
         if len(params) != n_params:
             raise ValueError(
                 format_enriched_message(
@@ -90,6 +98,22 @@ def hva(
                     "circuit_validation",
                 )
             )
+        if not params[0].is_bound:
+            rng = np.random.default_rng(0)
+            params.bind(list(rng.uniform(0, np.pi, size=n_params)))
+    else:
+        # Convert np.ndarray to Parameters
+        params_arr = np.asarray(params)
+        if len(params_arr) != n_params:
+            raise ValueError(
+                format_enriched_message(
+                    f"Expected {n_params} parameters (n_groups={n_groups} × p={p}), "
+                    f"got {len(params_arr)}",
+                    "circuit_validation",
+                )
+            )
+        params = ParamClass("theta_hva", size=n_params)
+        params.bind(list(params_arr.flatten()))
 
     circuit = Circuit()
 
@@ -103,7 +127,10 @@ def hva(
         for g, group in enumerate(hamiltonian_groups):
             if not group:
                 continue
-            theta = float(params[layer * n_groups + g])
+            theta = params[layer * n_groups + g].evaluate()
             _apply_cost_unitary(circuit, group, theta)
+
+    # Attach parameters to circuit for traceability
+    circuit._params = params
 
     return circuit
