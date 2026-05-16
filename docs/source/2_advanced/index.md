@@ -1,7 +1,9 @@
 # 进阶教程
 
 进阶部分覆盖编译内部机制、区域选择、变分量子算法、含噪 dummy 系统、calibration、
-error mitigation、MPS 模拟器，以及 ``examples/2_advanced/`` 下完整的算法实现示例。
+error mitigation、MPS 模拟器。
+
+算法实现示例已独立为单独章节，见 [算法实现示例](../8_algorithms_examples/index.md)。
 
 本页只列目录索引，仅在你已经熟悉 [基本用法](../1_basic_usage/index.md) 后再进入。
 
@@ -47,14 +49,3 @@ calibration
 testing
 ```
 
-## 算法实现示例（生成）
-
-```{toctree}
-:maxdepth: 1
-
-algorithms
-```
-
-[算法实现示例](algorithms.md) 把 ``examples/2_advanced/`` 下所有 algorithms /
-circuits / measurement / state_preparation / wk180 示例集中在一页里，便于按
-"X 算法在 UnifiedQuantum 怎么写" 直接定位。

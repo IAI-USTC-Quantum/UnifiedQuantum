@@ -52,6 +52,7 @@ source/3_best_practices/index
 source/4_cli/index
 source/5_webui/index
 source/6_api/index
+source/8_algorithms_examples/index
 source/7_releases/index
 ```
 
