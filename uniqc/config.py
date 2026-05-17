@@ -127,17 +127,54 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
 
 def save_config(config: dict[str, Any], config_path: str | Path | None = None) -> None:
     path = Path(config_path) if config_path else CONFIG_FILE
-    path.parent.mkdir(parents=True, exist_ok=True)
+    parent = path.parent
 
+    # Ensure the parent directory exists.  If we are the ones creating it,
+    # make it 0o700 so it cannot be entered by other users on a shared host.
+    # If the user already created it with a looser mode, leave that alone so
+    # we don't surprise them by locking other tooling out.
+    newly_created_parent = not parent.exists()
+    parent.mkdir(parents=True, exist_ok=True)
+    if newly_created_parent:
+        try:
+            os.chmod(parent, 0o700)
+        except OSError:
+            # Best-effort: e.g. Windows ignores mode bits >0o100; don't fail.
+            pass
+
+    tmp_path = parent / f".{path.name}.tmp"
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            yaml.dump(
-                config,
-                f,
-                default_flow_style=False,
-                allow_unicode=True,
-                sort_keys=False,
-            )
+        fd = os.open(
+            str(tmp_path),
+            os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
+            0o600,
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                yaml.dump(
+                    config,
+                    f,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                    sort_keys=False,
+                )
+        except Exception:
+            # Ensure no half-written temp file is left behind.
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+
+        os.replace(tmp_path, path)
+        # Re-tighten in case ``path`` pre-existed with looser perms (replace
+        # preserves the *new* file's mode, but be defensive against umask
+        # quirks or FS-specific behaviours).
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            # Best-effort: Windows / exotic FS may ignore mode bits.
+            pass
     except OSError as e:
         raise ConfigError(format_enriched_message(f"Failed to write configuration file: {e}", "config")) from e
 

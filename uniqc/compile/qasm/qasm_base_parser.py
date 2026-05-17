@@ -13,6 +13,7 @@ from uniqc.circuit_builder.qcircuit import Circuit
 from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
 from uniqc.circuit_builder.translate_qasm2_oir import get_opcode_from_QASM2
 from .qasm_line_parser import OpenQASM2_LineParser
+from ._safe_eval import safe_eval_param
 from .exceptions import NotSupportedGateError, RegisterDefinitionError, RegisterNotFoundError, RegisterOutOfRangeError
 
 
@@ -209,7 +210,6 @@ class OpenQASM2_BaseParser:
         ``bindings`` and substituted as parenthesised expressions so operator
         precedence is preserved.
         """
-        import math
         import re as _re
 
         # Substitute bound parameters first (longest names first to avoid
@@ -217,16 +217,15 @@ class OpenQASM2_BaseParser:
         for name in sorted(bindings, key=len, reverse=True):
             expr = _re.sub(rf"\b{_re.escape(name)}\b", f"({bindings[name]})", expr)
 
-        # Replace QASM constants with their Python equivalents.
-        expr = _re.sub(r"\bpi\b", "math.pi", expr)
-        expr = _re.sub(r"(?<![A-Za-z_])e(?![A-Za-z0-9_])", "math.e", expr)
-
         try:
-            value = eval(expr, {"__builtins__": {}}, {"math": math})
-        except Exception:
+            value = safe_eval_param(expr)
+        except ValueError:
             # Could not collapse to a number (e.g. nested unbound identifier);
             # return the substituted expression so downstream parsing surfaces
-            # the issue with full context.
+            # the issue with full context.  Note: ``safe_eval_param`` raises
+            # ``ValueError`` for both genuinely-unevaluable expressions *and*
+            # for disallowed (potentially-malicious) constructs — the downstream
+            # parser will reject the latter with a clearer error.
             return expr
         return repr(float(value))
 
