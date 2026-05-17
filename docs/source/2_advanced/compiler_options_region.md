@@ -163,7 +163,7 @@ transpile_qasm(qasm_strs, ...)
 
 ### 2.1 为什么需要 `BackendOptions`？
 
-现有 `submit_task(circuit, "originq", shots=1000, backend_name="WK_C180")` 的问题：
+现有 `submit_task(circuit, "originq:WK_C180", shots=1000, measurement_amend=True)` 的问题：
 
 - **无 IDE 自动补全**：字符串参数无法提供类型提示
 - **无文档注解**：不知道有哪些可选参数
@@ -188,7 +188,7 @@ BackendOptions（基类）
 from uniqc import OriginQOptions
 
 opts = OriginQOptions(
-    backend_name="WK_C180",           # OriginQ 后端名
+    backend_name="originq:WK_C180",   # OriginQ 后端名（canonical 'provider:chip' 形式）
     circuit_optimize=True,             # 默认 True，后端执行时优化
     measurement_amend=False,           # 默认 False，测量误差缓解
     auto_mapping=False,                # 默认 False
@@ -230,14 +230,14 @@ from uniqc import BackendOptionsFactory, OriginQOptions
 
 # 从 kwargs dict 构建
 opts = BackendOptionsFactory.from_kwargs("originq", {
-    "backend_name": "WK_C180",
+    "backend_name": "originq:WK_C180",
     "circuit_optimize": False,
 })
 assert isinstance(opts, OriginQOptions)
 
 # 从 dict 规范化（normalize_options 的主入口）
 opts = BackendOptionsFactory.normalize_options(
-    {"backend_name": "WK_C180"}, "originq"
+    {"backend_name": "originq:WK_C180"}, "originq"
 )
 ```
 
@@ -247,17 +247,17 @@ opts = BackendOptionsFactory.normalize_options(
 from uniqc import submit_task, OriginQOptions
 
 # 方式 1：直接传入 BackendOptions 实例（推荐）
-opts = OriginQOptions(backend_name="WK_C180", shots=2000)
-task_id = submit_task(circuit, "originq", options=opts)
+opts = OriginQOptions(backend_name="originq:WK_C180", shots=2000)
+task_id = submit_task(circuit, "originq:WK_C180", options=opts)
 
 # 方式 2：传入 dict（底层自动转换为 BackendOptions）
-task_id = submit_task(circuit, "originq", shots=500, options={
-    "backend_name": "WK_C180",
+task_id = submit_task(circuit, "originq:WK_C180", shots=500, options={
+    "measurement_amend": True,
 })
 
 # 方式 3：纯 kwargs（向后完全兼容，无变化）
-task_id = submit_task(circuit, "originq", shots=500,
-    backend_name="WK_C180",
+task_id = submit_task(circuit, "originq:WK_C180", shots=500,
+    measurement_amend=True,
 )
 ```
 
@@ -426,7 +426,7 @@ print(f"编译后电路: {compiled.originir[:100]}...")
 
 # 5. 提交任务
 opts = OriginQOptions(shots=1000)
-task_id = submit_task(compiled, "originq", options=opts)
+task_id = submit_task(compiled, "originq:WK_C180", options=opts)
 print(f"任务 ID: {task_id}")
 ```
 

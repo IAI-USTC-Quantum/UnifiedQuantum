@@ -35,7 +35,7 @@ Python example::
     circuit.measure(0)
 
     # Validate before submitting
-    result = dry_run_task(circuit, backend='quafu', chip_id='ScQ-P18', shots=1000)
+    result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
     if result.success:
-        task_id = submit_task(circuit, backend='quafu', chip_id='ScQ-P18', shots=1000)
+        task_id = submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)
 """
