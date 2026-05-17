@@ -38,7 +38,7 @@ def main() -> None:
 
     print()
     print("Real-chip submission template (uncomment after `uniqc config set originq.token ...`):")
-    print("    submit_task(circuit, backend='originq', shots=1000, backend_name='WK_C180')")
+    print("    submit_task(circuit, backend='originq:WK_C180', shots=1000)")
 
 
 if __name__ == "__main__":
