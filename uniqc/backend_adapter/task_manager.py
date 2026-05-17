@@ -17,18 +17,18 @@ Usage::
     circuit.measure(0, 1)
 
     # Dry-run: validate circuit offline before submitting
-    result = dry_run_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')
+    result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
     if not result.success:
         print(f"Validation failed: {result.error}")
 
     # Submit task
-    task_id = submit_task(circuit, backend='quafu', shots=1000)
+    task_id = submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)
 
-    # Wait for result
-    result = wait_for_result(task_id, backend='quafu', timeout=300)
+    # Wait for result (backend is auto-resolved from the cached TaskInfo)
+    result = wait_for_result(task_id, timeout=300)
 
     # Query task status
-    info = query_task(task_id, backend='quafu')
+    info = query_task(task_id)
     print(info['status'])  # 'running', 'success', or 'failed'
 
     # Use dummy backend for local simulation
@@ -329,7 +329,7 @@ def dry_run_task(
         >>> circuit = Circuit()
         >>> circuit.h(0)
         >>> circuit.measure(0)
-        >>> result = dry_run_task(circuit, backend='quafu', shots=1000, chip_id='ScQ-P18')
+        >>> result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
         >>> if result.success:
         ...     print("Circuit is valid for submission")
         >>> else:
@@ -2178,7 +2178,7 @@ class TaskManager:
 
     Example:
         >>> manager = TaskManager()
-        >>> task_id = manager.submit(circuit, backend='quafu', shots=1000)
+        >>> task_id = manager.submit(circuit, backend='quafu:ScQ-P18', shots=1000)
         >>> result = manager.wait_for_result(task_id)
         >>> print(result)
     """

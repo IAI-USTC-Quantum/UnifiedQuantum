@@ -66,7 +66,7 @@ from uniqc import submit_task
 
 task_id = submit_task(
     circuit=circuit,
-    backend='originq',
+    backend='originq:WK_C180',
     shots=1000
 )
 ```

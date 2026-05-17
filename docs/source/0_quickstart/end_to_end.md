@@ -12,7 +12,7 @@
 from uniqc import Circuit, submit_task, wait_for_result
 
 c = Circuit(); c.h(0); c.cnot(0, 1); c.measure(0, 1)
-task_id = submit_task(c, backend="originq", shots=1000, backend_name="WK_C180")
+task_id = submit_task(c, backend="originq:WK_C180", shots=1000)
 print(wait_for_result(task_id))
 ```
 

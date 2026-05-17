@@ -7,7 +7,7 @@
 ``dummy:local:simulator`` 上跑一遍。如果你正确装好了 ``unified-quantum`` 并能跑通
 这个脚本，就证明环境是可用的。
 
-真机提交把 ``backend`` 换成 ``"originq"`` 即可（推荐先在 ``uniqc config init`` 里
+真机提交把 ``backend`` 换成 ``"originq:WK_C180"`` 即可（推荐先在 ``uniqc config init`` 里
 配好 ``originq.token``）。要先离线检查可加 ``dry_run=True``。
 """
 

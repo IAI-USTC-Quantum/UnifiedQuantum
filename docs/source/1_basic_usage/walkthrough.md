@@ -55,10 +55,10 @@ from uniqc import Circuit, dry_run_task, submit_task, wait_for_result
 c = Circuit(); c.h(0); c.cnot(0, 1); c.measure(0, 1)
 
 # 1. 离线检查（推荐每次都先 dry_run）
-print(dry_run_task(c, backend="originq", backend_name="WK_C180", shots=1000))
+print(dry_run_task(c, backend="originq:WK_C180", shots=1000))
 
 # 2. 真机提交
-task_id = submit_task(c, backend="originq", backend_name="WK_C180", shots=1000)
+task_id = submit_task(c, backend="originq:WK_C180", shots=1000)
 print(wait_for_result(task_id))
 ```
 

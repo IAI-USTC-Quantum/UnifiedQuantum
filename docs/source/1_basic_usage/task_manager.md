@@ -117,7 +117,7 @@ from uniqc import submit_batch
 
 task_ids = submit_batch(
     circuits,             # 线路列表
-    backend='originq',
+    backend='originq:WK_C180',
     shots=1000
 )
 ```
