@@ -220,9 +220,6 @@ uniqc result <task_id>
 uniqc config init
 uniqc config set originq.token YOUR_TOKEN
 
-# Alternative module entrypoint
-python -m uniqc.cli simulate circuit.ir
-
 # Calibration and QEM data preparation
 uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
 uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10

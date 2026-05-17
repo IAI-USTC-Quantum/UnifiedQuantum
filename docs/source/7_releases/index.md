@@ -17,8 +17,10 @@
   ``task list`` / ``result`` 这些子命令仍然接受 ``--platform``。
 - 你是否在 Python 层面 ``from uniqc.simulator import OriginIR_Simulator`` 或
   ``QASM_Simulator``。这两个类在 ``v0.0.13`` 已经被合并为统一的 ``Simulator`` /
-  ``NoisySimulator``；``program_type=`` 参数同时移除，输入直接走 ``AnyQuantumCircuit``
-  自动归一化。
+  ``NoisySimulator``（通过 ``uniqc.simulator.create_simulator(...)`` /
+  ``get_simulator(...)`` 工厂获取）；输入直接走 ``AnyQuantumCircuit`` 自动归一化，
+  原来的 ``program_type=`` 参数目前仍作为已弃用别名保留（被忽略，仅为一版过渡的
+  向后兼容），新代码请省略该参数。
 - 你是否在用 ``unified-quantum[qiskit]`` 或 ``unified-quantum[quafu]`` 这两个 extras
   装包。``v0.0.13`` 起 ``qiskit`` 已经是核心依赖（``pip install unified-quantum``
   即可），而 ``quafu`` 已归档，需要的人请独立 ``pip install pyquafu`` 并接受
