@@ -41,10 +41,7 @@ _VIRTUAL_Z_GATES = {"Z", "RZ", "U1", "P", "PHASE", "S", "T", "SDG", "TDG"}
 _DEFAULT_BASIS_GATES = ["cz", "sx", "rz"]
 
 
-class TimelineDurationError(ValueError):
-    """Raised when a logical circuit cannot be scheduled without durations."""
-
-# Re-export from central module (local name kept for backward compat within this file)
+# Re-export from central module to preserve the historical local name.
 from uniqc.exceptions import TimelineDurationError as TimelineDurationError  # noqa: F401, E501
 
 

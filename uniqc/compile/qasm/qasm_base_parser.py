@@ -318,27 +318,27 @@ class OpenQASM2_BaseParser:
         try:
             qubit_id = OpenQASM2_BaseParser._compute_id(self.qregs, qreg_name, qreg_id)
             return qubit_id
-        except RegisterNotFoundError:
+        except RegisterNotFoundError as e:
             raise RegisterNotFoundError('Cannot find qreg {}, (defined = {})'.format(
                 qreg_name, self.collected_qregs_str
-            ))
-        except RegisterOutOfRangeError:
+            )) from e
+        except RegisterOutOfRangeError as e:
             raise RegisterOutOfRangeError('qreg {}[{}] out of range.)'.format(
                 qreg_name, qreg_id
-            ))
+            )) from e
         
     def _get_cbit_id(self, creg_name, creg_id):
         try:
             cbit_id = OpenQASM2_BaseParser._compute_id(self.cregs, creg_name, creg_id)
             return cbit_id
-        except RegisterNotFoundError:
+        except RegisterNotFoundError as e:
             raise RegisterNotFoundError('Cannot find creg {}, (defined = {})'.format(
                 creg_name, self.collected_cregs_str
-            ))
-        except RegisterOutOfRangeError:
+            )) from e
+        except RegisterOutOfRangeError as e:
             raise RegisterOutOfRangeError('creg {}[{}] out of range.)'.format(
                 creg_name, creg_id
-            ))
+            )) from e
     
     @staticmethod
     def _check_regs(collected_regs, reg_handler):
@@ -387,14 +387,14 @@ class OpenQASM2_BaseParser:
             self.n_qubit, self.qregs = OpenQASM2_BaseParser._check_regs(self.collected_qregs_str, OpenQASM2_LineParser.handle_qreg)
         except RegisterDefinitionError as e:
             raise RegisterDefinitionError("QReg Definition Error.\n"
-                                          f"Internal error: \n{str(e)}")
+                                          f"Internal error: \n{str(e)}") from e
         
         # process the total number of cbit
         try:
             self.n_cbit, self.cregs = OpenQASM2_BaseParser._check_regs(self.collected_cregs_str, OpenQASM2_LineParser.handle_creg)
         except RegisterDefinitionError as e:
             raise RegisterDefinitionError("CReg Definition Error.\n"
-                                          f"Internal error: \n{str(e)}")
+                                          f"Internal error: \n{str(e)}") from e
         
         # process measurements
         self._process_measurements()

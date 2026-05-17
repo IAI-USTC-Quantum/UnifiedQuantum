@@ -75,7 +75,7 @@ def transpile_qasm(
                 circuit = qasm2_loads(qasm_str, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS)
                 circuits.append(circuit)
             except Exception as e:
-                raise CompilationFailedError(f"Error loading QASM string at index {i}: {e}")
+                raise CompilationFailedError(f"Error loading QASM string at index {i}: {e}") from e
 
         if not circuits:
             print("Warning: No valid circuits were loaded.")
@@ -95,7 +95,7 @@ def transpile_qasm(
                 output_qasm = qasm2_dumps(transpiled_circuit)
                 output_qasm_strings.append(output_qasm)
             except Exception as e:
-                raise CompilationFailedError(f"Error dumping transpiled circuit at index {i} to QASM: {e}")
+                raise CompilationFailedError(f"Error dumping transpiled circuit at index {i} to QASM: {e}") from e
 
         if single_circuit:
             return output_qasm_strings[0]
@@ -104,12 +104,12 @@ def transpile_qasm(
 
     except CompilationFailedError as e:
         raise e
-    except ImportError:
-        raise CompilationFailedError("Error: Qiskit is not installed. Please install it using 'pip install qiskit'")
+    except ImportError as e:
+        raise CompilationFailedError("Error: Qiskit is not installed. Please install it using 'pip install qiskit'") from e
     except qiskit.exceptions.QiskitError as e:
-        raise CompilationFailedError(f"An error occurred during Qiskit operation: {e}")
+        raise CompilationFailedError(f"An error occurred during Qiskit operation: {e}") from e
     except Exception as e:
-        raise CompilationFailedError(f"An unexpected error occurred: {e}")
+        raise CompilationFailedError(f"An unexpected error occurred: {e}") from e
 
 def transpile_originir(
         originir_strings: List[str],

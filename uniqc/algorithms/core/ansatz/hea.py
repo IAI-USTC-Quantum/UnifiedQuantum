@@ -55,13 +55,13 @@ def _normalize_rotation_gates(
         elif isinstance(g, str):
             try:
                 normalized.append(RotationGate(g.lower()))
-            except ValueError:
+            except ValueError as exc:
                 raise ValueError(
                     format_enriched_message(
                         f"Unknown rotation gate: {g!r}. Valid: {[e.value for e in RotationGate]}",
                         "circuit_validation",
                     )
-                )
+                ) from exc
         else:
             raise ValueError(
                 format_enriched_message(
@@ -84,13 +84,13 @@ def _normalize_entangling_gate(
     if isinstance(gate, str):
         try:
             return EntanglingGate(gate.lower())
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 format_enriched_message(
                     f"Unknown entangling gate: {gate!r}. Valid: {[e.value for e in EntanglingGate]}",
                     "circuit_validation",
                 )
-            )
+            ) from exc
     raise ValueError(
         format_enriched_message(
             f"entangling_gate must be a string or EntanglingGate, got {type(gate)}",
@@ -111,13 +111,13 @@ def _normalize_topology(
     if isinstance(topology, str):
         try:
             return EntanglementTopology(topology.lower())
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 format_enriched_message(
                     f"Unknown topology: {topology!r}. Valid: {[e.value for e in EntanglementTopology]}",
                     "circuit_validation",
                 )
-            )
+            ) from exc
     raise ValueError(
         format_enriched_message(
             f"topology must be a string or EntanglementTopology, got {type(topology)}",
