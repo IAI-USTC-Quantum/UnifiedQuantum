@@ -85,10 +85,12 @@ def _apply_cost_unitary(
             circuit.cx(non_id[i][1], non_id[i + 1][1])
 
         # Step 5: Undo basis rotations
+        # Forward Y rotation was Rz(-π/2) then H (matrix H · Rz(-π/2));
+        # the inverse is Rz(+π/2) · H, which in circuit order means
+        # apply H first and then Rz(+π/2).
         for op, q in non_id:
             if op == "X":
                 circuit.h(q)
             elif op == "Y":
-                _angle = np.pi / 2
-                circuit.rz(q, float(_angle))
                 circuit.h(q)
+                circuit.rz(q, float(np.pi / 2))

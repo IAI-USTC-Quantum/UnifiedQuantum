@@ -152,8 +152,12 @@ def compute_operator_gradient(
 ) -> float:
     """Compute the gradient of energy with respect to an operator's parameter.
 
-    Uses the parameter-shift rule:
-    gradient = (E(θ + π/4) - E(θ - π/4)) / 2
+    Uses the coefficient-aware parameter-shift rule. Because the cost-unitary
+    applies ``Rz(2γ·coeff)``, shifting ``γ`` by ``π/(4|coeff|)`` is equivalent
+    to shifting the underlying rotation angle by ``±π/2``. Combining the two
+    halves of the standard parameter-shift identity gives
+
+        dE/dγ = |coeff| · ( E(γ + π/(4|coeff|)) - E(γ - π/(4|coeff|)) ).
 
     Args:
         circuit: Base circuit with current parameters applied.
@@ -163,7 +167,8 @@ def compute_operator_gradient(
         n_qubits: Total number of qubits. Inferred from *circuit* when ``None``.
 
     Returns:
-        Absolute value of the gradient magnitude.
+        Absolute value of the gradient magnitude. Operators with ``coeff == 0``
+        return ``0.0`` (gradient is identically zero).
 
     Note:
         This computes the gradient of ⟨H⟩ with respect to the angle parameter
@@ -172,7 +177,13 @@ def compute_operator_gradient(
     from uniqc.algorithms.core.ansatz._pauli_unitary import _parse_pauli_string
 
     pauli_str, coeff = operator
-    shift = np.pi / 4
+    abs_coeff = abs(coeff)
+    if abs_coeff == 0.0:
+        return 0.0
+
+    # Shift in γ that corresponds to a ±π/2 shift of the underlying
+    # Rz(2γ·coeff) rotation angle.
+    shift = np.pi / (4.0 * abs_coeff)
 
     if n_qubits is None:
         n_qubits = circuit.max_qubit + 1
@@ -201,6 +212,6 @@ def compute_operator_gradient(
     e_plus = energy(circ_plus)
     e_minus = energy(circ_minus)
 
-    # Parameter-shift gradient
-    gradient = (e_plus - e_minus) / 2
+    # Coefficient-aware parameter-shift gradient
+    gradient = abs_coeff * (e_plus - e_minus)
     return abs(gradient)
