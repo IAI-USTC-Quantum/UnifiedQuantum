@@ -107,20 +107,13 @@ jobs:
       run: |
         uv pip install --system pytest pytest-cov ruff httpx
 
-    - name: Install torchquantum (fork; Linux only, not installable from PyPI)
-      if: runner.os == 'Linux'
-      # The upstream torchquantum on PyPI (0.1.8, 2022) pins qiskit<1.0 and is
-      # unusable here. We use a maintained fork with optional qiskit deps.
-      # This cannot live in the `[all]` extra because PyPI rejects published
-      # distributions whose metadata contains direct URL references.
-      run: |
-        uv pip install --system \
-          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
+    # NOTE: torchquantum is intentionally NOT installed until after the main
+    # qiskit/dill-sensitive suite has finished. Installing torchquantum brings
+    # `dill` as a transitive dep, and once `dill` is importable, qiskit's
+    # pickle path for `qiskit.circuit.Qubit` fails in test_transpiler_qiskit.
+    # Running the qiskit tests first in a dill-free environment side-steps it.
 
-    - name: Run non-torchquantum tests with deprecation monitoring
-      # Importing torchquantum registers C++ classes that conflict with qiskit's
-      # dill-based pickling of Qubit objects (test_transpiler_qiskit). Split the
-      # run so the qiskit/dill-sensitive suite executes in a torch-free interpreter.
+    - name: Run non-torchquantum tests with deprecation monitoring (dill-free)
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
@@ -128,6 +121,14 @@ jobs:
           --ignore=uniqc/test/adapter/test_tq_algorithms.py \
           --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
           --ignore=uniqc/test/simulator/test_simulator_factory.py
+
+    - name: Install torchquantum (fork; Linux only, not installable from PyPI)
+      if: runner.os == 'Linux'
+      # See the NOTE above: this install brings `dill`, which is incompatible
+      # with the qiskit transpiler tests. Install after the main pytest runs.
+      run: |
+        uv pip install --system \
+          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
     - name: Run torchquantum-touching tests in a separate process
       env:
