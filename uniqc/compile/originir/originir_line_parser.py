@@ -771,8 +771,8 @@ class OriginIR_LineParser:
                 raise NotImplementedError(f"A invalid line: {line}.")
 
             return operation, q, c, parameter, dagger_flag, control_qubits
-        except AttributeError:
-            raise RuntimeError(f"Error when parsing the line: {line}")
+        except AttributeError as e:
+            raise RuntimeError(f"Error when parsing the line: {line}") from e
 
 
 if __name__ == "__main__":

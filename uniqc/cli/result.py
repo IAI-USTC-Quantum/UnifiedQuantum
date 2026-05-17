@@ -52,7 +52,7 @@ def show_result(
             result_data = _query_result(task_id, platform)
     except Exception as e:
         print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     if result_data is None:
         print_error(f"No result available for task {task_id}")

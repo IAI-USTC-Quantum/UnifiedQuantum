@@ -73,7 +73,8 @@ def _statevector_expectation(circuit: Circuit, pauli_string: str) -> float:
     probs = np.abs(result) ** 2
     exp_val = 0.0
     for idx, p in enumerate(probs):
-        # Build bitstring for this index (big-endian: qubit 0 is MSB)
+        # Build bitstring; the leftmost char corresponds to qubit n-1 (MSB),
+        # so bitstring[n-1-q] is the measurement bit of qubit q (qubit 0 = LSB).
         bitstring = format(idx, f'0{n}b')
         parity = _parity(bitstring, pauli_string.upper())
         if parity == 0:

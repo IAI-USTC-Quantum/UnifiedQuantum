@@ -62,7 +62,7 @@ def simulate(
         result = _run_simulation(content, backend, shots)
     except Exception as e:
         print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     if format == "json":
         data = {"backend": backend, "shots": shots, "results": result}

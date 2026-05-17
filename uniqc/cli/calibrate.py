@@ -210,7 +210,7 @@ def xeb_cmd(
 
     except Exception as e:
         print_error(f"XEB failed: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command("readout", help="Run readout error calibration (1q and/or 2q).")
