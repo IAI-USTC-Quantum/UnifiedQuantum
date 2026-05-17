@@ -1,4 +1,5 @@
 """Tests for transpiler qiskit_transpiler module."""
+
 import pytest
 
 pytestmark = pytest.mark.requires_qiskit
@@ -14,7 +15,7 @@ def qiskit_available():
     return True
 
 
-@uniq_test('Test Transpiler Qiskit: transpile_qasm')
+@uniq_test("Test Transpiler Qiskit: transpile_qasm")
 def run_test_transpile_qasm():
     """Test QASM transpilation."""
     from uniqc.compile.qiskit_transpiler import transpile_qasm
@@ -34,7 +35,7 @@ cx q[1], q[2];
     topology = [[0, 1], [1, 0], [1, 2], [2, 1]]
     transpiled = transpile_qasm(qasm_str, topology=topology, optimization_level=1)
     assert isinstance(transpiled, str)
-    assert 'OPENQASM 2.0' in transpiled
+    assert "OPENQASM 2.0" in transpiled
     print(f"Transpiled QASM:\n{transpiled}")
 
     # Test with list of QASM strings
@@ -48,12 +49,12 @@ cx q[1], q[2];
     assert empty_result == []
 
     # Test custom basis gates
-    transpiled_custom = transpile_qasm(qasm_str, topology=topology, basis_gates=['cx', 'u3'])
-    assert 'OPENQASM 2.0' in transpiled_custom
+    transpiled_custom = transpile_qasm(qasm_str, topology=topology, basis_gates=["cx", "u3"])
+    assert "OPENQASM 2.0" in transpiled_custom
     print("Transpiled with custom basis gates")
 
 
-@uniq_test('Test Transpiler Qiskit: transpile_originir')
+@uniq_test("Test Transpiler Qiskit: transpile_originir")
 def run_test_transpile_originir():
     """Test OriginIR transpilation."""
     from uniqc.circuit_builder import Circuit
@@ -67,11 +68,11 @@ def run_test_transpile_originir():
     topology = [[0, 1], [1, 0]]
     transpiled = transpile_originir(originir_str, topology=topology, optimization_level=1)
     assert isinstance(transpiled, str)
-    assert 'QINIT' in transpiled
+    assert "QINIT" in transpiled
     print(f"Transpiled OriginIR:\n{transpiled}")
 
 
-@uniq_test('Test Transpiler Qiskit: Error Handling')
+@uniq_test("Test Transpiler Qiskit: Error Handling")
 def run_test_qiskit_error_handling():
     """Test error handling."""
     from uniqc.compile._utils import CompilationFailedError
@@ -91,7 +92,7 @@ def run_test_qiskit_error_handling():
         print(f"Caught expected error for invalid QASM: {e}")
 
 
-@uniq_test('Test Transpiler Qiskit: Different Optimization Levels')
+@uniq_test("Test Transpiler Qiskit: Different Optimization Levels")
 def run_test_optimization_levels():
     """Test different optimization levels."""
     from uniqc.compile.qiskit_transpiler import transpile_qasm
@@ -110,11 +111,11 @@ cx q[0], q[1];
 
     for level in [0, 1, 2, 3]:
         transpiled = transpile_qasm(qasm_str, topology=topology, optimization_level=level)
-        assert 'OPENQASM 2.0' in transpiled
+        assert "OPENQASM 2.0" in transpiled
         print(f"Optimization level {level} OK")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_test_transpile_qasm()
     run_test_transpile_originir()
     run_test_qiskit_error_handling()

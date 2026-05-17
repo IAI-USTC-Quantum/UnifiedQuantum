@@ -185,9 +185,7 @@ class TorchQuantumSimulator:
             elif op_name in _GATE_MAP:
                 gate_fn, is_parametric = _GATE_MAP[op_name]
             else:
-                raise NotImplementedError(
-                    f"Gate '{op_name}' is not supported by TorchQuantum backend."
-                )
+                raise NotImplementedError(f"Gate '{op_name}' is not supported by TorchQuantum backend.")
 
             # Resolve wires
             wires = qubits if isinstance(qubits, list) else [qubits]
@@ -202,9 +200,7 @@ class TorchQuantumSimulator:
                     raw = [-p for p in params] if dagger else list(params)
                 else:
                     raw = [-params] if dagger else [params]
-                gate_params = torch.tensor(
-                    raw, dtype=torch.float32, device=self.device
-                )
+                gate_params = torch.tensor(raw, dtype=torch.float32, device=self.device)
             else:
                 gate_params = None
 

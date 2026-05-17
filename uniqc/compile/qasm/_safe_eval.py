@@ -66,10 +66,8 @@ _ALLOWED_FUNCS: dict[str, object] = {
 }
 
 
-def _reject(node: ast.AST) -> "ValueError":
-    return ValueError(
-        f"Unsafe QASM expression: disallowed syntax {type(node).__name__!s}"
-    )
+def _reject(node: ast.AST) -> ValueError:
+    return ValueError(f"Unsafe QASM expression: disallowed syntax {type(node).__name__!s}")
 
 
 def _eval(node: ast.AST) -> float:
@@ -78,24 +76,17 @@ def _eval(node: ast.AST) -> float:
 
     if isinstance(node, ast.Constant):
         if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
-            raise ValueError(
-                f"Unsafe QASM expression: non-numeric constant {node.value!r}"
-            )
+            raise ValueError(f"Unsafe QASM expression: non-numeric constant {node.value!r}")
         return float(node.value)
 
     if isinstance(node, ast.Name):
         if node.id not in _ALLOWED_NAMES:
-            raise ValueError(
-                f"Unsafe QASM expression: unknown name {node.id!r}"
-            )
+            raise ValueError(f"Unsafe QASM expression: unknown name {node.id!r}")
         return float(_ALLOWED_NAMES[node.id])
 
     if isinstance(node, ast.BinOp):
         if not isinstance(node.op, _ALLOWED_BINOPS):
-            raise ValueError(
-                f"Unsafe QASM expression: disallowed operator "
-                f"{type(node.op).__name__}"
-            )
+            raise ValueError(f"Unsafe QASM expression: disallowed operator {type(node.op).__name__}")
         left = _eval(node.left)
         right = _eval(node.right)
         if isinstance(node.op, ast.Add):
@@ -107,17 +98,14 @@ def _eval(node: ast.AST) -> float:
         if isinstance(node.op, ast.Div):
             return left / right
         if isinstance(node.op, ast.Pow):
-            return left ** right
+            return left**right
         if isinstance(node.op, ast.Mod):
             return left % right
         raise _reject(node.op)  # pragma: no cover — guarded above
 
     if isinstance(node, ast.UnaryOp):
         if not isinstance(node.op, _ALLOWED_UNARYOPS):
-            raise ValueError(
-                f"Unsafe QASM expression: disallowed unary operator "
-                f"{type(node.op).__name__}"
-            )
+            raise ValueError(f"Unsafe QASM expression: disallowed unary operator {type(node.op).__name__}")
         operand = _eval(node.operand)
         if isinstance(node.op, ast.UAdd):
             return +operand
@@ -125,19 +113,12 @@ def _eval(node: ast.AST) -> float:
 
     if isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name):
-            raise ValueError(
-                "Unsafe QASM expression: only direct calls to whitelisted "
-                "math functions are permitted"
-            )
+            raise ValueError("Unsafe QASM expression: only direct calls to whitelisted math functions are permitted")
         fname = node.func.id
         if fname not in _ALLOWED_FUNCS:
-            raise ValueError(
-                f"Unsafe QASM expression: function {fname!r} is not in the allow-list"
-            )
+            raise ValueError(f"Unsafe QASM expression: function {fname!r} is not in the allow-list")
         if node.keywords:
-            raise ValueError(
-                "Unsafe QASM expression: keyword arguments are not permitted"
-            )
+            raise ValueError("Unsafe QASM expression: keyword arguments are not permitted")
         args = [_eval(a) for a in node.args]
         return float(_ALLOWED_FUNCS[fname](*args))  # type: ignore[operator]
 
@@ -191,8 +172,6 @@ def safe_eval_param(expr: str) -> float:
             continue
         if isinstance(node, _ALLOWED_BINOPS) or isinstance(node, _ALLOWED_UNARYOPS):
             continue
-        raise ValueError(
-            f"Unsafe QASM expression: disallowed syntax {type(node).__name__!s}"
-        )
+        raise ValueError(f"Unsafe QASM expression: disallowed syntax {type(node).__name__!s}")
 
     return float(_eval(tree))

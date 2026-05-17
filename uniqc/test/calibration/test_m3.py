@@ -1,10 +1,8 @@
 """Tests for M3 readout error mitigator."""
 
 import json
-import tempfile
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
-import numpy as np
 import pytest
 
 from uniqc.qem import M3Mitigator, StaleCalibrationError

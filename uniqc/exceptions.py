@@ -121,12 +121,14 @@ class UnifiedQuantumError(Exception):
 # Authentication Errors
 # -----------------------------------------------------------------------------
 
+
 class AuthenticationError(UnifiedQuantumError):
     """Raised when authentication fails (invalid token, expired credentials, etc.).
 
     This error indicates that the provided API token or credentials are invalid,
     expired, or do not have the required permissions.
     """
+
     pass
 
 
@@ -134,12 +136,14 @@ class AuthenticationError(UnifiedQuantumError):
 # Credit and Quota Errors
 # -----------------------------------------------------------------------------
 
+
 class InsufficientCreditsError(UnifiedQuantumError):
     """Raised when the account has insufficient credits to run a task.
 
     This error indicates that the user's account balance is too low to
     execute the requested quantum computation.
     """
+
     pass
 
 
@@ -149,12 +153,14 @@ class QuotaExceededError(UnifiedQuantumError):
     This error indicates that the user has reached their daily, monthly,
     or total usage limit for the quantum computing service.
     """
+
     pass
 
 
 # -----------------------------------------------------------------------------
 # Network Errors
 # -----------------------------------------------------------------------------
+
 
 class NetworkError(UnifiedQuantumError):
     """Raised when a network operation fails.
@@ -180,6 +186,7 @@ class NetworkError(UnifiedQuantumError):
 # -----------------------------------------------------------------------------
 # Task Errors
 # -----------------------------------------------------------------------------
+
 
 class TaskFailedError(UnifiedQuantumError):
     """Raised when a quantum task fails on the backend.
@@ -245,11 +252,13 @@ class TaskNotFoundError(UnifiedQuantumError):
 # Backend Errors
 # -----------------------------------------------------------------------------
 
+
 class BackendError(UnifiedQuantumError):
     """Raised when a backend operation fails.
 
     This is the base class for all backend-related errors.
     """
+
     pass
 
 
@@ -259,6 +268,7 @@ class BackendNotAvailableError(BackendError):
     This error indicates that the backend is offline, not configured,
     or cannot be accessed due to missing dependencies.
     """
+
     pass
 
 
@@ -268,11 +278,13 @@ class BackendNotFoundError(BackendError):
     This error indicates that the specified backend name is not
     registered in the backend registry.
     """
+
     pass
 
 
 class BackendOptionsError(UnifiedQuantumError, ValueError):
     """Raised when :class:`BackendOptions` construction, validation, or normalisation fails."""
+
     pass
 
 
@@ -280,8 +292,10 @@ class BackendOptionsError(UnifiedQuantumError, ValueError):
 # Circuit Errors
 # -----------------------------------------------------------------------------
 
+
 class CircuitError(UnifiedQuantumError):
     """Base class for all circuit-related errors."""
+
     pass
 
 
@@ -327,31 +341,37 @@ class UnsupportedGateError(CircuitError):
 
 class NotSupportedGateError(CircuitError):
     """Raised when an unsupported gate is encountered in OpenQASM 2."""
+
     pass
 
 
 class RegisterNotFoundError(CircuitError):
     """Raised when a quantum or classical register is not found."""
+
     pass
 
 
 class RegisterOutOfRangeError(CircuitError):
     """Raised when a register index exceeds its defined size."""
+
     pass
 
 
 class RegisterDefinitionError(CircuitError):
     """Raised when a register definition is invalid (e.g., duplicate name, empty)."""
+
     pass
 
 
 class NotMatrixableError(CircuitError):
     """Raised when a circuit or gate has no unitary matrix representation."""
+
     pass
 
 
 class TimelineDurationError(CircuitError):
     """Raised when a logical circuit cannot be scheduled without gate durations."""
+
     pass
 
 
@@ -359,8 +379,10 @@ class TimelineDurationError(CircuitError):
 # Compilation Errors
 # -----------------------------------------------------------------------------
 
+
 class CompilationFailedError(UnifiedQuantumError):
     """Raised when quantum circuit compilation fails."""
+
     pass
 
 
@@ -368,23 +390,28 @@ class CompilationFailedError(UnifiedQuantumError):
 # Config Errors
 # -----------------------------------------------------------------------------
 
+
 class ConfigError(UnifiedQuantumError):
     """Base exception for configuration-related errors."""
+
     pass
 
 
 class ConfigValidationError(ConfigError):
     """Raised when configuration validation fails."""
+
     pass
 
 
 class PlatformNotFoundError(ConfigError):
     """Raised when an unsupported platform is referenced."""
+
     pass
 
 
 class ProfileNotFoundError(ConfigError):
     """Raised when a configuration profile is not found."""
+
     pass
 
 
@@ -392,8 +419,10 @@ class ProfileNotFoundError(ConfigError):
 # Simulator Errors
 # -----------------------------------------------------------------------------
 
+
 class TopologyError(UnifiedQuantumError):
     """Raised when an invalid qubit or topology is used."""
+
     pass
 
 
@@ -401,14 +430,17 @@ class TopologyError(UnifiedQuantumError):
 # Calibration Errors
 # -----------------------------------------------------------------------------
 
+
 class StaleCalibrationError(UnifiedQuantumError):
     """Raised when calibration data exceeds the allowed age (TTL)."""
+
     pass
 
 
 # -----------------------------------------------------------------------------
 # Dependency Errors
 # -----------------------------------------------------------------------------
+
 
 class MissingDependencyError(UnifiedQuantumError, ImportError):
     """Raised when an optional dependency is not installed.

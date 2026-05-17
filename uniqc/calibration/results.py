@@ -157,12 +157,7 @@ def save_calibration_result(
         cache_dir = pathlib.Path(cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
     qid = _qubit_identifier(result)
-    ts = (
-        result.calibrated_at
-        .replace("+00:00", "Z")
-        .replace(":", "")
-        .replace("-", "")
-    )
+    ts = result.calibrated_at.replace("+00:00", "Z").replace(":", "").replace("-", "")
     filename = f"{type_prefix}_{result.backend}_{qid}_{ts}.json"
     path = cache_dir / filename
     with open(path, "w") as f:

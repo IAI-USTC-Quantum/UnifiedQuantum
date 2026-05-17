@@ -41,13 +41,12 @@ from __future__ import annotations
 __all__ = ["MPSConfig", "MPSSimulator"]
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import numpy as np
 
 from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
-
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -115,16 +114,14 @@ def _u1(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
     elif name == "U2":
         phi, lam = _floats(params)
         u = (1 / np.sqrt(2)) * np.array(
-            [[1, -np.exp(1j * lam)],
-             [np.exp(1j * phi), np.exp(1j * (phi + lam))]],
+            [[1, -np.exp(1j * lam)], [np.exp(1j * phi), np.exp(1j * (phi + lam))]],
             dtype=complex,
         )
     elif name == "U3":
         th, phi, lam = _floats(params)
         c, s = math.cos(th / 2), math.sin(th / 2)
         u = np.array(
-            [[c, -np.exp(1j * lam) * s],
-             [np.exp(1j * phi) * s, np.exp(1j * (phi + lam)) * c]],
+            [[c, -np.exp(1j * lam) * s], [np.exp(1j * phi) * s, np.exp(1j * (phi + lam)) * c]],
             dtype=complex,
         )
     elif name in ("RPHI", "RPhi"):
@@ -132,8 +129,7 @@ def _u1(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
         theta, phi = _floats(params)
         c, s = math.cos(theta / 2), math.sin(theta / 2)
         u = np.array(
-            [[c, -1j * s * (math.cos(phi) - 1j * math.sin(phi))],
-             [-1j * s * (math.cos(phi) + 1j * math.sin(phi)), c]],
+            [[c, -1j * s * (math.cos(phi) - 1j * math.sin(phi))], [-1j * s * (math.cos(phi) + 1j * math.sin(phi)), c]],
             dtype=complex,
         )
     elif name == "RPHI90":
@@ -179,22 +175,28 @@ def _u2(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
         # exp(-i theta/2 X⊗X)
         (a,) = _floats(params)
         c, s = math.cos(a / 2), math.sin(a / 2)
-        u = np.array([
-            [c, 0, 0, -1j * s],
-            [0, c, -1j * s, 0],
-            [0, -1j * s, c, 0],
-            [-1j * s, 0, 0, c],
-        ], dtype=complex)
+        u = np.array(
+            [
+                [c, 0, 0, -1j * s],
+                [0, c, -1j * s, 0],
+                [0, -1j * s, c, 0],
+                [-1j * s, 0, 0, c],
+            ],
+            dtype=complex,
+        )
     elif name in ("YY", "RYY"):
         # exp(-i theta/2 Y⊗Y)
         (a,) = _floats(params)
         c, s = math.cos(a / 2), math.sin(a / 2)
-        u = np.array([
-            [c, 0, 0, 1j * s],
-            [0, c, -1j * s, 0],
-            [0, -1j * s, c, 0],
-            [1j * s, 0, 0, c],
-        ], dtype=complex)
+        u = np.array(
+            [
+                [c, 0, 0, 1j * s],
+                [0, c, -1j * s, 0],
+                [0, -1j * s, c, 0],
+                [1j * s, 0, 0, c],
+            ],
+            dtype=complex,
+        )
     elif name in ("ZZ", "RZZ"):
         # exp(-i theta/2 Z⊗Z)
         (a,) = _floats(params)
@@ -205,30 +207,34 @@ def _u2(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
         # exp(-i theta/2 (X⊗X + Y⊗Y) / 2)
         (a,) = _floats(params)
         c, s = math.cos(a / 2), math.sin(a / 2)
-        u = np.array([
-            [1, 0, 0, 0],
-            [0, c, -1j * s, 0],
-            [0, -1j * s, c, 0],
-            [0, 0, 0, 1],
-        ], dtype=complex)
+        u = np.array(
+            [
+                [1, 0, 0, 0],
+                [0, c, -1j * s, 0],
+                [0, -1j * s, c, 0],
+                [0, 0, 0, 1],
+            ],
+            dtype=complex,
+        )
     elif name == "ECR":
         # Echoed cross-resonance: (1/sqrt(2)) * (IX - iZX)
         # Matrix form per Qiskit convention.
         s = 1.0 / math.sqrt(2.0)
-        u = s * np.array([
-            [0, 0, 1, 1j],
-            [0, 0, 1j, 1],
-            [1, -1j, 0, 0],
-            [-1j, 1, 0, 0],
-        ], dtype=complex)
+        u = s * np.array(
+            [
+                [0, 0, 1, 1j],
+                [0, 0, 1j, 1],
+                [1, -1j, 0, 0],
+                [-1j, 1, 0, 0],
+            ],
+            dtype=complex,
+        )
     elif name == "PHASE2Q":
         # 2-qubit phase gate with three diagonal phases (uniqc convention):
         # diag(1, e^{i p1}, e^{i p2}, e^{i p3})
         ps = _floats(params)
         if len(ps) != 3:
-            raise ValueError(
-                f"MPSSimulator: PHASE2Q requires 3 parameters, got {len(ps)}."
-            )
+            raise ValueError(f"MPSSimulator: PHASE2Q requires 3 parameters, got {len(ps)}.")
         u = np.diag([1.0, np.exp(1j * ps[0]), np.exp(1j * ps[1]), np.exp(1j * ps[2])]).astype(complex)
     else:
         raise ValueError(
@@ -484,9 +490,7 @@ class MPSSimulator:
         self.config = config
         self.available_qubits = list(available_qubits) if available_qubits is not None else None
         self.available_topology = (
-            [[int(e[0]), int(e[1])] for e in available_topology]
-            if available_topology is not None
-            else None
+            [[int(e[0]), int(e[1])] for e in available_topology] if available_topology is not None else None
         )
         self.parser: OriginIR_BaseParser | None = None
         self._state: _MPSState | None = None
@@ -578,9 +582,7 @@ class MPSSimulator:
                 qs = qubit if isinstance(qubit, list) else [qubit] if qubit is not None else []
                 for q in qs:
                     if int(q) not in allowed:
-                        raise ValueError(
-                            f"MPSSimulator: qubit {q} not in available_qubits={sorted(allowed)}"
-                        )
+                        raise ValueError(f"MPSSimulator: qubit {q} not in available_qubits={sorted(allowed)}")
 
         self._state = _MPSState(
             n_qubits=n,
@@ -602,15 +604,12 @@ class MPSSimulator:
 
         if control_qubits_set:
             raise NotImplementedError(
-                f"MPSSimulator does not support CONTROL blocks (gate '{operation}'). "
-                "Decompose to native gates first."
+                f"MPSSimulator does not support CONTROL blocks (gate '{operation}'). Decompose to native gates first."
             )
 
         if isinstance(qubit, list):
             if len(qubit) != 2:
-                raise NotImplementedError(
-                    f"MPSSimulator only supports 1q and NN 2q gates; got {operation} on {qubit}"
-                )
+                raise NotImplementedError(f"MPSSimulator only supports 1q and NN 2q gates; got {operation} on {qubit}")
             a, b = int(qubit[0]), int(qubit[1])
             if abs(a - b) != 1:
                 raise ValueError(
@@ -619,9 +618,7 @@ class MPSSimulator:
                 )
             if self.available_topology is not None:
                 if [a, b] not in self.available_topology and [b, a] not in self.available_topology:
-                    raise ValueError(
-                        f"MPSSimulator: gate '{operation}' on ({a},{b}) violates available_topology"
-                    )
+                    raise ValueError(f"MPSSimulator: gate '{operation}' on ({a},{b}) violates available_topology")
             U = _u2(op_name, parameter, dagger=bool(dagger_flag))
             if a < b:
                 left = a

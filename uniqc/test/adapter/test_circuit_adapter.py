@@ -22,10 +22,12 @@ class TestCircuitAdapterInterface:
 
     def test_adapt_batch(self):
         """Test that adapt_batch calls adapt for each circuit."""
+
         # Create a concrete adapter for testing
         class MockAdapter(CircuitAdapter):
             def adapt(self, circuit):
                 return f"adapted_{circuit}"
+
             def get_supported_gates(self):
                 return ["H"]
 
@@ -39,9 +41,11 @@ class TestCircuitAdapterInterface:
 
     def test_get_originir(self):
         """Test _get_originir extracts OriginIR string."""
+
         class MockAdapter(CircuitAdapter):
             def adapt(self, circuit):
                 return None
+
             def get_supported_gates(self):
                 return []
 
@@ -159,8 +163,8 @@ class TestQuafuCircuitAdapterIntegration:
         result = adapter.adapt(circuit)
         # Verify result is a quafu.QuantumCircuit
         assert result is not None
-        assert hasattr(result, 'h')
-        assert hasattr(result, 'cnot')
+        assert hasattr(result, "h")
+        assert hasattr(result, "cnot")
 
     def test_adapt_rotation_gates(self):
         """Test adapt with rotation gates."""
@@ -252,7 +256,7 @@ class TestIBMCircuitAdapterIntegration:
         result = adapter.adapt(circuit)
         # Verify result is a qiskit.QuantumCircuit
         assert result is not None
-        assert hasattr(result, 'num_qubits')
+        assert hasattr(result, "num_qubits")
         assert result.num_qubits == 2
 
     def test_adapt_batch(self):

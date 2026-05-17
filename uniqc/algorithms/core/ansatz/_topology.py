@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 from ._types import EntanglementTopology
 
 __all__ = ["generate_edges"]
 
-TopologyEdge = Tuple[int, int]
+TopologyEdge = tuple[int, int]
 
 
 def generate_edges(
-    qubits: List[int],
+    qubits: list[int],
     topology: EntanglementTopology,
-    custom_edges: List[TopologyEdge] | None = None,
+    custom_edges: list[TopologyEdge] | None = None,
     layer_index: int = 0,
-) -> List[TopologyEdge]:
+) -> list[TopologyEdge]:
     """Generate directed entangling-gate edges for the given topology.
 
     Args:
@@ -69,9 +67,7 @@ def generate_edges(
         mapped = []
         for u, v in custom_edges:
             if u not in qubit_set or v not in qubit_set:
-                raise ValueError(
-                    f"Custom edge ({u}, {v}) contains qubits not in the qubit set {qubits}"
-                )
+                raise ValueError(f"Custom edge ({u}, {v}) contains qubits not in the qubit set {qubits}")
             mapped.append((u, v))
         return mapped
 
@@ -79,11 +75,11 @@ def generate_edges(
 
 
 def count_edges_per_layer(
-    qubits: List[int],
+    qubits: list[int],
     topology: EntanglementTopology,
     depth: int = 1,
-    custom_edges: List[TopologyEdge] | None = None,
-) -> List[int]:
+    custom_edges: list[TopologyEdge] | None = None,
+) -> list[int]:
     """Count number of edges per layer for parameter accounting.
 
     For brickwork topology, each layer may have a different edge count.

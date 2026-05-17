@@ -15,11 +15,10 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from uniqc._error_hints import format_enriched_message
 from uniqc.backend_adapter.backend_cache import get_cached_backends, update_cache
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES, BackendInfo, Platform, QubitTopology
 from uniqc.exceptions import BackendError
-
-from uniqc._error_hints import format_enriched_message
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +166,7 @@ def _normalise_quafu(raw: list[dict[str, Any]]) -> list[BackendInfo]:
             BackendInfo(
                 platform=Platform.QUAFU,
                 name=name,
-                description=f"BAQIS Quafu simulator" if is_sim else f"BAQIS Quafu chip",
+                description="BAQIS Quafu simulator" if is_sim else "BAQIS Quafu chip",
                 num_qubits=num_qubits,
                 topology=topology,
                 status=mapped_status,
@@ -429,8 +428,7 @@ def fetch_platform_backends(
             else:
                 hint = f"Install the relevant extras (e.g. `pip install unified-quantum[{platform.value}]`)."
             raise BackendError(
-                f"Platform {platform.value} has credentials but its SDK is not installed: {exc}. "
-                f"{hint}"
+                f"Platform {platform.value} has credentials but its SDK is not installed: {exc}. {hint}"
             ) from exc
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch %s backends: %s", platform.value, exc)
@@ -589,6 +587,7 @@ def _resolve_backend_aliases(platform: Platform, name: str) -> list[str]:
 
 def _names_match(candidate: str, available_name: str) -> bool:
     """Case-insensitive backend-name match that also normalises ``- ↔ _``."""
+
     def _norm(s: str) -> str:
         return s.strip().lower().replace("-", "_")
 
@@ -629,8 +628,7 @@ def find_backend(identifier: str) -> BackendInfo:
         available = ", ".join(b.name for b in backends) or "(none)"
         raise ValueError(
             format_enriched_message(
-                f"Backend '{name}' not found on platform '{platform.value}'. "
-                f"Available backends: {available}",
+                f"Backend '{name}' not found on platform '{platform.value}'. Available backends: {available}",
                 "backend_not_found",
             )
         )

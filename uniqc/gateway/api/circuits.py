@@ -56,11 +56,7 @@ def _looks_like_circuit(value: Any) -> bool:
         return False
     upper = text.upper()
     return (
-        upper.startswith("QINIT")
-        or "OPENQASM" in upper
-        or "QREG " in upper
-        or "CREG " in upper
-        or "MEASURE" in upper
+        upper.startswith("QINIT") or "OPENQASM" in upper or "QREG " in upper or "CREG " in upper or "MEASURE" in upper
     )
 
 
@@ -129,13 +125,23 @@ def circuit_svg(
     result = task.result or {}
 
     if format == "source":
-        circuit_ir = _find_string_by_keys(metadata, _CIRCUIT_KEYS["source"]) or _find_string_by_keys(result, _CIRCUIT_KEYS["source"]) or ""
+        circuit_ir = (
+            _find_string_by_keys(metadata, _CIRCUIT_KEYS["source"])
+            or _find_string_by_keys(result, _CIRCUIT_KEYS["source"])
+            or ""
+        )
         language = metadata.get("circuit_language", "OriginIR")
     elif format == "compiled":
-        circuit_ir = _find_string_by_keys(metadata, _CIRCUIT_KEYS["compiled"]) or _find_string_by_keys(result, _CIRCUIT_KEYS["compiled"]) or ""
+        circuit_ir = (
+            _find_string_by_keys(metadata, _CIRCUIT_KEYS["compiled"])
+            or _find_string_by_keys(result, _CIRCUIT_KEYS["compiled"])
+            or ""
+        )
         language = metadata.get("compiled_language", "OriginIR")
         if not circuit_ir:
-            source = _find_string_by_keys(metadata, _CIRCUIT_KEYS["source"]) or _find_string_by_keys(result, _CIRCUIT_KEYS["source"])
+            source = _find_string_by_keys(metadata, _CIRCUIT_KEYS["source"]) or _find_string_by_keys(
+                result, _CIRCUIT_KEYS["source"]
+            )
             return _fallback_html(
                 task_id,
                 format,
@@ -143,7 +149,11 @@ def circuit_svg(
                 source,
             )
     elif format == "executed":
-        circuit_ir = _find_string_by_keys(metadata, _CIRCUIT_KEYS["executed"]) or _find_string_by_keys(result, _CIRCUIT_KEYS["executed"]) or ""
+        circuit_ir = (
+            _find_string_by_keys(metadata, _CIRCUIT_KEYS["executed"])
+            or _find_string_by_keys(result, _CIRCUIT_KEYS["executed"])
+            or ""
+        )
         language = metadata.get("executed_language", "OriginIR")
         if not circuit_ir:
             # Fall back to compiled

@@ -21,9 +21,9 @@ __all__ = [
     "schedule_circuit",
 ]
 
-from dataclasses import dataclass
 import html
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -41,10 +41,7 @@ _VIRTUAL_Z_GATES = {"Z", "RZ", "U1", "P", "PHASE", "S", "T", "SDG", "TDG"}
 _DEFAULT_BASIS_GATES = ["cz", "sx", "rz"]
 
 
-class TimelineDurationError(ValueError):
-    """Raised when a logical circuit cannot be scheduled without durations."""
-
-# Re-export from central module (local name kept for backward compat within this file)
+# Re-export from central module to preserve the historical local name.
 from uniqc.exceptions import TimelineDurationError as TimelineDurationError  # noqa: F401, E501
 
 
@@ -189,8 +186,11 @@ def schedule_circuit(
     if not has_explicit_start_times:
         if not compile_to_basis:
             raise TimelineDurationError(
-                format_enriched_message("Timeline scheduling requires compiling logical circuits to basis gates first. "
-                "Use compile_to_basis=True, or pass pulse/timeline data with explicit start times.", "visualization")
+                format_enriched_message(
+                    "Timeline scheduling requires compiling logical circuits to basis gates first. "
+                    "Use compile_to_basis=True, or pass pulse/timeline data with explicit start times.",
+                    "visualization",
+                )
             )
         compiled_prog = _compile_to_basis_for_timeline(
             compiled_prog,
@@ -208,7 +208,7 @@ def schedule_circuit(
     needs_duration_data = any(entry.explicit_start is None for entry in entries if not entry.is_barrier)
 
     all_qubits = sorted({q for entry in entries for q in entry.resources})
-    available_at: dict[int, float] = {q: 0.0 for q in all_qubits}
+    available_at: dict[int, float] = dict.fromkeys(all_qubits, 0.0)
     scheduled: list[TimelineGate] = []
     start_to_layer: dict[float, int] = {}
 
@@ -661,18 +661,24 @@ def _duration_for_gate(gate_name: str, qubits: tuple[int, ...], durations: dict[
         if "MEASURE" in durations:
             return durations["MEASURE"]
         if strict:
-            raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "measure"), "visualization"))
+            raise TimelineDurationError(
+                format_enriched_message(_missing_duration_message(gate_name, "measure"), "visualization")
+            )
         return 0.0
     if len(qubits) >= 2 or upper in _TWO_QUBIT_GATES:
         if "2Q" in durations:
             return durations["2Q"]
         if strict:
-            raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "2q"), "visualization"))
+            raise TimelineDurationError(
+                format_enriched_message(_missing_duration_message(gate_name, "2q"), "visualization")
+            )
         return 0.0
     if "1Q" in durations:
         return durations["1Q"]
     if strict:
-        raise TimelineDurationError(format_enriched_message(_missing_duration_message(gate_name, "1q"), "visualization"))
+        raise TimelineDurationError(
+            format_enriched_message(_missing_duration_message(gate_name, "1q"), "visualization")
+        )
     return 0.0
 
 
@@ -686,7 +692,7 @@ def _missing_duration_message(gate_name: str, generic_key: str) -> str:
 
 def _layered_circuit_schedule(entries: list[_ProgramEntry]) -> TimelineSchedule:
     all_qubits = sorted({q for entry in entries for q in entry.resources})
-    available_layer: dict[int, int] = {q: 0 for q in all_qubits}
+    available_layer: dict[int, int] = dict.fromkeys(all_qubits, 0)
     gates: list[TimelineGate] = []
 
     for index, entry in enumerate(entries):
@@ -757,7 +763,7 @@ def _schedule_to_svg(schedule: TimelineSchedule, *, use_timing: bool) -> str:
         f'<svg class="uniqc-circuit" width="{body_width}" height="{height}" '
         f'viewBox="0 0 {body_width} {height}" xmlns="http://www.w3.org/2000/svg" role="img">',
         "<defs>",
-        '<style>.wire{stroke:#677083;stroke-width:1.4}.qlabel{fill:#1f2937;font:13px ui-monospace,monospace}'
+        "<style>.wire{stroke:#677083;stroke-width:1.4}.qlabel{fill:#1f2937;font:13px ui-monospace,monospace}"
         ".gate{stroke:#243047;stroke-width:1.1;rx:5;ry:5}.gate-text{fill:#111827;font:12px Arial,sans-serif;"
         "text-anchor:middle;dominant-baseline:middle}.connector{stroke:#384152;stroke-width:1.2}.barrier{stroke:#7a3e00;"
         "stroke-width:1.5;stroke-dasharray:4 4}.tick{stroke:#d6dbe4;stroke-width:1}.tick-text{fill:#64748b;"
@@ -792,12 +798,16 @@ def _schedule_to_svg(schedule: TimelineSchedule, *, use_timing: bool) -> str:
         if gate.is_barrier:
             parts.append(f"<g><title>{tooltip}</title>")
             for y in ys:
-                parts.append(f'<line class="barrier" x1="{center_x:.2f}" x2="{center_x:.2f}" y1="{y - 20}" y2="{y + 20}"/>')
+                parts.append(
+                    f'<line class="barrier" x1="{center_x:.2f}" x2="{center_x:.2f}" y1="{y - 20}" y2="{y + 20}"/>'
+                )
             parts.append("</g>")
             continue
 
         if len(ys) > 1:
-            parts.append(f'<line class="connector" x1="{center_x:.2f}" x2="{center_x:.2f}" y1="{min(ys):.2f}" y2="{max(ys):.2f}"/>')
+            parts.append(
+                f'<line class="connector" x1="{center_x:.2f}" x2="{center_x:.2f}" y1="{min(ys):.2f}" y2="{max(ys):.2f}"/>'
+            )
 
         label = html.escape(_gate_label(gate.name))
         fill = _gate_color(gate)

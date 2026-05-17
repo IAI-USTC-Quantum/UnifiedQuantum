@@ -73,10 +73,7 @@ PROVIDER_INSTALL_HINTS: dict[str, str] = {
         "or, for the curated extras set:\n"
         "  pip install 'unified-quantum[originq]'"
     ),
-    "ibm": (
-        "IBM backends require qiskit + qiskit_ibm_runtime. Install with:\n"
-        "  pip install 'unified-quantum[ibm]'"
-    ),
+    "ibm": ("IBM backends require qiskit + qiskit_ibm_runtime. Install with:\n  pip install 'unified-quantum[ibm]'"),
     "quafu": (
         "The Quafu adapter is deprecated. Install pyquafu directly only "
         "if you really need it:\n  pip install pyquafu  (warning: "
@@ -107,18 +104,22 @@ def has_provider_credentials(provider: str) -> bool:
     try:
         if provider == "originq":
             from uniqc.config import load_originq_config
+
             load_originq_config()
             return True
         if provider == "quafu":
             from uniqc.config import load_quafu_config
+
             load_quafu_config()
             return True
         if provider == "quark":
             from uniqc.config import load_quark_config
+
             load_quark_config()
             return True
         if provider == "ibm":
             from uniqc.config import load_ibm_config
+
             load_ibm_config()
             return True
     except Exception:
@@ -169,7 +170,7 @@ def _is_topology_suffix(suffix: str) -> bool:
 def _canonical_topology_suffix(suffix: str) -> str:
     """Map any legacy MPS form (``mps:linear-N``) to the canonical hyphen form."""
     if suffix.startswith("mps:linear-"):
-        return "mps-linear-" + suffix[len("mps:linear-"):]
+        return "mps-linear-" + suffix[len("mps:linear-") :]
     return suffix
 
 
@@ -202,16 +203,20 @@ def parse_backend_target(name: str) -> BackendTarget:
 
     # dummy:local:<topology-spec>
     if raw.startswith("dummy:local:"):
-        suffix = raw[len("dummy:local:"):]
+        suffix = raw[len("dummy:local:") :]
         if suffix in ("simulator", ""):
             return BackendTarget(raw=raw, kind="local")
         if suffix.startswith(("virtual-line-", "virtual-grid-")):
             return BackendTarget(
-                raw=raw, kind="local_topology", topology_spec=suffix,
+                raw=raw,
+                kind="local_topology",
+                topology_spec=suffix,
             )
         if suffix.startswith("mps-linear-"):
             return BackendTarget(
-                raw=raw, kind="local_mps", topology_spec=suffix,
+                raw=raw,
+                kind="local_mps",
+                topology_spec=suffix,
             )
         # Legacy ``mps:linear-`` (colon separator) → reject with migration hint.
         if suffix.startswith("mps:linear-"):
@@ -232,14 +237,11 @@ def parse_backend_target(name: str) -> BackendTarget:
     if raw.startswith("dummy:") and _is_topology_suffix(raw.split(":", 1)[1]):
         suffix = raw.split(":", 1)[1]
         canonical = f"dummy:local:{_canonical_topology_suffix(suffix)}"
-        raise ValueError(
-            f"Backend identifier {raw!r} is not allowed. Use the canonical "
-            f"{canonical!r} form instead."
-        )
+        raise ValueError(f"Backend identifier {raw!r} is not allowed. Use the canonical {canonical!r} form instead.")
 
     # dummy:<provider>:<chip>
     if raw.startswith("dummy:"):
-        rest = raw[len("dummy:"):]
+        rest = raw[len("dummy:") :]
         parts = rest.split(":", 1)
         if len(parts) != 2 or not parts[0] or not parts[1]:
             raise ValueError(
@@ -250,8 +252,10 @@ def parse_backend_target(name: str) -> BackendTarget:
         provider = parts[0].lower()
         chip_name = parts[1]
         return BackendTarget(
-            raw=raw, kind="dummy_provider",
-            provider=provider, chip_name=chip_name,
+            raw=raw,
+            kind="dummy_provider",
+            provider=provider,
+            chip_name=chip_name,
         )
 
     # <provider>:<chip>  or bare <provider>
@@ -259,8 +263,10 @@ def parse_backend_target(name: str) -> BackendTarget:
     provider = parts[0].lower()
     chip_name = parts[1] if len(parts) == 2 else None
     return BackendTarget(
-        raw=raw, kind="provider",
-        provider=provider, chip_name=chip_name,
+        raw=raw,
+        kind="provider",
+        provider=provider,
+        chip_name=chip_name,
     )
 
 
@@ -281,7 +287,8 @@ def _check_provider_dep(provider: str) -> None:
     if provider == "ibm":
         if not check_qiskit():
             raise MissingDependencyError(
-                "qiskit + qiskit_ibm_runtime", install_hint=install_hint,
+                "qiskit + qiskit_ibm_runtime",
+                install_hint=install_hint,
             )
         return
     if provider == "quafu":
@@ -340,8 +347,7 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
-                f"originq SDK import failed while refreshing chip "
-                f"characterization for {chip_name!r}: {exc}"
+                f"originq SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
             adapter = OriginQAdapter()
@@ -366,8 +372,7 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
-                f"IBM SDK import failed while refreshing chip "
-                f"characterization for {chip_name!r}: {exc}"
+                f"IBM SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
             adapter = IBMAdapter()
@@ -392,8 +397,7 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
-                f"Quafu SDK import failed while refreshing chip "
-                f"characterization for {chip_name!r}: {exc}"
+                f"Quafu SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
             adapter = QuafuAdapter()
@@ -418,8 +422,7 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
-                f"Quark SDK import failed while refreshing chip "
-                f"characterization for {chip_name!r}: {exc}"
+                f"Quark SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
             adapter = QuarkAdapter()
@@ -431,8 +434,7 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             ) from exc
         if chip is None:
             raise BackendPreflightError(
-                f"Quark returned no characterization for {chip_name!r}. "
-                "Verify the chip name is currently online."
+                f"Quark returned no characterization for {chip_name!r}. Verify the chip name is currently online."
             )
         save_chip(chip)
         return chip
@@ -453,10 +455,7 @@ def _load_chip_cache(provider: str, chip_name: str) -> tuple[Any | None, Path]:
     try:
         plat = Platform(provider)
     except ValueError as exc:
-        raise BackendPreflightError(
-            f"Unknown provider '{provider}'. Known: "
-            f"{[p.value for p in Platform]}."
-        ) from exc
+        raise BackendPreflightError(f"Unknown provider '{provider}'. Known: {[p.value for p in Platform]}.") from exc
 
     chip = _find_cached_chip(plat, chip_name)
     path = _chip_path(None, plat, chip.chip_name if chip else chip_name)
@@ -523,10 +522,7 @@ def ensure_backend_ready(
     needs_refresh = (
         refresh is True
         or chip is None
-        or (refresh is not False
-            and max_age_hours is not None
-            and age_h is not None
-            and age_h > max_age_hours)
+        or (refresh is not False and max_age_hours is not None and age_h is not None and age_h > max_age_hours)
     )
     if not needs_refresh:
         return chip

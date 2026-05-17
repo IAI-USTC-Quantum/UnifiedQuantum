@@ -25,11 +25,9 @@ def _make_view(
     bad_qubits = bad_qubits or set()
     bad_edges = bad_edges or set()
     e_1q = {q: (1e-3 if q not in bad_qubits else 5e-2) for q in range(n_qubits)}
-    e_ro = {q: 1e-2 for q in range(n_qubits)}
+    e_ro = dict.fromkeys(range(n_qubits), 0.01)
     norm_edges = tuple(sorted({(min(a, b), max(a, b)) for a, b in edges}))
-    e_2q = {
-        e: (1e-2 if e not in bad_edges else 1e-1) for e in norm_edges
-    }
+    e_2q = {e: (1e-2 if e not in bad_edges else 1e-1) for e in norm_edges}
     return ChipTopologyView(
         enabled_qubits=tuple(range(n_qubits)),
         coupling_map=norm_edges,
@@ -47,9 +45,7 @@ def test_parallel_patterns_disjoint_and_cover_all_edges():
     for pat in patterns:
         qs_in_pat: set[int] = set()
         for a, b in pat:
-            assert a not in qs_in_pat and b not in qs_in_pat, (
-                f"pattern {pat} not disjoint"
-            )
+            assert a not in qs_in_pat and b not in qs_in_pat, f"pattern {pat} not disjoint"
             qs_in_pat.update((a, b))
             seen.add((min(a, b), max(a, b)))
     assert seen == {(min(a, b), max(a, b)) for a, b in edges}
@@ -66,9 +62,16 @@ def test_three_color_chip_partitions_all_edges():
     # Bipartite-ish 4x4 grid edges (max degree 4 -> may need >3 colors, but
     # we use a small kagome-ish subgraph with max degree 3).
     edges = [
-        (0, 1), (1, 2), (2, 3),
-        (4, 5), (5, 6), (6, 7),
-        (0, 4), (1, 5), (2, 6), (3, 7),
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (0, 4),
+        (1, 5),
+        (2, 6),
+        (3, 7),
     ]
     view = _make_view(8, edges)
     colors = three_color_chip(view, max_K=4)
@@ -157,8 +160,11 @@ def test_chip_topology_view_from_characterization():
         ),
         single_qubit_data=tuple(
             SingleQubitData(
-                qubit_id=q, single_gate_fidelity=0.999, avg_readout_fidelity=0.97,
-            ) for q in range(4)
+                qubit_id=q,
+                single_gate_fidelity=0.999,
+                avg_readout_fidelity=0.97,
+            )
+            for q in range(4)
         ),
         two_qubit_data=(
             TwoQubitData(qubit_u=0, qubit_v=1, gates=(TwoQubitGateData(gate="cz", fidelity=0.99),)),

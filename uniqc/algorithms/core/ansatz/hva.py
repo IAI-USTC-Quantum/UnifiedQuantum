@@ -6,10 +6,12 @@ terms, suitable for quantum chemistry simulations.
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 from ._pauli_unitary import _apply_cost_unitary
 
@@ -20,11 +22,11 @@ if TYPE_CHECKING:
 
 
 def hva(
-    hamiltonian_groups: List[List[Tuple[str, float]]],
+    hamiltonian_groups: list[list[tuple[str, float]]],
     p: int = 1,
-    qubits: Optional[List[int]] = None,
-    params: Optional[Union["Parameters", np.ndarray]] = None,
-    hf_state: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
+    params: Parameters | np.ndarray | None = None,
+    hf_state: list[int] | None = None,
 ) -> Circuit:
     """Build a Hamiltonian Variational Ansatz (HVA) circuit.
 
@@ -93,8 +95,7 @@ def hva(
         if len(params) != n_params:
             raise ValueError(
                 format_enriched_message(
-                    f"Expected {n_params} parameters (n_groups={n_groups} × p={p}), "
-                    f"got {len(params)}",
+                    f"Expected {n_params} parameters (n_groups={n_groups} × p={p}), got {len(params)}",
                     "circuit_validation",
                 )
             )
@@ -107,8 +108,7 @@ def hva(
         if len(params_arr) != n_params:
             raise ValueError(
                 format_enriched_message(
-                    f"Expected {n_params} parameters (n_groups={n_groups} × p={p}), "
-                    f"got {len(params_arr)}",
+                    f"Expected {n_params} parameters (n_groups={n_groups} × p={p}), got {len(params_arr)}",
                     "circuit_validation",
                 )
             )

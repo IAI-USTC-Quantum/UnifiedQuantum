@@ -21,16 +21,16 @@ from __future__ import annotations
 __all__ = ["normalize_originq", "normalize_quafu", "normalize_ibm", "normalize_dummy"]
 
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .result_types import UnifiedResult
 
 
 def normalize_originq(
-    raw: Dict[str, Any],
+    raw: dict[str, Any],
     task_id: str,
     shots: int = 1000,
-    n_qubits: Optional[int] = None,
+    n_qubits: int | None = None,
 ) -> UnifiedResult:
     """Normalize OriginQ Cloud result format.
 
@@ -123,7 +123,7 @@ def normalize_originq(
         n_qubits = max(1, max_val.bit_length())
 
     if is_probability_form:
-        probs: Dict[str, float] = {}
+        probs: dict[str, float] = {}
         for outcome, prob in zip(keys, values, strict=False):
             try:
                 int_val = _to_int(outcome)
@@ -141,7 +141,7 @@ def normalize_originq(
         )
 
     # Counts form
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
     for outcome, count in zip(keys, values, strict=False):
         try:
             int_val = _to_int(outcome)
@@ -161,7 +161,7 @@ def normalize_originq(
 def normalize_quafu(
     result_obj: Any,
     task_id: str,
-    backend_name: Optional[str] = None,
+    backend_name: str | None = None,
 ) -> UnifiedResult:
     """Normalize Quafu ExecResult format.
 
@@ -185,7 +185,7 @@ def normalize_quafu(
         {'00': 512, '11': 488}
     """
     # Extract counts from ExecResult
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
     if hasattr(result_obj, "counts") and result_obj.counts is not None:
         # Quafu uses q[0]/c[0] as the LEFTMOST bitstring character. uniqc
         # convention (docs/source/guide/platform_conventions.md §2.6) puts
@@ -235,7 +235,7 @@ def normalize_ibm(
         {'0x0': 512, '0x3': 488}
     """
     # Get counts from Result object
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
 
     try:
         raw_counts = result_obj.get_counts()
@@ -247,7 +247,7 @@ def normalize_ibm(
         pass
 
     # Extract backend name
-    backend_name: Optional[str] = None
+    backend_name: str | None = None
     try:
         result_dict = result_obj.to_dict()
         backend_name = result_dict.get("backend_name")
@@ -259,7 +259,7 @@ def normalize_ibm(
     # convention which matches uniqc — see docs/source/guide/
     # platform_conventions.md §2.6. We only normalise hex keys (legacy
     # output) into plain binary strings, without changing bit order.
-    normalized_counts: Dict[str, int] = {}
+    normalized_counts: dict[str, int] = {}
     for key, value in counts.items():
         if isinstance(key, str):
             stripped = key.replace(" ", "")
@@ -271,15 +271,11 @@ def normalize_ibm(
                     int_val = int(stripped, 16)
                     width = max(1, int_val.bit_length())
                     bin_key = format(int_val, f"0{width}b")
-                    normalized_counts[bin_key] = (
-                        normalized_counts.get(bin_key, 0) + int(value)
-                    )
+                    normalized_counts[bin_key] = normalized_counts.get(bin_key, 0) + int(value)
                 except ValueError:
                     normalized_counts[stripped] = int(value)
             else:
-                normalized_counts[stripped] = (
-                    normalized_counts.get(stripped, 0) + int(value)
-                )
+                normalized_counts[stripped] = normalized_counts.get(stripped, 0) + int(value)
         else:
             normalized_counts[str(key)] = int(value)
 
@@ -320,7 +316,7 @@ def normalize_dummy(
     if n_qubits == 0:
         n_qubits = 1
 
-    probs: Dict[str, float] = {}
+    probs: dict[str, float] = {}
     for i, prob in enumerate(probs_list):
         if prob > 0:
             bin_key = bin(i)[2:].zfill(n_qubits)

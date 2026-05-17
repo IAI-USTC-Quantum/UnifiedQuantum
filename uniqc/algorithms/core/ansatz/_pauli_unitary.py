@@ -5,7 +5,6 @@ Extracted from qaoa_ansatz.py for reuse in HVA and other algorithms.
 
 from __future__ import annotations
 
-from typing import List, Tuple
 import numpy as np
 
 from uniqc.circuit_builder import Circuit
@@ -13,7 +12,7 @@ from uniqc.circuit_builder import Circuit
 __all__ = ["_parse_pauli_string", "_apply_cost_unitary"]
 
 
-def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
+def _parse_pauli_string(pauli_string: str) -> list[tuple[str, int]]:
     """Parse a Pauli string into [(op, qubit), ...].
 
     Supports two formats:
@@ -25,7 +24,7 @@ def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
     """
     # Indexed format: contains digits (e.g. "Z0Z1", "X0Y2")
     if any(ch.isdigit() for ch in pauli_string):
-        terms: List[Tuple[str, int]] = []
+        terms: list[tuple[str, int]] = []
         current_op: str | None = None
         current_idx = ""
         for ch in pauli_string:
@@ -47,7 +46,7 @@ def _parse_pauli_string(pauli_string: str) -> List[Tuple[str, int]]:
 
 def _apply_cost_unitary(
     circuit: Circuit,
-    hamiltonian_terms: List[Tuple[str, float]],
+    hamiltonian_terms: list[tuple[str, float]],
     gamma: float,
 ) -> None:
     """Apply the cost-function unitary exp(-i γ H_C).

@@ -8,22 +8,22 @@ from __future__ import annotations
 import pytest
 
 from uniqc.backend_adapter.task.optional_deps import (
-    MissingDependencyError,
-    require,
-    check_quafu,
-    check_quark,
-    check_qiskit,
-    check_pyqpanda3,
-    check_uniqc_cpp,
-    check_qutip,
-    check_simulation,
+    PYQPANDA3_AVAILABLE,
+    QISKIT_AVAILABLE,
     QUAFU_AVAILABLE,
     QUARK_AVAILABLE,
-    QISKIT_AVAILABLE,
-    PYQPANDA3_AVAILABLE,
-    UNIQC_CPP_AVAILABLE,
     QUTIP_AVAILABLE,
     SIMULATION_AVAILABLE,
+    UNIQC_CPP_AVAILABLE,
+    MissingDependencyError,
+    check_pyqpanda3,
+    check_qiskit,
+    check_quafu,
+    check_quark,
+    check_qutip,
+    check_simulation,
+    check_uniqc_cpp,
+    require,
 )
 
 
@@ -69,6 +69,7 @@ class TestRequireFunction:
     def test_require_existing_module(self):
         """Test require returns module for existing module."""
         import os
+
         mod = require("os", "test")
         assert mod is os
 

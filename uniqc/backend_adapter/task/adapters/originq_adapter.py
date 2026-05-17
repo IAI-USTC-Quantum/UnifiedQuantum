@@ -15,7 +15,6 @@ import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import ORIGINQ_SIMULATOR_NAMES
-from uniqc.exceptions import BackendNotAvailableError
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -23,8 +22,9 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.config import load_originq_config
 from uniqc.backend_adapter.task.optional_deps import require
+from uniqc.config import load_originq_config
+from uniqc.exceptions import BackendNotAvailableError
 
 
 def _avg(values: list[float]) -> float | None:
@@ -39,6 +39,7 @@ def _avg(values: list[float]) -> float | None:
 # SX            = RX( π/2)   (up to a global phase, irrelevant for sampling)
 # SX.dagger     = RX(-π/2)
 import re as _re
+
 _SX_PI_OVER_2 = "1.5707963267948966"
 _NEG_SX_PI_OVER_2 = "-1.5707963267948966"
 _SX_DAGGER_RE = _re.compile(r"^(\s*)SX\s+(q\[\d+\])\s*\.\s*dagger\s*$", _re.IGNORECASE)
@@ -133,16 +134,14 @@ class OriginQAdapter(QuantumAdapter):
             return backend_name
 
         raw_backends = (
-            self._service.backends()
-            if self._service is not None and hasattr(self._service, "backends")
-            else {}
+            self._service.backends() if self._service is not None and hasattr(self._service, "backends") else {}
         )
         candidates = [backend_name]
 
         stripped = backend_name
         for prefix in ("originq:", "origin:"):
             if stripped.startswith(prefix):
-                stripped = stripped[len(prefix):]
+                stripped = stripped[len(prefix) :]
                 candidates.append(stripped)
         if ":" in stripped:
             candidates.append(stripped.rsplit(":", 1)[-1])

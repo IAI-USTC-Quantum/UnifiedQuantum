@@ -13,6 +13,7 @@ class TestDummyAdapter:
     def adapter(self):
         """Create a DummyAdapter instance."""
         from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
+
         return DummyAdapter()
 
     def test_name(self, adapter):

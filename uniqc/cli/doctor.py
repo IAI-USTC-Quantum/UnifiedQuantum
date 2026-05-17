@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import rich.box
-from rich.panel import Panel
 from rich.table import Table
 
 from .output import (
@@ -42,6 +41,7 @@ _CORE_DEPS = ["numpy", "typer", "rich", "scipy", "yaml"]
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _mask_key(key: str) -> str:
     if len(key) <= 6:
         return "****"
@@ -59,6 +59,7 @@ def _import_version(pkg: str) -> str:
 # ---------------------------------------------------------------------------
 # Check functions — each prints a Rich section and returns nothing.
 # ---------------------------------------------------------------------------
+
 
 def _check_environment() -> None:
     from uniqc import __version__
@@ -104,7 +105,6 @@ def _check_config() -> None:
         CONFIG_FILE,
         SUPPORTED_PLATFORMS,
         get_active_profile,
-        has_platform_credentials,
         load_config,
         validate_config,
     )
@@ -168,8 +168,8 @@ def _check_config() -> None:
 def _check_task_db() -> None:
     from uniqc.backend_adapter.task.store import (
         APPLICATION_ID,
-        DEFAULT_CACHE_DIR,
         DB_FILENAME,
+        DEFAULT_CACHE_DIR,
     )
 
     db_path: Path = DEFAULT_CACHE_DIR / DB_FILENAME
@@ -188,10 +188,7 @@ def _check_task_db() -> None:
             if app_id == APPLICATION_ID:
                 console.print(f"[green]✓[/green] application_id: 0x{app_id:08X} (UNIC)")
             else:
-                console.print(
-                    f"[red]✗[/red] application_id: 0x{app_id:08X}, "
-                    f"expected 0x{APPLICATION_ID:08X} (UNIC)"
-                )
+                console.print(f"[red]✗[/red] application_id: 0x{app_id:08X}, expected 0x{APPLICATION_ID:08X} (UNIC)")
 
             schema_ver = conn.execute("PRAGMA user_version").fetchone()[0]
             console.print(f"  Schema version: {schema_ver}")
@@ -240,14 +237,10 @@ def _check_platform_connectivity() -> None:
     from uniqc.cli.chip_service import fetch_chip_characterization
     from uniqc.config import SUPPORTED_PLATFORMS, has_platform_credentials
 
-    configured_platforms = [
-        p for p in SUPPORTED_PLATFORMS if has_platform_credentials(p)
-    ]
+    configured_platforms = [p for p in SUPPORTED_PLATFORMS if has_platform_credentials(p)]
 
     if not configured_platforms:
-        console.print(
-            "[yellow]⚠[/yellow] No platform credentials configured — skipping connectivity check"
-        )
+        console.print("[yellow]⚠[/yellow] No platform credentials configured — skipping connectivity check")
         return
 
     for plat_str in configured_platforms:
@@ -257,10 +250,7 @@ def _check_platform_connectivity() -> None:
         # Fetch backends (tests credentials + network)
         try:
             backends, fetched = fetch_platform_backends(plat, force_refresh=True)
-            console.print(
-                f"[green]✓[/green] Connectivity OK — "
-                f"{len(backends)} backend(s) fetched"
-            )
+            console.print(f"[green]✓[/green] Connectivity OK — {len(backends)} backend(s) fetched")
         except Exception as exc:
             console.print(f"[red]✗[/red] Failed to fetch backends: {exc}")
             continue
@@ -273,19 +263,13 @@ def _check_platform_connectivity() -> None:
 
         for be in hw_backends:
             try:
-                chip = fetch_chip_characterization(
-                    be.name, plat, force_refresh=True
-                )
+                chip = fetch_chip_characterization(be.name, plat, force_refresh=True)
             except Exception as exc:
-                console.print(
-                    f"  [red]✗[/red] {be.name}: calibration fetch failed — {exc}"
-                )
+                console.print(f"  [red]✗[/red] {be.name}: calibration fetch failed — {exc}")
                 continue
 
             if chip is None:
-                console.print(
-                    f"  [yellow]⚠[/yellow] {be.name}: no characterization data"
-                )
+                console.print(f"  [yellow]⚠[/yellow] {be.name}: no characterization data")
                 continue
 
             issues: list[str] = []
@@ -300,20 +284,16 @@ def _check_platform_connectivity() -> None:
 
             if issues:
                 detail = ", ".join(issues)
-                console.print(
-                    f"  [yellow]⚠[/yellow] {be.name}: {detail}"
-                )
+                console.print(f"  [yellow]⚠[/yellow] {be.name}: {detail}")
             else:
                 cal = chip.calibrated_at or "unknown"
-                console.print(
-                    f"  [green]✓[/green] {be.name}: calibration OK "
-                    f"(calibrated_at={cal})"
-                )
+                console.print(f"  [green]✓[/green] {be.name}: calibration OK (calibrated_at={cal})")
 
 
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
+
 
 def run_doctor(
     ai_hints: bool = AI_HINTS_OPTION,

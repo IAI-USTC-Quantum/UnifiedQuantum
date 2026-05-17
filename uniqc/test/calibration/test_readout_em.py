@@ -1,7 +1,5 @@
 """Tests for unified ReadoutEM interface."""
 
-import pytest
-
 
 class TestReadoutEMDispatch:
     """Test that ReadoutEM correctly dispatches to 1q or 2q calibrators."""

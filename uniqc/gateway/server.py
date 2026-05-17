@@ -29,9 +29,11 @@ def _uniqc_version() -> str:
             return "0.0.0+unknown"
         return __version__
 
+
 # ---------------------------------------------------------------------------
 # App factory (importable from uvicorn)
 # ---------------------------------------------------------------------------
+
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -85,6 +87,7 @@ def create_app() -> FastAPI:
 # ---------------------------------------------------------------------------
 # Frontend static mount
 # ---------------------------------------------------------------------------
+
 
 def _frontend_dist_dir() -> Path:
     """Return the built frontend distribution directory."""

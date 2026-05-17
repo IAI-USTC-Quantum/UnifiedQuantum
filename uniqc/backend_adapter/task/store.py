@@ -56,12 +56,13 @@ import sqlite3
 import tempfile
 import threading
 import uuid
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Paths & constants
@@ -99,6 +100,7 @@ def is_uniqc_task_id(task_id: str) -> bool:
 # ---------------------------------------------------------------------------
 # Task types
 # ---------------------------------------------------------------------------
+
 
 class TaskStatus(str, Enum):
     """Enumeration of task statuses."""
@@ -148,7 +150,7 @@ class TaskInfo:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TaskInfo":
+    def from_dict(cls, data: dict[str, Any]) -> TaskInfo:
         """Create from dictionary."""
         # Tolerate older snapshots that didn't carry ``error_message``.
         if "error_message" not in data:
@@ -255,15 +257,9 @@ CREATE TABLE IF NOT EXISTS archived_tasks (
 def _apply_v2(conn: sqlite3.Connection) -> None:
     """v2: add ``archived_tasks`` table for task archiving."""
     conn.execute(_ARCHIVED_TASKS_DDL)
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS archived_backend_idx ON archived_tasks(backend)"
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS archived_status_idx  ON archived_tasks(status)"
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS archived_submit_time_idx ON archived_tasks(submit_time)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS archived_backend_idx ON archived_tasks(backend)")
+    conn.execute("CREATE INDEX IF NOT EXISTS archived_status_idx  ON archived_tasks(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS archived_submit_time_idx ON archived_tasks(submit_time)")
 
 
 def _apply_v3(conn: sqlite3.Connection) -> None:
@@ -326,18 +322,11 @@ def _apply_v4(conn: sqlite3.Connection) -> None:
     need one platform job per circuit).
     """
     conn.execute(_TASK_SHARDS_DDL)
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS task_shards_platform_idx "
-        "ON task_shards(platform_task_id)"
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS task_shards_status_idx "
-        "ON task_shards(status)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS task_shards_platform_idx ON task_shards(platform_task_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS task_shards_status_idx ON task_shards(status)")
     conn.execute(_ARCHIVED_TASK_SHARDS_DDL)
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS archived_task_shards_platform_idx "
-        "ON archived_task_shards(platform_task_id)"
+        "CREATE INDEX IF NOT EXISTS archived_task_shards_platform_idx ON archived_task_shards(platform_task_id)"
     )
 
 
@@ -354,14 +343,10 @@ def _apply_v5(conn: sqlite3.Connection) -> None:
     ``archived_task_shards``.
     """
     _migrate_legacy_table(conn, "tasks", "task_shards", archived=False)
-    _migrate_legacy_table(
-        conn, "archived_tasks", "archived_task_shards", archived=True
-    )
+    _migrate_legacy_table(conn, "archived_tasks", "archived_task_shards", archived=True)
 
 
-def _migrate_legacy_table(
-    conn: sqlite3.Connection, src_table: str, shard_table: str, *, archived: bool
-) -> None:
+def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table: str, *, archived: bool) -> None:
     rows = conn.execute(f"SELECT * FROM {src_table}").fetchall()
     for row in rows:
         old_id = row["task_id"]
@@ -386,8 +371,13 @@ def _migrate_legacy_table(
                 " result_json, metadata_json, error_message, archived_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    new_id, row["backend"], row["status"], row["shots"],
-                    row["submit_time"], row["update_time"], row["result_json"],
+                    new_id,
+                    row["backend"],
+                    row["status"],
+                    row["shots"],
+                    row["submit_time"],
+                    row["update_time"],
+                    row["result_json"],
                     new_metadata_json,
                     row["error_message"] if "error_message" in row.keys() else None,
                     row["archived_at"],
@@ -400,8 +390,13 @@ def _migrate_legacy_table(
                 " result_json, metadata_json, error_message) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    new_id, row["backend"], row["status"], row["shots"],
-                    row["submit_time"], row["update_time"], row["result_json"],
+                    new_id,
+                    row["backend"],
+                    row["status"],
+                    row["shots"],
+                    row["submit_time"],
+                    row["update_time"],
+                    row["result_json"],
                     new_metadata_json,
                     row["error_message"] if "error_message" in row.keys() else None,
                 ),
@@ -416,10 +411,15 @@ def _migrate_legacy_table(
                 " error_message, submit_time, update_time, archived_at) "
                 "VALUES (?, 0, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)",
                 (
-                    new_id, old_id, row["backend"], row["status"],
+                    new_id,
+                    old_id,
+                    row["backend"],
+                    row["status"],
                     row["result_json"],
                     row["error_message"] if "error_message" in row.keys() else None,
-                    row["submit_time"], row["update_time"], row["archived_at"],
+                    row["submit_time"],
+                    row["update_time"],
+                    row["archived_at"],
                 ),
             )
         else:
@@ -430,17 +430,19 @@ def _migrate_legacy_table(
                 " error_message, submit_time, update_time) "
                 "VALUES (?, 0, ?, ?, 1, 0, ?, ?, ?, ?, ?)",
                 (
-                    new_id, old_id, row["backend"], row["status"],
+                    new_id,
+                    old_id,
+                    row["backend"],
+                    row["status"],
                     row["result_json"],
                     row["error_message"] if "error_message" in row.keys() else None,
-                    row["submit_time"], row["update_time"],
+                    row["submit_time"],
+                    row["update_time"],
                 ),
             )
 
         # Drop the legacy parent row last.
-        conn.execute(
-            f"DELETE FROM {src_table} WHERE task_id = ?", (old_id,)
-        )
+        conn.execute(f"DELETE FROM {src_table} WHERE task_id = ?", (old_id,))
 
 
 MigrateFn = Callable[[sqlite3.Connection], None]
@@ -459,6 +461,7 @@ MIGRATIONS: list[tuple[int, MigrateFn]] = [
 # ---------------------------------------------------------------------------
 # Header metadata + status helpers
 # ---------------------------------------------------------------------------
+
 
 def _normalize_status(status: Any) -> str:
     """Return the canonical string value for a status.
@@ -494,6 +497,7 @@ def _set_application_id(conn: sqlite3.Connection, app_id: int) -> None:
 # Row <-> TaskInfo
 # ---------------------------------------------------------------------------
 
+
 def _row_to_info(row: sqlite3.Row) -> TaskInfo:
     result = json.loads(row["result_json"]) if row["result_json"] else None
     metadata = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
@@ -517,6 +521,7 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
 # ---------------------------------------------------------------------------
 # TaskStore
 # ---------------------------------------------------------------------------
+
 
 class TaskStore:
     """SQLite-backed storage for task records.
@@ -649,9 +654,7 @@ class TaskStore:
     def get(self, task_id: str) -> TaskInfo | None:
         """Return a task by id, or ``None`` if missing."""
         with self._tx() as conn:
-            row = conn.execute(
-                "SELECT * FROM tasks WHERE task_id = ?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone()
         return _row_to_info(row) if row is not None else None
 
     def list(
@@ -709,9 +712,7 @@ class TaskStore:
             cur = conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
             return cur.rowcount > 0
 
-    def clear_completed(
-        self, terminal_statuses: tuple[str, ...] = TERMINAL_STATUSES
-    ) -> int:
+    def clear_completed(self, terminal_statuses: tuple[str, ...] = TERMINAL_STATUSES) -> int:
         """Delete tasks whose status is in ``terminal_statuses``."""
         placeholders = ",".join("?" for _ in terminal_statuses)
         with self._tx() as conn:
@@ -748,10 +749,7 @@ class TaskStore:
         """
         now = datetime.now(timezone.utc).isoformat()
         shard.update_time = now
-        result_json = (
-            json.dumps(shard.result, ensure_ascii=False)
-            if shard.result is not None else None
-        )
+        result_json = json.dumps(shard.result, ensure_ascii=False) if shard.result is not None else None
         params = {
             "uniqc_task_id": shard.uniqc_task_id,
             "shard_index": int(shard.shard_index),
@@ -810,14 +808,16 @@ class TaskStore:
         """Return shards for ``uniqc_task_id`` ordered by ``shard_index``."""
         with self._tx() as conn:
             rows = conn.execute(
-                "SELECT * FROM task_shards WHERE uniqc_task_id = ? "
-                "ORDER BY shard_index ASC",
+                "SELECT * FROM task_shards WHERE uniqc_task_id = ? ORDER BY shard_index ASC",
                 (uniqc_task_id,),
             ).fetchall()
         return [self._row_to_shard(r) for r in rows]
 
     def get_shard_by_platform_id(
-        self, platform_task_id: str, *, backend: str | None = None,
+        self,
+        platform_task_id: str,
+        *,
+        backend: str | None = None,
     ) -> TaskShard | None:
         """Look up a shard by its platform-issued task id.
 
@@ -829,20 +829,21 @@ class TaskStore:
         with self._tx() as conn:
             if backend is None:
                 row = conn.execute(
-                    "SELECT * FROM task_shards WHERE platform_task_id = ? "
-                    "LIMIT 1",
+                    "SELECT * FROM task_shards WHERE platform_task_id = ? LIMIT 1",
                     (platform_task_id,),
                 ).fetchone()
             else:
                 row = conn.execute(
-                    "SELECT * FROM task_shards "
-                    "WHERE platform_task_id = ? AND backend = ? LIMIT 1",
+                    "SELECT * FROM task_shards WHERE platform_task_id = ? AND backend = ? LIMIT 1",
                     (platform_task_id, backend),
                 ).fetchone()
         return self._row_to_shard(row) if row is not None else None
 
     def find_uniqc_id_by_platform_id(
-        self, platform_task_id: str, *, backend: str | None = None,
+        self,
+        platform_task_id: str,
+        *,
+        backend: str | None = None,
     ) -> str | None:
         """Return the parent ``uniqc_task_id`` for a platform id, or ``None``."""
         shard = self.get_shard_by_platform_id(platform_task_id, backend=backend)

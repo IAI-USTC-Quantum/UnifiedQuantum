@@ -2,16 +2,15 @@
 
 __all__ = ["basis_state"]
 
-from typing import List, Optional
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def basis_state(
     circuit: Circuit,
     state: int,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
 ) -> None:
     r"""Prepare a computational basis state ``|state>`` on the given qubits.
 

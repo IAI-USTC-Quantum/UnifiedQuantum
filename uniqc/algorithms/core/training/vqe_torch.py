@@ -64,9 +64,7 @@ def build_h2_hamiltonian(bond_length: float = 0.735) -> tuple[list[tuple[str, fl
     return pauli_terms, nuclear_repulsion
 
 
-def build_hea_circuit(
-    params: torch.Tensor, n_qubits: int, depth: int = 2
-) -> tuple[list, int, dict]:
+def build_hea_circuit(params: torch.Tensor, n_qubits: int, depth: int = 2) -> tuple[list, int, dict]:
     """Build HEA circuit with torch.Tensor parameters.
 
     Returns (opcode_list, n_qubits, param_overrides) for TorchQuantumSimulator.

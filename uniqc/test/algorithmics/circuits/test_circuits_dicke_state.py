@@ -3,14 +3,14 @@
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.circuits import dicke_state_circuit
+from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
 
 
 def _simulate(circuit, n):
     """Run statevector simulation and return probability array."""
-    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
+    sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
     result = sim.simulate_statevector(circuit.qasm)
     return np.abs(result) ** 2
 
@@ -52,7 +52,7 @@ class TestDickeStateCircuit:
         # States with exactly 2 ones
         weight_sum = 0.0
         for i in range(16):
-            if bin(i).count('1') == 2:
+            if bin(i).count("1") == 2:
                 assert np.isclose(probs[i], expected_weight, atol=0.02)
                 weight_sum += probs[i]
         assert np.isclose(weight_sum, 1.0, atol=0.02)
@@ -95,7 +95,7 @@ class TestDickeStateCircuit:
         probs = _simulate(c, 5)
         expected_weight = 1.0 / 10  # 1/C(5,3)
         for i in range(32):
-            if bin(i).count('1') == 3:
+            if bin(i).count("1") == 3:
                 assert np.isclose(probs[i], expected_weight, atol=0.01)
             else:
                 assert np.isclose(probs[i], 0.0, atol=0.01)
@@ -111,7 +111,7 @@ class TestDickeStateCircuit:
         probs = _simulate(c, 6)
         expected_weight = 1.0 / 15  # 1/C(6,2)
         for i in range(64):
-            if bin(i).count('1') == 2:
+            if bin(i).count("1") == 2:
                 assert np.isclose(probs[i], expected_weight, atol=0.01)
             else:
                 assert np.isclose(probs[i], 0.0, atol=0.01)

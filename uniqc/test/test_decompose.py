@@ -37,10 +37,7 @@ def _matrices_equal_up_to_global_phase(a: np.ndarray, b: np.ndarray, atol: float
 
 
 def _no_unrepresentable(circuit: Circuit) -> bool:
-    return not any(
-        str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES
-        for op in circuit.opcode_list
-    )
+    return not any(str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES for op in circuit.opcode_list)
 
 
 # ---------------------------------------------------------------------------
@@ -59,9 +56,7 @@ def test_rphi_decomposition_matches_matrix(theta: float, phi: float) -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 @pytest.mark.parametrize("phi", [0.0, 0.7, -1.3, math.pi / 3])
@@ -72,9 +67,7 @@ def test_rphi90_decomposition_matches_matrix(phi: float) -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 @pytest.mark.parametrize("phi", [0.0, 0.7, -1.3, math.pi / 3])
@@ -85,9 +78,7 @@ def test_rphi180_decomposition_matches_matrix(phi: float) -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 def test_rphi_dagger_decomposition() -> None:
@@ -98,9 +89,7 @@ def test_rphi_dagger_decomposition() -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 # ---------------------------------------------------------------------------
@@ -119,9 +108,7 @@ def test_phase2q_decomposition_matches_matrix(params: tuple[float, float, float]
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 def test_phase2q_dagger_decomposition() -> None:
@@ -131,9 +118,7 @@ def test_phase2q_dagger_decomposition() -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 # ---------------------------------------------------------------------------
@@ -151,9 +136,7 @@ def test_uu15_decomposition_matches_matrix() -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 def test_uu15_dagger_decomposition() -> None:
@@ -166,9 +149,7 @@ def test_uu15_dagger_decomposition() -> None:
     decomposed = decompose_for_qasm2(original)
 
     assert _no_unrepresentable(decomposed)
-    assert _matrices_equal_up_to_global_phase(
-        get_matrix(original), get_matrix(decomposed)
-    )
+    assert _matrices_equal_up_to_global_phase(get_matrix(original), get_matrix(decomposed))
 
 
 # ---------------------------------------------------------------------------

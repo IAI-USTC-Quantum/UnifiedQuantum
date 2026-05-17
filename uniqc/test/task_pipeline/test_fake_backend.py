@@ -25,6 +25,7 @@ BACKEND = "dummy:local:simulator"
 # helpers
 # ---------------------------------------------------------------------------
 
+
 def _bell_pair() -> Circuit:
     c = Circuit(2)
     c.h(0)
@@ -82,6 +83,7 @@ def _all_gates_circuit() -> Circuit:
 # Tests: submit_task + get_result / wait_for_result
 # ---------------------------------------------------------------------------
 
+
 class TestSubmitAndGetResult:
     """End-to-end submit→get_result against dummy backend."""
 
@@ -110,6 +112,7 @@ class TestSubmitAndGetResult:
 # Tests: poll_result (non-blocking)
 # ---------------------------------------------------------------------------
 
+
 class TestPollResult:
     """Non-blocking poll_result tests."""
 
@@ -127,6 +130,7 @@ class TestPollResult:
 # ---------------------------------------------------------------------------
 # Tests: batch submission
 # ---------------------------------------------------------------------------
+
 
 class TestBatchSubmission:
     """Batch submit + per-circuit result ordering."""
@@ -158,15 +162,12 @@ class TestBatchSubmission:
 # Tests: string auto-detection
 # ---------------------------------------------------------------------------
 
+
 class TestStringAutoDetection:
     """submit_task accepts OriginIR / QASM strings directly."""
 
     def test_originir_string_input(self):
-        originir = (
-            "QINIT 2\nCREG 2\n"
-            "H q[0]\nCNOT q[0], q[1]\n"
-            "MEASURE q[0], c[0]\nMEASURE q[1], c[1]\n"
-        )
+        originir = "QINIT 2\nCREG 2\nH q[0]\nCNOT q[0], q[1]\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\n"
         task_id = submit_task(originir, backend=BACKEND, shots=512)
         result = get_result(task_id, timeout=30)
         assert result is not None
@@ -186,6 +187,7 @@ class TestStringAutoDetection:
 # ---------------------------------------------------------------------------
 # Tests: Circuit serialization roundtrip
 # ---------------------------------------------------------------------------
+
 
 class TestCircuitSerializationRoundtrip:
     """Circuit → to_qasm → from_qasm → submit produces equivalent results."""
@@ -224,6 +226,7 @@ class TestCircuitSerializationRoundtrip:
 # Tests: dry_run
 # ---------------------------------------------------------------------------
 
+
 class TestDryRun:
     """dry_run_task against dummy backend."""
 
@@ -237,6 +240,7 @@ class TestDryRun:
 # ---------------------------------------------------------------------------
 # Tests: qiskit.QuantumCircuit auto-detection (requires qiskit)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.requires_qiskit
 class TestQiskitAutoDetection:

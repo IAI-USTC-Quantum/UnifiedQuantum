@@ -116,9 +116,7 @@ class QAOASolver:
         betas = self.params[self.p :]
         params = torch.cat([gammas, betas])
 
-        opcode_list, n_qubits, param_overrides = build_qaoa_circuit(
-            params, self.n_qubits, self.edges, self.p
-        )
+        opcode_list, n_qubits, param_overrides = build_qaoa_circuit(params, self.n_qubits, self.edges, self.p)
         cost = self._sim.expectation(opcode_list, self.hamiltonian, param_overrides)
         # Minimize negative cut value = maximize cut
         (-cost).backward()

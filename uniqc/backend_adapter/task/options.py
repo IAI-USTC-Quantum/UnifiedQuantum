@@ -70,9 +70,7 @@ class BackendOptions:
         raise NotImplementedError
 
     @classmethod
-    def from_kwargs(
-        cls, platform: str, kwargs: dict[str, Any] | None = None, **extra: Any
-    ) -> BackendOptions:
+    def from_kwargs(cls, platform: str, kwargs: dict[str, Any] | None = None, **extra: Any) -> BackendOptions:
         """Construct the appropriate :class:`BackendOptions` from a ``**kwargs`` dict.
 
         This is a convenience alias for :meth:`BackendOptionsFactory.from_kwargs`.
@@ -347,7 +345,7 @@ class UnifiedOptions:
             raise BackendOptionsError(msg)
         warnings.warn(msg, UserWarning, stacklevel=3)
 
-    def to_platform_options(self, platform: str) -> "BackendOptions":
+    def to_platform_options(self, platform: str) -> BackendOptions:
         """Translate to the platform-specific :class:`BackendOptions` subclass.
 
         Unknown platforms raise :class:`BackendOptionsError`.  Unsupported
@@ -538,7 +536,7 @@ class BackendOptionsFactory:
     @classmethod
     def normalize_options(
         cls,
-        options: "BackendOptions | UnifiedOptions | dict[str, Any] | None",
+        options: BackendOptions | UnifiedOptions | dict[str, Any] | None,
         platform: str,
     ) -> BackendOptions:
         """Normalise mixed input to a validated :class:`BackendOptions` instance.
@@ -575,6 +573,5 @@ class BackendOptionsFactory:
         if isinstance(options, dict):
             return cls.from_kwargs(platform, options)
         raise BackendOptionsError(
-            f"options must be BackendOptions, UnifiedOptions, dict, or None; "
-            f"got {type(options).__name__}"
+            f"options must be BackendOptions, UnifiedOptions, dict, or None; got {type(options).__name__}"
         )

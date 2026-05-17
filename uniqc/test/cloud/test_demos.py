@@ -23,7 +23,7 @@ def demo_2():
     circuit = _build_circuit()
 
     # Submit with dummy backend for local simulation
-    task_id = submit_task(circuit, backend='dummy:local:simulator', shots=1000)
+    task_id = submit_task(circuit, backend="dummy:local:simulator", shots=1000)
     print(f"Task ID: {task_id}")
 
     # Wait for result (immediate for dummy mode)
@@ -39,29 +39,26 @@ def demo_3():
     circuit = _build_circuit()
 
     # Submit with dummy mode
-    task_id = submit_task(circuit, backend='dummy:local:simulator', shots=1000)
+    task_id = submit_task(circuit, backend="dummy:local:simulator", shots=1000)
     result = wait_for_result(task_id, timeout=60)
 
     if result:
-        probs = result.get('probabilities', {})
+        probs = result.get("probabilities", {})
         print(f"Probabilities: {probs}")
 
         # Calculate expectation values using probabilities
         # Note: circuit uses 4 qubits (0-3), so Hamiltonians must be 4-qubit strings
         if probs:
-            exps = [
-                calculate_expectation(probs, h)
-                for h in ['ZIII', 'IIIZ']
-            ]
+            exps = [calculate_expectation(probs, h) for h in ["ZIII", "IIIZ"]]
             print(f"<ZIII> = {exps[0]}")
             print(f"<IIIZ> = {exps[1]}")
 
 
-@uniq_test('Test Demos')
+@uniq_test("Test Demos")
 def run_test_demos():
     demo_2()
     demo_3()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_test_demos()

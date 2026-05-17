@@ -20,12 +20,12 @@ __all__ = [
     "cluster_state",
 ]
 
+from .amplitude_estimation import amplitude_estimation_circuit, amplitude_estimation_result, grover_operator
+from .deutsch_jozsa import deutsch_jozsa_circuit, deutsch_jozsa_oracle
+from .dicke_state import dicke_state_circuit
+from .entangled_states import cluster_state, ghz_state, w_state
+from .grover_oracle import grover_diffusion, grover_oracle
 from .qft import qft_circuit
 from .qpe import qpe_circuit
-from .deutsch_jozsa import deutsch_jozsa_circuit, deutsch_jozsa_oracle
 from .thermal_state import thermal_state_circuit
-from .dicke_state import dicke_state_circuit
-from .grover_oracle import grover_oracle, grover_diffusion
 from .vqd import vqd_ansatz, vqd_circuit, vqd_overlap_circuit
-from .amplitude_estimation import amplitude_estimation_circuit, amplitude_estimation_result, grover_operator
-from .entangled_states import ghz_state, w_state, cluster_state

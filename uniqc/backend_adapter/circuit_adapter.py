@@ -111,14 +111,38 @@ class OriginQCircuitAdapter(CircuitAdapter[Any]):
 
     # Gate mapping from OriginIR names to pyqpanda supported gates
     SUPPORTED_GATES = [
-        "H", "X", "Y", "Z", "S", "T", "SX",
-        "RX", "RY", "RZ", "RPhi", "RPhi90", "RPhi180",
-        "U1", "U2", "U3", "U4",
-        "CNOT", "CZ", "SWAP", "ISWAP",
-        "TOFFOLI", "CSWAP",
-        "XX", "YY", "ZZ", "XY",
-        "PHASE2Q", "UU15",
-        "I", "BARRIER", "MEASURE",
+        "H",
+        "X",
+        "Y",
+        "Z",
+        "S",
+        "T",
+        "SX",
+        "RX",
+        "RY",
+        "RZ",
+        "RPhi",
+        "RPhi90",
+        "RPhi180",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "CNOT",
+        "CZ",
+        "SWAP",
+        "ISWAP",
+        "TOFFOLI",
+        "CSWAP",
+        "XX",
+        "YY",
+        "ZZ",
+        "XY",
+        "PHASE2Q",
+        "UU15",
+        "I",
+        "BARRIER",
+        "MEASURE",
     ]
 
     def __init__(self) -> None:
@@ -133,12 +157,12 @@ class OriginQCircuitAdapter(CircuitAdapter[Any]):
                 from pyqpanda3.intermediate_compiler import (
                     convert_originir_string_to_qprog,
                 )
+
                 self._pyqpanda3 = pyqpanda3_core
                 self._convert_originir = convert_originir_string_to_qprog
             except ImportError as e:
                 raise RuntimeError(
-                    "pyqpanda3 is required for OriginQCircuitAdapter. "
-                    "Install it with: pip install pyqpanda3"
+                    "pyqpanda3 is required for OriginQCircuitAdapter. Install it with: pip install pyqpanda3"
                 ) from e
 
     def adapt(self, circuit: Circuit) -> str:
@@ -169,10 +193,22 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
 
     # Gate mapping from OriginIR to Quafu
     SUPPORTED_GATES = [
-        "H", "X", "Y", "Z", "S", "SX", "T",
-        "RX", "RY", "RZ",
-        "CNOT", "CZ", "SWAP", "ISWAP",
-        "MEASURE", "BARRIER",
+        "H",
+        "X",
+        "Y",
+        "Z",
+        "S",
+        "SX",
+        "T",
+        "RX",
+        "RY",
+        "RZ",
+        "CNOT",
+        "CZ",
+        "SWAP",
+        "ISWAP",
+        "MEASURE",
+        "BARRIER",
     ]
 
     def __init__(self) -> None:
@@ -185,12 +221,12 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
             try:
                 import quafu
                 from quafu import QuantumCircuit
+
                 self._quafu = quafu
                 self._QuantumCircuit = QuantumCircuit
             except ImportError as e:
                 raise RuntimeError(
-                    "quafu is required for QuafuCircuitAdapter. "
-                    "Install it with: pip install pyquafu"
+                    "quafu is required for QuafuCircuitAdapter. Install it with: pip install pyquafu"
                 ) from e
 
     def adapt(self, circuit: Circuit) -> Any:
@@ -228,9 +264,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
                     control_qubits,
                 ) = OriginIR_LineParser.parse_line(line)
             except NotImplementedError:
-                raise RuntimeError(
-                    f"Unknown OriginIR operation in Quafu adapter: {line}"
-                ) from None
+                raise RuntimeError(f"Unknown OriginIR operation in Quafu adapter: {line}") from None
 
             # Initialize circuit on QINIT
             if operation == "QINIT":
@@ -274,8 +308,13 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
 
             # Apply gates
             qc = self._apply_gate(
-                qc, operation, qubit, cbit, parameter,
-                effective_dagger, effective_control_qubits if effective_control_qubits else None
+                qc,
+                operation,
+                qubit,
+                cbit,
+                parameter,
+                effective_dagger,
+                effective_control_qubits if effective_control_qubits else None,
             )
 
         if qc is None:
@@ -326,7 +365,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
                     qc.cnot(int(ctrl_qubits[0]), int(target_qubit))
                 else:
                     # Multi-control: use mcx if available
-                    if hasattr(qc, 'mcx'):
+                    if hasattr(qc, "mcx"):
                         qc.mcx([int(c) for c in ctrl_qubits], int(target_qubit))
                         gate_fn(int(target_qubit), *args)
                         qc.mcx([int(c) for c in ctrl_qubits], int(target_qubit))
@@ -429,8 +468,7 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
         else:
             # For unsupported gates, raise a clear error
             raise NotImplementedError(
-                f"Gate '{operation}' is not supported by QuafuCircuitAdapter. "
-                f"Supported gates: {self.SUPPORTED_GATES}"
+                f"Gate '{operation}' is not supported by QuafuCircuitAdapter. Supported gates: {self.SUPPORTED_GATES}"
             )
 
         return qc
@@ -449,13 +487,31 @@ class QuarkCircuitAdapter(CircuitAdapter[str]):
     """
 
     SUPPORTED_GATES = [
-        "H", "X", "Y", "Z", "S", "T", "SX",
-        "RX", "RY", "RZ",
-        "U1", "U2", "U3",
-        "CNOT", "CX", "CZ", "SWAP", "ISWAP",
-        "TOFFOLI", "CCX", "CSWAP",
-        "MEASURE", "BARRIER",
-        "I", "ID",
+        "H",
+        "X",
+        "Y",
+        "Z",
+        "S",
+        "T",
+        "SX",
+        "RX",
+        "RY",
+        "RZ",
+        "U1",
+        "U2",
+        "U3",
+        "CNOT",
+        "CX",
+        "CZ",
+        "SWAP",
+        "ISWAP",
+        "TOFFOLI",
+        "CCX",
+        "CSWAP",
+        "MEASURE",
+        "BARRIER",
+        "I",
+        "ID",
     ]
 
     def adapt(self, circuit: Circuit) -> str:
@@ -475,13 +531,32 @@ class IBMCircuitAdapter(CircuitAdapter[Any]):
 
     # QASM 2.0 standard gates supported by qiskit
     SUPPORTED_GATES = [
-        "H", "X", "Y", "Z", "S", "T", "SX",
-        "RX", "RY", "RZ",
-        "U1", "U2", "U3",
-        "CNOT", "CX", "CZ", "SWAP", "ISWAP",
-        "TOFFOLI", "CCX", "CSWAP", "Fredkin",
-        "MEASURE", "BARRIER",
-        "I", "ID",
+        "H",
+        "X",
+        "Y",
+        "Z",
+        "S",
+        "T",
+        "SX",
+        "RX",
+        "RY",
+        "RZ",
+        "U1",
+        "U2",
+        "U3",
+        "CNOT",
+        "CX",
+        "CZ",
+        "SWAP",
+        "ISWAP",
+        "TOFFOLI",
+        "CCX",
+        "CSWAP",
+        "Fredkin",
+        "MEASURE",
+        "BARRIER",
+        "I",
+        "ID",
     ]
 
     def __init__(self) -> None:
@@ -492,11 +567,11 @@ class IBMCircuitAdapter(CircuitAdapter[Any]):
         if self._qiskit is None:
             try:
                 import qiskit
+
                 self._qiskit = qiskit
             except ImportError as e:
                 raise RuntimeError(
-                    "qiskit is required for IBMCircuitAdapter. "
-                    "Install it with: pip install qiskit"
+                    "qiskit is required for IBMCircuitAdapter. Install it with: pip install qiskit"
                 ) from e
 
     def adapt(self, circuit: Circuit) -> Any:

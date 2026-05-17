@@ -2,17 +2,18 @@
 
 __all__ = ["thermal_state"]
 
-from typing import List, Optional
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def thermal_state(
     circuit: Circuit,
     beta: float,
-    hamiltonian: Optional[np.ndarray] = None,
-    qubits: Optional[List[int]] = None,
+    hamiltonian: np.ndarray | None = None,
+    qubits: list[int] | None = None,
 ) -> None:
     """Prepare a thermal (Gibbs) state for a given inverse temperature β.
 
@@ -79,4 +80,5 @@ def thermal_state(
         state_vector = eigenvectors @ np.sqrt(weights)
 
         from .rotation_prepare import rotation_prepare
+
         rotation_prepare(circuit, state_vector, qubits)

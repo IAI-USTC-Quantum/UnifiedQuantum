@@ -57,16 +57,10 @@ def main(
 
 
 # Import and register subcommands
-from . import backend
-from . import calibrate
-from . import circuit
-from . import doctor
-from . import simulate
-from . import submit
-from . import result
-from . import config_cmd as config
-from . import task
 from uniqc import gateway
+
+from . import backend, calibrate, circuit, doctor, result, simulate, submit, task
+from . import config_cmd as config
 
 # Register single-action entrypoints as direct commands instead of sub-groups.
 # This avoids Click/Typer group parsing quirks where options after positionals

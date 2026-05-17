@@ -12,7 +12,6 @@ import sys
 
 import pytest
 
-
 pytestmark = pytest.mark.skipif(
     sys.platform.startswith("win"),
     reason="POSIX file-mode bits don't apply on Windows",
@@ -48,9 +47,7 @@ def test_save_config_writes_0600(tmp_path, monkeypatch) -> None:
     # The parent directory must not be world- or group-readable either when
     # we created it ourselves.
     parent_mode = new_dir.stat().st_mode & 0o777
-    assert parent_mode == 0o700, (
-        f"expected parent dir 0o700, got {oct(parent_mode)}"
-    )
+    assert parent_mode == 0o700, f"expected parent dir 0o700, got {oct(parent_mode)}"
 
 
 def test_save_config_retightens_preexisting_file(tmp_path, monkeypatch) -> None:

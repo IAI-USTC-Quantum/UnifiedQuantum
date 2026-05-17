@@ -13,7 +13,6 @@ from uniqc.backend_adapter.preflight import (
     parse_backend_target,
 )
 
-
 # ---------------------------------------------------------------------------
 # Identifier parsing
 # ---------------------------------------------------------------------------
@@ -22,7 +21,9 @@ from uniqc.backend_adapter.preflight import (
 class TestParseBackendTarget:
     def test_local_aliases(self):
         for alias in (
-            "local", "local:simulator", "dummy:local:simulator",
+            "local",
+            "local:simulator",
+            "dummy:local:simulator",
         ):
             t = parse_backend_target(alias)
             assert t.kind == "local"
@@ -94,24 +95,28 @@ class TestParseBackendTarget:
 class TestEnsureBackendReady:
     def test_local_passes_when_uniqc_cpp_present(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
         assert ensure_backend_ready("local") is None
         assert ensure_backend_ready("dummy:local:simulator") is None
 
     def test_local_raises_when_uniqc_cpp_missing(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: False,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: False,
         )
         with pytest.raises(MissingDependencyError, match="uniqc_cpp"):
             ensure_backend_ready("local")
 
     def test_dummy_provider_raises_without_sdk(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: False,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: False,
         )
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
         with pytest.raises(MissingDependencyError) as excinfo:
             ensure_backend_ready("dummy:originq:WK_C180")
@@ -120,7 +125,8 @@ class TestEnsureBackendReady:
 
     def test_provider_raises_without_sdk(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: False,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: False,
         )
         with pytest.raises(MissingDependencyError):
             ensure_backend_ready("originq:WK_C180")
@@ -131,10 +137,12 @@ class TestEnsureBackendReady:
 
     def test_dummy_provider_returns_cached_chip(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: True,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: True,
         )
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
         sentinel = mock.Mock(spec=[], chip_name="WK_C180")
         with (
@@ -148,16 +156,19 @@ class TestEnsureBackendReady:
             ),
         ):
             result = ensure_backend_ready(
-                "dummy:originq:WK_C180", max_age_hours=24.0,
+                "dummy:originq:WK_C180",
+                max_age_hours=24.0,
             )
         assert result is sentinel
 
     def test_refresh_attempt_propagates_provider_error(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: True,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: True,
         )
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
         # Cache miss → refresh attempt → simulated provider error.
         with (
@@ -167,36 +178,41 @@ class TestEnsureBackendReady:
             ),
             mock.patch(
                 "uniqc.backend_adapter.preflight._refresh_chip",
-                side_effect=BackendPreflightError(
-                    "simulated provider failure"
-                ),
+                side_effect=BackendPreflightError("simulated provider failure"),
             ),
+            pytest.raises(BackendPreflightError, match="simulated"),
         ):
-            with pytest.raises(BackendPreflightError, match="simulated"):
-                ensure_backend_ready("dummy:originq:WK_C180")
+            ensure_backend_ready("dummy:originq:WK_C180")
 
     def test_refresh_disabled_raises_when_cache_missing(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: True,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: True,
         )
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
-        with mock.patch(
-            "uniqc.backend_adapter.preflight._load_chip_cache",
-            return_value=(None, mock.Mock(exists=lambda: False)),
+        with (
+            mock.patch(
+                "uniqc.backend_adapter.preflight._load_chip_cache",
+                return_value=(None, mock.Mock(exists=lambda: False)),
+            ),
+            pytest.raises(BackendPreflightError, match="missing"),
         ):
-            with pytest.raises(BackendPreflightError, match="missing"):
-                ensure_backend_ready(
-                    "dummy:originq:WK_C180", refresh=False,
-                )
+            ensure_backend_ready(
+                "dummy:originq:WK_C180",
+                refresh=False,
+            )
 
     def test_stale_cache_triggers_refresh(self, monkeypatch):
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_pyqpanda3", lambda: True,
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: True,
         )
         monkeypatch.setattr(
-            "uniqc.backend_adapter.preflight.check_uniqc_cpp", lambda: True,
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
         )
         sentinel_old = mock.Mock(spec=[], chip_name="WK_C180")
         sentinel_new = mock.Mock(spec=[], chip_name="WK_C180")
@@ -215,7 +231,8 @@ class TestEnsureBackendReady:
             ) as ref,
         ):
             result = ensure_backend_ready(
-                "dummy:originq:WK_C180", max_age_hours=24.0,
+                "dummy:originq:WK_C180",
+                max_age_hours=24.0,
             )
         assert result is sentinel_new
         ref.assert_called_once()

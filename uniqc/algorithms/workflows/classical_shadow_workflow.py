@@ -7,15 +7,13 @@ expectations from a single shadow dataset in one call.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence
-
-import numpy as np
 
 from uniqc.algorithms.core.measurement.classical_shadow import (
+    ShadowSnapshot,
     classical_shadow,
     shadow_expectation,
-    ShadowSnapshot,
 )
 from uniqc.circuit_builder import Circuit
 
@@ -32,8 +30,8 @@ class ShadowWorkflowResult:
         n_snapshots: Number of shadow snapshots collected (= ``shots``).
     """
 
-    snapshots: List[ShadowSnapshot]
-    expectations: Dict[str, float] = field(default_factory=dict)
+    snapshots: list[ShadowSnapshot]
+    expectations: dict[str, float] = field(default_factory=dict)
     n_snapshots: int = 0
 
 
@@ -77,10 +75,7 @@ def run_classical_shadow_workflow(
 
     lengths = {len(p) for p in pauli_observables}
     if len(lengths) != 1:
-        raise ValueError(
-            f"All Pauli observables must have the same length, got: "
-            f"{sorted(lengths)}"
-        )
+        raise ValueError(f"All Pauli observables must have the same length, got: {sorted(lengths)}")
 
     kwargs: dict = {"shots": shots}
     if n_shadow is not None:
@@ -89,7 +84,7 @@ def run_classical_shadow_workflow(
         kwargs["qubits"] = qubits
 
     snapshots = classical_shadow(circuit, **kwargs)
-    expectations: Dict[str, float] = {}
+    expectations: dict[str, float] = {}
     for pauli in pauli_observables:
         expectations[pauli] = float(shadow_expectation(snapshots, pauli))
 

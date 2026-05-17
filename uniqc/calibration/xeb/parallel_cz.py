@@ -158,21 +158,15 @@ def build_parallel_cz_xeb_circuit(
     pat_t = tuple((int(a), int(b)) for a, b in pattern)
     for a, b in pat_t:
         if a not in qset or b not in qset:
-            raise ValueError(
-                f"pattern edge ({a},{b}) outside region {region}"
-            )
+            raise ValueError(f"pattern edge ({a},{b}) outside region {region}")
 
     from uniqc import Circuit
 
     # 0x50435A58 = "PCZX" — fixed salt, makes seeds disjoint from other XEB families
-    ss = np.random.SeedSequence(
-        [int(seed), int(depth), int(instance), 0x50435A58, _pattern_id(pat_t)]
-    )
+    ss = np.random.SeedSequence([int(seed), int(depth), int(instance), 0x50435A58, _pattern_id(pat_t)])
     rng = np.random.default_rng(ss)
 
-    cycles: list[
-        tuple[tuple[tuple[float, float, float], ...], tuple[tuple[int, int], ...]]
-    ] = []
+    cycles: list[tuple[tuple[tuple[float, float, float], ...], tuple[tuple[int, int], ...]]] = []
     circuit = Circuit()
     for _ in range(depth):
         angles: list[tuple[float, float, float]] = []
@@ -223,13 +217,20 @@ def build_parallel_cz_xeb_corpus(
         for d in depths:
             for inst in range(instances):
                 pc = build_parallel_cz_xeb_circuit(
-                    region_qubits, pat_t, depth=int(d),
-                    seed=seed, instance=int(inst),
+                    region_qubits,
+                    pat_t,
+                    depth=int(d),
+                    seed=seed,
+                    instance=int(inst),
                 )
                 rid = f"P{p_idx}_d{int(d)}_inst{int(inst)}"
-                out.append(dataclasses.replace(
-                    pc, pattern_idx=p_idx, record_id=rid,
-                ))
+                out.append(
+                    dataclasses.replace(
+                        pc,
+                        pattern_idx=p_idx,
+                        record_id=rid,
+                    )
+                )
     return out
 
 
@@ -355,9 +356,7 @@ class PairDecay:
     log_residual_std: float
 
 
-def _record_view(
-    probe: ProbeCircuit | dict, counts: Mapping[Any, int]
-) -> dict:
+def _record_view(probe: ProbeCircuit | dict, counts: Mapping[Any, int]) -> dict:
     """Normalise either a ``ProbeCircuit`` + counts pair, or a dict view,
     into the dict shape used by the per-pair pipeline."""
     if isinstance(probe, ProbeCircuit):
@@ -401,22 +400,16 @@ def per_pair_F_XEB(
     out: list[PairCircuitFit] = []
     for r in records:
         if isinstance(r, ProbeCircuit):
-            counts = (
-                counts_by_record.get(r.record_id, {})
-                if counts_by_record else {}
-            )
+            counts = counts_by_record.get(r.record_id, {}) if counts_by_record else {}
             d = _record_view(r, counts)
         else:
             counts = (
-                counts_by_record.get(r["record_id"], r.get("counts", {}))
-                if counts_by_record else r.get("counts", {})
+                counts_by_record.get(r["record_id"], r.get("counts", {})) if counts_by_record else r.get("counts", {})
             )
             d = _record_view(r, counts)
         sched: Schedule = d["schedule"]
         if not isinstance(sched, Schedule):
-            raise TypeError(
-                "record['schedule'] must be a Schedule instance"
-            )
+            raise TypeError("record['schedule'] must be a Schedule instance")
         measured = sched.measured_qubits
         for pair in pairs:
             if pair[0] not in measured or pair[1] not in measured:
@@ -437,20 +430,20 @@ def per_pair_F_XEB(
                 # Ideal distribution is uniform — F is undefined; skip.
                 continue
             f_xeb = (mean_p_meas - uniform_overlap) / ideal_contrast
-            var_p = float(
-                np.dot(wts, (p_at_keys - mean_p_meas) ** 2) / shots
-            )
+            var_p = float(np.dot(wts, (p_at_keys - mean_p_meas) ** 2) / shots)
             sigma = math.sqrt(max(var_p, 0.0) / shots) / abs(ideal_contrast)
-            out.append(PairCircuitFit(
-                record_id=str(d["record_id"]),
-                pair=(int(pair[0]), int(pair[1])),
-                pattern_idx=int(d["pattern_idx"]),
-                depth=int(d["depth"]),
-                instance=int(d["instance"]),
-                F_XEB=f_xeb,
-                F_XEB_sigma=sigma,
-                shots=shots,
-            ))
+            out.append(
+                PairCircuitFit(
+                    record_id=str(d["record_id"]),
+                    pair=(int(pair[0]), int(pair[1])),
+                    pattern_idx=int(d["pattern_idx"]),
+                    depth=int(d["depth"]),
+                    instance=int(d["instance"]),
+                    F_XEB=f_xeb,
+                    F_XEB_sigma=sigma,
+                    shots=shots,
+                )
+            )
     return out
 
 
@@ -492,9 +485,7 @@ def fit_pair_decays(
         sigma_m = float(math.sqrt(max(cov[0, 0], 0.0)))
         sigma_c = float(math.sqrt(max(cov[1, 1], 0.0)))
         residuals = log_f - (m * ds_m + c)
-        res_std = (
-            float(np.std(residuals, ddof=1)) if mask.sum() > 2 else 0.0
-        )
+        res_std = float(np.std(residuals, ddof=1)) if mask.sum() > 2 else 0.0
         out[pair] = PairDecay(
             pair=pair,
             n_points=int(mask.sum()),
@@ -564,13 +555,14 @@ class ParallelCZBenchmarker:
           * ``per_pair_results``: dict[pair, XEBResult]
         """
         corpus = build_parallel_cz_xeb_corpus(
-            region_qubits, patterns, depths, instances, seed=self.seed,
+            region_qubits,
+            patterns,
+            depths,
+            instances,
+            seed=self.seed,
         )
         counts_by_record = self._execute(corpus)
-        records = [
-            _record_view(pc, counts_by_record.get(pc.record_id, {}))
-            for pc in corpus
-        ]
+        records = [_record_view(pc, counts_by_record.get(pc.record_id, {})) for pc in corpus]
         all_pairs: dict[PairKey, None] = {}
         for pat in patterns:
             for a, b in pat:
@@ -579,9 +571,7 @@ class ParallelCZBenchmarker:
         fits = per_pair_F_XEB(records, pairs)
         decays = fit_pair_decays(fits)
 
-        backend_name = getattr(self.adapter, "name", None) or type(
-            self.adapter
-        ).__name__.lower()
+        backend_name = getattr(self.adapter, "name", None) or type(self.adapter).__name__.lower()
         per_pair_results: dict[PairKey, XEBResult] = {}
         depth_tuple = tuple(int(d) for d in depths)
         ts = _utc_now()
@@ -593,9 +583,7 @@ class ParallelCZBenchmarker:
                 qubit=None,
                 pairs=[pair],
                 fidelity_per_layer=float(decay.alpha),
-                fidelity_std_error=float(
-                    decay.alpha * decay.sigma_log_alpha
-                ),
+                fidelity_std_error=float(decay.alpha * decay.sigma_log_alpha),
                 fit_a=float(decay.beta),
                 fit_b=0.0,
                 fit_r=float(decay.alpha),
@@ -606,7 +594,8 @@ class ParallelCZBenchmarker:
             per_pair_results[pair] = r
             if self.cache_dir is not None:
                 save_calibration_result(
-                    r, type_prefix="xeb_2q_parallel",
+                    r,
+                    type_prefix="xeb_2q_parallel",
                     cache_dir=self.cache_dir,
                 )
         return {
@@ -619,18 +608,14 @@ class ParallelCZBenchmarker:
 
     # -- internal --------------------------------------------------------
 
-    def _execute(
-        self, corpus: Sequence[ProbeCircuit]
-    ) -> dict[str, dict[Any, int]]:
+    def _execute(self, corpus: Sequence[ProbeCircuit]) -> dict[str, dict[Any, int]]:
         """Run the corpus on the adapter and return a {record_id: counts} map."""
         # DummyAdapter fast path: exact pmeasure -> sample shots locally.
         if hasattr(self.adapter, "simulate_pmeasure"):
             return self._execute_via_pmeasure(corpus)
 
         # Cloud / generic adapters: prefer batch when available.
-        if hasattr(self.adapter, "submit_batch") and hasattr(
-            self.adapter, "query_batch"
-        ):
+        if hasattr(self.adapter, "submit_batch") and hasattr(self.adapter, "query_batch"):
             return self._execute_via_batch(corpus)
 
         # Fallback: per-circuit submit/query loop.
@@ -640,9 +625,7 @@ class ParallelCZBenchmarker:
             out[pc.record_id] = counts
         return out
 
-    def _execute_via_pmeasure(
-        self, corpus: Sequence[ProbeCircuit]
-    ) -> dict[str, dict[Any, int]]:
+    def _execute_via_pmeasure(self, corpus: Sequence[ProbeCircuit]) -> dict[str, dict[Any, int]]:
         rng = np.random.default_rng(self.seed + 1)
         out: dict[str, dict[Any, int]] = {}
         for pc in corpus:
@@ -657,20 +640,13 @@ class ParallelCZBenchmarker:
             probs = probs / probs.sum()
             samples = rng.choice(probs.size, size=self.shots, p=probs)
             keys, vals = np.unique(samples, return_counts=True)
-            out[pc.record_id] = {
-                format(int(k), f"0{n_meas}b"): int(v)
-                for k, v in zip(keys, vals)
-            }
+            out[pc.record_id] = {format(int(k), f"0{n_meas}b"): int(v) for k, v in zip(keys, vals)}
         return out
 
-    def _execute_via_batch(
-        self, corpus: Sequence[ProbeCircuit]
-    ) -> dict[str, dict[Any, int]]:
+    def _execute_via_batch(self, corpus: Sequence[ProbeCircuit]) -> dict[str, dict[Any, int]]:
         originirs = [pc.circuit.originir for pc in corpus]
         task_ids = self.adapter.submit_batch(originirs, shots=self.shots)
-        deadline = time.time() + max(
-            self.query_timeout, self.query_timeout * len(originirs) / 20
-        )
+        deadline = time.time() + max(self.query_timeout, self.query_timeout * len(originirs) / 20)
         while True:
             result = self.adapter.query_batch(task_ids)
             status = result.get("status", "")
@@ -686,13 +662,9 @@ class ParallelCZBenchmarker:
                     )
                 return {pc.record_id: dict(p) for pc, p in zip(corpus, payload)}
             if status == "failed":
-                raise RuntimeError(
-                    f"XEB batch failed: {result.get('result') or result.get('error')}"
-                )
+                raise RuntimeError(f"XEB batch failed: {result.get('result') or result.get('error')}")
             if time.time() >= deadline:
-                raise TimeoutError(
-                    f"Timed out waiting for XEB batch task(s) {task_ids}"
-                )
+                raise TimeoutError(f"Timed out waiting for XEB batch task(s) {task_ids}")
             time.sleep(self.query_interval)
 
     def _submit_and_wait_counts(self, originir: str) -> dict[Any, int]:
@@ -709,10 +681,7 @@ class ParallelCZBenchmarker:
                     return raw
                 return {}
             if status == "failed":
-                raise RuntimeError(
-                    f"XEB circuit failed: "
-                    f"{result.get('result') or result.get('error')}"
-                )
+                raise RuntimeError(f"XEB circuit failed: {result.get('result') or result.get('error')}")
             if time.time() >= deadline:
                 raise TimeoutError(f"Timed out waiting for XEB task {task_id}")
             time.sleep(self.query_interval)

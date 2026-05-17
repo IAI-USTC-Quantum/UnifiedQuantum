@@ -38,8 +38,8 @@ explicitly first if you need that.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Iterable
 
 from uniqc.circuit_builder.qcircuit import Circuit, OpCode
 
@@ -51,9 +51,7 @@ __all__ = [
 
 
 # Set of normalised (upper-case) gate names that this pass rewrites.
-QASM2_UNREPRESENTABLE_GATES: frozenset[str] = frozenset(
-    {"RPHI", "RPHI90", "RPHI180", "PHASE2Q", "UU15"}
-)
+QASM2_UNREPRESENTABLE_GATES: frozenset[str] = frozenset({"RPHI", "RPHI90", "RPHI180", "PHASE2Q", "UU15"})
 
 
 def _as_param_list(params) -> list[float]:
@@ -71,8 +69,7 @@ def _check_target_qubits(name: str, qubits, expected: int) -> list[int]:
         qubit_list = [int(q) for q in qubits]
     if len(qubit_list) != expected:
         raise ValueError(
-            f"Decomposition of {name} expects {expected} target qubit(s), "
-            f"got {len(qubit_list)}: {qubit_list}"
+            f"Decomposition of {name} expects {expected} target qubit(s), got {len(qubit_list)}: {qubit_list}"
         )
     return qubit_list
 
@@ -130,9 +127,7 @@ def _uu15_replacement(
     auxiliary definition that ``qelib1.inc`` parsers already accept).
     """
     if len(params) != 15:
-        raise ValueError(
-            f"UU15 expects exactly 15 parameters, got {len(params)}"
-        )
+        raise ValueError(f"UU15 expects exactly 15 parameters, got {len(params)}")
     a0, a1, a2, b0, b1, b2, txx, tyy, tzz, c0, c1, c2, d0, d1, d2 = params
     return [
         ("U3", qa, None, [a0, a1, a2], False, None),
@@ -170,13 +165,11 @@ def _apply_dagger(replacement: list[OpCode], gate_name: str) -> list[OpCode]:
             # Should not occur — replacements never include these names —
             # but be defensive.
             raise NotImplementedError(
-                f"Internal error: cannot dagger replacement opcode {upper!r} "
-                f"for gate {gate_name!r}."
+                f"Internal error: cannot dagger replacement opcode {upper!r} for gate {gate_name!r}."
             )
         else:
             raise NotImplementedError(
-                f"Cannot dagger replacement opcode {upper!r} for gate "
-                f"{gate_name!r}; missing inverse rule."
+                f"Cannot dagger replacement opcode {upper!r} for gate {gate_name!r}; missing inverse rule."
             )
         inverted.append((name, qubits, cbits, new_params, False, ctrls))
     return inverted
@@ -252,10 +245,7 @@ def decompose_for_qasm2(circuit: Circuit) -> Circuit:
     >>> {op[0] for op in c2.opcode_list}.isdisjoint({"RPhi", "PHASE2Q"})
     True
     """
-    has_target = any(
-        str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES
-        for op in circuit.opcode_list
-    )
+    has_target = any(str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES for op in circuit.opcode_list)
     if not has_target:
         return circuit
 

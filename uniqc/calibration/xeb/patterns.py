@@ -235,16 +235,11 @@ class ParallelPatternGenerator:
         n_colors = max(colors.values()) + 1 if colors else 0
 
         # Group vertices by color
-        groups_dict: dict[int, list[tuple[int, int]]] = (
-            collections.defaultdict(list)
-        )
+        groups_dict: dict[int, list[tuple[int, int]]] = collections.defaultdict(list)
         for idx, col in colors.items():
             groups_dict[col].append(idx_to_edge[idx])
 
-        groups = tuple(
-            tuple(sorted(groups_dict[c], key=lambda e: (e[0], e[1])))
-            for c in sorted(groups_dict)
-        )
+        groups = tuple(tuple(sorted(groups_dict[c], key=lambda e: (e[0], e[1]))) for c in sorted(groups_dict))
 
         return ParallelPatternResult(
             groups=groups,
@@ -278,16 +273,11 @@ class ParallelPatternGenerator:
         colors = _dsatur_color(conflict_adj)
         n_colors = max(colors.values()) + 1 if colors else 0
 
-        groups_dict: dict[int, list[tuple[int, int]]] = (
-            collections.defaultdict(list)
-        )
+        groups_dict: dict[int, list[tuple[int, int]]] = collections.defaultdict(list)
         for idx, col in colors.items():
             groups_dict[col].append(pairs[idx])
 
-        groups = tuple(
-            tuple(sorted(groups_dict[c], key=lambda e: (e[0], e[1])))
-            for c in sorted(groups_dict)
-        )
+        groups = tuple(tuple(sorted(groups_dict[c], key=lambda e: (e[0], e[1]))) for c in sorted(groups_dict))
 
         return ParallelPatternResult(
             groups=groups,

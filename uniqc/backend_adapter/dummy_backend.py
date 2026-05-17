@@ -63,9 +63,7 @@ def _parse_mps_kwargs(suffix: str) -> dict[str, Any]:
         if not chunk:
             continue
         if "=" not in chunk:
-            raise ValueError(
-                f"MPS dummy backend kwargs must be 'key=value', got '{chunk}'"
-            )
+            raise ValueError(f"MPS dummy backend kwargs must be 'key=value', got '{chunk}'")
         key, raw = chunk.split("=", 1)
         key = key.strip().lower()
         raw = raw.strip()
@@ -77,8 +75,7 @@ def _parse_mps_kwargs(suffix: str) -> dict[str, Any]:
             parsed["seed"] = int(raw)
         else:
             raise ValueError(
-                f"Unknown MPS dummy backend kwarg '{key}'. "
-                "Supported: chi (chi_max), cutoff (svd_cutoff), seed."
+                f"Unknown MPS dummy backend kwarg '{key}'. Supported: chi (chi_max), cutoff (svd_cutoff), seed."
             )
     return parsed
 
@@ -173,8 +170,7 @@ def resolve_dummy_backend(
     identifier = (identifier or "dummy:local:simulator").strip()
     if identifier in ("dummy", "dummy:local"):
         raise ValueError(
-            f"Backend identifier {identifier!r} is not allowed. Use the "
-            "canonical 'dummy:local:simulator' form instead."
+            f"Backend identifier {identifier!r} is not allowed. Use the canonical 'dummy:local:simulator' form instead."
         )
     if identifier.startswith("dummy:"):
         suffix = identifier.split(":", 1)[1].strip()
@@ -191,7 +187,7 @@ def resolve_dummy_backend(
             # Apply override block at the bottom of the function.
             return _apply_dummy_overrides(spec, **overrides)
         if suffix.startswith("local:"):
-            suffix = suffix[len("local:"):].strip()
+            suffix = suffix[len("local:") :].strip()
         line_match = _VIRTUAL_LINE_RE.match(suffix)
         grid_match = _VIRTUAL_GRID_RE.match(suffix)
         mps_match = _MPS_LINEAR_RE.match(suffix)
@@ -203,9 +199,7 @@ def resolve_dummy_backend(
             spec = DummyBackendSpec(
                 identifier=canonical,
                 name=canonical,
-                description=(
-                    f"Noiseless MPS simulator on a {n}-qubit linear chain{chi_str}"
-                ),
+                description=(f"Noiseless MPS simulator on a {n}-qubit linear chain{chi_str}"),
                 available_qubits=list(range(n)),
                 available_topology=virtual_line_topology(n),
                 simulator_kind="mps",
@@ -321,24 +315,11 @@ def _chip_averages(chip: Any) -> tuple[float | None, float | None, float | None,
     def avg(values: list[float]) -> float | None:
         return sum(values) / len(values) if values else None
 
-    oneq = [
-        float(q.single_gate_fidelity)
-        for q in chip.single_qubit_data
-        if q.single_gate_fidelity is not None
-    ]
-    readout = [
-        float(q.avg_readout_fidelity)
-        for q in chip.single_qubit_data
-        if q.avg_readout_fidelity is not None
-    ]
+    oneq = [float(q.single_gate_fidelity) for q in chip.single_qubit_data if q.single_gate_fidelity is not None]
+    readout = [float(q.avg_readout_fidelity) for q in chip.single_qubit_data if q.avg_readout_fidelity is not None]
     t1 = [float(q.t1) for q in chip.single_qubit_data if q.t1 is not None]
     t2 = [float(q.t2) for q in chip.single_qubit_data if q.t2 is not None]
-    twoq = [
-        float(g.fidelity)
-        for pair in chip.two_qubit_data
-        for g in pair.gates
-        if g.fidelity is not None
-    ]
+    twoq = [float(g.fidelity) for pair in chip.two_qubit_data for g in pair.gates if g.fidelity is not None]
     return avg(oneq), avg(twoq), avg(readout), avg(t1), avg(t2)
 
 

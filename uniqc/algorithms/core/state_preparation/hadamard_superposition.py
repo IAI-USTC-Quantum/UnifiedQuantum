@@ -5,14 +5,13 @@ Creates a uniform superposition over the specified qubits.
 
 __all__ = ["hadamard_superposition"]
 
-from typing import List, Optional
 
 from uniqc.circuit_builder import Circuit
 
 
 def hadamard_superposition(
     circuit: Circuit,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
 ) -> None:
     """Create a uniform Hadamard superposition on the given qubits.
 

@@ -18,7 +18,8 @@ support **both** signatures during the deprecation cycle:
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from uniqc.circuit_builder.qcircuit import Circuit
 
@@ -30,9 +31,9 @@ def dispatch_circuit_fragment(
     *,
     n_qubits_kwarg: str = "n_qubits",
     qubits_kwarg: str = "qubits",
-    legacy_qubits: Optional[Any] = None,
-    extra_kwargs: Optional[dict] = None,
-) -> Optional[Circuit]:
+    legacy_qubits: Any | None = None,
+    extra_kwargs: dict | None = None,
+) -> Circuit | None:
     """Resolve the dual-mode signature for an algorithm fragment function.
 
     Args:
@@ -83,10 +84,7 @@ def dispatch_circuit_fragment(
         # Allow n_qubits to be inferred from qubits if provided
         qubits = kwargs.get(qubits_kwarg)
         if qubits is None:
-            raise ValueError(
-                f"{name}(...) requires either an integer n_qubits or a "
-                f"non-empty qubits list."
-            )
+            raise ValueError(f"{name}(...) requires either an integer n_qubits or a non-empty qubits list.")
         n_qubits = max(qubits) + 1
     kwargs[n_qubits_kwarg] = n_qubits
     return fragment_builder(**kwargs)

@@ -33,9 +33,7 @@ class ArchiveStore:
         Returns ``True`` if the task existed and was moved.
         """
         with self._store._tx() as conn:
-            row = conn.execute(
-                "SELECT * FROM tasks WHERE task_id = ?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)).fetchone()
             if not row:
                 return False
             archived_at = datetime.now(timezone.utc).isoformat()
@@ -49,8 +47,7 @@ class ArchiveStore:
                 svalues = [srow[c] for c in scols]
                 splaceholders = ",".join("?" * len(scols))
                 conn.execute(
-                    f"INSERT INTO archived_task_shards ({','.join(scols)}, archived_at) "
-                    f"VALUES ({splaceholders}, ?)",
+                    f"INSERT INTO archived_task_shards ({','.join(scols)}, archived_at) VALUES ({splaceholders}, ?)",
                     svalues + [archived_at],
                 )
             cols = list(row.keys())
@@ -58,8 +55,7 @@ class ArchiveStore:
             conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
             placeholders = ",".join("?" * len(cols))
             conn.execute(
-                f"INSERT INTO archived_tasks ({','.join(cols)}, archived_at) "
-                f"VALUES ({placeholders}, ?)",
+                f"INSERT INTO archived_tasks ({','.join(cols)}, archived_at) VALUES ({placeholders}, ?)",
                 values + [archived_at],
             )
         return True
@@ -71,9 +67,7 @@ class ArchiveStore:
         ``True`` if the task existed and was restored.
         """
         with self._store._tx() as conn:
-            row = conn.execute(
-                "SELECT * FROM archived_tasks WHERE task_id = ?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM archived_tasks WHERE task_id = ?", (task_id,)).fetchone()
             if not row:
                 return False
             cols = [c for c in row.keys() if c != "archived_at"]
@@ -143,9 +137,7 @@ class ArchiveStore:
         from uniqc.backend_adapter.task.store import _row_to_info
 
         with self._store._tx() as conn:
-            row = conn.execute(
-                "SELECT * FROM archived_tasks WHERE task_id = ?", (task_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM archived_tasks WHERE task_id = ?", (task_id,)).fetchone()
         return _row_to_info(row) if row is not None else None
 
     def delete_archived(self, task_id: str) -> bool:
@@ -155,9 +147,7 @@ class ArchiveStore:
                 "DELETE FROM archived_task_shards WHERE uniqc_task_id = ?",
                 (task_id,),
             )
-            cur = conn.execute(
-                "DELETE FROM archived_tasks WHERE task_id = ?", (task_id,)
-            )
+            cur = conn.execute("DELETE FROM archived_tasks WHERE task_id = ?", (task_id,))
             return cur.rowcount > 0
 
     def count_archived(self, *, status: str | None = None, backend: str | None = None) -> int:

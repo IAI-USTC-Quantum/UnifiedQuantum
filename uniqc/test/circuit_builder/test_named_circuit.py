@@ -9,12 +9,10 @@ Tests cover:
 - Nested circuit definitions
 """
 
-import pytest
 import math
-from uniqc.circuit_builder import Circuit, QReg
-from uniqc.circuit_builder.parameter import Parameter
-from uniqc.circuit_builder.named_circuit import circuit_def, NamedCircuit
 
+from uniqc.circuit_builder import Circuit
+from uniqc.circuit_builder.named_circuit import NamedCircuit, circuit_def
 
 # =============================================================================
 # TestCircuitDefDecorator
@@ -26,6 +24,7 @@ class TestCircuitDefDecorator:
 
     def test_basic_decorator(self):
         """@circuit_def creates a NamedCircuit."""
+
         @circuit_def(name="bell_pair")
         def bell_pair(circ, q):
             circ.h(q[0])
@@ -37,6 +36,7 @@ class TestCircuitDefDecorator:
 
     def test_decorator_with_qregs_dict(self):
         """@circuit_def with qregs dict."""
+
         @circuit_def(name="test", qregs={"q": 2})
         def test_circ(circ, q):
             circ.h(q[0])
@@ -46,6 +46,7 @@ class TestCircuitDefDecorator:
 
     def test_decorator_with_params(self):
         """@circuit_def with params list."""
+
         @circuit_def(name="rot", params=["theta"])
         def rot_circ(circ, q, theta):
             circ.rx(q[0], theta)
@@ -65,6 +66,7 @@ class TestNamedCircuitSignature:
 
     def test_num_qubits_from_qregs_dict(self):
         """num_qubits is sum of qregs sizes."""
+
         @circuit_def(name="test", qregs={"a": 3, "b": 2})
         def test_circ(circ, a, b):
             return circ
@@ -73,6 +75,7 @@ class TestNamedCircuitSignature:
 
     def test_num_parameters(self):
         """num_parameters matches params list length."""
+
         @circuit_def(name="test", params=["theta", "phi"])
         def test_circ(circ, q, theta, phi):
             return circ
@@ -90,6 +93,7 @@ class TestNamedCircuitApply:
 
     def test_apply_basic(self):
         """Apply NamedCircuit to parent circuit."""
+
         @circuit_def(name="bell_pair", qregs={"q": 2})
         def bell_pair(circ, q):
             circ.h(q[0])
@@ -110,6 +114,7 @@ class TestNamedCircuitApply:
 
     def test_apply_with_qreg_slice(self):
         """Apply NamedCircuit using QRegSlice mapping."""
+
         @circuit_def(name="bell_pair", qregs={"q": 2})
         def bell_pair(circ, q):
             circ.h(q[0])
@@ -136,18 +141,20 @@ class TestNamedCircuitParams:
 
     def test_apply_with_param_dict(self):
         """Apply NamedCircuit with parameter values."""
+
         @circuit_def(name="rx_gate", qregs={"q": 1}, params=["theta"])
         def rx_gate(circ, q, theta):
             circ.rx(q[0], theta)
             return circ
 
         c = Circuit(1)
-        rx_gate(c, qreg_mapping={"q": [0]}, param_values={"theta": math.pi/2})
+        rx_gate(c, qreg_mapping={"q": [0]}, param_values={"theta": math.pi / 2})
 
         assert "RX q[0]" in c.originir
 
     def test_apply_with_param_list(self):
         """Apply NamedCircuit with parameter list."""
+
         @circuit_def(name="rot", qregs={"q": 1}, params=["theta", "phi"])
         def rot_circ(circ, q, theta, phi):
             circ.rx(q[0], theta)
@@ -170,6 +177,7 @@ class TestNamedCircuitStandalone:
 
     def test_build_standalone(self):
         """Build standalone Circuit from NamedCircuit."""
+
         @circuit_def(name="bell_pair", qregs={"q": 2})
         def bell_pair(circ, q):
             circ.h(q[0])
@@ -182,6 +190,7 @@ class TestNamedCircuitStandalone:
 
     def test_build_standalone_with_params(self):
         """Build standalone with parameter values."""
+
         @circuit_def(name="rot", qregs={"q": 1}, params=["theta"])
         def rot_circ(circ, q, theta):
             circ.rx(q[0], theta)
@@ -201,6 +210,7 @@ class TestNestedNamedCircuits:
 
     def test_nested_circuit(self):
         """NamedCircuit can call another NamedCircuit."""
+
         @circuit_def(name="h_gate", qregs={"q": 1})
         def h_gate(circ, q):
             circ.h(q[0])

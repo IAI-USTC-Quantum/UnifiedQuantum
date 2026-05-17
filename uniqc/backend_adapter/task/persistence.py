@@ -34,10 +34,12 @@ __all__ = ["TaskPersistence", "DEFAULT_CACHE_DIR"]
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from uniqc.backend_adapter.task.store import (
     DEFAULT_CACHE_DIR as _STORE_DEFAULT_CACHE_DIR,
+)
+from uniqc.backend_adapter.task.store import (
     TERMINAL_STATUSES,
     TaskInfo,
     TaskStore,
@@ -73,7 +75,7 @@ class TaskPersistence:
         'running'
     """
 
-    def __init__(self, cache_dir: Optional[Path] = None) -> None:
+    def __init__(self, cache_dir: Path | None = None) -> None:
         self._store = TaskStore(cache_dir)
         self.cache_dir: Path = self._store.cache_dir
         # Legacy attribute: historically referenced the JSONL file;
@@ -83,10 +85,10 @@ class TaskPersistence:
     # -- helpers ------------------------------------------------------------
 
     @staticmethod
-    def _split_kwargs(metadata: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    def _split_kwargs(metadata: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         """Split caller kwargs into (reserved, extra)."""
-        reserved: Dict[str, Any] = {}
-        extra: Dict[str, Any] = {}
+        reserved: dict[str, Any] = {}
+        extra: dict[str, Any] = {}
         for key, value in metadata.items():
             if key in _RESERVED_KWARGS:
                 reserved[key] = value
@@ -95,9 +97,9 @@ class TaskPersistence:
         return reserved, extra
 
     @staticmethod
-    def _info_to_record(info: TaskInfo) -> Dict[str, Any]:
+    def _info_to_record(info: TaskInfo) -> dict[str, Any]:
         """Render a TaskInfo as the legacy flat-dict record."""
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "task_id": info.task_id,
             "platform": info.backend,
             "status": info.status,
@@ -120,7 +122,7 @@ class TaskPersistence:
         task_id: str,
         platform: str,
         status: str,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         **metadata: Any,
     ) -> None:
         """Save (upsert) a task record.
@@ -185,7 +187,7 @@ class TaskPersistence:
         task_id: str,
         platform: str,
         status: str,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         **metadata: Any,
     ) -> None:
         """Update if present, otherwise insert."""
@@ -196,17 +198,17 @@ class TaskPersistence:
 
     # -- read ---------------------------------------------------------------
 
-    def load(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def load(self, task_id: str) -> dict[str, Any] | None:
         """Load a record by task id."""
         info = self._store.get(task_id)
         return self._info_to_record(info) if info is not None else None
 
     def list_all(
         self,
-        platform: Optional[str] = None,
-        status: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+        platform: str | None = None,
+        status: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
         """List records, newest first.
 
         Args:
@@ -217,20 +219,18 @@ class TaskPersistence:
         infos = self._store.list(status=status, backend=platform, limit=limit)
         return [self._info_to_record(i) for i in infos]
 
-    def list_by_platform(self, platform: str) -> List[Dict[str, Any]]:
+    def list_by_platform(self, platform: str) -> list[dict[str, Any]]:
         """All records for a given platform."""
         return self.list_all(platform=platform)
 
-    def list_pending(self) -> List[Dict[str, Any]]:
+    def list_pending(self) -> list[dict[str, Any]]:
         """Records currently in-flight ('pending' or 'running')."""
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
         for status in ("pending", "running"):
             records.extend(self.list_all(status=status))
         return records
 
-    def count(
-        self, platform: Optional[str] = None, status: Optional[str] = None
-    ) -> int:
+    def count(self, platform: str | None = None, status: str | None = None) -> int:
         """Count records with optional filters."""
         return self._store.count(status=status, backend=platform)
 

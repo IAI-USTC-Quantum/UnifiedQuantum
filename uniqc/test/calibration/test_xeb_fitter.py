@@ -71,8 +71,7 @@ class TestExponentialFit:
         r_true = 0.99
         A, B = 1.0, 0.0
         depths = [5, 10, 20, 50, 100]
-        fidelities = [A * (r_true ** m) + B + np.random.normal(0, 0.001)
-                      for m in depths]
+        fidelities = [A * (r_true**m) + B + np.random.normal(0, 0.001) for m in depths]
         result = fit_exponential(depths, fidelities)
         assert 0.95 < result["r"] < 1.0
         assert result["r"] == pytest.approx(r_true, abs=0.02)
@@ -93,6 +92,6 @@ class TestExponentialFit:
         r_true = 0.7
         depths = [2, 5, 10, 20]
         np.random.seed(42)
-        fidelities = [0.7 ** m + np.random.normal(0, 0.01) for m in depths]
+        fidelities = [0.7**m + np.random.normal(0, 0.01) for m in depths]
         result = fit_exponential(depths, fidelities)
         assert 0.5 < result["r"] < 0.9

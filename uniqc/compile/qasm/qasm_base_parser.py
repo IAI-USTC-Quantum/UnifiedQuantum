@@ -8,13 +8,14 @@ Key exports:
 """
 
 __all__ = ["OpenQASM2_BaseParser"]
-from typing import List, Tuple
+
 from uniqc.circuit_builder.qcircuit import Circuit
-from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
 from uniqc.circuit_builder.translate_qasm2_oir import get_opcode_from_QASM2
-from .qasm_line_parser import OpenQASM2_LineParser
+from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+
 from ._safe_eval import safe_eval_param
 from .exceptions import NotSupportedGateError, RegisterDefinitionError, RegisterNotFoundError, RegisterOutOfRangeError
+from .qasm_line_parser import OpenQASM2_LineParser
 
 
 class OpenQASM2_BaseParser:
@@ -31,10 +32,10 @@ class OpenQASM2_BaseParser:
 
     def __init__(self):
         self.qregs = list()
-        self.cregs = list()        
+        self.cregs = list()
         self.n_qubit = None
         self.n_cbit = None
-        self.program_body = list() # contain the opcodes
+        self.program_body = list()  # contain the opcodes
         self.raw_qasm = None
         self.formatted_qasm = None
 
@@ -42,43 +43,43 @@ class OpenQASM2_BaseParser:
         self.collected_qregs_str = list()
         self.collected_cregs_str = list()
         self.collected_measurements_str = list()
-        self.program_body_str = list() # contain strs of the program body
+        self.program_body_str = list()  # contain strs of the program body
 
         # for measurement mapping
-        self.measure_qubits : List[Tuple[int, int]] = list()
+        self.measure_qubits: list[tuple[int, int]] = list()
 
     def _format_and_check(self):
-        '''Format the original qasm code and check if it is valid.
+        """Format the original qasm code and check if it is valid.
 
-           As of v0.0.11.dev23, the parser **inlines** user-defined
-           ``gate <name>(<params>) <args> { <body> }`` blocks: each call
-           to such a gate in the program body is expanded into a sequence
-           of primitive gate calls with parameters and qubit arguments
-           substituted.  Gate names that match a known qelib1.inc / OriginIR
-           opcode are still recognised directly via the gate-name → opcode
-           table in ``translate_qasm2_oir``.  Inline ``opaque`` declarations
-           are stripped (no body to inline).  ``if`` statements are still
-           not supported.
+        As of v0.0.11.dev23, the parser **inlines** user-defined
+        ``gate <name>(<params>) <args> { <body> }`` blocks: each call
+        to such a gate in the program body is expanded into a sequence
+        of primitive gate calls with parameters and qubit arguments
+        substituted.  Gate names that match a known qelib1.inc / OriginIR
+        opcode are still recognised directly via the gate-name → opcode
+        table in ``translate_qasm2_oir``.  Inline ``opaque`` declarations
+        are stripped (no body to inline).  ``if`` statements are still
+        not supported.
 
-           A canonical format of qasm code is like:
-           OPENQASM 2.0;
-           include "qelib1.inc";
+        A canonical format of qasm code is like:
+        OPENQASM 2.0;
+        include "qelib1.inc";
 
-           qreg q[n];
-           <other qreg definitions>
-           creg c[m];
-           <other creg definitions>
-           <program_body>
+        qreg q[n];
+        <other qreg definitions>
+        creg c[m];
+        <other creg definitions>
+        <program_body>
 
-           These rules will be applied in the formatted qasm code.
-           1. OPENQASM 2.0 and include "qelib1.inc" will be removed.
-           2. ``gate ... { ... }`` definitions are stripped (their bodies are
-              not expanded; recognition relies on the gate-name registry).
-           3. qreg definitions are collected together; so as creg definitions.
-           4. program body is line-wise, separated by semicolons
-           5. measurements must be at the end of the program body.
-           6. barriers are kept in the program body.
-        '''
+        These rules will be applied in the formatted qasm code.
+        1. OPENQASM 2.0 and include "qelib1.inc" will be removed.
+        2. ``gate ... { ... }`` definitions are stripped (their bodies are
+           not expanded; recognition relies on the gate-name registry).
+        3. qreg definitions are collected together; so as creg definitions.
+        4. program body is line-wise, separated by semicolons
+        5. measurements must be at the end of the program body.
+        6. barriers are kept in the program body.
+        """
         if self.raw_qasm is None:
             raise ValueError("No raw qasm code provided.")
 
@@ -95,10 +96,10 @@ class OpenQASM2_BaseParser:
         # ``opaque`` declarations have no body and are simply stripped.
         # ------------------------------------------------------------------
         gate_def_re = re.compile(
-            r"\bgate\s+([A-Za-z_][A-Za-z0-9_]*)"          # 1: gate name
-            r"(?:\s*\(([^)]*)\))?"                          # 2: optional params
-            r"\s+([A-Za-z_][A-Za-z0-9_,\s]*)"             # 3: qubit args
-            r"\s*\{([^{}]*)\}",                              # 4: body
+            r"\bgate\s+([A-Za-z_][A-Za-z0-9_]*)"  # 1: gate name
+            r"(?:\s*\(([^)]*)\))?"  # 2: optional params
+            r"\s+([A-Za-z_][A-Za-z0-9_,\s]*)"  # 3: qubit args
+            r"\s*\{([^{}]*)\}",  # 4: body
             flags=re.MULTILINE | re.DOTALL,
         )
         gate_defs: dict[str, tuple[list[str], list[str], list[str]]] = {}
@@ -135,48 +136,39 @@ class OpenQASM2_BaseParser:
         # false positives on substrings like "Unified" that contain "if").
         if re.search(r"\bif\s*\(", raw):
             raise NotSupportedGateError("If statements are not supported yet.")
-        
+
         collected_qregs = list()
         collected_cregs = list()
         collected_measurements = list()
         program_body = list()
 
         # split all codes by semicolons (use the gate-def-stripped source)
-        codes = raw.split(';')
+        codes = raw.split(";")
         for code in codes:
             # strip leading and trailing whitespaces
             code = code.strip()
             # remove comments and OPENQASM/include statements
-            if code.startswith('//'):
-                continue
-            elif code == '':
-                continue
-            elif code.startswith('include'):
-                continue
-            elif code.startswith('OPENQASM'):
+            if code.startswith("//") or code == "" or code.startswith("include") or code.startswith("OPENQASM"):
                 continue
             # handle qreg and creg definitions
-            elif code.startswith('qreg'):
+            elif code.startswith("qreg"):
                 collected_qregs.append(code)
-            elif code.startswith('creg'):
+            elif code.startswith("creg"):
                 collected_cregs.append(code)
-            elif code.startswith('measure'):
+            elif code.startswith("measure"):
                 collected_measurements.append(code)
             else:
                 program_body.append(code)
-            
-        ret_qasm = ('{};\n'
-                    '{};\n'
-                    '{};\n'
-                    '{};'.format(
-                        ';\n'.join(collected_qregs),
-                        ';\n'.join(collected_cregs),
-                        ';\n'.join(program_body),
-                        ';\n'.join(collected_measurements)
-                    ))
+
+        ret_qasm = "{};\n{};\n{};\n{};".format(
+            ";\n".join(collected_qregs),
+            ";\n".join(collected_cregs),
+            ";\n".join(program_body),
+            ";\n".join(collected_measurements),
+        )
 
         return ret_qasm, collected_qregs, collected_cregs, program_body, collected_measurements
-                
+
     @staticmethod
     def _split_outside_parens(text: str, sep: str = ",") -> list[str]:
         """Split ``text`` on ``sep`` while respecting parenthesized groups."""
@@ -241,8 +233,7 @@ class OpenQASM2_BaseParser:
 
         if depth > 32:
             raise NotImplementedError(
-                "Custom gate inlining exceeded recursion depth (32). "
-                "Likely a self-referential gate definition."
+                "Custom gate inlining exceeded recursion depth (32). Likely a self-referential gate definition."
             )
 
         gate_defs = getattr(self, "_gate_defs", {})
@@ -270,13 +261,9 @@ class OpenQASM2_BaseParser:
         call_args = self._split_outside_parens(arg_str)
 
         if len(call_param_exprs) != len(params):
-            raise NotImplementedError(
-                f"Gate '{name}' expects {len(params)} parameters, got {len(call_param_exprs)}"
-            )
+            raise NotImplementedError(f"Gate '{name}' expects {len(params)} parameters, got {len(call_param_exprs)}")
         if len(call_args) != len(qubit_args):
-            raise NotImplementedError(
-                f"Gate '{name}' expects {len(qubit_args)} qubit arguments, got {len(call_args)}"
-            )
+            raise NotImplementedError(f"Gate '{name}' expects {len(qubit_args)} qubit arguments, got {len(call_args)}")
 
         param_bindings = dict(zip(params, call_param_exprs))
         arg_bindings = dict(zip(qubit_args, call_args))
@@ -284,12 +271,14 @@ class OpenQASM2_BaseParser:
         expanded: list[str] = []
         for body_line in body_lines:
             new_line = body_line
+
             # Substitute the parameter expressions inside any (...)
             def _replace_paren(match):
                 inner = match.group(1)
                 expr_parts = self._split_outside_parens(inner)
                 evaluated = [self._eval_param_expr(p, param_bindings) for p in expr_parts]
                 return "(" + ", ".join(evaluated) + ")"
+
             new_line = _re.sub(r"\(([^()]*)\)", _replace_paren, new_line)
 
             # Substitute qubit argument identifiers (whole-word match).
@@ -309,37 +298,29 @@ class OpenQASM2_BaseParser:
                 if reg_id >= stored_reg_size:
                     raise RegisterOutOfRangeError()
                 return id + reg_id
-            
+
             id += stored_reg_size
-            
+
         raise RegisterNotFoundError()
-    
+
     def _get_qubit_id(self, qreg_name, qreg_id):
         try:
             qubit_id = OpenQASM2_BaseParser._compute_id(self.qregs, qreg_name, qreg_id)
             return qubit_id
-        except RegisterNotFoundError:
-            raise RegisterNotFoundError('Cannot find qreg {}, (defined = {})'.format(
-                qreg_name, self.collected_qregs_str
-            ))
-        except RegisterOutOfRangeError:
-            raise RegisterOutOfRangeError('qreg {}[{}] out of range.)'.format(
-                qreg_name, qreg_id
-            ))
-        
+        except RegisterNotFoundError as e:
+            raise RegisterNotFoundError(f"Cannot find qreg {qreg_name}, (defined = {self.collected_qregs_str})") from e
+        except RegisterOutOfRangeError as e:
+            raise RegisterOutOfRangeError(f"qreg {qreg_name}[{qreg_id}] out of range.)") from e
+
     def _get_cbit_id(self, creg_name, creg_id):
         try:
             cbit_id = OpenQASM2_BaseParser._compute_id(self.cregs, creg_name, creg_id)
             return cbit_id
-        except RegisterNotFoundError:
-            raise RegisterNotFoundError('Cannot find creg {}, (defined = {})'.format(
-                creg_name, self.collected_cregs_str
-            ))
-        except RegisterOutOfRangeError:
-            raise RegisterOutOfRangeError('creg {}[{}] out of range.)'.format(
-                creg_name, creg_id
-            ))
-    
+        except RegisterNotFoundError as e:
+            raise RegisterNotFoundError(f"Cannot find creg {creg_name}, (defined = {self.collected_cregs_str})") from e
+        except RegisterOutOfRangeError as e:
+            raise RegisterOutOfRangeError(f"creg {creg_name}[{creg_id}] out of range.)") from e
+
     @staticmethod
     def _check_regs(collected_regs, reg_handler):
         # check whether qregs have the same name
@@ -352,13 +333,13 @@ class OpenQASM2_BaseParser:
             name, size = reg_handler(reg_str)
             if name in names:
                 raise RegisterDefinitionError("Duplicate name")
-            
+
             names.add(name)
             regs.append((name, size))
             total_size += size
 
         return total_size, regs
-    
+
     def _process_measurements(self):
         for measurement in self.collected_measurements_str:
             qreg_name, qreg_id, creg_name, creg_id = OpenQASM2_LineParser.handle_measure(measurement)
@@ -376,26 +357,30 @@ class OpenQASM2_BaseParser:
 
         # format, and check if QASM code is valid
         # also return the collected statements
-        (self.formatted_qasm, 
-         self.collected_qregs_str, 
-         self.collected_cregs_str, 
-         self.program_body_str, 
-         self.collected_measurements_str) = self._format_and_check()
-        
+        (
+            self.formatted_qasm,
+            self.collected_qregs_str,
+            self.collected_cregs_str,
+            self.program_body_str,
+            self.collected_measurements_str,
+        ) = self._format_and_check()
+
         # process the total number of qubit
         try:
-            self.n_qubit, self.qregs = OpenQASM2_BaseParser._check_regs(self.collected_qregs_str, OpenQASM2_LineParser.handle_qreg)
+            self.n_qubit, self.qregs = OpenQASM2_BaseParser._check_regs(
+                self.collected_qregs_str, OpenQASM2_LineParser.handle_qreg
+            )
         except RegisterDefinitionError as e:
-            raise RegisterDefinitionError("QReg Definition Error.\n"
-                                          f"Internal error: \n{str(e)}")
-        
+            raise RegisterDefinitionError(f"QReg Definition Error.\nInternal error: \n{str(e)}") from e
+
         # process the total number of cbit
         try:
-            self.n_cbit, self.cregs = OpenQASM2_BaseParser._check_regs(self.collected_cregs_str, OpenQASM2_LineParser.handle_creg)
+            self.n_cbit, self.cregs = OpenQASM2_BaseParser._check_regs(
+                self.collected_cregs_str, OpenQASM2_LineParser.handle_creg
+            )
         except RegisterDefinitionError as e:
-            raise RegisterDefinitionError("CReg Definition Error.\n"
-                                          f"Internal error: \n{str(e)}")
-        
+            raise RegisterDefinitionError(f"CReg Definition Error.\nInternal error: \n{str(e)}") from e
+
         # process measurements
         self._process_measurements()
 
@@ -410,7 +395,7 @@ class OpenQASM2_BaseParser:
             operation, qubits, cbits, parameters = OpenQASM2_LineParser.parse_line(line)
             if operation is None:
                 continue
-            
+
             # transform the qubit from regname+index to qubit_id
             # Note: register's validity is checked through _get_qubit_id
             if qubits:
@@ -424,7 +409,7 @@ class OpenQASM2_BaseParser:
                     cbits = [self._get_cbit_id(cbit[0], cbit[1]) for cbit in cbits]
                 else:
                     cbits = self._get_cbit_id(cbits[0], cbits[1])
-            
+
             # convert parameter to a scalar value
             if parameters and isinstance(parameters, list) and len(parameters) == 1:
                 parameters = parameters[0]
@@ -432,19 +417,20 @@ class OpenQASM2_BaseParser:
             # transform into opcodes
             # opcodes = (operation,qubits,cbit,parameter,dagger_flag,control_qubits_set)
             opcode = get_opcode_from_QASM2(operation, qubits, cbits, parameters)
-            
+
             # check if opcode is correctely converted
             if opcode is None:
-                raise NotImplementedError("Opcode is not converted correctly for "
-                                          f"line: {line}.\n"
-                                          f"operation: {operation}"
-                                          f"qubits: {qubits}"
-                                          f"cbits: {cbits}"
-                                          f"parameters: {parameters}"
-                                          )
+                raise NotImplementedError(
+                    "Opcode is not converted correctly for "
+                    f"line: {line}.\n"
+                    f"operation: {operation}"
+                    f"qubits: {qubits}"
+                    f"cbits: {cbits}"
+                    f"parameters: {parameters}"
+                )
 
             self.program_body.append(opcode)
-    
+
     def to_originir(self):
         """Convert parsed OpenQASM data to OriginIR string.
 
@@ -460,19 +446,19 @@ class OpenQASM2_BaseParser:
         oir_parser.measure_qubits = list(self.measure_qubits)
 
         return oir_parser.to_extended_originir()
-    
+
     def to_circuit(self) -> Circuit:
         """
         The function coverts OpenQASM string into uniqc.Circuit object.
 
         In the initilization phase, we need to notice that OriginIR-based quantum circuit
-        doe not need to specify how many qregs and cregs used. 
-        
+        doe not need to specify how many qregs and cregs used.
+
         Parameters:
         - qasm_str: The quantum circuit of intersts in the OpenQASM format.
 
         Returns:
-        - origin_qcirc: The quantum circuit of intersts in the OriginIR format. 
+        - origin_qcirc: The quantum circuit of intersts in the OriginIR format.
         """
         # Create an empty Circuit object
         origincircuit = Circuit()
@@ -483,7 +469,7 @@ class OpenQASM2_BaseParser:
             origincircuit.add_gate(*opcode)
 
         # add measurements to the circuit, sort by cbit id
-        measure_list = sorted(self.measure_qubits, key=lambda x: x[1])        
+        measure_list = sorted(self.measure_qubits, key=lambda x: x[1])
 
         for qubit, cbit in measure_list:
             origincircuit.measure(qubit)

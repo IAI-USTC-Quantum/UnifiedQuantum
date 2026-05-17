@@ -2,13 +2,12 @@
 
 __all__ = ["state_tomography", "tomography_summary"]
 
-from typing import Optional, List
+
 import numpy as np
 
+from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
-from uniqc.utils.expectation import calculate_expectation
-from uniqc._error_hints import format_enriched_message
 
 
 def _build_tomography_circuit(circuit: Circuit, basis: tuple[str, ...]) -> str:
@@ -47,7 +46,7 @@ def _build_tomography_circuit(circuit: Circuit, basis: tuple[str, ...]) -> str:
 
 def state_tomography(
     circuit: Circuit,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     shots: int = 8192,
 ) -> np.ndarray:
     """Reconstruct the density matrix of a quantum state via complete tomography.
@@ -347,9 +346,7 @@ def state_tomography(
         # Compute <P> for this Pauli string
         # Determine which basis setting we need: b_i = Z if P_i ∈ {I, Z},
         # b_i = P_i if P_i ∈ {X, Y} (we measure in the eigenbasis of P_i).
-        basis_for_p: tuple[str, ...] = tuple(
-            "Z" if p_i in ("I", "Z") else p_i for p_i in p
-        )
+        basis_for_p: tuple[str, ...] = tuple("Z" if p_i in ("I", "Z") else p_i for p_i in p)
 
         # Get the pre-computed probabilities for this basis
         probs_dict = basis_results[basis_for_p]
@@ -453,7 +450,7 @@ def state_tomography(
 def tomography_summary(
     rho: np.ndarray,
     label: str = "ρ",
-    reference_state: Optional[np.ndarray] = None,
+    reference_state: np.ndarray | None = None,
     *,
     print_summary: bool = True,
 ) -> dict:
@@ -512,7 +509,7 @@ def tomography_summary(
     trace = float(np.real(np.trace(rho)))
     is_pure = abs(purity - 1.0) < 1e-4
 
-    fidelity: Optional[float] = None
+    fidelity: float | None = None
     if reference_state is not None:
         fidelity = _density_matrix_fidelity(rho, reference_state)
 
@@ -520,11 +517,10 @@ def tomography_summary(
         print(f"{'=' * 50}")
         print(f"State Tomography Summary  (label={label}, n_qubits={n})")
         print(f"{'=' * 50}")
-        print(f"\nEigenvalues (largest first):")
+        print("\nEigenvalues (largest first):")
         for i, ev in enumerate(eigvals):
             print(f"  λ_{i} = {ev: .6f}")
-        print(f"\nPurity  Tr(ρ²) = {purity:.6f}  "
-              f"({'pure' if is_pure else 'mixed'})")
+        print(f"\nPurity  Tr(ρ²) = {purity:.6f}  ({'pure' if is_pure else 'mixed'})")
         print(f"Trace   Tr(ρ)   = {trace:.6f}")
         if fidelity is not None:
             print(f"\nFidelity F(ρ, σ) = {fidelity:.6f}")
@@ -561,8 +557,7 @@ def _density_matrix_fidelity(rho: np.ndarray, sigma: np.ndarray) -> float:
     return fid
 
 
-__all__ = ["state_tomography", "tomography_summary", "StateTomography",
-           "state_tomography_example"]
+__all__ = ["state_tomography", "tomography_summary", "StateTomography", "state_tomography_example"]
 
 
 class StateTomography:
@@ -575,14 +570,14 @@ class StateTomography:
     def __init__(
         self,
         circuit: Circuit,
-        qubits: Optional[List[int]] = None,
+        qubits: list[int] | None = None,
         shots: int = 8192,
     ) -> None:
         self.circuit = circuit.copy()
         self.qubits = qubits
         self.shots = shots
 
-    def get_readout_circuits(self) -> List[Circuit]:
+    def get_readout_circuits(self) -> list[Circuit]:
         """Return one circuit per Pauli measurement basis (3^n total)."""
         from itertools import product
 

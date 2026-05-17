@@ -84,7 +84,7 @@ class TestDetectSystemProxy(unittest.TestCase):
         """Test detection of both HTTP and HTTPS proxies."""
         env_vars = {
             "HTTP_PROXY": "http://http-proxy.example.com:8080",
-            "HTTPS_PROXY": "https://https-proxy.example.com:8443"
+            "HTTPS_PROXY": "https://https-proxy.example.com:8443",
         }
         with patch.dict(os.environ, env_vars, clear=True):
             result = detect_system_proxy()
@@ -101,7 +101,7 @@ class TestDetectSystemProxy(unittest.TestCase):
         """Test that uppercase env vars take precedence over lowercase when both exist."""
         env_vars = {
             "HTTP_PROXY": "http://uppercase.example.com:8080",
-            "http_proxy": "http://lowercase.example.com:9090"
+            "http_proxy": "http://lowercase.example.com:9090",
         }
         with patch("uniqc.backend_adapter.network_utils.os.environ", env_vars):
             result = detect_system_proxy()
@@ -168,19 +168,13 @@ class TestGetIbmProxyFromConfig(unittest.TestCase):
 
     def test_http_proxy_only(self):
         """Test with only HTTP proxy configured."""
-        config = {
-            "token": "test_token",
-            "proxy": {"http": "http://proxy.example.com:8080"}
-        }
+        config = {"token": "test_token", "proxy": {"http": "http://proxy.example.com:8080"}}
         result = get_ibm_proxy_from_config(config)
         self.assertEqual(result, {"http": "http://proxy.example.com:8080"})
 
     def test_https_proxy_only(self):
         """Test with only HTTPS proxy configured."""
-        config = {
-            "token": "test_token",
-            "proxy": {"https": "https://proxy.example.com:8443"}
-        }
+        config = {"token": "test_token", "proxy": {"https": "https://proxy.example.com:8443"}}
         result = get_ibm_proxy_from_config(config)
         self.assertEqual(result, {"https": "https://proxy.example.com:8443"})
 
@@ -188,26 +182,16 @@ class TestGetIbmProxyFromConfig(unittest.TestCase):
         """Test with both HTTP and HTTPS proxies configured."""
         config = {
             "token": "test_token",
-            "proxy": {
-                "http": "http://http-proxy.example.com:8080",
-                "https": "https://https-proxy.example.com:8443"
-            }
+            "proxy": {"http": "http://http-proxy.example.com:8080", "https": "https://https-proxy.example.com:8443"},
         }
         result = get_ibm_proxy_from_config(config)
-        self.assertEqual(result, {
-            "http": "http://http-proxy.example.com:8080",
-            "https": "https://https-proxy.example.com:8443"
-        })
+        self.assertEqual(
+            result, {"http": "http://http-proxy.example.com:8080", "https": "https://https-proxy.example.com:8443"}
+        )
 
     def test_empty_proxy_values(self):
         """Test with empty proxy values."""
-        config = {
-            "token": "test_token",
-            "proxy": {
-                "http": "",
-                "https": ""
-            }
-        }
+        config = {"token": "test_token", "proxy": {"http": "", "https": ""}}
         result = get_ibm_proxy_from_config(config)
         self.assertIsNone(result)
 
@@ -252,10 +236,7 @@ class TestTestIbmConnectivity:
             mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
             mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-            result = check_ibm_connectivity(
-                token="test_token",
-                proxy=proxy
-            )
+            result = check_ibm_connectivity(token="test_token", proxy=proxy)
 
         # Verify proxy is recorded in result
         assert result["proxy_used"] == proxy
@@ -268,10 +249,7 @@ class TestTestIbmConnectivity:
             mock_open.return_value.__enter__ = MagicMock(return_value=mock_response)
             mock_open.return_value.__exit__ = MagicMock(return_value=False)
 
-            result = check_ibm_connectivity(
-                token="test_token",
-                proxy="http://proxy.example.com:8080"
-            )
+            result = check_ibm_connectivity(token="test_token", proxy="http://proxy.example.com:8080")
 
             # String proxy should be converted to dict
             assert result["proxy_used"] is not None
@@ -347,9 +325,12 @@ class TestIntegration:
         """Test full flow from system proxy detection to IBM connectivity."""
         write_uniqc_config(tmp_path, {"ibm": {"token": "test_token"}})
         monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
-        with patch.dict(os.environ, {
-            "HTTPS_PROXY": "http://proxy.example.com:8080",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "HTTPS_PROXY": "http://proxy.example.com:8080",
+            },
+        ):
             # Detect system proxy
             proxies = detect_system_proxy()
             assert proxies["https"] == "http://proxy.example.com:8080"

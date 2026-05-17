@@ -12,7 +12,7 @@ Key exports:
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from .opcode import (
     make_header_originir,
@@ -25,7 +25,7 @@ from .opcode import (
 
 if TYPE_CHECKING:
     from .parameter import Parameters
-    from .qubit import Qubit, QReg, QRegSlice
+    from .qubit import QReg, QRegSlice, Qubit
 
     try:
         import qiskit
@@ -163,11 +163,11 @@ class Circuit:
     cbit_num: int
     measure_list: list[int]
     opcode_list: list[OpCode]
-    _qregs: dict[str, "QReg"]
+    _qregs: dict[str, QReg]
 
     def __init__(
         self,
-        qregs: Optional[dict[str, int] | list["QReg"] | int] = None,
+        qregs: dict[str, int] | list[QReg] | int | None = None,
     ) -> None:
         """Initialize a quantum circuit.
 
@@ -211,7 +211,7 @@ class Circuit:
         # Stack used by set_control / unset_control to remember each push size.
         self._control_stack: list[tuple[int, ...]] = []
         # Named parameters attached to this circuit (for parametric circuits)
-        self._params: "Parameters | None" = None
+        self._params: Parameters | None = None
 
         # Handle qregs parameter
         if qregs is not None:
@@ -239,11 +239,11 @@ class Circuit:
                 self.max_qubit = max(0, base_index - 1)
 
     @property
-    def qregs(self) -> dict[str, "QReg"]:
+    def qregs(self) -> dict[str, QReg]:
         """Return the named quantum registers."""
         return self._qregs
 
-    def get_qreg(self, name: str) -> "QReg":
+    def get_qreg(self, name: str) -> QReg:
         """Get a named quantum register by name.
 
         Args:
@@ -268,9 +268,9 @@ class Circuit:
         Returns:
             Integer qubit index or list of indices
         """
-        from .qubit import Qubit as QubitClass
         from .qubit import QReg as QRegClass
         from .qubit import QRegSlice as QRegSliceClass
+        from .qubit import Qubit as QubitClass
 
         if isinstance(qubit, int):
             return qubit
@@ -299,7 +299,7 @@ class Circuit:
         else:
             raise TypeError(f"Unsupported qubit type: {type(qubit)}")
 
-    def copy(self) -> "Circuit":
+    def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
         new_circuit = Circuit()
         new_circuit.used_qubit_list = self.used_qubit_list.copy()
@@ -322,6 +322,7 @@ class Circuit:
 
     def _make_qasm_circuit(self) -> str:
         from .translate_qasm2_oir import collect_qasm2_custom_gates
+
         custom_gates = collect_qasm2_custom_gates(self.opcode_list)
         header = make_header_qasm(self.qubit_num, self.cbit_num, custom_gates=custom_gates)
         circuit_str = "\n".join([opcode_to_line_qasm(op, self.qubit_num) for op in self.opcode_list])
@@ -344,7 +345,7 @@ class Circuit:
         return self._make_qasm_circuit()
 
     @classmethod
-    def from_qasm(cls, qasm_str: str) -> "Circuit":
+    def from_qasm(cls, qasm_str: str) -> Circuit:
         """Create a Circuit from an OpenQASM 2.0 string.
 
         Args:
@@ -354,12 +355,13 @@ class Circuit:
             A new Circuit instance.
         """
         from uniqc.compile.qasm.qasm_base_parser import OpenQASM2_BaseParser
+
         parser = OpenQASM2_BaseParser()
         parser.parse(qasm_str)
         return parser.to_circuit()
 
     @classmethod
-    def from_originir(cls, originir_str: str) -> "Circuit":
+    def from_originir(cls, originir_str: str) -> Circuit:
         """Create a Circuit from an OriginIR string.
 
         Args:
@@ -369,6 +371,7 @@ class Circuit:
             A new Circuit instance.
         """
         from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+
         parser = OriginIR_BaseParser()
         parser.parse(originir_str)
         return parser.to_circuit()
@@ -398,8 +401,7 @@ class Circuit:
             from qiskit import qasm2
         except ImportError:
             raise ImportError(
-                "qiskit is required for to_qiskit_circuit(). "
-                "Install it with: pip install qiskit"
+                "qiskit is required for to_qiskit_circuit(). Install it with: pip install qiskit"
             ) from None
         return qasm2.loads(self.qasm)
 
@@ -418,8 +420,7 @@ class Circuit:
             )
         except ImportError:
             raise ImportError(
-                "pyqpanda3 is required for to_pyqpanda3_circuit(). "
-                "Install it with: pip install pyqpanda3"
+                "pyqpanda3 is required for to_pyqpanda3_circuit(). Install it with: pip install pyqpanda3"
             ) from None
         return convert_originir_string_to_qprog(self.originir)
 
@@ -476,7 +477,7 @@ class Circuit:
         self.opcode_list.append(opcode)
         self.record_qubit(resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits])
 
-    def add_circuit(self, other: "Circuit") -> None:
+    def add_circuit(self, other: Circuit) -> None:
         """Add all gates from another circuit into this circuit."""
         for op in other.opcode_list:
             self.add_gate(*op)
@@ -520,6 +521,7 @@ class Circuit:
                 DAGGER scope opcodes that have no unitary representation.
         """
         from .matrix import get_matrix as _get_matrix
+
         return _get_matrix(self)
 
     # ─────────────────── Single-qubit gates (no parameters) ───────────────────
@@ -749,8 +751,7 @@ class Circuit:
         """
         self.add_gate("U1", target, params=lam, control_qubits=[control])
 
-    def cu(self, control: QubitInput, target: QubitInput,
-           theta: float, phi: float, lam: float) -> None:
+    def cu(self, control: QubitInput, target: QubitInput, theta: float, phi: float, lam: float) -> None:
         """Apply controlled-U3 gate.
 
         Args:

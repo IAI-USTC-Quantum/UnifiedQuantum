@@ -12,8 +12,8 @@ from typing import Any
 
 import numpy as np
 
-from uniqc.exceptions import StaleCalibrationError  # noqa: F401 — re-export
 from uniqc._error_hints import format_enriched_message
+from uniqc.exceptions import StaleCalibrationError  # noqa: F401 — re-export
 
 __all__ = ["M3Mitigator", "StaleCalibrationError"]
 
@@ -106,9 +106,12 @@ class M3Mitigator:
 
         if not isinstance(result, UnifiedResult):
             raise TypeError(
-                format_enriched_message("M3Mitigator.apply expects a UnifiedResult; "
-                f"got {type(result).__name__}. Use mitigate_counts/mitigate_probabilities "
-                "for raw dict input.", "calibration")
+                format_enriched_message(
+                    "M3Mitigator.apply expects a UnifiedResult; "
+                    f"got {type(result).__name__}. Use mitigate_counts/mitigate_probabilities "
+                    "for raw dict input.",
+                    "calibration",
+                )
             )
 
         # Convert string bitstrings → int and apply mitigation.
@@ -144,9 +147,7 @@ class M3Mitigator:
             error_message=result.error_message,
         )
 
-    def mitigate_counts(
-        self, counts: dict[int, int]
-    ) -> dict[int, float]:
+    def mitigate_counts(self, counts: dict[int, int]) -> dict[int, float]:
         """Apply M3 mitigation to measurement counts.
 
         Uses linear inversion: ``n_corrected = C⁻¹ · n_obs``.
@@ -190,9 +191,7 @@ class M3Mitigator:
 
         return {int(i): float(v) for i, v in enumerate(n_corr)}
 
-    def mitigate_probabilities(
-        self, probs: dict[str, float] | dict[int, float]
-    ) -> dict[int, float]:
+    def mitigate_probabilities(self, probs: dict[str, float] | dict[int, float]) -> dict[int, float]:
         """Apply M3 mitigation to a probability dictionary.
 
         Args:
@@ -223,9 +222,7 @@ class M3Mitigator:
 
         return {int(i): float(v) for i, v in enumerate(p_corr)}
 
-    def _load_from_path(
-        self, path: str | pathlib.Path, max_age_hours: float
-    ) -> dict[str, Any]:
+    def _load_from_path(self, path: str | pathlib.Path, max_age_hours: float) -> dict[str, Any]:
         """Load and validate calibration from a file path."""
         import json
 
@@ -259,9 +256,12 @@ class M3Mitigator:
         )
         if not paths:
             raise FileNotFoundError(
-                format_enriched_message(f"No fresh calibration result found for backend={backend}, "
-                f"qubit={qubit}, max_age_hours={max_age_hours}. "
-                f"Run calibration first.", "calibration")
+                format_enriched_message(
+                    f"No fresh calibration result found for backend={backend}, "
+                    f"qubit={qubit}, max_age_hours={max_age_hours}. "
+                    f"Run calibration first.",
+                    "calibration",
+                )
             )
 
         matching_paths: list[pathlib.Path] = []
@@ -280,9 +280,12 @@ class M3Mitigator:
 
         if not matching_paths:
             raise FileNotFoundError(
-                format_enriched_message(f"No fresh calibration result found for backend={backend}, "
-                f"qubit={qubit}, max_age_hours={max_age_hours}. "
-                f"Run calibration first.", "calibration")
+                format_enriched_message(
+                    f"No fresh calibration result found for backend={backend}, "
+                    f"qubit={qubit}, max_age_hours={max_age_hours}. "
+                    f"Run calibration first.",
+                    "calibration",
+                )
             )
 
         # Use the most recent exact qubit/pair match.
@@ -303,9 +306,12 @@ class M3Mitigator:
             age_hours = (now - ts).total_seconds() / 3600
             if age_hours > max_age_hours:
                 raise StaleCalibrationError(
-                    format_enriched_message(f"Calibration data is {age_hours:.1f} hours old "
-                    f"(max_age_hours={max_age_hours}). "
-                    f"Calibrated at: {calibrated_at}", "calibration")
+                    format_enriched_message(
+                        f"Calibration data is {age_hours:.1f} hours old "
+                        f"(max_age_hours={max_age_hours}). "
+                        f"Calibrated at: {calibrated_at}",
+                        "calibration",
+                    )
                 )
         except ValueError:
             pass  # Can't parse timestamp — skip age check

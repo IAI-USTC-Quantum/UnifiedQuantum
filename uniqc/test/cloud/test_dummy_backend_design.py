@@ -119,6 +119,7 @@ def test_dummy_dry_run_enforces_virtual_backend_constraints():
 
 # --- Regression tests for chip-backed dummy relayout (NEW-U1/NEW-U2 hotfix) ---
 
+
 def _wk_c180_backed_dummy_spec():
     """Build a chip-backed dummy spec mirroring the user-reported case."""
     from uniqc.backend_adapter.backend_info import Platform, QubitTopology
@@ -140,13 +141,8 @@ def _wk_c180_backed_dummy_spec():
         full_id="originq:WK_C180",
         available_qubits=tuple(safe + [0, 1]),
         connectivity=tuple(QubitTopology(a, b) for a, b in edges),
-        single_qubit_data=tuple(
-            SingleQubitData(q, single_gate_fidelity=0.999) for q in safe + [0, 1]
-        ),
-        two_qubit_data=tuple(
-            TwoQubitData(a, b, gates=(TwoQubitGateData(gate="cz", fidelity=0.99),))
-            for a, b in edges
-        ),
+        single_qubit_data=tuple(SingleQubitData(q, single_gate_fidelity=0.999) for q in safe + [0, 1]),
+        two_qubit_data=tuple(TwoQubitData(a, b, gates=(TwoQubitGateData(gate="cz", fidelity=0.99),)) for a, b in edges),
     )
     return resolve_dummy_backend(
         "dummy:originq:WK_C180",
@@ -161,7 +157,11 @@ def test_chip_backed_dummy_local_compile_zero_preserves_user_qubits():
     from uniqc.circuit_builder import Circuit
 
     spec = _wk_c180_backed_dummy_spec()
-    c = Circuit(); c.h(58); c.cz(58, 68); c.measure(58); c.measure(68)
+    c = Circuit()
+    c.h(58)
+    c.cz(58, 68)
+    c.measure(58)
+    c.measure(68)
 
     ir, _ = _compile_for_chip_backed_dummy(c, spec, None, local_compile=0)
     assert "q[58]" in ir and "q[68]" in ir
@@ -178,10 +178,16 @@ def test_chip_backed_dummy_available_qubits_blocks_bad_relayout():
     from uniqc.circuit_builder import Circuit
 
     spec = _wk_c180_backed_dummy_spec()
-    c = Circuit(); c.h(58); c.cz(58, 68); c.measure(58); c.measure(68)
+    c = Circuit()
+    c.h(58)
+    c.cz(58, 68)
+    c.measure(58)
+    c.measure(68)
 
     ir, _ = _compile_for_chip_backed_dummy(
-        c, spec, None,
+        c,
+        spec,
+        None,
         local_compile=2,
         available_qubits=[58, 68, 77, 86],
     )

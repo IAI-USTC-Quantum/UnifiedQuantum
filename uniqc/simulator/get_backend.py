@@ -1,6 +1,6 @@
 from .base_simulator import BaseSimulator
 from .mps_simulator import MPSSimulator
-from .simulator import NoisySimulator, Simulator
+from .simulator import Simulator
 from .torchquantum_simulator import TorchQuantumSimulator
 
 __all__ = ["create_simulator", "get_simulator"]
@@ -82,8 +82,7 @@ def get_backend(
     import warnings
 
     warnings.warn(
-        "uniqc.simulator.get_backend() is deprecated. "
-        "Use get_simulator() or create_simulator() instead.",
+        "uniqc.simulator.get_backend() is deprecated. Use get_simulator() or create_simulator() instead.",
         DeprecationWarning,
         stacklevel=2,
     )

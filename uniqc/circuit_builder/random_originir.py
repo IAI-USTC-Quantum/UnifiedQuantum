@@ -12,8 +12,9 @@ Key exports:
 """
 
 import random
+
 from .opcode import opcode_to_line_originir
-from .originir_spec import available_originir_gates, angular_gates, available_originir_error_channels
+from .originir_spec import angular_gates, available_originir_error_channels, available_originir_gates
 
 __all__ = [
     "build_originir_gate",

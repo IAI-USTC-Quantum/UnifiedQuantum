@@ -1,8 +1,9 @@
 """Tests for CLI circuit conversion functions."""
+
 from uniqc.test._utils import uniq_test
 
 
-@uniq_test('Test CLI _qasm_to_originir')
+@uniq_test("Test CLI _qasm_to_originir")
 def test_qasm_to_originir():
     """Test QASM to OriginIR conversion in CLI."""
     from uniqc.cli.circuit import _qasm_to_originir
@@ -24,7 +25,7 @@ cx q[0], q[1];
     print(f"Converted OriginIR:\n{originir}")
 
 
-@uniq_test('Test CLI _originir_to_qasm')
+@uniq_test("Test CLI _originir_to_qasm")
 def test_originir_to_qasm():
     """Test OriginIR to QASM conversion in CLI."""
     from uniqc.cli.circuit import _originir_to_qasm
@@ -42,7 +43,7 @@ CNOT q[0], q[1]
     print(f"Converted QASM:\n{qasm}")
 
 
-@uniq_test('Test CLI _detect_format')
+@uniq_test("Test CLI _detect_format")
 def test_detect_format():
     """Test format detection in CLI."""
     from uniqc.cli.circuit import _detect_format
@@ -59,7 +60,7 @@ def test_detect_format():
     assert _detect_format("invalid content") == "unknown"
 
 
-@uniq_test('Test CLI _print_info')
+@uniq_test("Test CLI _print_info")
 def test_print_info():
     """Test circuit info printing in CLI."""
     from uniqc.cli.circuit import _print_info

@@ -16,10 +16,9 @@ import numpy as np
 import pytest
 from scipy.linalg import expm
 
+from uniqc.algorithms.core.ansatz._pauli_unitary import _apply_cost_unitary
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
-from uniqc.algorithms.core.ansatz._pauli_unitary import _apply_cost_unitary
-
 
 _Y = np.array([[0.0, -1j], [1j, 0.0]], dtype=complex)
 
