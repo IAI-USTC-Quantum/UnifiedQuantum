@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -23,11 +22,13 @@ class TestTaskPersistence:
     def persistence(self, temp_dir):
         """Create a TaskPersistence instance with temp directory."""
         from uniqc.backend_adapter.task.persistence import TaskPersistence
+
         return TaskPersistence(cache_dir=temp_dir)
 
     def test_init_creates_directory(self, temp_dir):
         """Test that initialization creates the cache directory."""
         from uniqc.backend_adapter.task.persistence import TaskPersistence
+
         cache_dir = temp_dir / "new_cache"
         TaskPersistence(cache_dir=cache_dir)
 

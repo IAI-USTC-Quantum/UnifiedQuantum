@@ -16,10 +16,10 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
+from uniqc._error_hints import format_enriched_message
+
 from ._utils import CompilationFailedError
 from .converter import convert_oir_to_qasm, convert_qasm_to_oir
-
-from uniqc._error_hints import format_enriched_message
 
 if TYPE_CHECKING:
     from uniqc.backend_adapter.backend_info import BackendInfo
@@ -74,9 +74,15 @@ class TranspilerConfig:
 
     def __post_init__(self) -> None:
         if self.type not in ("qiskit",):
-            raise ValueError(format_enriched_message(f"Unsupported transpiler type: {self.type!r}. Only 'qiskit' is supported.", "compilation"))
+            raise ValueError(
+                format_enriched_message(
+                    f"Unsupported transpiler type: {self.type!r}. Only 'qiskit' is supported.", "compilation"
+                )
+            )
         if not 0 <= self.level <= 3:
-            raise ValueError(format_enriched_message(f"optimization_level must be 0–3, got {self.level}", "compilation"))
+            raise ValueError(
+                format_enriched_message(f"optimization_level must be 0–3, got {self.level}", "compilation")
+            )
         object.__setattr__(self, "basis_gates", tuple(self.basis_gates or _DEFAULT_BASIS_GATES))
 
 
@@ -186,8 +192,7 @@ def compile(
         basis_gates=tuple(basis_gates) if basis_gates else _DEFAULT_BASIS_GATES,
         chip_characterization=chip_characterization,
     )
-    return compile_with_config(circuit, backend_info, config, output_format,
-                               available_qubits=available_qubits)
+    return compile_with_config(circuit, backend_info, config, output_format, available_qubits=available_qubits)
 
 
 def compile_with_config(
@@ -246,8 +251,9 @@ def compile_with_config(
             routing_overhead,
             fidelity_estimate,
             initial_layout,
-        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization,
-                                 available_qubits=available_qubits)
+        ) = _route_with_fidelity(
+            routed_originir, topology, config.chip_characterization, available_qubits=available_qubits
+        )
         layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
             f"Mapping selected from chip characterization "
@@ -332,17 +338,19 @@ def compile_full(
     elif config.chip_characterization is not None and config.chip_characterization.connectivity:
         topology = [(e.u, e.v) for e in config.chip_characterization.connectivity]
     else:
-        raise ValueError(format_enriched_message("compile_full() requires either backend_info.topology or chip_characterization.connectivity.", "compilation"))
+        raise ValueError(
+            format_enriched_message(
+                "compile_full() requires either backend_info.topology or chip_characterization.connectivity.",
+                "compilation",
+            )
+        )
 
     # Restrict the coupling map to user-allowed physical qubits, if any.
     if available_qubits is not None:
         allowed = {int(q) for q in available_qubits}
         topology = [(u, v) for (u, v) in topology if u in allowed and v in allowed]
         if not topology:
-            raise ValueError(
-                "compile_full(): available_qubits restriction yielded an "
-                "empty coupling map."
-            )
+            raise ValueError("compile_full(): available_qubits restriction yielded an empty coupling map.")
 
     originir_input = circuit_obj.originir
     routed_originir = originir_input
@@ -356,8 +364,9 @@ def compile_full(
             routing_overhead,
             fidelity_estimate,
             initial_layout,
-        ) = _route_with_fidelity(routed_originir, topology, config.chip_characterization,
-                                 available_qubits=available_qubits)
+        ) = _route_with_fidelity(
+            routed_originir, topology, config.chip_characterization, available_qubits=available_qubits
+        )
         layout_msg = f", initial_layout={initial_layout}" if initial_layout else ""
         messages.append(
             f"Mapping selected from chip characterization "
@@ -459,9 +468,7 @@ def _route_with_fidelity(
     for tq_data in chip.two_qubit_data:
         if tq_data.qubit_u == tq_data.qubit_v:
             continue
-        if allowed is not None and (
-            tq_data.qubit_u not in allowed or tq_data.qubit_v not in allowed
-        ):
+        if allowed is not None and (tq_data.qubit_u not in allowed or tq_data.qubit_v not in allowed):
             continue
         for gate in tq_data.gates:
             if gate.fidelity is not None:
@@ -531,14 +538,23 @@ def _route_with_fidelity(
         except Exception:
             initial_layout = None
 
-    # Fidelity estimate against the chosen layout
+    # Fidelity estimate against the chosen layout.
+    #
+    # Defensive note: when ``initial_layout`` is shorter than ``n_qubits``
+    # (e.g. RegionSelector returned a partial region, or the chip is too
+    # small for the circuit), the previous ``min(n_qubits, len(...))`` slice
+    # left some logical qubits unmapped. Any subsequent lookup of those
+    # missing logicals would have raised ``KeyError`` from
+    # ``_estimate_circuit_fidelity_from_lines`` on tiny circuits against
+    # large chips. Pad with an identity fallback so every logical qubit
+    # has an entry; downstream qiskit transpile still owns final routing.
     if initial_layout is not None:
         l2p = {i: initial_layout[i] for i in range(min(n_qubits, len(initial_layout)))}
     else:
-        l2p = {i: i for i in range(n_qubits)}
-    fidelity = _estimate_circuit_fidelity_from_lines(
-        lines, sq_fid, tq_fid, l2p, {}
-    )
+        l2p = {}
+    for i in range(n_qubits):
+        l2p.setdefault(i, i)
+    fidelity = _estimate_circuit_fidelity_from_lines(lines, sq_fid, tq_fid, l2p, {})
 
     return originir, 0, fidelity, initial_layout
 
@@ -646,10 +662,12 @@ def _rewrite_originir_qubits(line: str, old_qubits: list[int], new_qubits: list[
 
 def _remap_measure_line(line: str, l2p: dict[int, int]) -> str:
     """Rewrite ``MEASURE q[L], c[k]`` so that L → l2p[L]."""
+
     def _sub(m: re.Match[str]) -> str:
         lq = int(m.group(1))
         pq = l2p.get(lq, lq)
         return f"q[{pq}]"
+
     return _QREG_RE.sub(_sub, line)
 
 
@@ -660,7 +678,23 @@ def _estimate_circuit_fidelity_from_lines(
     l2p: dict[int, int],
     p2l: dict[int, int],
 ) -> float:
-    """Compute product-of-fidelities estimate from OriginIR lines."""
+    """Compute product-of-fidelities estimate from OriginIR lines.
+
+    Defensive lookups:
+
+    * ``l2p.get(qubit, qubit)`` — logical qubits absent from the mapping
+      fall back to identity (treat the logical index as a physical index).
+    * ``sq_fid.get(p, _DEFAULT_FIDELITY)`` / ``tq_fid.get(edge, _DEFAULT_FIDELITY)`` —
+      chip qubits / edges without calibration data fall back to
+      ``_DEFAULT_FIDELITY``. This keeps the estimate optimistic instead of
+      crashing with ``KeyError`` on tiny circuits routed onto large chips
+      (where most calibration data is for unrelated qubits) or when the
+      caller's ``available_qubits`` restriction filtered out an edge.
+    * Two-qubit edge keys are always built with ``tuple(sorted(...))`` to
+      match how ``tq_fid`` is constructed in :func:`_route_with_fidelity`
+      (line 468), so ``CNOT q[1], q[0]`` and ``CNOT q[0], q[1]`` resolve
+      to the same fidelity entry.
+    """
     from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 
     fidelity = 1.0

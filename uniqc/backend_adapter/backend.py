@@ -44,16 +44,15 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     pass
 
+from uniqc._error_hints import format_enriched_message
 from uniqc.backend_adapter.task.adapters import (
     DummyAdapter,
     OriginQAdapter,
     QiskitAdapter,
     QuafuAdapter,
-    QuarkAdapter,
     QuantumAdapter,
+    QuarkAdapter,
 )
-
-from uniqc._error_hints import format_enriched_message
 
 # -----------------------------------------------------------------------------
 # Cache Configuration
@@ -65,11 +64,11 @@ CACHE_FILE_SUFFIX = "_backend.json"
 
 def _get_cache_file_path(platform: str, cache_dir: Path | None = None) -> Path:
     """Get the cache file path for a specific platform.
-    
+
     Args:
         platform: The backend platform identifier.
         cache_dir: Optional custom cache directory. Uses default if None.
-        
+
     Returns:
         Path to the cache file.
     """
@@ -82,12 +81,13 @@ def _get_cache_file_path(platform: str, cache_dir: Path | None = None) -> Path:
 # Abstract Base Backend
 # -----------------------------------------------------------------------------
 
+
 class QuantumBackend(abc.ABC):
     """Abstract base class for quantum backend management.
-    
+
     This class provides a unified interface for all quantum computing backends,
     wrapping the underlying adapters and providing caching capabilities.
-    
+
     Attributes:
         name: The name of this backend instance.
         platform: The platform identifier (e.g., 'originq', 'quafu', 'ibm').
@@ -111,7 +111,7 @@ class QuantumBackend(abc.ABC):
         cache_dir: Path | str | None = None,
     ) -> None:
         """Initialize the backend.
-        
+
         Args:
             name: Optional name for this backend instance. Uses platform name if None.
             config: Optional configuration dictionary.
@@ -125,10 +125,10 @@ class QuantumBackend(abc.ABC):
     @property
     def adapter(self) -> QuantumAdapter:
         """Get or create the underlying adapter instance.
-        
+
         Returns:
             The quantum adapter for this backend.
-            
+
         Raises:
             RuntimeError: If the adapter cannot be initialized.
         """
@@ -139,7 +139,7 @@ class QuantumBackend(abc.ABC):
     @abc.abstractmethod
     def _create_adapter(self) -> QuantumAdapter:
         """Create and return the platform-specific adapter.
-        
+
         Returns:
             A new adapter instance for this backend.
         """
@@ -151,7 +151,7 @@ class QuantumBackend(abc.ABC):
 
     def get_circuit_adapter(self) -> QuantumAdapter:
         """Get the circuit adapter for translating circuits.
-        
+
         Returns:
             The quantum adapter that handles circuit translation.
         """
@@ -159,10 +159,10 @@ class QuantumBackend(abc.ABC):
 
     def translate_circuit(self, originir: str) -> Any:
         """Translate an OriginIR circuit to the platform's native format.
-        
+
         Args:
             originir: Circuit in OriginIR format.
-            
+
         Returns:
             Provider-specific circuit object.
         """
@@ -174,27 +174,25 @@ class QuantumBackend(abc.ABC):
 
     def submit(self, circuit: Any, *, shots: int = 1000, **kwargs: Any) -> str:
         """Submit a circuit to the backend.
-        
+
         Args:
             circuit: Provider-native circuit object or OriginIR string.
             shots: Number of measurement shots.
             **kwargs: Additional provider-specific parameters.
-            
+
         Returns:
             Task ID assigned by the backend.
         """
         return self.adapter.submit(circuit, shots=shots, **kwargs)
 
-    def submit_batch(
-        self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any
-    ) -> str | list[str]:
+    def submit_batch(self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any) -> str | list[str]:
         """Submit multiple circuits as a batch.
-        
+
         Args:
             circuits: List of provider-native circuit objects or OriginIR strings.
             shots: Number of measurement shots.
             **kwargs: Additional provider-specific parameters.
-            
+
         Returns:
             Task ID(s) assigned by the backend.
         """
@@ -206,10 +204,10 @@ class QuantumBackend(abc.ABC):
 
     def query(self, task_id: str) -> dict[str, Any]:
         """Query a task's status and result.
-        
+
         Args:
             task_id: Task identifier.
-            
+
         Returns:
             Dict with keys:
                 - 'status': 'success' | 'failed' | 'running'
@@ -219,10 +217,10 @@ class QuantumBackend(abc.ABC):
 
     def query_batch(self, task_ids: list[str]) -> dict[str, Any]:
         """Query multiple tasks' status and merge results.
-        
+
         Args:
             task_ids: List of task identifiers.
-            
+
         Returns:
             Dict with keys: 'status', 'result' (list of results).
         """
@@ -234,7 +232,7 @@ class QuantumBackend(abc.ABC):
 
     def is_available(self) -> bool:
         """Check if this backend is available.
-        
+
         Returns:
             True if the backend is properly configured and ready to use.
         """
@@ -261,6 +259,7 @@ class QuantumBackend(abc.ABC):
         except OSError as e:
             # Cache saving is non-critical, log but don't fail
             import warnings
+
             warnings.warn(f"Failed to save backend cache: {e}")
 
     @classmethod
@@ -269,10 +268,10 @@ class QuantumBackend(abc.ABC):
         cache_dir: Path | str | None = None,
     ) -> QuantumBackend | None:
         """Load a backend instance from cache.
-        
+
         Args:
             cache_dir: Optional custom cache directory path.
-            
+
         Returns:
             Loaded backend instance or None if cache doesn't exist or is invalid.
         """
@@ -321,13 +320,13 @@ class QuantumBackend(abc.ABC):
         cache_dir: Path | str | None = None,
     ) -> QuantumBackend:
         """Get or create a backend instance (factory method).
-        
+
         Args:
             name: Optional name for the instance.
             config: Optional configuration dictionary.
             use_cache: Whether to use/load cache. Defaults to True.
             cache_dir: Optional custom cache directory.
-            
+
         Returns:
             A backend instance.
         """
@@ -357,7 +356,7 @@ class QuantumBackend(abc.ABC):
     @classmethod
     def list_available(cls) -> bool:
         """Check if this backend type is available.
-        
+
         Returns:
             True if the backend can be instantiated and is configured.
         """
@@ -372,9 +371,10 @@ class QuantumBackend(abc.ABC):
 # Concrete Backend Implementations
 # -----------------------------------------------------------------------------
 
+
 class OriginQBackend(QuantumBackend):
     """Backend for OriginQ Cloud (本源量子云).
-    
+
     This backend connects to the OriginQ Cloud service for executing
     quantum circuits on OriginQ quantum computers and simulators.
     """
@@ -384,7 +384,7 @@ class OriginQBackend(QuantumBackend):
 
     def _create_adapter(self) -> OriginQAdapter:
         """Create an OriginQ adapter.
-        
+
         Returns:
             A configured OriginQAdapter instance.
         """
@@ -393,7 +393,7 @@ class OriginQBackend(QuantumBackend):
 
 class QuafuBackend(QuantumBackend):
     """Backend for BAQIS Quafu (ScQ) quantum cloud platform.
-    
+
     This backend connects to the Quafu service for executing quantum
     circuits on superconducting quantum computers.
     """
@@ -402,13 +402,11 @@ class QuafuBackend(QuantumBackend):
     _adapter_class = QuafuAdapter
 
     # Valid chip IDs for Quafu
-    VALID_CHIP_IDS = frozenset(
-        {"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"}
-    )
+    VALID_CHIP_IDS = frozenset({"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"})
 
     def _create_adapter(self) -> QuafuAdapter:
         """Create a Quafu adapter.
-        
+
         Returns:
             A configured QuafuAdapter instance.
         """
@@ -416,10 +414,10 @@ class QuafuBackend(QuantumBackend):
 
     def validate_chip_id(self, chip_id: str) -> bool:
         """Validate if the chip ID is valid for Quafu.
-        
+
         Args:
             chip_id: The chip identifier to validate.
-            
+
         Returns:
             True if the chip ID is valid.
         """
@@ -495,11 +493,11 @@ class IBMBackend(QuantumBackend):
         2. Environment variables (HTTP_PROXY, HTTPS_PROXY)
         3. config.yaml configuration file
         """
-        from uniqc.config import get_ibm_config
         from uniqc.backend_adapter.network_utils import (
             detect_system_proxy,
             get_ibm_proxy_from_config,
         )
+        from uniqc.config import get_ibm_config
 
         # Start with config file settings
         try:
@@ -516,10 +514,7 @@ class IBMBackend(QuantumBackend):
             if "proxy" in self.config:
                 proxy = self.config["proxy"]
                 if isinstance(proxy, dict):
-                    self._proxy_config = {
-                        k: v for k, v in proxy.items()
-                        if k in ("http", "https") and v
-                    }
+                    self._proxy_config = {k: v for k, v in proxy.items() if k in ("http", "https") and v}
                 elif isinstance(proxy, str):
                     self._proxy_config = {"http": proxy, "https": proxy}
 
@@ -753,6 +748,7 @@ BACKENDS: dict[str, type[QuantumBackend]] = {
 # Public API Functions
 # -----------------------------------------------------------------------------
 
+
 def get_backend(
     name: str,
     *,
@@ -761,24 +757,24 @@ def get_backend(
     cache_dir: Path | str | None = None,
 ) -> QuantumBackend:
     """Get or create a backend instance by name.
-    
+
     This is the main factory function for obtaining backend instances.
     It uses the BACKENDS registry to look up the appropriate backend class
     and returns a configured instance.
-    
+
     Args:
         name: The platform name ('originq', 'quafu', 'quark', 'ibm', or 'dummy').
         config: Optional configuration dictionary for the backend.
         use_cache: Whether to use cache. Defaults to True.
         cache_dir: Optional custom cache directory path.
-        
+
     Returns:
         A configured QuantumBackend instance.
-        
+
     Raises:
         ValueError: If the backend name is not recognized.
         RuntimeError: If the backend cannot be initialized.
-        
+
     Example:
         >>> backend = get_backend('originq')
         >>> task_id = backend.submit(circuit, shots=1000)
@@ -859,15 +855,15 @@ def register_backend(
     allow_override: bool = False,
 ) -> None:
     """Register a custom backend class.
-    
+
     Args:
         name: The platform name to register.
         backend_class: The backend class to register.
         allow_override: Whether to allow overriding existing registrations.
-        
+
     Raises:
         ValueError: If the name is already registered and override is False.
-        
+
     Example:
         >>> class MyBackend(QuantumBackend):
         ...     platform = "my_platform"
@@ -879,8 +875,7 @@ def register_backend(
     if name in BACKENDS and not allow_override:
         raise ValueError(
             format_enriched_message(
-                f"Backend '{name}' is already registered. "
-                "Use allow_override=True to replace it.",
+                f"Backend '{name}' is already registered. Use allow_override=True to replace it.",
                 "backend_not_found",
             )
         )
@@ -889,8 +884,7 @@ def register_backend(
     if not issubclass(backend_class, QuantumBackend):
         raise TypeError(
             format_enriched_message(
-                f"Backend class must be a subclass of QuantumBackend, "
-                f"got {type(backend_class)}",
+                f"Backend class must be a subclass of QuantumBackend, got {type(backend_class)}",
                 "backend_not_found",
             )
         )
@@ -908,10 +902,10 @@ def register_backend(
 
 def unregister_backend(name: str) -> None:
     """Unregister a backend.
-    
+
     Args:
         name: The platform name to unregister.
-        
+
     Raises:
         ValueError: If the backend is not registered.
     """
@@ -923,7 +917,7 @@ def unregister_backend(name: str) -> None:
 
 def clear_backend_cache(cache_dir: Path | str | None = None) -> None:
     """Clear all backend caches.
-    
+
     Args:
         cache_dir: Optional custom cache directory. Uses default if None.
     """

@@ -3,19 +3,20 @@
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.measurement import (
+    basis_rotation_measurement,
+    classical_shadow,
     pauli_expectation,
+    shadow_expectation,
     state_tomography,
     tomography_summary,
-    classical_shadow,
-    shadow_expectation,
-    basis_rotation_measurement,
 )
+from uniqc.circuit_builder import Circuit
 
 
 class TestPauliExpectation:
     """Tests for Pauli string expectation value calculations."""
+
     def test_zz_on_computational(self):
         """Test ⟨ZZ⟩ expectation on |00⟩ state.
 
@@ -105,6 +106,7 @@ class TestPauliExpectation:
 
 class TestBasisRotationMeasurement:
     """Tests for basis rotation measurement functionality."""
+
     def test_z_basis_on_plus(self):
         """Test |+⟩ measurement in Z basis.
 
@@ -180,6 +182,7 @@ class TestBasisRotationMeasurement:
 
 class TestStateTomography:
     """Tests for quantum state tomography reconstruction."""
+
     def test_pure_state_reconstruction(self):
         """Test pure Bell state reconstruction.
 
@@ -232,6 +235,7 @@ class TestStateTomography:
 
 class TestClassicalShadow:
     """Tests for classical shadow estimation technique."""
+
     def test_shadow_generates_correct_count(self):
         """Test that shadow generates correct number of snapshots."""
         c = Circuit()
@@ -299,7 +303,7 @@ class TestClassicalShadow:
         c.measure(0, 1)
         shadows = classical_shadow(c, shots=512, n_shadow=8)
         with pytest.raises(ValueError, match="length"):
-            shadow_expectation(shadows, "Z")   # 1 qubit, shadow has 2
+            shadow_expectation(shadows, "Z")  # 1 qubit, shadow has 2
 
     def test_empty_shadows_raises(self):
         """Test that empty shadow list raises ValueError."""

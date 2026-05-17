@@ -9,8 +9,8 @@ Tests cover:
 """
 
 import pytest
-from uniqc.circuit_builder.qubit import Qubit, QReg, QRegSlice
 
+from uniqc.circuit_builder.qubit import QReg, QRegSlice, Qubit
 
 # =============================================================================
 # TestQubit

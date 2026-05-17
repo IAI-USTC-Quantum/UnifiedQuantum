@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 from .basis_state import basis_state
+from .dicke_state import dicke_state
 from .hadamard_superposition import hadamard_superposition
 from .rotation_prepare import rotation_prepare
 from .thermal_state import thermal_state
-from .dicke_state import dicke_state

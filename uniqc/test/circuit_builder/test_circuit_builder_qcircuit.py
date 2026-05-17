@@ -3,8 +3,8 @@ Comprehensive unit tests for uniqc.circuit_builder.qcircuit.Circuit.
 """
 
 import pytest
-from uniqc.circuit_builder import Circuit
 
+from uniqc.circuit_builder import Circuit
 
 # =============================================================================
 # TestSingleQubitGates
@@ -91,7 +91,7 @@ class TestSingleQubitGates:
         assert lines[1].startswith("CREG")
         # Gate line should contain "q[0]" and the operation name
         gate_line = lines[2] if len(lines) > 2 else lines[-1]
-        assert f"q[0]" in gate_line
+        assert "q[0]" in gate_line
         # For daggered gates the keyword "dagger" appears; for others just op name
         if "dg" in gate_method:
             assert "dagger" in gate_line
@@ -492,9 +492,8 @@ class TestContextManagers:
     def test_nested_control_and_dagger(self):
         """control() and dagger() can be nested."""
         c = Circuit()
-        with c.control(0):
-            with c.dagger():
-                c.x(1)
+        with c.control(0), c.dagger():
+            c.x(1)
         s = c.circuit_str
         # Verify the expected block structure is present.
         # Use substrings that don't overlap with END markers.
@@ -543,18 +542,16 @@ class TestContextManagers:
     def test_double_dagger_cancels(self):
         """Two nested dagger() contexts cancel out (dagger^dagger = identity)."""
         c = Circuit()
-        with c.dagger():
-            with c.dagger():
-                c.s(0)
+        with c.dagger(), c.dagger():
+            c.s(0)
         op = c.opcode_list[-1]
         assert op[4] is False, "double dagger should cancel to dagger=False"
 
     def test_nested_control_unions(self):
         """Nested control() contexts union their control qubits in the opcode."""
         c = Circuit()
-        with c.control(0):
-            with c.control(1):
-                c.z(2)
+        with c.control(0), c.control(1):
+            c.z(2)
         op = c.opcode_list[-1]
         ctrl = list(op[5])
         assert 0 in ctrl
@@ -563,16 +560,14 @@ class TestContextManagers:
     def test_duplicate_control_rejected(self):
         """Adding a gate with control_qubits overlapping active context raises."""
         c = Circuit()
-        with c.control(0):
-            with pytest.raises(ValueError, match="overlap|appear"):
-                c.add_gate("X", 1, control_qubits=[0])
+        with c.control(0), pytest.raises(ValueError, match="overlap|appear"):
+            c.add_gate("X", 1, control_qubits=[0])
 
     def test_measure_inside_control_raises(self):
         """measure() inside a control() context should raise ValueError."""
         c = Circuit()
-        with pytest.raises(ValueError):
-            with c.control(0):
-                c.measure(1)
+        with pytest.raises(ValueError), c.control(0):
+            c.measure(1)
 
     def test_set_control_unset_control_propagates_to_opcode(self):
         """Low-level set_control / unset_control should also propagate to opcodes."""
@@ -779,7 +774,9 @@ class TestOriginirQasmProperties:
         c.y(0)
         lines = c.originir.strip().split("\n")
         # Skip header (2 lines) and measure lines at end
-        gate_lines = [l for l in lines if not l.startswith("QINIT") and not l.startswith("CREG") and not l.startswith("MEASURE")]
+        gate_lines = [
+            l for l in lines if not l.startswith("QINIT") and not l.startswith("CREG") and not l.startswith("MEASURE")
+        ]
         assert len(gate_lines) == 3
 
 

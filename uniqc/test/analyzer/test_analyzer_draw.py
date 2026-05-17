@@ -4,14 +4,14 @@ import pytest
 
 from uniqc.visualization.result import (
     _parse_measured_result,
-    plot_histogram,
     plot_distribution,
+    plot_histogram,
 )
-
 
 # ---------------------------------------------------------------------------
 # Mock axes – provides all methods called by plot_histogram / plot_distribution
 # ---------------------------------------------------------------------------
+
 
 class _MockAxes:
     """Minimal mock for matplotlib Axes."""
@@ -73,6 +73,7 @@ class _MockFigure:
 # file like uniqc/analyzer/draw.py to find submodules.
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _patch_matplotlib(monkeypatch):
     """Patches plt.show and plt.subplots to return mock objects."""
@@ -94,6 +95,7 @@ def _patch_matplotlib(monkeypatch):
 # ---------------------------------------------------------------------------
 # _parse_measured_result – dict format
 # ---------------------------------------------------------------------------
+
 
 class TestParseDictFormat:
     """Tests for dict input to _parse_measured_result."""
@@ -127,6 +129,7 @@ class TestParseDictFormat:
 # ---------------------------------------------------------------------------
 # _parse_measured_result – list format
 # ---------------------------------------------------------------------------
+
 
 class TestParseListFormat:
     """Tests for list input to _parse_measured_result."""
@@ -206,6 +209,7 @@ class TestParseListFormat:
 # _parse_measured_result – wrong type
 # ---------------------------------------------------------------------------
 
+
 class TestParseWrongType:
     """Tests for invalid type input to _parse_measured_result."""
 
@@ -219,13 +223,12 @@ class TestParseWrongType:
 # _parse_measured_result – rotation angle and figsize adjustment
 # ---------------------------------------------------------------------------
 
+
 class TestParseRotationAndFigsize:
     """Tests for rotation angle and figsize adjustment logic."""
 
     def test_nqubit_1_no_rotation(self):
-        labels, values, nqubit, adj_figsize, rot = _parse_measured_result(
-            {"0": 1.0}, (10, 6)
-        )
+        labels, values, nqubit, adj_figsize, rot = _parse_measured_result({"0": 1.0}, (10, 6))
         assert nqubit == 1
         assert rot == 0
 
@@ -264,6 +267,7 @@ class TestParseRotationAndFigsize:
 # _parse_measured_result – label format
 # ---------------------------------------------------------------------------
 
+
 class TestParseLabelsFormat:
     """Tests for the format of generated labels."""
 
@@ -286,6 +290,7 @@ class TestParseLabelsFormat:
 # plot_histogram – valid inputs (no errors raised)
 # ---------------------------------------------------------------------------
 
+
 class TestPlotHistogramValid:
     """Tests that plot_histogram accepts valid inputs without raising."""
 
@@ -302,6 +307,7 @@ class TestPlotHistogramValid:
 # ---------------------------------------------------------------------------
 # plot_histogram – invalid inputs raise
 # ---------------------------------------------------------------------------
+
 
 class TestPlotHistogramInvalid:
     """Tests that plot_histogram raises on invalid inputs."""
@@ -324,6 +330,7 @@ class TestPlotHistogramInvalid:
 # plot_distribution – valid inputs (no errors raised)
 # ---------------------------------------------------------------------------
 
+
 class TestPlotDistributionValid:
     """Tests that plot_distribution accepts valid inputs without raising."""
 
@@ -340,6 +347,7 @@ class TestPlotDistributionValid:
 # ---------------------------------------------------------------------------
 # plot_distribution – invalid inputs raise
 # ---------------------------------------------------------------------------
+
 
 class TestPlotDistributionInvalid:
     """Tests that plot_distribution raises on invalid inputs."""

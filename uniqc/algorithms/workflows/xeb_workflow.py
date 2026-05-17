@@ -243,15 +243,15 @@ def run_parallel_xeb_workflow(
     from uniqc.qem import ReadoutEM
 
     if chip_characterization is None:
-        raise ValueError(format_enriched_message("chip_characterization is required for parallel XEB", "circuit_validation"))
+        raise ValueError(
+            format_enriched_message("chip_characterization is required for parallel XEB", "circuit_validation")
+        )
 
     if depths is None:
         depths = [5, 10, 20]
 
     # Build topology
-    edges = [
-        (e.u, e.v) for e in chip_characterization.connectivity
-    ]
+    edges = [(e.u, e.v) for e in chip_characterization.connectivity]
     if target_qubits is not None:
         target_set = set(target_qubits)
         edges = [(u, v) for u, v in edges if u in target_set and v in target_set]
@@ -388,9 +388,11 @@ def run_parallel_cz_xeb_workflow(
     from uniqc.calibration.xeb.topology import (
         ChipTopologyView,
         Region,
-        parallel_patterns as _parallel_patterns,
         pick_region,
         three_color_chip,
+    )
+    from uniqc.calibration.xeb.topology import (
+        parallel_patterns as _parallel_patterns,
     )
 
     # Hard pre-execution gate: missing SDK / chip cache → loud error.
@@ -408,13 +410,9 @@ def run_parallel_cz_xeb_workflow(
 
     if region_qubits is None:
         if view is None:
-            raise ValueError(
-                "region_qubits or chip_characterization (with n_qubits) is required"
-            )
+            raise ValueError("region_qubits or chip_characterization (with n_qubits) is required")
         if n_qubits is None:
-            raise ValueError(
-                "n_qubits is required when region_qubits is not supplied"
-            )
+            raise ValueError("n_qubits is required when region_qubits is not supplied")
         region = pick_region(view, int(n_qubits), seed=seed or 0)
         region_qs = list(region.qubits)
         region_obj: Region | None = region
@@ -423,9 +421,12 @@ def run_parallel_cz_xeb_workflow(
         if view is not None:
             adj = view.adjacency()
             from uniqc.calibration.xeb.topology import _induced_edges
+
             induced = tuple(_induced_edges(region_qs, adj))
             region_obj = Region(
-                qubits=tuple(sorted(region_qs)), edges=induced, score=0.0,
+                qubits=tuple(sorted(region_qs)),
+                edges=induced,
+                score=0.0,
             )
         else:
             region_obj = None
@@ -434,16 +435,12 @@ def run_parallel_cz_xeb_workflow(
         if pattern_mode == "auto":
             if region_obj is None or not region_obj.edges:
                 raise ValueError(
-                    "pattern_mode='auto' needs a region with edges; supply "
-                    "chip_characterization or explicit patterns"
+                    "pattern_mode='auto' needs a region with edges; supply chip_characterization or explicit patterns"
                 )
             patterns = [list(p) for p in _parallel_patterns(region_obj.edges)]
         elif pattern_mode == "three_color":
             if view is None and (region_obj is None or not region_obj.edges):
-                raise ValueError(
-                    "pattern_mode='three_color' needs chip_characterization "
-                    "or a region with edges"
-                )
+                raise ValueError("pattern_mode='three_color' needs chip_characterization or a region with edges")
             # Color the region's edges when an explicit region is given,
             # else color the entire chip's coupling map.
             if region_obj is not None and region_obj.edges:
@@ -451,19 +448,14 @@ def run_parallel_cz_xeb_workflow(
             else:
                 colors = three_color_chip(view, max_K=4)
             if not (0 <= color_idx < len(colors)):
-                raise ValueError(
-                    f"color_idx={color_idx} out of range; got "
-                    f"{len(colors)} colors"
-                )
+                raise ValueError(f"color_idx={color_idx} out of range; got {len(colors)} colors")
             chosen = list(colors[color_idx])
             patterns = [chosen]
             # Region = qubits actually touched by the chosen matching.
             region_qs = sorted({q for e in chosen for q in e})
         elif pattern_mode == "single_pair_per_pattern":
             if region_obj is None or not region_obj.edges:
-                raise ValueError(
-                    "pattern_mode='single_pair_per_pattern' needs region edges"
-                )
+                raise ValueError("pattern_mode='single_pair_per_pattern' needs region edges")
             patterns = [[e] for e in region_obj.edges]
         else:
             raise ValueError(f"unknown pattern_mode={pattern_mode!r}")
@@ -477,7 +469,10 @@ def run_parallel_cz_xeb_workflow(
     adapter = _get_adapter(backend, **adapter_kwargs)
 
     bench = ParallelCZBenchmarker(
-        adapter=adapter, shots=shots, seed=seed, cache_dir=cache_dir,
+        adapter=adapter,
+        shots=shots,
+        seed=seed,
+        cache_dir=cache_dir,
     )
     result = bench.run(region_qs, patterns, depths, instances=instances)
 

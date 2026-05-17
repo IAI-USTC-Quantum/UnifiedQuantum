@@ -17,9 +17,9 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
-from uniqc._error_hints import format_enriched_message
 
 
 @dataclass
@@ -58,10 +58,7 @@ class ShadowSnapshot:
     _expectation_cache: dict[int, float] = field(default_factory=dict, repr=False)
 
     def __repr__(self) -> str:
-        return (
-            f"Shadow(unitary_indices={self.unitary_indices}, "
-            f"outcomes={self.outcomes})"
-        )
+        return f"Shadow(unitary_indices={self.unitary_indices}, outcomes={self.outcomes})"
 
 
 # Mapping: unitary_index → which Pauli basis this unitary measures
@@ -81,9 +78,9 @@ def _inject_random_basis(circuit: Circuit, unitary_indices: list[int]) -> str:
     n = circuit.max_qubit + 1
     rot_gates: dict[int, list[str]] = {i: [] for i in range(n)}
     for i, ui in enumerate(unitary_indices):
-        if ui == 1:          # H  → X basis
+        if ui == 1:  # H  → X basis
             rot_gates[i].append(f"h q[{i}];")
-        elif ui == 2:        # Sdg·H → Y basis
+        elif ui == 2:  # Sdg·H → Y basis
             rot_gates[i].append(f"sdg q[{i}];")  # S-dagger then H = measure Y
             rot_gates[i].append(f"h q[{i}];")
 
@@ -193,9 +190,7 @@ def classical_shadow(
             basis_sequence.extend(all_combos[i] for i in extra_idx)
         rng.shuffle(basis_sequence)
     else:
-        basis_sequence = [
-            tuple(rng.integers(0, 3, size=n).tolist()) for _ in range(n_shadow)
-        ]
+        basis_sequence = [tuple(rng.integers(0, 3, size=n).tolist()) for _ in range(n_shadow)]
 
     snapshots: list[ShadowSnapshot] = []
 
@@ -208,17 +203,11 @@ def classical_shadow(
         total = sum(counts.values())
         probs = {k: v / total for k, v in counts.items()}
 
-        outcomes_int = int(
-            rng.choice(
-                list(probs.keys()), size=1, p=list(probs.values()), replace=True
-            )[0]
-        )
+        outcomes_int = int(rng.choice(list(probs.keys()), size=1, p=list(probs.values()), replace=True)[0])
 
         # LSB-first: outcomes[i] = measurement of qubit i
         outcomes = tuple((outcomes_int >> i) & 1 for i in range(n))
-        snapshots.append(
-            ShadowSnapshot(unitary_indices, outcomes, dict(counts))
-        )
+        snapshots.append(ShadowSnapshot(unitary_indices, outcomes, dict(counts)))
 
     return snapshots
 
@@ -264,8 +253,9 @@ def shadow_expectation(
     n = len(shadows[0].unitary_indices)
     if len(pauli_string) != n:
         raise ValueError(
-            format_enriched_message(f"pauli_string length ({len(pauli_string)}) must match "
-            f"snapshots ({n})", "measurement")
+            format_enriched_message(
+                f"pauli_string length ({len(pauli_string)}) must match snapshots ({n})", "measurement"
+            )
         )
 
     pauli_string = pauli_string.upper()
@@ -339,10 +329,17 @@ def shadow_expectation(
     return float(np.mean(estimates))
 
 
-__all__ = list(set(globals().get("__all__", []) + [
-    "classical_shadow", "shadow_expectation",
-    "ClassicalShadow", "classical_shadow_example",
-]))
+__all__ = list(
+    set(
+        globals().get("__all__", [])
+        + [
+            "classical_shadow",
+            "shadow_expectation",
+            "ClassicalShadow",
+            "classical_shadow_example",
+        ]
+    )
+)
 
 
 class ClassicalShadow:
@@ -373,9 +370,7 @@ class ClassicalShadow:
         n = measured.max_qubit + 1
         for q in range(n):
             measured.measure(q)
-        return classical_shadow(
-            measured, qubits=self.qubits, shots=self.shots, n_shadow=self.n_shadow
-        )
+        return classical_shadow(measured, qubits=self.qubits, shots=self.shots, n_shadow=self.n_shadow)
 
 
 def classical_shadow_example():

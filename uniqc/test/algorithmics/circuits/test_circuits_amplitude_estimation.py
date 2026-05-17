@@ -2,15 +2,14 @@
 
 import math
 
-import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.circuits import (
     amplitude_estimation_circuit,
     amplitude_estimation_result,
     grover_operator,
 )
+from uniqc.circuit_builder import Circuit
 
 
 class TestAmplitudeEstimationResult:
@@ -18,12 +17,12 @@ class TestAmplitudeEstimationResult:
 
     def test_result_all_zero_outcome(self):
         """counts={0: 100} with n_eval=3 → a ≈ sin²(0) = 0."""
-        a = amplitude_estimation_result({'0': 100}, n_eval_qubits=3)
+        a = amplitude_estimation_result({"0": 100}, n_eval_qubits=3)
         assert math.isclose(a, 0.0, abs_tol=1e-10)
 
     def test_result_all_max_outcome(self):
         """counts={7: 100} with n_eval=3 → a = sin²(π·7/16) ≈ 0.9619."""
-        a = amplitude_estimation_result({'111': 100}, n_eval_qubits=3)
+        a = amplitude_estimation_result({"111": 100}, n_eval_qubits=3)
         # QAE formula: theta = pi * m / 2^(M+1), a = sin^2(theta)
         expected = math.sin(math.pi * 7 / 16) ** 2
         assert math.isclose(a, expected, abs_tol=1e-10)

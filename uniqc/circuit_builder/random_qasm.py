@@ -13,9 +13,10 @@ Key exports:
 """
 
 import random
-from typing import List
-from .qasm_spec import available_qasm_gates
+
 from uniqc.circuit_builder.qcircuit import OpcodeType
+
+from .qasm_spec import available_qasm_gates
 
 __all__ = [
     "build_qasm_gate",
@@ -133,7 +134,7 @@ def random_qasm(n_qubits, n_gates, instruction_set=available_qasm_gates, measure
     return "\n".join(qasm)
 
 
-def build_qasm_from_opcodes(opcode_list: List[OpcodeType], measure_qbit_cbit=None, qreg_name="q", creg_name="c"):
+def build_qasm_from_opcodes(opcode_list: list[OpcodeType], measure_qbit_cbit=None, qreg_name="q", creg_name="c"):
     """
     Generate a QASM code from a list of opcodes.
 

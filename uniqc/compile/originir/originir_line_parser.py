@@ -703,7 +703,13 @@ class OriginIR_LineParser:
             ):
                 operation, q, dagger_flag, control_qubits = OriginIR_LineParser.handle_1q(line)
             # 2-qubit gates
-            elif operation == "CZ" or operation == "CNOT" or operation == "ECR" or operation == "SWAP" or operation == "ISWAP":
+            elif (
+                operation == "CZ"
+                or operation == "CNOT"
+                or operation == "ECR"
+                or operation == "SWAP"
+                or operation == "ISWAP"
+            ):
                 operation, q, dagger_flag, control_qubits = OriginIR_LineParser.handle_2q(line)
             # 3-qubit gates
             elif operation == "TOFFOLI" or operation == "CSWAP":
@@ -771,8 +777,8 @@ class OriginIR_LineParser:
                 raise NotImplementedError(f"A invalid line: {line}.")
 
             return operation, q, c, parameter, dagger_flag, control_qubits
-        except AttributeError:
-            raise RuntimeError(f"Error when parsing the line: {line}")
+        except AttributeError as e:
+            raise RuntimeError(f"Error when parsing the line: {line}") from e
 
 
 if __name__ == "__main__":

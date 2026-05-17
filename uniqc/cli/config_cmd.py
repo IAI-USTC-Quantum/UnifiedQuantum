@@ -17,10 +17,7 @@ from .output import (
 )
 
 app = typer.Typer(
-    help=(
-        "Manage API key and configuration\n"
-        f"  {build_ref_str('config')}"
-    ),
+    help=(f"Manage API key and configuration\n  {build_ref_str('config')}"),
 )
 
 
@@ -46,7 +43,9 @@ def init(
 
 @app.command()
 def set(
-    key: str = typer.Argument(..., help="Configuration key (e.g., originq.token, ibm.proxy.https, quark.QUARK_API_KEY)"),
+    key: str = typer.Argument(
+        ..., help="Configuration key (e.g., originq.token, ibm.proxy.https, quark.QUARK_API_KEY)"
+    ),
     value: str = typer.Argument(..., help="Configuration value"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
@@ -63,7 +62,9 @@ def set(
 
     parts = key.split(".")
     if len(parts) < 2:
-        print_error("Key must be in format 'platform.field' or 'platform.section.field' (e.g., originq.token, ibm.proxy.https)")
+        print_error(
+            "Key must be in format 'platform.field' or 'platform.section.field' (e.g., originq.token, ibm.proxy.https)"
+        )
         raise typer.Exit(1)
 
     platform_name, *fields = parts

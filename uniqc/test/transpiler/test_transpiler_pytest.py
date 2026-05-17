@@ -1,5 +1,4 @@
 """Pytest tests for transpiler module."""
-import pytest
 
 
 class TestTranspilerLazyImport:

@@ -10,8 +10,8 @@ when you want autodiff parameter-shift gradients and PyTorch interop.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -40,7 +40,7 @@ class VQEResult:
 
     energy: float
     params: np.ndarray
-    history: List[float] = field(default_factory=list)
+    history: list[float] = field(default_factory=list)
     n_iter: int = 0
     success: bool = True
     message: str = ""
@@ -50,7 +50,7 @@ def _build_default_ansatz(
     n_qubits: int,
     depth: int,
     ansatz_type: str = "hea",
-    ansatz_options: Optional[dict] = None,
+    ansatz_options: dict | None = None,
 ) -> Callable[[np.ndarray], Circuit]:
     """Return ``params -> Circuit`` builder using the selected ansatz type."""
     ansatz_options = ansatz_options or {}
@@ -74,8 +74,7 @@ def _build_default_ansatz(
     return builder
 
 
-def _energy(circuit: Circuit, hamiltonian: Sequence[Tuple[str, float]],
-            shots: Optional[int]) -> float:
+def _energy(circuit: Circuit, hamiltonian: Sequence[tuple[str, float]], shots: int | None) -> float:
     """Evaluate ⟨H⟩ = Σ_i c_i ⟨P_i⟩ by summing per-term Pauli expectations."""
     total = 0.0
     for pauli, coeff in hamiltonian:
@@ -84,17 +83,17 @@ def _energy(circuit: Circuit, hamiltonian: Sequence[Tuple[str, float]],
 
 
 def run_vqe_workflow(
-    hamiltonian: Sequence[Tuple[str, float]],
+    hamiltonian: Sequence[tuple[str, float]],
     *,
-    n_qubits: Optional[int] = None,
-    ansatz: Optional[Callable[[np.ndarray], Circuit]] = None,
+    n_qubits: int | None = None,
+    ansatz: Callable[[np.ndarray], Circuit] | None = None,
     depth: int = 1,
     ansatz_type: str = "hea",
-    ansatz_options: Optional[dict] = None,
-    init_params: Optional[np.ndarray] = None,
-    shots: Optional[int] = None,
+    ansatz_options: dict | None = None,
+    init_params: np.ndarray | None = None,
+    shots: int | None = None,
     method: str = "COBYLA",
-    options: Optional[dict] = None,
+    options: dict | None = None,
 ) -> VQEResult:
     """Run a scipy-driven VQE on ``hamiltonian``.
 
@@ -153,9 +152,7 @@ def run_vqe_workflow(
 
     for pauli, _ in hamiltonian:
         if len(pauli) != n_qubits:
-            raise ValueError(
-                f"All Pauli terms must have length {n_qubits}, got {pauli!r}"
-            )
+            raise ValueError(f"All Pauli terms must have length {n_qubits}, got {pauli!r}")
 
     if ansatz is None:
         ansatz = _build_default_ansatz(n_qubits, depth, ansatz_type, ansatz_options)
@@ -173,7 +170,7 @@ def run_vqe_workflow(
         rng = np.random.default_rng(0)
         init_params = rng.uniform(-np.pi / 8, np.pi / 8, size=param_count)
 
-    history: List[float] = []
+    history: list[float] = []
 
     def objective(params: np.ndarray) -> float:
         circuit = ansatz(np.asarray(params))
@@ -184,8 +181,7 @@ def run_vqe_workflow(
     if options is None and method.upper() == "COBYLA":
         options = {"maxiter": 200, "rhobeg": 0.1}
 
-    res = minimize(objective, np.asarray(init_params, dtype=float),
-                   method=method, options=options)
+    res = minimize(objective, np.asarray(init_params, dtype=float), method=method, options=options)
 
     return VQEResult(
         energy=float(res.fun),

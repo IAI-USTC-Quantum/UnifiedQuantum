@@ -1,20 +1,19 @@
 """Unit tests for uniqc/analyzer/result_adapter.py"""
 
-import numpy as np
 import pytest
 
 from uniqc.utils.result_adapter import (
-    shots2prob,
+    QASMResultAdapter,
     kv2list,
     list2kv,
     normalize_result,
-    QASMResultAdapter,
+    shots2prob,
 )
-
 
 # =============================================================================
 # shots2prob
 # =============================================================================
+
 
 class TestShots2Prob:
     """Tests for shots2prob."""
@@ -48,6 +47,7 @@ class TestShots2Prob:
 # kv2list
 # =============================================================================
 
+
 class TestKv2List:
     """Tests for kv2list."""
 
@@ -79,6 +79,7 @@ class TestKv2List:
 # =============================================================================
 # list2kv
 # =============================================================================
+
 
 class TestList2Kv:
     """Tests for list2kv."""
@@ -112,6 +113,7 @@ class TestList2Kv:
 # =============================================================================
 # normalize_result
 # =============================================================================
+
 
 class TestNormalizeResult:
     """Tests for normalize_result."""
@@ -149,6 +151,7 @@ class TestNormalizeResult:
 # =============================================================================
 # QASMResultAdapter
 # =============================================================================
+
 
 class TestQASMResultAdapter:
     """Tests for QASMResultAdapter class."""

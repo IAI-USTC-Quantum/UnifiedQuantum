@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 
 from .output import (
@@ -22,17 +20,14 @@ from .output import (
 )
 
 app = typer.Typer(
-    help=(
-        "Manage submitted tasks\n"
-        f"  {build_ref_str('task-list')}"
-    ),
+    help=(f"Manage submitted tasks\n  {build_ref_str('task-list')}"),
 )
 
 
 @app.command("list")
 def list_tasks(
-    status: Optional[str] = typer.Option(None, "--status", help="Filter by status: pending/running/success/failed"),
-    platform: Optional[str] = typer.Option(None, "--platform", "-p", help="Filter by platform"),
+    status: str | None = typer.Option(None, "--status", help="Filter by status: pending/running/success/failed"),
+    platform: str | None = typer.Option(None, "--platform", "-p", help="Filter by platform"),
     limit: int = typer.Option(20, "--limit", "-l", help="Maximum number of tasks to show"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
     ai_hints: bool = AI_HINTS_OPTION,
@@ -118,9 +113,7 @@ def show(
 
         if task_info.result:
             console.print("\n[bold]Results:[/bold]")
-            counts, probs = extract_counts_and_probs(
-                task_info.result, shots=task_info.shots
-            )
+            counts, probs = extract_counts_and_probs(task_info.result, shots=task_info.shots)
             # Prefer counts order for display; fall back to probabilities.
             if counts:
                 rows = [
@@ -129,20 +122,14 @@ def show(
                         str(count),
                         format_prob(probs.get(state, count / (sum(counts.values()) or 1))),
                     ]
-                    for state, count in sorted(
-                        counts.items(), key=lambda x: x[1], reverse=True
-                    )
+                    for state, count in sorted(counts.items(), key=lambda x: x[1], reverse=True)
                 ]
             else:
                 rows = [
                     [state, "-", format_prob(prob)]
-                    for state, prob in sorted(
-                        probs.items(), key=lambda x: x[1], reverse=True
-                    )
+                    for state, prob in sorted(probs.items(), key=lambda x: x[1], reverse=True)
                 ]
-            print_table(
-                "Measurement Results", ["State", "Count", "Probability"], rows
-            )
+            print_table("Measurement Results", ["State", "Count", "Probability"], rows)
 
 
 @app.command("shards")
@@ -165,19 +152,21 @@ def shards(
         return
 
     if format == "json":
-        print_json([
-            {
-                "uniqc_task_id": s.uniqc_task_id,
-                "shard_index": s.shard_index,
-                "platform_task_id": s.platform_task_id,
-                "backend": s.backend,
-                "circuit_count": s.circuit_count,
-                "sub_index_offset": s.sub_index_offset,
-                "status": s.status,
-                "error_message": s.error_message,
-            }
-            for s in shards_list
-        ])
+        print_json(
+            [
+                {
+                    "uniqc_task_id": s.uniqc_task_id,
+                    "shard_index": s.shard_index,
+                    "platform_task_id": s.platform_task_id,
+                    "backend": s.backend,
+                    "circuit_count": s.circuit_count,
+                    "sub_index_offset": s.sub_index_offset,
+                    "status": s.status,
+                    "error_message": s.error_message,
+                }
+                for s in shards_list
+            ]
+        )
         return
 
     rows = [
@@ -201,7 +190,7 @@ def shards(
 
 @app.command()
 def clear(
-    status: Optional[str] = typer.Option(None, "--status", help="Clear tasks with this status"),
+    status: str | None = typer.Option(None, "--status", help="Clear tasks with this status"),
     force: bool = typer.Option(False, "--force", help="Force clear without confirmation"),
     ai_hints: bool = AI_HINTS_OPTION,
 ):

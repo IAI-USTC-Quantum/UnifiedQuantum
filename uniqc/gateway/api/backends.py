@@ -220,12 +220,8 @@ def _node_payload(
         "t1": t1 if t1 is not None else avg_t1,
         "t2": t2 if t2 is not None else avg_t2,
         "freq": None,
-        "single_gate_fidelity": (
-            single_gate_fidelity if single_gate_fidelity is not None else avg_1q
-        ),
-        "avg_readout_fidelity": (
-            avg_readout_fidelity if avg_readout_fidelity is not None else avg_readout
-        ),
+        "single_gate_fidelity": (single_gate_fidelity if single_gate_fidelity is not None else avg_1q),
+        "avg_readout_fidelity": (avg_readout_fidelity if avg_readout_fidelity is not None else avg_readout),
         "readout_fidelity_0": _fidelity(q.readout_fidelity_0) if q else None,
         "readout_fidelity_1": _fidelity(q.readout_fidelity_1) if q else None,
     }
@@ -320,8 +316,7 @@ def _backend_summary(
         "is_hardware": b.is_hardware,
         "topology": {
             "nodes": [
-                _node_payload(qid, per_qubit, avg_1q, avg_readout, avg_t1, avg_t2, chip_available)
-                for qid in node_ids
+                _node_payload(qid, per_qubit, avg_1q, avg_readout, avg_t1, avg_t2, chip_available) for qid in node_ids
             ],
             "edges": edges,
             "has_connectivity": bool(edges),

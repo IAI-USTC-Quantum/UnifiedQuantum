@@ -6,13 +6,13 @@ gradient computation using the parameter-shift rule.
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
 from itertools import combinations
+
 import numpy as np
 
-from uniqc.circuit_builder import Circuit
+from uniqc.algorithms.core.ansatz._pauli_unitary import _apply_cost_unitary, _parse_pauli_string
 from uniqc.algorithms.core.measurement.pauli_expectation import pauli_expectation
-from uniqc.algorithms.core.ansatz._pauli_unitary import _parse_pauli_string, _apply_cost_unitary
+from uniqc.circuit_builder import Circuit
 
 __all__ = ["OperatorPool", "compute_operator_gradient"]
 
@@ -26,7 +26,7 @@ class OperatorPool:
 
     def __init__(
         self,
-        operators: Optional[List[Tuple[str, float]]] = None,
+        operators: list[tuple[str, float]] | None = None,
     ) -> None:
         """Initialize with explicit operator list.
 
@@ -36,7 +36,7 @@ class OperatorPool:
         self._operators = operators or []
 
     @classmethod
-    def uccsd_pool(cls, n_qubits: int, n_electrons: int) -> "OperatorPool":
+    def uccsd_pool(cls, n_qubits: int, n_electrons: int) -> OperatorPool:
         """Generate UCCSD singles + doubles operator pool.
 
         Args:
@@ -47,13 +47,11 @@ class OperatorPool:
             OperatorPool containing all single and double excitation operators.
         """
         if n_electrons > n_qubits:
-            raise ValueError(
-                f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})"
-            )
+            raise ValueError(f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})")
 
         occupied = list(range(n_electrons))
         virtual = list(range(n_electrons, n_qubits))
-        operators: List[Tuple[str, float]] = []
+        operators: list[tuple[str, float]] = []
 
         # Single excitations: occupied -> virtual
         for i in occupied:
@@ -70,7 +68,7 @@ class OperatorPool:
         return cls(operators)
 
     @classmethod
-    def minimal_pool(cls, n_qubits: int) -> "OperatorPool":
+    def minimal_pool(cls, n_qubits: int) -> OperatorPool:
         """Generate a minimal pool with single and two-qubit Pauli excitations.
 
         For n qubits, includes all single-qubit Pauli operators and
@@ -82,7 +80,7 @@ class OperatorPool:
         Returns:
             OperatorPool with minimal operator set.
         """
-        operators: List[Tuple[str, float]] = []
+        operators: list[tuple[str, float]] = []
 
         # Single-qubit excitations (X, Y on each qubit)
         for q in range(n_qubits):
@@ -99,7 +97,7 @@ class OperatorPool:
 
         return cls(operators)
 
-    def operators(self) -> List[Tuple[str, float]]:
+    def operators(self) -> list[tuple[str, float]]:
         """Return the list of (pauli_string, coefficient) operators."""
         return self._operators
 
@@ -115,8 +113,8 @@ def _generate_excitation_pauli(
     i: int,
     a: int,
     is_double: bool = False,
-    j: Optional[int] = None,
-    b: Optional[int] = None,
+    j: int | None = None,
+    b: int | None = None,
 ) -> str:
     """Generate Pauli string for an excitation operator.
 
@@ -144,16 +142,20 @@ def _generate_excitation_pauli(
 
 def compute_operator_gradient(
     circuit: Circuit,
-    operator: Tuple[str, float],
-    hamiltonian: List[Tuple[str, float]],
-    shots: Optional[int] = None,
+    operator: tuple[str, float],
+    hamiltonian: list[tuple[str, float]],
+    shots: int | None = None,
     *,
-    n_qubits: Optional[int] = None,
+    n_qubits: int | None = None,
 ) -> float:
     """Compute the gradient of energy with respect to an operator's parameter.
 
-    Uses the parameter-shift rule:
-    gradient = (E(θ + π/4) - E(θ - π/4)) / 2
+    Uses the coefficient-aware parameter-shift rule. Because the cost-unitary
+    applies ``Rz(2γ·coeff)``, shifting ``γ`` by ``π/(4|coeff|)`` is equivalent
+    to shifting the underlying rotation angle by ``±π/2``. Combining the two
+    halves of the standard parameter-shift identity gives
+
+        dE/dγ = |coeff| · ( E(γ + π/(4|coeff|)) - E(γ - π/(4|coeff|)) ).
 
     Args:
         circuit: Base circuit with current parameters applied.
@@ -163,16 +165,22 @@ def compute_operator_gradient(
         n_qubits: Total number of qubits. Inferred from *circuit* when ``None``.
 
     Returns:
-        Absolute value of the gradient magnitude.
+        Absolute value of the gradient magnitude. Operators with ``coeff == 0``
+        return ``0.0`` (gradient is identically zero).
 
     Note:
         This computes the gradient of ⟨H⟩ with respect to the angle parameter
         of the given operator in the ansatz circuit.
     """
-    from uniqc.algorithms.core.ansatz._pauli_unitary import _parse_pauli_string
 
     pauli_str, coeff = operator
-    shift = np.pi / 4
+    abs_coeff = abs(coeff)
+    if abs_coeff == 0.0:
+        return 0.0
+
+    # Shift in γ that corresponds to a ±π/2 shift of the underlying
+    # Rz(2γ·coeff) rotation angle.
+    shift = np.pi / (4.0 * abs_coeff)
 
     if n_qubits is None:
         n_qubits = circuit.max_qubit + 1
@@ -201,6 +209,6 @@ def compute_operator_gradient(
     e_plus = energy(circ_plus)
     e_minus = energy(circ_minus)
 
-    # Parameter-shift gradient
-    gradient = (e_plus - e_minus) / 2
+    # Coefficient-aware parameter-shift gradient
+    gradient = abs_coeff * (e_plus - e_minus)
     return abs(gradient)

@@ -21,15 +21,14 @@ __all__ = [
     "cluster_state_circuit",
 ]
 
-from typing import List, Optional, Tuple
 
-from uniqc.circuit_builder import Circuit
+from uniqc._error_hints import format_enriched_message
 from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc.algorithms.core.circuits.dicke_state import dicke_state_circuit
-from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
-def _build_ghz_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+def _build_ghz_fragment(*, n_qubits: int, qubits: list[int] | None = None) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits))
     if len(qubits) < 2:
@@ -41,7 +40,7 @@ def _build_ghz_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) ->
     return fragment
 
 
-def ghz_state(first_arg=None, qubits: Optional[List[int]] = None):
+def ghz_state(first_arg=None, qubits: list[int] | None = None):
     r"""Prepare a GHZ state :math:`(|0\ldots0\rangle + |1\ldots1\rangle)/\sqrt 2`.
 
     Two calling conventions:
@@ -72,12 +71,12 @@ def ghz_state(first_arg=None, qubits: Optional[List[int]] = None):
     )
 
 
-def ghz_state_circuit(n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+def ghz_state_circuit(n_qubits: int, qubits: list[int] | None = None) -> Circuit:
     """Fragment-style alias of :func:`ghz_state` (always returns a fresh ``Circuit``)."""
     return _build_ghz_fragment(n_qubits=n_qubits, qubits=qubits)
 
 
-def _build_w_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+def _build_w_fragment(*, n_qubits: int, qubits: list[int] | None = None) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits))
     if len(qubits) < 2:
@@ -89,7 +88,7 @@ def _build_w_fragment(*, n_qubits: int, qubits: Optional[List[int]] = None) -> C
     return fragment
 
 
-def w_state(first_arg=None, qubits: Optional[List[int]] = None):
+def w_state(first_arg=None, qubits: list[int] | None = None):
     r"""Prepare a W state — equal superposition of single-excitation basis states.
 
     See :func:`ghz_state` for the dual-mode signature contract.
@@ -102,7 +101,7 @@ def w_state(first_arg=None, qubits: Optional[List[int]] = None):
     )
 
 
-def w_state_circuit(n_qubits: int, qubits: Optional[List[int]] = None) -> Circuit:
+def w_state_circuit(n_qubits: int, qubits: list[int] | None = None) -> Circuit:
     """Fragment-style alias of :func:`w_state`."""
     return _build_w_fragment(n_qubits=n_qubits, qubits=qubits)
 
@@ -110,8 +109,8 @@ def w_state_circuit(n_qubits: int, qubits: Optional[List[int]] = None) -> Circui
 def _build_cluster_fragment(
     *,
     n_qubits: int,
-    qubits: Optional[List[int]] = None,
-    edges: Optional[List[Tuple[int, int]]] = None,
+    qubits: list[int] | None = None,
+    edges: list[tuple[int, int]] | None = None,
 ) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits))
@@ -126,7 +125,9 @@ def _build_cluster_fragment(
     for src_idx, tgt_idx in edges:
         if src_idx >= n or tgt_idx >= n:
             raise ValueError(
-                format_enriched_message(f"Edge ({src_idx}, {tgt_idx}) out of range for {n} qubits", "circuit_validation")
+                format_enriched_message(
+                    f"Edge ({src_idx}, {tgt_idx}) out of range for {n} qubits", "circuit_validation"
+                )
             )
         fragment.cz(qubits[src_idx], qubits[tgt_idx])
     return fragment
@@ -134,8 +135,8 @@ def _build_cluster_fragment(
 
 def cluster_state(
     first_arg=None,
-    qubits: Optional[List[int]] = None,
-    edges: Optional[List[Tuple[int, int]]] = None,
+    qubits: list[int] | None = None,
+    edges: list[tuple[int, int]] | None = None,
 ):
     r"""Prepare a cluster (graph) state via :math:`H^{\otimes n}` + CZ on each edge.
 
@@ -153,8 +154,8 @@ def cluster_state(
 
 def cluster_state_circuit(
     n_qubits: int,
-    qubits: Optional[List[int]] = None,
-    edges: Optional[List[Tuple[int, int]]] = None,
+    qubits: list[int] | None = None,
+    edges: list[tuple[int, int]] | None = None,
 ) -> Circuit:
     """Fragment-style alias of :func:`cluster_state`."""
     return _build_cluster_fragment(n_qubits=n_qubits, qubits=qubits, edges=edges)

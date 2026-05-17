@@ -1,7 +1,5 @@
 """Tests for XEB circuit generators."""
 
-import pytest
-
 from uniqc.calibration.xeb.circuits import (
     generate_1q_xeb_circuits,
     generate_2q_xeb_circuit,
@@ -24,9 +22,11 @@ class TestGenerate1qXEB:
         for i, d in enumerate(depths):
             c = circuits[i]
             # Count gate lines (non-header, non-measure)
-            lines = [l for l in c.originir.splitlines()
-                     if l.strip() and not l.startswith("QINIT") and not l.startswith("CREG")
-                     and not l.startswith("MEASURE")]
+            lines = [
+                l
+                for l in c.originir.splitlines()
+                if l.strip() and not l.startswith("QINIT") and not l.startswith("CREG") and not l.startswith("MEASURE")
+            ]
             assert len(lines) == d, f"Expected {d} gates, got {len(lines)}"
 
     def test_measure_present(self):
@@ -54,11 +54,13 @@ class TestGenerate2qXEB:
     def test_depth_correct(self):
         for depth in [1, 5, 10]:
             c = generate_2q_xeb_circuit(qubit_u=3, qubit_v=7, depth=depth, seed=42)
-            lines = [l for l in c.originir.splitlines()
-                     if l.strip() and not l.startswith("QINIT") and not l.startswith("CREG")
-                     and not l.startswith("MEASURE")]
+            lines = [
+                l
+                for l in c.originir.splitlines()
+                if l.strip() and not l.startswith("QINIT") and not l.startswith("CREG") and not l.startswith("MEASURE")
+            ]
             # Each layer: 2 random 1q gates + 1 2q gate = 3 gates
-            assert len(lines) == 3 * depth, f"Expected {3*depth} gates, got {len(lines)}"
+            assert len(lines) == 3 * depth, f"Expected {3 * depth} gates, got {len(lines)}"
 
     def test_list_output(self):
         circuits = generate_2q_xeb_circuits(qubit_u=0, qubit_v=1, depths=[5, 10], n_circuits=2, seed=42)

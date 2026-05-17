@@ -5,7 +5,6 @@ from __future__ import annotations
 from uniqc.backend_adapter.task.adapters.base import TASK_STATUS_RUNNING, TASK_STATUS_SUCCESS
 from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
-
 ORIGINIR_BELL = """
 QINIT 2
 CREG 2
@@ -100,9 +99,7 @@ def test_list_backends_from_status_payload():
     # (num_qubits / topology / valid_gates / backend_info_available) when
     # quarkcircuit is installed. Check the core fields explicitly.
     assert len(backends) == 3
-    core = [
-        {k: b[k] for k in ("name", "status", "task_in_queue")} for b in backends
-    ]
+    core = [{k: b[k] for k in ("name", "status", "task_in_queue")} for b in backends]
     assert core == [
         {"name": "Baihua", "status": "available", "task_in_queue": 0},
         {"name": "Miaofeng", "status": "unavailable", "task_in_queue": "Offline"},
@@ -114,12 +111,14 @@ def test_normalise_quark_backend_status_payload():
     from uniqc.backend_adapter.backend_info import Platform
     from uniqc.backend_adapter.backend_registry import _normalise_quark
 
-    backends = _normalise_quark([
-        {"name": "Baihua", "status": "available", "task_in_queue": 0},
-        {"name": "Miaofeng", "status": "unavailable", "task_in_queue": "Offline"},
-        {"name": "Haituo", "status": "Calibrating", "task_in_queue": "Calibrating"},
-        {"name": "Jiu", "task_in_queue": "Maintenance"},
-    ])
+    backends = _normalise_quark(
+        [
+            {"name": "Baihua", "status": "available", "task_in_queue": 0},
+            {"name": "Miaofeng", "status": "unavailable", "task_in_queue": "Offline"},
+            {"name": "Haituo", "status": "Calibrating", "task_in_queue": "Calibrating"},
+            {"name": "Jiu", "task_in_queue": "Maintenance"},
+        ]
+    )
 
     assert backends[0].platform == Platform.QUARK
     assert backends[0].name == "Baihua"

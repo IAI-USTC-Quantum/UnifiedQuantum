@@ -2,15 +2,14 @@
 
 __all__ = ["plot_histogram", "plot_distribution"]
 
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
 
 def _parse_measured_result(
-    measured_result: Union[Dict[str, float], List[float]],
-    figsize: Tuple[int, int],
-) -> Tuple[list, list, int, Tuple[int, int], int]:
+    measured_result: dict[str, float] | list[float],
+    figsize: tuple[int, int],
+) -> tuple[list, list, int, tuple[int, int], int]:
     """Parse measurement results and compute plot parameters.
 
     Args:
@@ -32,18 +31,12 @@ def _parse_measured_result(
     elif isinstance(measured_result, list):
         n = len(measured_result)
         if n == 0 or (n & (n - 1)) != 0:
-            raise ValueError(
-                f"List length {n} is not a power of 2 and cannot represent "
-                "a valid qubit system."
-            )
+            raise ValueError(f"List length {n} is not a power of 2 and cannot represent a valid qubit system.")
         nqubit = int(np.log2(n))
         labels = [f"{i:0{nqubit}b}" for i in range(n)]
         values = measured_result
     else:
-        raise TypeError(
-            "measured_result must be a dict or a list, "
-            f"got {type(measured_result).__name__}"
-        )
+        raise TypeError(f"measured_result must be a dict or a list, got {type(measured_result).__name__}")
 
     if nqubit >= 10:
         figsize = (max(figsize[0], nqubit * 0.4), figsize[1])
@@ -58,9 +51,9 @@ def _parse_measured_result(
 
 
 def plot_histogram(
-    measured_result: Union[Dict[str, float], List[float]],
+    measured_result: dict[str, float] | list[float],
     title: str = "Measurement Result",
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
 ) -> None:
     """Plot a histogram of measurement results.
 
@@ -100,9 +93,7 @@ def plot_histogram(
     ]
     matplotlib.rcParams["axes.unicode_minus"] = False
 
-    labels, values, nqubit, figsize, rot = _parse_measured_result(
-        measured_result, figsize
-    )
+    labels, values, nqubit, figsize, rot = _parse_measured_result(measured_result, figsize)
 
     fig, ax = plt.subplots(figsize=figsize)
     x = np.arange(len(labels))
@@ -119,9 +110,9 @@ def plot_histogram(
 
 
 def plot_distribution(
-    measured_result: Union[Dict[str, float], List[float]],
+    measured_result: dict[str, float] | list[float],
     title: str = "Probability Distribution",
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
 ) -> None:
     """Plot a bar chart of the probability distribution with a
     uniform reference line.
@@ -162,9 +153,7 @@ def plot_distribution(
     ]
     matplotlib.rcParams["axes.unicode_minus"] = False
 
-    labels, values, nqubit, figsize, rot = _parse_measured_result(
-        measured_result, figsize
-    )
+    labels, values, nqubit, figsize, rot = _parse_measured_result(measured_result, figsize)
 
     n_outcomes = len(labels)
     uniform_prob = 1.0 / n_outcomes

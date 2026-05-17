@@ -108,10 +108,7 @@ def test_ibm_chip_characterization_uses_target_per_edge_errors():
 
     chip = _chip_characterization_from_backend(_Backend(), backend_name="ibm_fake")
 
-    edge_fids = {
-        (item.qubit_u, item.qubit_v): item.gates[0].fidelity
-        for item in chip.two_qubit_data
-    }
+    edge_fids = {(item.qubit_u, item.qubit_v): item.gates[0].fidelity for item in chip.two_qubit_data}
     assert edge_fids[(0, 1)] == pytest.approx(0.959)
     assert edge_fids[(1, 2)] == pytest.approx(0.917)
     assert len(set(edge_fids.values())) == 2
@@ -132,10 +129,7 @@ def test_ibm_backend_summary_uses_cached_per_edge_details_without_chip_cache():
     backend = _normalise_ibm(raw)[0]
     summary = _backend_summary(backend, chip_meta={})
 
-    edge_fids = {
-        (edge["u"], edge["v"]): edge["fidelity"]
-        for edge in summary["topology"]["edges"]
-    }
+    edge_fids = {(edge["u"], edge["v"]): edge["fidelity"] for edge in summary["topology"]["edges"]}
     assert edge_fids[(0, 1)] == pytest.approx(0.959)
     assert edge_fids[(1, 2)] == pytest.approx(0.917)
     assert len(set(edge_fids.values())) == 2

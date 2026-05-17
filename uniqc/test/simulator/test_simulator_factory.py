@@ -1,13 +1,10 @@
 """Tests for simulator factory helpers."""
 
-import pytest
-
 import warnings
 
 import pytest
 
 from uniqc.simulator import Simulator, create_simulator, get_simulator
-from uniqc.simulator.torchquantum_simulator import TORCHQUANTUM_AVAILABLE, TorchQuantumSimulator
 from uniqc.simulator.torchquantum_simulator import TORCHQUANTUM_AVAILABLE, TorchQuantumSimulator
 
 

@@ -281,8 +281,7 @@ def _resolve_basis_gates(
         if raw:
             return frozenset(_normalise_gate_name(g) for g in raw), ()
         return None, (
-            f"Backend {backend_info.full_id()} does not advertise a basis_gates list; "
-            "skipping gate-set check.",
+            f"Backend {backend_info.full_id()} does not advertise a basis_gates list; skipping gate-set check.",
         )
     return None, ("No backend_info and no basis_gates supplied; skipping gate-set check.",)
 
@@ -316,10 +315,7 @@ def _check_language(used_gates: frozenset[str], language: str | None) -> tuple[s
         unsupported_in_qasm2 = used_gates & frozenset({"RPHI", "RPHI90", "RPHI180", "PHASE2Q", "UU15"})
         if unsupported_in_qasm2:
             names = ", ".join(sorted(unsupported_in_qasm2))
-            return (
-                f"Gates {{{names}}} are not expressible in OpenQASM 2.0; "
-                "compile() to a portable basis set first.",
-            )
+            return (f"Gates {{{names}}} are not expressible in OpenQASM 2.0; compile() to a portable basis set first.",)
     return ()
 
 
@@ -394,8 +390,7 @@ def compatibility_report(
         out_of_basis = sorted(g for g in used_gates_fz if g not in basis and g not in _NON_GATE_OPS)
         if out_of_basis:
             errors.append(
-                f"Circuit uses gates outside the backend basis set: "
-                f"{out_of_basis}. Allowed: {sorted(basis)}."
+                f"Circuit uses gates outside the backend basis set: {out_of_basis}. Allowed: {sorted(basis)}."
             )
 
     # 4. Topology
@@ -406,9 +401,7 @@ def compatibility_report(
             warnings.append("No backend_info supplied; skipping topology check.")
     elif undirected is None:
         if two_qubit_interactions:
-            warnings.append(
-                f"Backend {backend_info.full_id()} reports no topology; skipping topology check."
-            )
+            warnings.append(f"Backend {backend_info.full_id()} reports no topology; skipping topology check.")
     else:
         bad: list[str] = []
         for gname, a, b in two_qubit_interactions:
@@ -429,10 +422,7 @@ def compatibility_report(
                         "advertised hardware edge — compile() will need to flip it."
                     )
         if bad:
-            errors.append(
-                "Two-qubit gates violate the backend topology: "
-                + "; ".join(bad)
-            )
+            errors.append("Two-qubit gates violate the backend topology: " + "; ".join(bad))
 
     depth = compute_gate_depth(circuit, virtual_z=virtual_z)
 

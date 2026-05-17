@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import tempfile
 from pathlib import Path
 from unittest import mock
 
@@ -15,7 +14,6 @@ from uniqc.backend_adapter import config as legacy_config
 from uniqc.config import (
     DEFAULT_CONFIG,
     ConfigError,
-    ConfigValidationError,
     PlatformNotFoundError,
     ProfileNotFoundError,
     create_default_config,

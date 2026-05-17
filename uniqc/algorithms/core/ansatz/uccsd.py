@@ -7,11 +7,13 @@ independent variational angle.
 
 __all__ = ["uccsd_ansatz"]
 
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 from itertools import combinations
+from typing import TYPE_CHECKING, Union
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 if TYPE_CHECKING:
     from uniqc.circuit_builder.parameter import Parameters
@@ -81,8 +83,8 @@ def _double_excitation(
 def uccsd_ansatz(
     n_qubits: int,
     n_electrons: int,
-    qubits: Optional[List[int]] = None,
-    params: Optional[Union["Parameters", np.ndarray]] = None,
+    qubits: list[int] | None = None,
+    params: Union["Parameters", np.ndarray] | None = None,
 ) -> Circuit:
     """Build a UCCSD (Unitary Coupled-Cluster Singles and Doubles) ansatz.
 
@@ -109,7 +111,9 @@ def uccsd_ansatz(
     """
     if n_electrons > n_qubits:
         raise ValueError(
-            format_enriched_message(f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})", "circuit_validation")
+            format_enriched_message(
+                f"n_electrons ({n_electrons}) must not exceed n_qubits ({n_qubits})", "circuit_validation"
+            )
         )
 
     if qubits is None:
@@ -135,9 +139,11 @@ def uccsd_ansatz(
     elif isinstance(params, ParamClass):
         if len(params) != n_params:
             raise ValueError(
-                format_enriched_message(f"Expected {n_params} parameters "
-                f"({n_singles} singles + {n_doubles} doubles), "
-                f"got {len(params)}", "circuit_validation"))
+                format_enriched_message(
+                    f"Expected {n_params} parameters ({n_singles} singles + {n_doubles} doubles), got {len(params)}",
+                    "circuit_validation",
+                )
+            )
         if not params[0].is_bound:
             params.bind([0.0] * n_params)
     else:
@@ -145,9 +151,13 @@ def uccsd_ansatz(
         params_arr = np.asarray(params)
         if len(params_arr) != n_params:
             raise ValueError(
-                format_enriched_message(f"Expected {n_params} parameters "
-                f"({n_singles} singles + {n_doubles} doubles), "
-                f"got {len(params_arr)}", "circuit_validation"))
+                format_enriched_message(
+                    f"Expected {n_params} parameters "
+                    f"({n_singles} singles + {n_doubles} doubles), "
+                    f"got {len(params_arr)}",
+                    "circuit_validation",
+                )
+            )
         params = ParamClass("theta_uccsd", size=n_params)
         params.bind(list(params_arr.flatten()))
 
@@ -168,14 +178,11 @@ def uccsd_ansatz(
             idx += 1
 
     # Double excitations: pairs of occupied → pairs of virtual
-    for (i, j) in combinations(occupied, 2):
-        for (a, b) in combinations(virtual, 2):
+    for i, j in combinations(occupied, 2):
+        for a, b in combinations(virtual, 2):
             val = params[idx].evaluate()
             if abs(val) > 1e-15:
-                _double_excitation(
-                    circuit, qubits[i], qubits[j], qubits[a], qubits[b],
-                    val
-                )
+                _double_excitation(circuit, qubits[i], qubits[j], qubits[a], qubits[b], val)
             idx += 1
 
     # Attach parameters to circuit for traceability

@@ -5,8 +5,11 @@ def uniq_test(testname):
             result = func(*args, **kwargs)
             print(f"------------ Test {testname} OK -------------")
             return result
+
         return wrapper
+
     return decorator
+
 
 class NotMatchError(Exception):
     pass

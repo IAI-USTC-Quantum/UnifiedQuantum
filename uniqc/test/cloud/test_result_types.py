@@ -104,8 +104,6 @@ class TestUnifiedResult:
     def test_raw_result_stored(self):
         """Test raw_result can store original result object."""
         raw = {"original": "data"}
-        result = UnifiedResult.from_counts(
-            {"0": 1000}, "test", "test", raw_result=raw
-        )
+        result = UnifiedResult.from_counts({"0": 1000}, "test", "test", raw_result=raw)
 
         assert result.raw_result == raw

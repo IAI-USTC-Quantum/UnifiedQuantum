@@ -11,7 +11,7 @@ Variational algorithms expose a parameterised **ansatz** factory that
 returns a fresh :class:`~uniqc.circuit_builder.Circuit`.
 
 ```python
-from uniqc.algorithms import hea, hva, qaoa_ansatz, uccsd_ansatz, vqd_ansatz
+from uniqc import hea, hva, qaoa_ansatz, uccsd_ansatz, vqd_ansatz
 import numpy as np
 
 # Default HEA (backward-compatible)

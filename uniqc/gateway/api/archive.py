@@ -43,9 +43,7 @@ def archive_task(task_id: str) -> dict[str, str]:
     archive = ArchiveStore()
     success = archive.archive_task(task_id)
     if not success:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to archive task '{task_id}'"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to archive task '{task_id}'")
     return {"archived": task_id}
 
 
@@ -81,9 +79,7 @@ def get_archived(task_id: str) -> dict[str, Any]:
     archive = ArchiveStore()
     task = archive.get_archived(task_id)
     if task is None:
-        raise HTTPException(
-            status_code=404, detail=f"Archived task '{task_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Archived task '{task_id}' not found")
     return {
         "task_id": task.task_id,
         "backend": task.backend,
@@ -103,9 +99,7 @@ def delete_archived(task_id: str) -> dict[str, str]:
     archive = ArchiveStore()
     deleted = archive.delete_archived(task_id)
     if not deleted:
-        raise HTTPException(
-            status_code=404, detail=f"Archived task '{task_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Archived task '{task_id}' not found")
     return {"deleted": task_id}
 
 
@@ -115,7 +109,5 @@ def restore_task(task_id: str) -> dict[str, str]:
     archive = ArchiveStore()
     restored = archive.restore_task(task_id)
     if not restored:
-        raise HTTPException(
-            status_code=404, detail=f"Archived task '{task_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Archived task '{task_id}' not found")
     return {"restored": task_id}

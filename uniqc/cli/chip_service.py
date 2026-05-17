@@ -77,6 +77,7 @@ def fetch_chip_characterization(
 # Platform-specific fetchers
 # ---------------------------------------------------------------------------
 
+
 def _fetch_originq(backend_name: str):
     """Fetch chip characterization from OriginQ Cloud."""
     try:
@@ -144,6 +145,7 @@ def _fetch_ibm(backend_name: str):
 # Multi-chip fetchers (used by CLI update command)
 # ---------------------------------------------------------------------------
 
+
 def fetch_all_chips(
     platform: Platform | None = None,
     force_refresh: bool = True,
@@ -159,6 +161,7 @@ def fetch_all_chips(
 
     if platform is not None:
         from uniqc.backend_adapter.backend_registry import fetch_platform_backends
+
         backends, _ = fetch_platform_backends(platform)
         if backends:
             all_backends[platform] = backends

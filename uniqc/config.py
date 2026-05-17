@@ -98,10 +98,10 @@ from uniqc.exceptions import (  # noqa: F401 — re-export for backward compat
     ProfileNotFoundError,
 )
 
-
 # ---------------------------------------------------------------------------
 # Core functions (also used by uniqc.backend_adapter.config via re-export)
 # ---------------------------------------------------------------------------
+
 
 def _ensure_config_dir() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -127,17 +127,54 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
 
 def save_config(config: dict[str, Any], config_path: str | Path | None = None) -> None:
     path = Path(config_path) if config_path else CONFIG_FILE
-    path.parent.mkdir(parents=True, exist_ok=True)
+    parent = path.parent
 
+    # Ensure the parent directory exists.  If we are the ones creating it,
+    # make it 0o700 so it cannot be entered by other users on a shared host.
+    # If the user already created it with a looser mode, leave that alone so
+    # we don't surprise them by locking other tooling out.
+    newly_created_parent = not parent.exists()
+    parent.mkdir(parents=True, exist_ok=True)
+    if newly_created_parent:
+        try:
+            os.chmod(parent, 0o700)
+        except OSError:
+            # Best-effort: e.g. Windows ignores mode bits >0o100; don't fail.
+            pass
+
+    tmp_path = parent / f".{path.name}.tmp"
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            yaml.dump(
-                config,
-                f,
-                default_flow_style=False,
-                allow_unicode=True,
-                sort_keys=False,
-            )
+        fd = os.open(
+            str(tmp_path),
+            os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
+            0o600,
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                yaml.dump(
+                    config,
+                    f,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                    sort_keys=False,
+                )
+        except Exception:
+            # Ensure no half-written temp file is left behind.
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+
+        os.replace(tmp_path, path)
+        # Re-tighten in case ``path`` pre-existed with looser perms (replace
+        # preserves the *new* file's mode, but be defensive against umask
+        # quirks or FS-specific behaviours).
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            # Best-effort: Windows / exotic FS may ignore mode bits.
+            pass
     except OSError as e:
         raise ConfigError(format_enriched_message(f"Failed to write configuration file: {e}", "config")) from e
 
@@ -150,8 +187,7 @@ def get_platform_config(
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
             format_enriched_message(
-                f"Unsupported platform: {platform_name}. "
-                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                f"Unsupported platform: {platform_name}. Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
                 "config",
             )
         )
@@ -161,8 +197,7 @@ def get_platform_config(
     if profile not in config:
         raise ProfileNotFoundError(
             format_enriched_message(
-                f"Profile '{profile}' not found in configuration. "
-                f"Available profiles: {', '.join(config.keys())}",
+                f"Profile '{profile}' not found in configuration. Available profiles: {', '.join(config.keys())}",
                 "config",
             )
         )
@@ -211,10 +246,7 @@ def validate_config(
             platform_config = profile_config[platform_name]
 
             if not isinstance(platform_config, dict):
-                errors.append(
-                    f"Platform '{platform_name}' in profile '{profile_name}' "
-                    "must be a dictionary"
-                )
+                errors.append(f"Platform '{platform_name}' in profile '{profile_name}' must be a dictionary")
                 continue
 
             if platform_name == "quark":
@@ -237,24 +269,17 @@ def validate_config(
             unknown = set(platform_config.keys()) - known
             for key in sorted(unknown):
                 errors.append(
-                    f"Warning: unknown field '{key}' for platform "
-                    f"'{platform_name}' in profile '{profile_name}'"
+                    f"Warning: unknown field '{key}' for platform '{platform_name}' in profile '{profile_name}'"
                 )
 
             if platform_name == "ibm" and "proxy" in platform_config:
                 proxy = platform_config["proxy"]
                 if not isinstance(proxy, dict):
-                    errors.append(
-                        f"Proxy configuration for IBM in profile '{profile_name}' "
-                        "must be a dictionary"
-                    )
+                    errors.append(f"Proxy configuration for IBM in profile '{profile_name}' must be a dictionary")
                 else:
                     for proxy_type in ["http", "https"]:
                         if proxy_type in proxy and not isinstance(proxy[proxy_type], str):
-                            errors.append(
-                                f"Proxy '{proxy_type}' for IBM in profile "
-                                f"'{profile_name}' must be a string"
-                            )
+                            errors.append(f"Proxy '{proxy_type}' for IBM in profile '{profile_name}' must be a string")
 
     return errors
 
@@ -276,8 +301,7 @@ def update_platform_config(
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
             format_enriched_message(
-                f"Unsupported platform: {platform_name}. "
-                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                f"Unsupported platform: {platform_name}. Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
                 "config",
             )
         )
@@ -364,6 +388,7 @@ def get_ibm_config(profile: str | None = None) -> dict[str, Any]:
 # Platform-specific credential loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_platform_config(platform: str) -> dict[str, Any]:
     profile = get_active_profile()
     return get_platform_config(platform, profile)
@@ -398,8 +423,7 @@ def load_quafu_config() -> dict[str, Any]:
 
     raise ImportError(
         format_enriched_message(
-            "Quafu config not found. "
-            "Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "Quafu config not found. Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
             "config",
         )
     )
@@ -430,8 +454,7 @@ def load_ibm_config() -> dict[str, Any]:
 
     raise ImportError(
         format_enriched_message(
-            "IBM Quantum config not found. "
-            "Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "IBM Quantum config not found. Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
             "config",
         )
     )

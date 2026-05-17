@@ -289,6 +289,7 @@ def get_ibm_proxy_from_config(config: dict[str, Any] | None = None) -> dict[str,
     """
     if config is None:
         from uniqc.config import get_ibm_config
+
         config = get_ibm_config()
 
     proxy_config = config.get("proxy")

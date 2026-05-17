@@ -6,17 +6,20 @@ entangling gates, and entanglement topologies, suitable for NISQ devices.
 
 __all__ = ["hea", "hea_param_count"]
 
-from typing import Callable, List, Optional, Tuple, Union, TYPE_CHECKING, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional, Union
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 if TYPE_CHECKING:
     from uniqc.circuit_builder.parameter import Parameters
 
-from ._types import EntanglingGate, EntanglementTopology, RotationGate
-from ._topology import generate_edges, count_edges_per_layer
 from ._hardware_aware import select_ansatz_config
+from ._topology import count_edges_per_layer, generate_edges
+from ._types import EntanglementTopology, EntanglingGate, RotationGate
 
 if TYPE_CHECKING:
     from uniqc.backend_adapter.backend_info import BackendInfo
@@ -42,8 +45,8 @@ _ENTANGLING_DISPATCH: dict[EntanglingGate, Callable[[Circuit, int, int, float], 
 
 
 def _normalize_rotation_gates(
-    gates: Optional[List[str | RotationGate]],
-) -> List[RotationGate]:
+    gates: list[str | RotationGate] | None,
+) -> list[RotationGate]:
     """Normalize rotation gate input to list of RotationGate enums."""
     if gates is None:
         return _DEFAULT_ROTATION_GATES.copy()
@@ -55,13 +58,13 @@ def _normalize_rotation_gates(
         elif isinstance(g, str):
             try:
                 normalized.append(RotationGate(g.lower()))
-            except ValueError:
+            except ValueError as exc:
                 raise ValueError(
                     format_enriched_message(
                         f"Unknown rotation gate: {g!r}. Valid: {[e.value for e in RotationGate]}",
                         "circuit_validation",
                     )
-                )
+                ) from exc
         else:
             raise ValueError(
                 format_enriched_message(
@@ -73,7 +76,7 @@ def _normalize_rotation_gates(
 
 
 def _normalize_entangling_gate(
-    gate: Optional[str | EntanglingGate],
+    gate: str | EntanglingGate | None,
 ) -> EntanglingGate:
     """Normalize entangling gate input to EntanglingGate enum."""
     if gate is None:
@@ -84,13 +87,13 @@ def _normalize_entangling_gate(
     if isinstance(gate, str):
         try:
             return EntanglingGate(gate.lower())
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 format_enriched_message(
                     f"Unknown entangling gate: {gate!r}. Valid: {[e.value for e in EntanglingGate]}",
                     "circuit_validation",
                 )
-            )
+            ) from exc
     raise ValueError(
         format_enriched_message(
             f"entangling_gate must be a string or EntanglingGate, got {type(gate)}",
@@ -100,7 +103,7 @@ def _normalize_entangling_gate(
 
 
 def _normalize_topology(
-    topology: Optional[str | EntanglementTopology],
+    topology: str | EntanglementTopology | None,
 ) -> EntanglementTopology:
     """Normalize topology input to EntanglementTopology enum."""
     if topology is None:
@@ -111,13 +114,13 @@ def _normalize_topology(
     if isinstance(topology, str):
         try:
             return EntanglementTopology(topology.lower())
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 format_enriched_message(
                     f"Unknown topology: {topology!r}. Valid: {[e.value for e in EntanglementTopology]}",
                     "circuit_validation",
                 )
-            )
+            ) from exc
     raise ValueError(
         format_enriched_message(
             f"topology must be a string or EntanglementTopology, got {type(topology)}",
@@ -130,11 +133,11 @@ def hea_param_count(
     n_qubits: int,
     depth: int = 1,
     *,
-    qubits: Optional[List[int]] = None,
-    rotation_gates: Optional[List[str | RotationGate]] = None,
-    entangling_gate: Optional[str | EntanglingGate] = None,
-    topology: Optional[str | EntanglementTopology] = None,
-    custom_edges: Optional[List[Tuple[int, int]]] = None,
+    qubits: list[int] | None = None,
+    rotation_gates: list[str | RotationGate] | None = None,
+    entangling_gate: str | EntanglingGate | None = None,
+    topology: str | EntanglementTopology | None = None,
+    custom_edges: list[tuple[int, int]] | None = None,
     backend_info: Optional["BackendInfo"] = None,
 ) -> int:
     """Calculate the number of parameters required for an HEA circuit.
@@ -188,13 +191,13 @@ def hea_param_count(
 def hea(
     n_qubits: int,
     depth: int = 1,
-    qubits: Optional[List[int]] = None,
-    params: Optional[Union["Parameters", np.ndarray]] = None,
+    qubits: list[int] | None = None,
+    params: Union["Parameters", np.ndarray] | None = None,
     *,
-    rotation_gates: Optional[List[str | RotationGate]] = None,
-    entangling_gate: Optional[str | EntanglingGate] = None,
-    topology: Optional[str | EntanglementTopology] = None,
-    custom_edges: Optional[List[Tuple[int, int]]] = None,
+    rotation_gates: list[str | RotationGate] | None = None,
+    entangling_gate: str | EntanglingGate | None = None,
+    topology: str | EntanglementTopology | None = None,
+    custom_edges: list[tuple[int, int]] | None = None,
     backend_info: Optional["BackendInfo"] = None,
 ) -> Circuit:
     """Build a Hardware-Efficient Ansatz (HEA) circuit.
@@ -277,7 +280,7 @@ def hea(
     # Calculate required parameter count
     rot_params_per_layer = len(rot_gates) * n_qubits
 
-    edge_counts: List[int] = []
+    edge_counts: list[int] = []
     if ent_gate.is_parametric:
         edge_counts = count_edges_per_layer(qubits, topo, depth, custom_edges)
         ent_params_per_layer = edge_counts

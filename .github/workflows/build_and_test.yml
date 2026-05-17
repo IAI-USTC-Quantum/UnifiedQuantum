@@ -52,6 +52,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           - os: windows-latest
             c_compiler: cl
@@ -71,17 +72,17 @@ jobs:
             c_compiler: cl
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
       with:
         submodules: 'true'
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
       with:
-        python-version: '3.11'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install build dependencies (Linux)
       if: runner.os == 'Linux'
@@ -110,7 +111,7 @@ jobs:
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
-        pytest uniqc/test/ -v --tb=short --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py -m "not cloud"
+        pytest uniqc/test/ -v --tb=short -m "not cloud"
 
     - name: Check for deprecation warnings (fail on error)
       if: runner.os == 'Linux'
@@ -135,8 +136,8 @@ jobs:
         " || echo "::warning::Deprecation warnings detected in platform libraries"
 
     - name: Upload coverage report
-      if: runner.os == 'Linux' && matrix.c_compiler == 'gcc'
-      uses: actions/upload-artifact@v4
+      if: runner.os == 'Linux' && matrix.c_compiler == 'gcc' && matrix.python-version == '3.11'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
         name: coverage-report
         path: .coverage

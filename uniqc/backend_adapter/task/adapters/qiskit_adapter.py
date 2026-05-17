@@ -21,8 +21,8 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.config import load_ibm_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_qiskit
+from uniqc.config import load_ibm_config
 
 if TYPE_CHECKING:
     import qiskit
@@ -279,7 +279,9 @@ class QiskitAdapter(QuantumAdapter):
             task_name=task_name,
         )
 
-    def submit_batch(self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, native_batch: bool = True, **kwargs: Any) -> list[str]:
+    def submit_batch(
+        self, circuits: list[qiskit.QuantumCircuit], *, shots: int = 1000, native_batch: bool = True, **kwargs: Any
+    ) -> list[str]:
         """Submit multiple circuits as a batch.
 
         IBM Quantum (qiskit-runtime ``Sampler``) natively supports running a
@@ -388,7 +390,10 @@ class QiskitAdapter(QuantumAdapter):
         status_name = status.name if hasattr(status, "name") else str(status)
 
         if status_name not in ("DONE", "COMPLETED"):
-            return {"status": _normalize_qiskit_status(status_name), "value": status.value if hasattr(status, "value") else status_name}
+            return {
+                "status": _normalize_qiskit_status(status_name),
+                "value": status.value if hasattr(status, "value") else status_name,
+            }
 
         raw_result = job.result()
         results = []

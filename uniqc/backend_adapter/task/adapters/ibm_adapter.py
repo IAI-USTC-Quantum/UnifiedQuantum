@@ -81,7 +81,9 @@ def _target_error(target: Any, gate_names: tuple[str, ...], qubits: tuple[int, .
     return "", None
 
 
-def _properties_gate_error(properties: Any, gate_names: tuple[str, ...], qubits: tuple[int, ...]) -> tuple[str, float | None]:
+def _properties_gate_error(
+    properties: Any, gate_names: tuple[str, ...], qubits: tuple[int, ...]
+) -> tuple[str, float | None]:
     if properties is None:
         return "", None
     for gate_name in gate_names:
@@ -457,15 +459,35 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
     for g in basis_gates:
         g_lower = str(g).lower()
         if (
-            g_lower in {"h", "x", "y", "z", "s", "sx", "sdg", "sxdg", "t", "tdg", "i",
-                        "id", "rx", "ry", "rz", "u1", "u2", "u3", "r", "rphi", "rphi90", "rphi180"}
+            g_lower
+            in {
+                "h",
+                "x",
+                "y",
+                "z",
+                "s",
+                "sx",
+                "sdg",
+                "sxdg",
+                "t",
+                "tdg",
+                "i",
+                "id",
+                "rx",
+                "ry",
+                "rz",
+                "u1",
+                "u2",
+                "u3",
+                "r",
+                "rphi",
+                "rphi90",
+                "rphi180",
+            }
             and g_lower not in sq_gates
         ):
             sq_gates.append(g_lower)
-        elif (
-            g_lower in {"cx", "cz", "ecr", "swap", "iswap", "xx", "yy", "zz", "xy"}
-            and g_lower not in tq_gates
-        ):
+        elif g_lower in {"cx", "cz", "ecr", "swap", "iswap", "xx", "yy", "zz", "xy"} and g_lower not in tq_gates:
             tq_gates.append(g_lower)
 
     # 2Q gate time: use the average target duration where available.

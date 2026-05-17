@@ -75,10 +75,7 @@ def test_quafu_backend_summary_uses_backend_cache_topology_and_per_edge_details(
 
     assert summary["topology"]["has_connectivity"] is True
     assert [node["id"] for node in summary["topology"]["nodes"]] == [0, 1, 2]
-    edge_fids = {
-        (edge["u"], edge["v"]): edge["fidelity"]
-        for edge in summary["topology"]["edges"]
-    }
+    edge_fids = {(edge["u"], edge["v"]): edge["fidelity"] for edge in summary["topology"]["edges"]}
     assert edge_fids[(0, 1)] == pytest.approx(0.91)
     assert edge_fids[(1, 2)] == pytest.approx((0.84 + 0.82) / 2)
     assert len(set(edge_fids.values())) == 2

@@ -1,5 +1,4 @@
 """Pytest tests for test module itself."""
-import pytest
 
 
 class TestTestRunner:

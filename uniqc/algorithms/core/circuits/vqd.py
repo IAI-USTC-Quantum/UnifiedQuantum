@@ -3,19 +3,18 @@
 __all__ = ["vqd_circuit", "vqd_ansatz", "vqd_overlap_circuit", "vqd_example"]
 
 import warnings
-from typing import List, Optional
 
 import numpy as np
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def _hea_ansatz(
     circuit: Circuit,
-    params: List[float],
+    params: list[float],
     n_layers: int,
-    qubits: List[int],
+    qubits: list[int],
 ) -> None:
     r"""Apply a Hardware-Efficient Ansatz (HEA) to the circuit.
 
@@ -43,8 +42,10 @@ def _hea_ansatz(
     expected = n_qubits * n_layers
     if len(params) != expected:
         raise ValueError(
-            format_enriched_message(f"Expected {expected} parameters (n_qubits={n_qubits} × "
-            f"n_layers={n_layers}), got {len(params)}", "circuit_validation")
+            format_enriched_message(
+                f"Expected {expected} parameters (n_qubits={n_qubits} × n_layers={n_layers}), got {len(params)}",
+                "circuit_validation",
+            )
         )
 
     idx = 0
@@ -60,9 +61,9 @@ def _hea_ansatz(
 
 def vqd_ansatz(
     n_qubits: int,
-    ansatz_params: List[float],
-    prev_states: List[np.ndarray],
-    qubits: Optional[List[int]] = None,
+    ansatz_params: list[float],
+    prev_states: list[np.ndarray],
+    qubits: list[int] | None = None,
     penalty: float = 10.0,
     n_layers: int = 2,
 ) -> Circuit:
@@ -75,7 +76,9 @@ def vqd_ansatz(
         qubits = list(range(n_qubits))
     if len(prev_states) == 0:
         raise ValueError(
-            format_enriched_message("prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation")
+            format_enriched_message(
+                "prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation"
+            )
         )
     fragment = Circuit()
     _hea_ansatz(fragment, ansatz_params, n_layers, qubits)
@@ -84,9 +87,9 @@ def vqd_ansatz(
 
 def vqd_circuit(
     *args,
-    ansatz_params: Optional[List[float]] = None,
-    prev_states: Optional[List[np.ndarray]] = None,
-    qubits: Optional[List[int]] = None,
+    ansatz_params: list[float] | None = None,
+    prev_states: list[np.ndarray] | None = None,
+    qubits: list[int] | None = None,
     penalty: float = 10.0,
     n_layers: int = 2,
 ):
@@ -120,7 +123,9 @@ def vqd_circuit(
             qubits = list(range(circuit_in.qubit_num))
         if not prev_states:
             raise ValueError(
-                format_enriched_message("prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation")
+                format_enriched_message(
+                    "prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation"
+                )
             )
         _hea_ansatz(circuit_in, ansatz_params, n_layers, qubits)
         return None
@@ -131,20 +136,28 @@ def vqd_circuit(
     elif qubits is not None:
         n_qubits = max(qubits) + 1
     else:
-        raise TypeError(format_enriched_message("vqd_circuit requires n_qubits as first positional arg", "circuit_validation"))
+        raise TypeError(
+            format_enriched_message("vqd_circuit requires n_qubits as first positional arg", "circuit_validation")
+        )
     if ansatz_params is None or prev_states is None:
-        raise TypeError(format_enriched_message("vqd_circuit requires ansatz_params and prev_states", "circuit_validation"))
+        raise TypeError(
+            format_enriched_message("vqd_circuit requires ansatz_params and prev_states", "circuit_validation")
+        )
     return vqd_ansatz(
-        n_qubits, ansatz_params, prev_states,
-        qubits=qubits, penalty=penalty, n_layers=n_layers,
+        n_qubits,
+        ansatz_params,
+        prev_states,
+        qubits=qubits,
+        penalty=penalty,
+        n_layers=n_layers,
     )
 
 
 def vqd_overlap_circuit(
     prev_state: np.ndarray,
-    ansatz_params: List[float],
+    ansatz_params: list[float],
     n_layers: int = 2,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
 ) -> Circuit:
     r"""Build a circuit to compute :math:`|\langle\psi(\boldsymbol{\theta})|\phi\rangle|^2`.
 
@@ -184,9 +197,7 @@ def vqd_overlap_circuit(
     dim = len(prev_state)
     n = int(np.log2(dim))
     if 2**n != dim:
-        raise ValueError(
-            format_enriched_message(f"prev_state length {dim} is not a power of 2.", "circuit_validation")
-        )
+        raise ValueError(format_enriched_message(f"prev_state length {dim} is not a power of 2.", "circuit_validation"))
 
     if qubits is None:
         qubits = list(range(n))
@@ -196,7 +207,7 @@ def vqd_overlap_circuit(
     circ = Circuit()
 
     ancilla = 0
-    data_a = list(range(1, 1 + n))       # ansatz register
+    data_a = list(range(1, 1 + n))  # ansatz register
     data_b = list(range(1 + n, 1 + 2 * n))  # prev-state register
 
     # Prepare prev_state on data_b using state preparation
@@ -229,7 +240,7 @@ def vqd_overlap_circuit(
 def _prepare_state(
     circuit: Circuit,
     state: np.ndarray,
-    qubits: List[int],
+    qubits: list[int],
 ) -> None:
     """Prepare an arbitrary state vector on the given qubits using multiplexed rotations.
 
@@ -245,7 +256,9 @@ def _prepare_state(
     dim = len(state)
     if dim != 2**n:
         raise ValueError(
-            format_enriched_message(f"State vector length {dim} does not match {n} qubits (expected {2**n}).", "circuit_validation")
+            format_enriched_message(
+                f"State vector length {dim} does not match {n} qubits (expected {2**n}).", "circuit_validation"
+            )
         )
 
     # Normalise
@@ -262,7 +275,7 @@ def _prepare_state(
 def _state_prep_recursive(
     circuit: Circuit,
     state: np.ndarray,
-    qubits: List[int],
+    qubits: list[int],
 ) -> None:
     """Recursively prepare a state vector using controlled Ry rotations."""
     n = len(qubits)
@@ -272,7 +285,7 @@ def _state_prep_recursive(
         # Single qubit: just Ry
         alpha = float(state[0])
         beta = float(state[1]) if dim > 1 else 0.0
-        amp = np.sqrt(abs(alpha)**2 + abs(beta)**2)
+        amp = np.sqrt(abs(alpha) ** 2 + abs(beta) ** 2)
         if amp < 1e-15:
             return
         theta = 2 * np.arccos(np.clip(abs(alpha) / amp, 0, 1))

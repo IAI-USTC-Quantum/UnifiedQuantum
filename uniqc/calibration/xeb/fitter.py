@@ -44,7 +44,7 @@ def compute_hellinger_fidelity(
     p_noisy = np.clip(p_noisy, 0, 1)
 
     overlap = np.sqrt(p_theory * p_noisy).sum()
-    return float(overlap ** 2)
+    return float(overlap**2)
 
 
 def compute_linear_xeb(

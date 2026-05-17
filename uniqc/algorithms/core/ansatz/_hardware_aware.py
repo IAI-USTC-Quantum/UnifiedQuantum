@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
-from uniqc.backend_adapter.backend_info import BackendInfo, QubitTopology
+from uniqc.backend_adapter.backend_info import BackendInfo
 from uniqc.compile.policy import resolve_basis_gates
 
-from ._types import EntanglingGate, EntanglementTopology
+from ._types import EntanglementTopology, EntanglingGate
 
 __all__ = ["select_ansatz_config"]
 
-TopologyEdge = Tuple[int, int]
+TopologyEdge = tuple[int, int]
 
 
 def select_ansatz_config(
     backend_info: BackendInfo,
     n_qubits: int,
-) -> Tuple[EntanglementTopology, EntanglingGate, List[TopologyEdge]]:
+) -> tuple[EntanglementTopology, EntanglingGate, list[TopologyEdge]]:
     """Select topology and entangling gate based on hardware connectivity and basis gates.
 
     Args:
@@ -35,7 +33,7 @@ def select_ansatz_config(
     """
     # Build undirected adjacency from topology
     adjacency: dict[int, set[int]] = {}
-    raw_edges: List[TopologyEdge] = []
+    raw_edges: list[TopologyEdge] = []
 
     for edge in backend_info.topology:
         u, v = edge.u, edge.v
@@ -54,8 +52,7 @@ def select_ansatz_config(
 
     if backend_info.num_qubits < n_qubits:
         raise ValueError(
-            f"Backend {backend_info.name} has {backend_info.num_qubits} qubits, "
-            f"but {n_qubits} were requested"
+            f"Backend {backend_info.name} has {backend_info.num_qubits} qubits, but {n_qubits} were requested"
         )
 
     # Classify the graph structure
@@ -159,9 +156,9 @@ def _select_native_gate(backend_info: BackendInfo) -> EntanglingGate:
 
 
 def _generate_named_edges(
-    qubits: List[int],
+    qubits: list[int],
     topology: EntanglementTopology,
-) -> List[TopologyEdge]:
+) -> list[TopologyEdge]:
     """Generate edges for named topologies."""
     n = len(qubits)
     if topology == EntanglementTopology.LINEAR:

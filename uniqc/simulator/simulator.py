@@ -11,13 +11,12 @@ Key exports:
 
 __all__ = ["Simulator", "NoisySimulator"]
 
-from typing import Dict, List
+
+from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+from uniqc.compile.qasm.qasm_base_parser import OpenQASM2_BaseParser
 
 from .base_simulator import BaseNoisySimulator, BaseSimulator
 from .error_model import ErrorLoader
-from .opcode_simulator import OpcodeSimulator
-from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
-from uniqc.compile.qasm.qasm_base_parser import OpenQASM2_BaseParser
 
 
 def _to_originir_str(quantum_code):
@@ -32,10 +31,7 @@ def _to_originir_str(quantum_code):
         return quantum_code.originir
     if isinstance(quantum_code, str):
         return quantum_code
-    raise TypeError(
-        f"Expected Circuit, originir string, or qasm string, "
-        f"got {type(quantum_code).__name__}"
-    )
+    raise TypeError(f"Expected Circuit, originir string, or qasm string, got {type(quantum_code).__name__}")
 
 
 class Simulator(BaseSimulator):
@@ -61,13 +57,11 @@ class Simulator(BaseSimulator):
     def __init__(
         self,
         backend_type="statevector",
-        available_qubits: List[int] = None,
-        available_topology: List[List[int]] = None,
+        available_qubits: list[int] = None,
+        available_topology: list[list[int]] = None,
         **extra_kwargs,
     ):
-        super().__init__(
-            backend_type, available_qubits, available_topology, **extra_kwargs
-        )
+        super().__init__(backend_type, available_qubits, available_topology, **extra_kwargs)
         self.parser = OriginIR_BaseParser()
 
     # ------------------------------------------------------------------
@@ -131,10 +125,10 @@ class NoisySimulator(BaseNoisySimulator):
     def __init__(
         self,
         backend_type="statevector",
-        available_qubits: List[int] = None,
-        available_topology: List[List[int]] = None,
+        available_qubits: list[int] = None,
+        available_topology: list[list[int]] = None,
         error_loader: ErrorLoader = None,
-        readout_error: Dict[int, List[float]] = {},
+        readout_error: dict[int, list[float]] = {},
     ):
         super().__init__(
             backend_type,

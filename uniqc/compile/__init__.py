@@ -67,4 +67,5 @@ except ImportError:
 def draw(*args, **kwargs):
     """Lazy import for draw function to avoid hard dependency on pyqpanda3."""
     from uniqc.visualization.circuit import draw as _draw
+
     return _draw(*args, **kwargs)

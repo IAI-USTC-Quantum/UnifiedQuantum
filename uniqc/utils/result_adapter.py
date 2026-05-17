@@ -1,17 +1,15 @@
-'''Result Adapter
+"""Result Adapter
 
 Utility functions for converting and normalizing quantum measurement results.
-'''
+"""
 
 __all__ = ["shots2prob", "kv2list", "list2kv", "normalize_result", "QASMResultAdapter"]
 
-from copy import deepcopy
+
 import numpy as np
-from typing import Dict, List, Optional, Union
 
 
-def shots2prob(measured_result : Dict[str, int],
-               total_shots = None):
+def shots2prob(measured_result: dict[str, int], total_shots=None):
     """Convert a shot-counts dict to a probability distribution.
 
     Args:
@@ -25,11 +23,11 @@ def shots2prob(measured_result : Dict[str, int],
     if not total_shots:
         total_shots = np.sum(list(measured_result.values()))
 
-    return {k : measured_result[k] / total_shots for k in measured_result}
+    return {k: measured_result[k] / total_shots for k in measured_result}
 
 
-def list2kv(data: List[str]) -> Dict[str, int]:
-    '''Convert a measurement result list to a key-value frequency dict.
+def list2kv(data: list[str]) -> dict[str, int]:
+    """Convert a measurement result list to a key-value frequency dict.
 
     Args:
         data (List[str]): A list of measurement outcome strings,
@@ -38,15 +36,15 @@ def list2kv(data: List[str]) -> Dict[str, int]:
     Returns:
         Dict[str, int]: Frequency dict where keys are outcome strings
         and values are occurrence counts. Returns ``{}`` for empty input.
-    '''
-    result: Dict[str, int] = {}
+    """
+    result: dict[str, int] = {}
     for item in data:
         result[item] = result.get(item, 0) + 1
     return result
 
 
-def normalize_result(data: Union[Dict[str, int], List[str]]) -> Dict[str, float]:
-    '''Normalize measurement results to a probability distribution.
+def normalize_result(data: dict[str, int] | list[str]) -> dict[str, float]:
+    """Normalize measurement results to a probability distribution.
 
     Accepts either a frequency dict or a raw list of outcome strings.
     List input is first converted via :func:`list2kv`.
@@ -61,7 +59,7 @@ def normalize_result(data: Union[Dict[str, int], List[str]]) -> Dict[str, float]
     Returns:
         Dict[str, float]: Probability distribution dict with values
         summing to 1.0.
-    '''
+    """
     if isinstance(data, list):
         kv = list2kv(data)
     else:
@@ -74,7 +72,7 @@ def normalize_result(data: Union[Dict[str, int], List[str]]) -> Dict[str, float]
     return {k: v / total for k, v in kv.items()}
 
 
-def kv2list(kv_result : dict, guessed_qubit_num):
+def kv2list(kv_result: dict, guessed_qubit_num):
     """Convert a key-value result dict to a flat list indexed by integer keys.
 
     The list has length ``2 ** guessed_qubit_num`` and is indexed by the
@@ -89,7 +87,7 @@ def kv2list(kv_result : dict, guessed_qubit_num):
     Returns:
         list: Flat list where ``ret[k]`` holds the value for outcome ``k``.
     """
-    ret = [0] * (2 ** guessed_qubit_num)
+    ret = [0] * (2**guessed_qubit_num)
     for k in kv_result:
         ret[k] = kv_result[k]
 
@@ -131,23 +129,19 @@ class QASMResultAdapter:
 
     def __init__(
         self,
-        counts: Dict[str, int],
-        shots: Optional[int] = None,
-        metadata: Optional[dict] = None,
+        counts: dict[str, int],
+        shots: int | None = None,
+        metadata: dict | None = None,
     ):
-        self.counts: Dict[str, int] = dict(counts)
+        self.counts: dict[str, int] = dict(counts)
         self.shots: int = shots if shots is not None else sum(self.counts.values())
         self.metadata: dict = metadata if metadata is not None else {}
         self.metadata.setdefault("simulator", "simulator")
         self.metadata.setdefault("shots", self.shots)
-        self.probabilities: Dict[str, float] = normalize_result(self.counts)
+        self.probabilities: dict[str, float] = normalize_result(self.counts)
 
     def __repr__(self) -> str:
-        return (
-            f"QASMResultAdapter(shots={self.shots}, "
-            f"outcomes={len(self.counts)}, "
-            f"metadata={self.metadata})"
-        )
+        return f"QASMResultAdapter(shots={self.shots}, outcomes={len(self.counts)}, metadata={self.metadata})"
 
     def to_dict(self) -> dict:
         """Convert to a plain dict for serialization.

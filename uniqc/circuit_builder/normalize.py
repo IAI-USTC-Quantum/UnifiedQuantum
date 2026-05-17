@@ -7,10 +7,16 @@ modules so that every public entry point accepts the same set of input types.
 
 from __future__ import annotations
 
-__all__ = ["AnyQuantumCircuit", "NormalizedCircuit", "normalize_circuit_input", "normalize_to_circuit", "resolve_output_format"]
+__all__ = [
+    "AnyQuantumCircuit",
+    "NormalizedCircuit",
+    "normalize_circuit_input",
+    "normalize_to_circuit",
+    "resolve_output_format",
+]
 
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
     from .qcircuit import Circuit
@@ -43,6 +49,7 @@ class NormalizedCircuit:
 
 def _parse_originir(text: str):
     from uniqc.compile.originir import OriginIR_BaseParser
+
     parser = OriginIR_BaseParser()
     parser.parse(text)
     return parser.to_circuit()
@@ -50,6 +57,7 @@ def _parse_originir(text: str):
 
 def _parse_qasm(text: str):
     from uniqc.compile.qasm import OpenQASM2_BaseParser
+
     parser = OpenQASM2_BaseParser()
     parser.parse(text)
     return parser.to_circuit()
@@ -84,30 +92,22 @@ def normalize_circuit_input(circuit) -> NormalizedCircuit:
         stripped = circuit.lstrip()
         if stripped.upper().startswith(("OPENQASM", "QREG", "CREG", "MEASURE")):
             try:
-                return NormalizedCircuit(
-                    circuit=_parse_qasm(circuit), type="qasm", original_input=circuit
-                )
+                return NormalizedCircuit(circuit=_parse_qasm(circuit), type="qasm", original_input=circuit)
             except Exception:
                 pass
         try:
-            return NormalizedCircuit(
-                circuit=_parse_originir(circuit), type="originir", original_input=circuit
-            )
+            return NormalizedCircuit(circuit=_parse_originir(circuit), type="originir", original_input=circuit)
         except Exception:
             pass
         # Last-ditch QASM attempt
-        return NormalizedCircuit(
-            circuit=_parse_qasm(circuit), type="qasm", original_input=circuit
-        )
+        return NormalizedCircuit(circuit=_parse_qasm(circuit), type="qasm", original_input=circuit)
 
     # qiskit.QuantumCircuit
     try:
         import qiskit.qasm2
 
         qasm_str = qiskit.qasm2.dumps(circuit)
-        return NormalizedCircuit(
-            circuit=_parse_qasm(qasm_str), type="qiskit", original_input=circuit
-        )
+        return NormalizedCircuit(circuit=_parse_qasm(qasm_str), type="qiskit", original_input=circuit)
     except Exception:
         pass
 
@@ -132,7 +132,7 @@ def normalize_circuit_input(circuit) -> NormalizedCircuit:
     )
 
 
-def normalize_to_circuit(input: AnyQuantumCircuit) -> "Circuit":
+def normalize_to_circuit(input: AnyQuantumCircuit) -> Circuit:
     """Convert *AnyQuantumCircuit* to a :class:`Circuit` object."""
     return normalize_circuit_input(input).circuit
 

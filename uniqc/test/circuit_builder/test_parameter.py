@@ -8,11 +8,10 @@ Tests cover:
 - Parameter evaluation and binding
 """
 
-import pytest
 import sympy as sp
-from uniqc.circuit_builder.parameter import Parameter, Parameters
-from uniqc.circuit_builder import Circuit
 
+from uniqc.circuit_builder import Circuit
+from uniqc.circuit_builder.parameter import Parameter, Parameters
 
 # =============================================================================
 # TestParameter
@@ -185,8 +184,5 @@ class TestParameterEvaluation:
         """Expression using Parameters array elements."""
         alphas = Parameters(name="alpha", size=4)
         expr = alphas[0] + alphas[1] * 2
-        result = expr.subs({
-            alphas[0].symbol: 1.0,
-            alphas[1].symbol: 2.0
-        })
+        result = expr.subs({alphas[0].symbol: 1.0, alphas[1].symbol: 2.0})
         assert float(result) == 5.0

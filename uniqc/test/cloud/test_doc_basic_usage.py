@@ -13,8 +13,8 @@ from __future__ import annotations
 import pytest
 
 from uniqc import (
-    Circuit,
     BackendNotFoundError,
+    Circuit,
     query_task,
     submit_task,
     wait_for_result,
@@ -100,9 +100,9 @@ class TestSubmitTaskDocBasicUsage:
         reaches the network layer.
         """
         from uniqc.exceptions import (
+            AuthenticationError,
             BackendNotAvailableError,
             BackendNotFoundError,
-            AuthenticationError,
             NetworkError,
             UnsupportedGateError,
         )
@@ -145,11 +145,6 @@ class TestSubmitTaskDummyBackends:
         counts = _counts_dict(result)
         assert isinstance(counts, dict)
 
-    @pytest.mark.xfail(
-        reason="Pre-existing router bug: KeyError in _route_with_fidelity for "
-        "tiny circuits on large chips (independent of the doc/strict-format fix).",
-        strict=False,
-    )
     def test_chip_backed_dummy(self):
         task_id = submit_task(
             _bell_circuit(),

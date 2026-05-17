@@ -6,15 +6,16 @@ of all n-qubit basis states with exactly k excitations (ones).
 
 __all__ = ["dicke_state"]
 
-from typing import List, Optional
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def dicke_state(
     circuit: Circuit,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     k: int = 1,
 ) -> None:
     r"""Prepare the symmetric Dicke state ``|D(n,k)>``.
@@ -64,10 +65,11 @@ def dicke_state(
     target = np.zeros(d, dtype=complex)
     count = 0
     for i in range(d):
-        if bin(i).count('1') == k:
+        if bin(i).count("1") == k:
             target[i] = 1.0
             count += 1
     target /= np.sqrt(count)
 
     from .rotation_prepare import rotation_prepare
+
     rotation_prepare(circuit, target, qubits)

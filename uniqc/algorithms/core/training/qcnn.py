@@ -118,8 +118,6 @@ class QCNNClassifier(nn.Module):
         Returns:
             Probability-like output in [0, 1].
         """
-        opcode_list, n_qubits, param_overrides = _build_qcnn_circuit(
-            self.params, self.n_qubits
-        )
+        opcode_list, n_qubits, param_overrides = _build_qcnn_circuit(self.params, self.n_qubits)
         expval = self._sim.expectation(opcode_list, self.hamiltonian, param_overrides)
         return (expval + 1.0) / 2.0

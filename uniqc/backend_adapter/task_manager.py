@@ -84,17 +84,6 @@ from uniqc.backend_adapter.circuit_adapter import (
     QuafuCircuitAdapter,
     QuarkCircuitAdapter,
 )
-from uniqc.exceptions import (
-    AuthenticationError,
-    BackendNotAvailableError,
-    BackendNotFoundError,
-    InsufficientCreditsError,
-    NetworkError,
-    QuotaExceededError,
-    TaskFailedError,
-    TaskNotFoundError,
-    TaskTimeoutError,
-)
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -114,9 +103,19 @@ from uniqc.backend_adapter.task.store import (
     TaskShard,
     TaskStatus,
     TaskStore,
-    UNIQC_TASK_ID_PREFIX,
     generate_uniqc_task_id,
     is_uniqc_task_id,
+)
+from uniqc.exceptions import (
+    AuthenticationError,
+    BackendNotAvailableError,
+    BackendNotFoundError,
+    InsufficientCreditsError,
+    NetworkError,
+    QuotaExceededError,
+    TaskFailedError,
+    TaskNotFoundError,
+    TaskTimeoutError,
 )
 
 # -----------------------------------------------------------------------------
@@ -166,15 +165,11 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
     if platform_key not in ADAPTER_MAP:
         available = ", ".join(ADAPTER_MAP.keys())
         if ":" in backend_name:
-            hint = (
-                f" Did you mean `backend='{platform_key}', backend_name="
-                f"'{backend_name.split(':', 1)[1]}'`?"
-            )
+            hint = f" Did you mean `backend='{platform_key}', backend_name='{backend_name.split(':', 1)[1]}'`?"
         else:
             hint = ""
         raise BackendNotFoundError(
-            f"No circuit adapter for backend '{backend_name}'. "
-            f"Available adapters: {available}.{hint}"
+            f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}.{hint}"
         )
     return ADAPTER_MAP[platform_key]()
 
@@ -349,6 +344,7 @@ def dry_run_task(
         BackendPreflightError,
         ensure_backend_ready,
     )
+
     try:
         ensure_backend_ready(backend)
     except (BackendPreflightError, ValueError) as exc:
@@ -418,10 +414,7 @@ def dry_run_task(
                     "appears broken. Reinstall with `pip install --upgrade unified-quantum`."
                 )
             else:
-                hint = (
-                    f"Install the matching extra (e.g. "
-                    f"`pip install \"unified-quantum[{platform}]\"`)."
-                )
+                hint = f'Install the matching extra (e.g. `pip install "unified-quantum[{platform}]"`).'
             return DryRunResult(
                 success=False,
                 details=f"Adapter for '{backend}' is not installed. {hint}",
@@ -448,10 +441,7 @@ def dry_run_task(
     except (ImportError, ModuleNotFoundError) as e:
         return DryRunResult(
             success=False,
-            details=(
-                f"dry_run() needs an SDK that is not installed: {e}. "
-                f"Install the matching extra and retry."
-            ),
+            details=(f"dry_run() needs an SDK that is not installed: {e}. Install the matching extra and retry."),
             error=str(e),
             error_kind="sdk_missing",
             backend_name=getattr(adapter, "name", None),
@@ -555,14 +545,10 @@ def list_tasks(
     Returns:
         List of TaskInfo objects matching the filters, newest first.
     """
-    return _store(cache_dir).list(
-        status=status, backend=backend, limit=limit, offset=offset
-    )
+    return _store(cache_dir).list(status=status, backend=backend, limit=limit, offset=offset)
 
 
-def clear_completed_tasks(
-    cache_dir: Path | None = None, status: str | None = None
-) -> int:
+def clear_completed_tasks(cache_dir: Path | None = None, status: str | None = None) -> int:
     """Remove completed tasks from the cache.
 
     Args:
@@ -760,10 +746,7 @@ def _prepare_circuit_for_submission(
             decompose_for_qasm2,
         )
 
-        if any(
-            str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES
-            for op in circuit.opcode_list
-        ):
+        if any(str(op[0]).upper() in QASM2_UNREPRESENTABLE_GATES for op in circuit.opcode_list):
             try:
                 circuit = decompose_for_qasm2(circuit)
             except (NotImplementedError, ValueError):
@@ -803,8 +786,7 @@ def _prepare_circuit_for_submission(
     if backend_info is not None and backend_info.extra.get("_uniqc_topology_stale"):
         extras["topology_stale"] = True
         extras["validation_warnings"].append(
-            f"Backend topology cache for {backend} is stale (older than TTL); "
-            "consider running `uniqc backend update`."
+            f"Backend topology cache for {backend} is stale (older than TTL); consider running `uniqc backend update`."
         )
 
     if report.compatible:
@@ -830,15 +812,12 @@ def _prepare_circuit_for_submission(
 
     # Try compiling and re-validate.
     try:
-        compiled = compile_for_backend(
-            circuit, backend_info, level=local_compile
-        )
+        compiled = compile_for_backend(circuit, backend_info, level=local_compile)
     except Exception as exc:  # pragma: no cover - depends on optional qiskit
         from uniqc.exceptions import UnsupportedGateError
 
         raise UnsupportedGateError(
-            f"Circuit failed validation for '{backend}' and "
-            f"local_compile={local_compile} errored: {exc}"
+            f"Circuit failed validation for '{backend}' and local_compile={local_compile} errored: {exc}"
         ) from exc
 
     post = compatibility_report(
@@ -856,9 +835,7 @@ def _prepare_circuit_for_submission(
         from uniqc.exceptions import UnsupportedGateError
 
         msg = "; ".join(post.errors)
-        raise UnsupportedGateError(
-            f"Auto-compile for '{backend}' did not land in the backend basis/topology: {msg}"
-        )
+        raise UnsupportedGateError(f"Auto-compile for '{backend}' did not land in the backend basis/topology: {msg}")
     return compiled, extras
 
 
@@ -914,9 +891,7 @@ def _compile_for_chip_backed_dummy(
     enriched = dict(metadata or {})
 
     # Resolve the effective allow-list once: explicit kwarg > spec.
-    effective_available = (
-        available_qubits if available_qubits is not None else spec.available_qubits
-    )
+    effective_available = available_qubits if available_qubits is not None else spec.available_qubits
 
     source_originir = circuit.originir
 
@@ -1054,7 +1029,6 @@ def submit_task(
         >>> chip = OriginQAdapter().get_chip_characterization("WK_C180")
         >>> task_id = submit_task(circuit, backend='dummy:local:simulator', chip_characterization=chip)
     """
-    import warnings
 
     # Normalize input: accept Circuit, OriginIR str, QASM str, qiskit.QuantumCircuit.
     circuit = _normalize_circuit_input(circuit)
@@ -1066,6 +1040,7 @@ def submit_task(
         BackendPreflightError,
         ensure_backend_ready,
     )
+
     try:
         ensure_backend_ready(backend)
     except (BackendPreflightError, ValueError):
@@ -1104,9 +1079,15 @@ def submit_task(
     # needing a subsequent query against a cloud backend.
     if backend.startswith("dummy:"):
         kwargs.pop("cloud_compile", None)
-        return _submit_dummy(circuit, backend, shots=shots, metadata=metadata,
-                             local_compile=local_compile,
-                             uniqc_task_id=uniqc_task_id, **kwargs)
+        return _submit_dummy(
+            circuit,
+            backend,
+            shots=shots,
+            metadata=metadata,
+            local_compile=local_compile,
+            uniqc_task_id=uniqc_task_id,
+            **kwargs,
+        )
 
     # Enforce 'provider:chip' canonical form for cloud submissions and inject
     # the chip into adapter kwargs so downstream calls don't fall back to a
@@ -1114,9 +1095,7 @@ def submit_task(
     backend = _require_qualified_backend(backend, kwargs)
 
     # Pre-submission validation + optional local compile.
-    circuit, prep_extras = _prepare_circuit_for_submission(
-        circuit, backend, kwargs, local_compile=local_compile
-    )
+    circuit, prep_extras = _prepare_circuit_for_submission(circuit, backend, kwargs, local_compile=local_compile)
     metadata = {**metadata, **prep_extras}
 
     # Persist a parent task row BEFORE remote submission so that any
@@ -1162,8 +1141,7 @@ def submit_task(
         # transient cloud errors.
         task_info.status = TaskStatus.FAILED
         task_info.error_message = f"submit failed: {e!r}"
-        task_info.metadata = {**(task_info.metadata or {}),
-                              "submission_error": str(e)}
+        task_info.metadata = {**(task_info.metadata or {}), "submission_error": str(e)}
         save_task(task_info)
         mapped_error = _map_adapter_error(e, backend)
         raise mapped_error from e
@@ -1234,7 +1212,9 @@ def _submit_dummy(
     dummy_adapter = DummyAdapter(**adapter_kwargs)
 
     originir, metadata = _compile_for_chip_backed_dummy(
-        circuit, spec, metadata,
+        circuit,
+        spec,
+        metadata,
         local_compile=local_compile,
         available_qubits=kwargs.get("available_qubits"),
     )
@@ -1373,6 +1353,7 @@ def submit_batch(
         BackendPreflightError,
         ensure_backend_ready,
     )
+
     try:
         ensure_backend_ready(backend)
     except (BackendPreflightError, ValueError):
@@ -1403,8 +1384,12 @@ def submit_batch(
         kwargs.pop("cloud_compile", None)
         kwargs.pop("native_batch", None)
         result_id = _submit_batch_dummy(
-            circuits, backend, shots=shots, local_compile=local_compile,
-            uniqc_task_id=uniqc_task_id, **kwargs,
+            circuits,
+            backend,
+            shots=shots,
+            local_compile=local_compile,
+            uniqc_task_id=uniqc_task_id,
+            **kwargs,
         )
         if return_platform_ids:
             return [s.platform_task_id for s in _store().get_shards(result_id)]
@@ -1418,9 +1403,7 @@ def submit_batch(
     prepared: list[Circuit] = []
     prep_extras_list: list[dict[str, Any]] = []
     for c in circuits:
-        c2, extras = _prepare_circuit_for_submission(
-            c, backend, kwargs, local_compile=local_compile
-        )
+        c2, extras = _prepare_circuit_for_submission(c, backend, kwargs, local_compile=local_compile)
         prepared.append(c2)
         prep_extras_list.append(extras)
     circuits = prepared
@@ -1430,9 +1413,7 @@ def submit_batch(
     parent_metadata: dict[str, Any] = {
         "batch": True,
         "batch_size": len(circuits),
-        "circuits": [
-            _metadata_with_circuit(c, {})["circuit_ir"] for c in circuits
-        ],
+        "circuits": [_metadata_with_circuit(c, {})["circuit_ir"] for c in circuits],
         "circuit_language": "OriginIR",
     }
     parent_info = TaskInfo(
@@ -1473,11 +1454,13 @@ def submit_batch(
     shards_submitted: list[TaskShard] = []
     try:
         for shard_index, start in enumerate(range(0, len(native_circuits), shard_size)):
-            chunk = native_circuits[start:start + shard_size]
+            chunk = native_circuits[start : start + shard_size]
             chunk_shots = shots
             try:
                 result = backend_instance.submit_batch(
-                    chunk, shots=chunk_shots, **kwargs,
+                    chunk,
+                    shots=chunk_shots,
+                    **kwargs,
                 )
             except Exception as exc:
                 # Mark parent FAILED with submission_error and the list
@@ -1485,15 +1468,12 @@ def submit_batch(
                 # query/cancel them.
                 parent_info.status = TaskStatus.FAILED
                 parent_info.error_message = (
-                    f"Shard {shard_index}/{ -(-len(native_circuits) // shard_size) } "
-                    f"submit failed: {exc!r}"
+                    f"Shard {shard_index}/{-(-len(native_circuits) // shard_size)} submit failed: {exc!r}"
                 )
                 parent_info.metadata = {
                     **(parent_info.metadata or {}),
                     "submission_error": str(exc),
-                    "partial_submitted_shards": [
-                        s.platform_task_id for s in shards_submitted
-                    ],
+                    "partial_submitted_shards": [s.platform_task_id for s in shards_submitted],
                 }
                 save_task(parent_info)
                 mapped_error = _map_adapter_error(exc, backend)
@@ -1586,7 +1566,9 @@ def _submit_batch_dummy(
     compiled_metadata: list[dict] = []
     for circuit in circuits:
         originir, item_metadata = _compile_for_chip_backed_dummy(
-            circuit, spec, {},
+            circuit,
+            spec,
+            {},
             local_compile=local_compile,
             available_qubits=kwargs.get("available_qubits"),
         )
@@ -1598,9 +1580,7 @@ def _submit_batch_dummy(
     parent_metadata: dict[str, Any] = {
         "batch": True,
         "batch_size": len(circuits),
-        "circuits": [
-            _metadata_with_circuit(c, {})["circuit_ir"] for c in circuits
-        ],
+        "circuits": [_metadata_with_circuit(c, {})["circuit_ir"] for c in circuits],
         "circuit_language": "OriginIR",
         "dummy_backend_id": spec.identifier,
         "dummy_noise_source": spec.noise_source,
@@ -1643,10 +1623,7 @@ def _submit_batch_dummy(
             sub_index_offset=index,
             status=shard_status,
             result=result.get("result") if adapter_status == TASK_STATUS_SUCCESS else None,
-            error_message=(
-                _extract_error_message(result)
-                if adapter_status == TASK_STATUS_FAILED else None
-            ),
+            error_message=(_extract_error_message(result) if adapter_status == TASK_STATUS_FAILED else None),
         )
         _store().save_shard(shard)
 
@@ -1680,6 +1657,7 @@ def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
     found = _store().find_uniqc_id_by_platform_id(task_id)
     if found is not None:
         import warnings
+
         warnings.warn(
             f"Task lookup via platform id {task_id!r} is deprecated; "
             f"use the uniqc id {found!r} instead. The platform id will "
@@ -1768,9 +1746,7 @@ def _refresh_shard_from_backend(shard: TaskShard) -> TaskShard:
         "cancelled": TaskStatus.CANCELLED,
     }
     new_status = status_map.get(adapter_status, TaskStatus.RUNNING)
-    shard.status = (
-        new_status.value if isinstance(new_status, TaskStatus) else str(new_status)
-    )
+    shard.status = new_status.value if isinstance(new_status, TaskStatus) else str(new_status)
     if shard.status == TaskStatus.SUCCESS.value:
         shard.result = result.get("result")
         shard.error_message = None
@@ -1827,10 +1803,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
                 cached_task.error_message = None
             elif agg_status == TaskStatus.FAILED.value:
                 failed = [s for s in shards if s.status == TaskStatus.FAILED.value]
-                msgs = [
-                    f"shard {s.shard_index}: {s.error_message or 'failed'}"
-                    for s in failed
-                ]
+                msgs = [f"shard {s.shard_index}: {s.error_message or 'failed'}" for s in failed]
                 cached_task.error_message = "; ".join(msgs) or "shard(s) failed"
             save_task(cached_task)
             return cached_task
@@ -1888,9 +1861,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
         backend=backend,
         status=task_status,
         result=result.get("result") if task_status == TaskStatus.SUCCESS else None,
-        error_message=(
-            _extract_error_message(result)
-        ) if task_status == TaskStatus.FAILED else None,
+        error_message=(_extract_error_message(result)) if task_status == TaskStatus.FAILED else None,
     )
     cached_task = get_task(task_id)
     if cached_task is not None:
@@ -2070,15 +2041,22 @@ def wait_for_result(
     """
     start_time = time.time()
 
-    def _wrap(raw: Any, backend: str | None, shots: int | None,
-              metadata: dict[str, Any] | None) -> UnifiedResult | list[UnifiedResult]:
+    def _wrap(
+        raw: Any, backend: str | None, shots: int | None, metadata: dict[str, Any] | None
+    ) -> UnifiedResult | list[UnifiedResult]:
         is_batch = bool(metadata and metadata.get("batch"))
         if is_batch and isinstance(raw, list):
             return _wrap_as_unified_result_list(
-                raw, task_id=task_id, backend=backend, shots=shots,
+                raw,
+                task_id=task_id,
+                backend=backend,
+                shots=shots,
             )
         return _wrap_as_unified_result(
-            raw, task_id=task_id, backend=backend, shots=shots,
+            raw,
+            task_id=task_id,
+            backend=backend,
+            shots=shots,
         )
 
     while True:
@@ -2088,20 +2066,17 @@ def wait_for_result(
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
-            return _wrap(task_info.result, task_info.backend,
-                         task_info.shots, task_info.metadata)
+            return _wrap(task_info.result, task_info.backend, task_info.shots, task_info.metadata)
 
         # Check if failed
         if task_info.status == TaskStatus.FAILED:
             if raise_on_failure:
                 detail = task_info.error_message or "(no error message recorded)"
                 raise TaskFailedError(
-                    f"Task '{task_id}' failed on backend "
-                    f"'{task_info.backend}': {detail}",
+                    f"Task '{task_id}' failed on backend '{task_info.backend}': {detail}",
                     task_id=task_id,
                     backend=task_info.backend,
-                    details={"error_message": task_info.error_message,
-                             "metadata": task_info.metadata},
+                    details={"error_message": task_info.error_message, "metadata": task_info.metadata},
                 )
             return None
 
@@ -2122,8 +2097,7 @@ def wait_for_result(
                         backend=backend,
                     )
                 if final_info.get("status") == TASK_STATUS_SUCCESS:
-                    return _wrap(final_info.get("result"), backend,
-                                 task_info.shots, task_info.metadata)
+                    return _wrap(final_info.get("result"), backend, task_info.shots, task_info.metadata)
 
             raise TaskTimeoutError(
                 f"Timeout waiting for task '{task_id}' to complete.",
@@ -2278,7 +2252,11 @@ class TaskManager:
     ) -> list[TaskInfo]:
         """List tasks from cache."""
         return list_tasks(
-            status, backend, cache_dir=self._cache_dir, limit=limit, offset=offset,
+            status,
+            backend,
+            cache_dir=self._cache_dir,
+            limit=limit,
+            offset=offset,
         )
 
     def clear_completed(self) -> int:

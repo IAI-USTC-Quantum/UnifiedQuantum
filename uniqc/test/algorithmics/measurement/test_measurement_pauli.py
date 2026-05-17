@@ -4,8 +4,8 @@ identity, mixed Pauli, 3-qubit, and edge cases."""
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.measurement import pauli_expectation
+from uniqc.circuit_builder import Circuit
 
 
 class TestSingleQubitPauli:

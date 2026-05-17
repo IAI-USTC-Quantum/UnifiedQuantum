@@ -2,15 +2,12 @@
 
 __all__ = ["calculate_expectation", "calculate_exp_X", "calculate_exp_Y", "calculate_multi_basis_expectation"]
 
-from typing import Dict, List, Optional, Union
-
-import numpy as np
 
 from uniqc._error_hints import format_enriched_message
 
 
 def _calculate_expectation_dict(
-    measured_result: Dict[str, float],
+    measured_result: dict[str, float],
     h: str,
     nqubit: int,
 ) -> float:
@@ -18,7 +15,9 @@ def _calculate_expectation_dict(
     for result in measured_result:
         if len(result) != nqubit:
             raise ValueError(
-                format_enriched_message("The Hamiltonian must have the same size with the measured result.", "measurement")
+                format_enriched_message(
+                    "The Hamiltonian must have the same size with the measured result.", "measurement"
+                )
             )
         p = measured_result[result]
         for i in range(nqubit):
@@ -29,7 +28,7 @@ def _calculate_expectation_dict(
 
 
 def _calculate_expectation_list(
-    measured_result: List[float],
+    measured_result: list[float],
     h: str,
     nqubit: int,
 ) -> float:
@@ -47,9 +46,9 @@ def _calculate_expectation_list(
 
 
 def calculate_expectation(
-    measured_result: Union[Dict[str, float], List[float]],
-    hamiltonian: Union[List[str], str],
-) -> Union[float, List[float]]:
+    measured_result: dict[str, float] | list[float],
+    hamiltonian: list[str] | str,
+) -> float | list[float]:
     """Calculate expectation value of a Hamiltonian from measurement results.
 
     The Hamiltonian may contain only Z and I (identity) terms. This function
@@ -96,13 +95,17 @@ def calculate_expectation(
 
     if not isinstance(hamiltonian, str):
         raise ValueError(
-            format_enriched_message("The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement")
+            format_enriched_message(
+                "The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement"
+            )
         )
 
     for h_char in hamiltonian:
         if h_char not in ("Z", "z", "I", "i"):
             raise ValueError(
-                format_enriched_message("The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement")
+                format_enriched_message(
+                    "The Hamiltonian input must be a str (only containing Z or I or z or i).", "measurement"
+                )
             )
 
     nqubit = len(hamiltonian)
@@ -116,9 +119,9 @@ def calculate_expectation(
 
 
 def calculate_multi_basis_expectation(
-    measured_results: Dict[str, Union[Dict[str, float], List[float]]],
+    measured_results: dict[str, dict[str, float] | list[float]],
     nqubit: int,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calculate expectation values for multiple measurement bases at once.
 
     Given measurement results in different bases (X, Y, Z, or custom),
@@ -165,7 +168,7 @@ def calculate_multi_basis_expectation(
         ... )
         {'Z': 1.0, 'X': 1.0}
     """
-    results: Dict[str, float] = {}
+    results: dict[str, float] = {}
     for basis_label, result in measured_results.items():
         if basis_label.upper().startswith("X"):
             results[basis_label] = calculate_exp_X(result, nqubit)
@@ -179,9 +182,9 @@ def calculate_multi_basis_expectation(
 
 
 def _ensure_dict(
-    measured_result: Union[Dict[str, float], List[float]],
+    measured_result: dict[str, float] | list[float],
     nqubit: int,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Convert list-format measurement results to dict if needed."""
     if isinstance(measured_result, list):
         keys = [f"{i:0{nqubit}b}" for i in range(len(measured_result))]
@@ -190,7 +193,7 @@ def _ensure_dict(
 
 
 def calculate_exp_X(
-    measured_result: Union[Dict[str, float], List[float]],
+    measured_result: dict[str, float] | list[float],
     nqubit: int,
     qubit_index: int = 0,
 ) -> float:
@@ -240,7 +243,7 @@ def calculate_exp_X(
 
 
 def calculate_exp_Y(
-    measured_result: Union[Dict[str, float], List[float]],
+    measured_result: dict[str, float] | list[float],
     nqubit: int,
     qubit_index: int = 0,
 ) -> float:

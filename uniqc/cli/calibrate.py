@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import pathlib
-import sys
 from typing import Any
 
 import typer
@@ -17,8 +16,8 @@ from uniqc.cli.output import (
     ai_hints_enabled,
     build_ref_str,
     console,
-    print_error,
     print_ai_hints,
+    print_error,
     print_info,
     print_success,
     print_warning,
@@ -39,35 +38,46 @@ HELP = f"Run calibration experiments: XEB benchmarking and readout error calibra
 @app.command("xeb", help="Run cross-entropy benchmarking (1q and/or 2q).")
 def xeb_cmd(
     qubits: list[int] | None = typer.Option(
-        None, "--qubits", "-q",
+        None,
+        "--qubits",
+        "-q",
         help="Qubit indices to benchmark. Defaults to [0,1,2,3].",
     ),
     xeb_type: str = typer.Option(
-        "both", "--type",
+        "both",
+        "--type",
         help="Benchmark type: '1q' (single-qubit gates), '2q' (two-qubit gates), or 'both'.",
     ),
     shots: int = typer.Option(
-        1000, "--shots",
+        1000,
+        "--shots",
         help="Number of shots per circuit. Higher shots → tighter fidelity estimates.",
     ),
     depths: list[int] | None = typer.Option(
-        None, "--depths", "-d",
+        None,
+        "--depths",
+        "-d",
         help="Circuit depths (number of random layers). Defaults to [5, 10, 20, 50].",
     ),
     n_circuits: int = typer.Option(
-        50, "--n-circuits",
+        50,
+        "--n-circuits",
         help="Number of random circuits per depth. More circuits → tighter fit.",
     ),
     pattern: str = typer.Option(
-        "auto", "--pattern",
+        "auto",
+        "--pattern",
         help="'auto' (run XEB) or 'circuit' (analyze OriginIR file for parallel patterns).",
     ),
     circuit_file: str | None = typer.Option(
-        None, "--circuit",
+        None,
+        "--circuit",
         help="OriginIR file path — required when --pattern circuit is set.",
     ),
     backend: str = typer.Option(
-        "dummy:local:simulator", "--backend", "-b",
+        "dummy:local:simulator",
+        "--backend",
+        "-b",
         help=(
             "Backend name. 'dummy:local:simulator' runs unconstrained local "
             "simulation. 'dummy:originq:<chip>' runs noisy local simulation "
@@ -76,20 +86,25 @@ def xeb_cmd(
         ),
     ),
     output: str | None = typer.Option(
-        None, "--output", "-o",
+        None,
+        "--output",
+        "-o",
         help="Output JSON file path. Results include fidelity_per_layer, fit_r, and fit_stderr.",
     ),
     no_readout_em: bool = typer.Option(
-        False, "--no-readout-em",
+        False,
+        "--no-readout-em",
         help="Skip readout error mitigation before fidelity computation. "
-             "Not recommended — readout errors bias fidelity estimates downward.",
+        "Not recommended — readout errors bias fidelity estimates downward.",
     ),
     max_age_hours: float = typer.Option(
-        24.0, "--max-age-hours",
+        24.0,
+        "--max-age-hours",
         help="Maximum age of cached calibration data (hours). Stale data raises an error.",
     ),
     seed: int | None = typer.Option(
-        None, "--seed",
+        None,
+        "--seed",
         help=(
             "Random seed for circuit generation (int). "
             "seed=0 is a valid seed (not the same as seed=None). "
@@ -122,8 +137,7 @@ def xeb_cmd(
             originir = path.read_text()
             gen = ParallelPatternGenerator(topology=[])
             pat_result = gen.from_circuit(originir)
-            print_info(f"Circuit pattern: {pat_result.n_rounds} rounds, "
-                        f"{pat_result.chromatic_number} chromatic number")
+            print_info(f"Circuit pattern: {pat_result.n_rounds} rounds, {pat_result.chromatic_number} chromatic number")
             print_success(f"Groups: {pat_result.groups}")
         else:
             print_error("--circuit required for circuit-based pattern analysis")
@@ -210,42 +224,50 @@ def xeb_cmd(
 
     except Exception as e:
         print_error(f"XEB failed: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command("readout", help="Run readout error calibration (1q and/or 2q).")
 def readout_cmd(
     qubits: list[int] | None = typer.Option(
-        None, "--qubits", "-q",
+        None,
+        "--qubits",
+        "-q",
         help="Qubit indices to calibrate. Defaults to [0,1,2,3].",
     ),
     readout_type: str = typer.Option(
-        "both", "--type",
+        "both",
+        "--type",
         help="'1q' (per-qubit confusion matrices), '2q' (joint pair matrices), or 'both'.",
     ),
     shots: int = typer.Option(
-        1000, "--shots",
-        help="Number of shots per calibration circuit. "
-             "Higher shots → more accurate confusion matrix.",
+        1000,
+        "--shots",
+        help="Number of shots per calibration circuit. Higher shots → more accurate confusion matrix.",
     ),
     backend: str = typer.Option(
-        "dummy:local:simulator", "--backend", "-b",
+        "dummy:local:simulator",
+        "--backend",
+        "-b",
         help="Backend name ('dummy:local:simulator' for local simulation).",
     ),
     output: str | None = typer.Option(
-        None, "--output", "-o",
+        None,
+        "--output",
+        "-o",
         help="Output JSON file. Contains confusion matrix, assignment fidelity, and calibrated_at.",
     ),
     max_age_hours: float = typer.Option(
-        24.0, "--max-age-hours",
+        24.0,
+        "--max-age-hours",
         help="Maximum age of cached calibration data (hours). "
-             "Stale data raises StaleCalibrationError in downstream QEM.",
+        "Stale data raises StaleCalibrationError in downstream QEM.",
     ),
     ai_hints: bool = AI_HINTS_OPTION,
 ) -> None:
     """Run readout calibration and save confusion matrices."""
-    from uniqc.calibration.readout import ReadoutCalibrator
     from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
+    from uniqc.calibration.readout import ReadoutCalibrator
 
     if ai_hints_enabled(ai_hints):
         print_ai_hints("calibrate-readout")
@@ -275,6 +297,7 @@ def readout_cmd(
 
     if readout_type in ("2q", "both"):
         from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter as DA
+
         if isinstance(adapter, DA):
             # Use connectivity from dummy adapter if available
             topology = adapter.available_topology or [(i, i + 1) for i in range(len(qubits) - 1)]
@@ -302,21 +325,28 @@ def readout_cmd(
 @app.command("pattern", help="Analyze parallel execution patterns for 2-qubit gates.")
 def pattern_cmd(
     qubits: list[int] | None = typer.Option(
-        None, "--qubits", "-q",
+        None,
+        "--qubits",
+        "-q",
         help="Qubit indices defining the chip topology (linear chain by default). "
-             "Example: --qubits 0 1 2 3 builds topology [(0,1),(1,2),(2,3)].",
+        "Example: --qubits 0 1 2 3 builds topology [(0,1),(1,2),(2,3)].",
     ),
     pattern_type: str = typer.Option(
-        "auto", "--type",
+        "auto",
+        "--type",
         help="'auto' (from topology) or 'circuit' (from OriginIR file).",
     ),
     circuit_file: str | None = typer.Option(
-        None, "--circuit", "-c",
+        None,
+        "--circuit",
+        "-c",
         help="OriginIR file path — required when --type circuit is set. "
-             "Extracts parallel execution pattern from gate-level circuit.",
+        "Extracts parallel execution pattern from gate-level circuit.",
     ),
     output: str | None = typer.Option(
-        None, "--output", "-o",
+        None,
+        "--output",
+        "-o",
         help="Output JSON file. Contains n_rounds, chromatic_number, and per-round groups.",
     ),
     ai_hints: bool = AI_HINTS_OPTION,
@@ -348,7 +378,7 @@ def pattern_cmd(
         gen = ParallelPatternGenerator(topology=topology)
         result = gen.auto_generate()
 
-    console.print(f"[bold]Parallel Pattern Analysis[/bold]")
+    console.print("[bold]Parallel Pattern Analysis[/bold]")
     console.print(f"  Source: {result.source}")
     console.print(f"  Parallel rounds: {result.n_rounds}")
     console.print(f"  Chromatic number: {result.chromatic_number}")

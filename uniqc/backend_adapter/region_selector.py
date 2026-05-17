@@ -113,7 +113,7 @@ class RegionSelector:
     # -------------------------------------------------------------------------
 
     @classmethod
-    def from_backend(cls, backend: str) -> "RegionSelector":
+    def from_backend(cls, backend: str) -> RegionSelector:
         """Construct a RegionSelector from a backend identifier string.
 
         This is a convenience wrapper that fetches the chip characterization
@@ -164,8 +164,7 @@ class RegionSelector:
             chip_data = adapter.get_chip_characterization(chip)
         else:
             raise ValueError(
-                f"RegionSelector.from_backend currently only supports the "
-                f"'originq' platform; got '{platform}'."
+                f"RegionSelector.from_backend currently only supports the 'originq' platform; got '{platform}'."
             )
         return cls(chip_data)
 
@@ -304,27 +303,19 @@ class RegionSelector:
         for start_q in candidates:
             if time.time() > deadline:
                 break
-            chain, fidelity, swaps = self._greedy_chain_expand(
-                start_q, length, available, deadline=deadline
-            )
+            chain, fidelity, swaps = self._greedy_chain_expand(start_q, length, available, deadline=deadline)
             _track_partial(chain, fidelity)
             if chain is not None and len(chain) == length:
-                return ChainSearchResult(
-                    chain=chain, estimated_fidelity=fidelity, num_swaps=swaps
-                )
+                return ChainSearchResult(chain=chain, estimated_fidelity=fidelity, num_swaps=swaps)
 
         # --- Backtracking DFS search (deadline-checked) ---
         for start_q in candidates:
             if time.time() > deadline:
                 break
-            result = self._backtrack_chain(
-                start_q, length, available, deadline=deadline
-            )
+            result = self._backtrack_chain(start_q, length, available, deadline=deadline)
             _track_partial(result[0], result[1])
             if result[0] is not None and len(result[0]) == length:
-                return ChainSearchResult(
-                    chain=result[0], estimated_fidelity=result[1], num_swaps=result[2]
-                )
+                return ChainSearchResult(chain=result[0], estimated_fidelity=result[1], num_swaps=result[2])
 
         # --- Pure-greedy fallback (always returns within budget) ---
         # Picks each next qubit as the highest-fidelity unvisited neighbour
@@ -333,9 +324,7 @@ class RegionSelector:
             chain, fidelity = self._pure_greedy_chain(start_q, length, available)
             _track_partial(chain, fidelity)
             if len(chain) == length:
-                return ChainSearchResult(
-                    chain=chain, estimated_fidelity=fidelity, num_swaps=0
-                )
+                return ChainSearchResult(chain=chain, estimated_fidelity=fidelity, num_swaps=0)
 
         if best_partial_chain:
             return ChainSearchResult(

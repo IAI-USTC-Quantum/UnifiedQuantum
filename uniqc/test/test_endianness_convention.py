@@ -23,6 +23,7 @@ These tests guard the convention by:
   raw responses captured from the actual SDK so we do not need cloud
   credentials in CI.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -57,8 +58,10 @@ def _dominant(counts: dict[str, int]) -> str:
 # Local simulators (always installed)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
-    "backend_type", ["statevector", "density_matrix", "mps"],
+    "backend_type",
+    ["statevector", "density_matrix", "mps"],
 )
 def test_local_simulator_endianness(backend_type):
     from uniqc.simulator.get_backend import get_simulator
@@ -66,14 +69,13 @@ def test_local_simulator_endianness(backend_type):
     sim = get_simulator(backend_type)
     counts = sim.simulate_shots(_probe_circuit().originir, shots=1024)
     # simulate_shots returns int-keyed counts; integer 1 == c[0]=1
-    assert max(counts, key=counts.get) == 1, (
-        f"{backend_type} returned {counts}; expected integer key 1 (c[0]=LSB)"
-    )
+    assert max(counts, key=counts.get) == 1, f"{backend_type} returned {counts}; expected integer key 1 (c[0]=LSB)"
 
 
 # ---------------------------------------------------------------------------
 # Dummy backends (chip-backed and virtual)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "backend",
@@ -84,20 +86,19 @@ def test_local_simulator_endianness(backend_type):
     ],
 )
 def test_dummy_backend_endianness(backend):
-    from uniqc.backend_adapter.task_manager import submit_batch, query_task
+    from uniqc.backend_adapter.task_manager import query_task, submit_batch
 
     uid = submit_batch([_probe_circuit()], backend=backend, shots=1024)
     info = query_task(uid)
     assert info.status == "success", f"{backend} failed: {info.error_message}"
-    assert _dominant(info.result) == "01", (
-        f"{backend} returned {info.result}; expected '01' as dominant key"
-    )
+    assert _dominant(info.result) == "01", f"{backend} returned {info.result}; expected '01' as dominant key"
 
 
 @pytest.mark.requires_pyqpanda3
 @pytest.mark.requires_originq_credentials
 @pytest.mark.parametrize(
-    "backend", ["dummy:originq:WK_C180", "dummy:originq:PQPUMESH8"],
+    "backend",
+    ["dummy:originq:WK_C180", "dummy:originq:PQPUMESH8"],
 )
 def test_dummy_originq_chip_endianness(backend):
     """Chip-backed density-matrix dummy honors c[0]=LSB.
@@ -107,7 +108,7 @@ def test_dummy_originq_chip_endianness(backend):
     strictly depend on the provider's SDK + chip data and there is no
     silent fallback path.
     """
-    from uniqc.backend_adapter.task_manager import submit_batch, query_task
+    from uniqc.backend_adapter.task_manager import query_task, submit_batch
 
     pytest.importorskip(
         "qiskit",
@@ -117,17 +118,14 @@ def test_dummy_originq_chip_endianness(backend):
 
     uid = submit_batch([_probe_circuit()], backend=backend, shots=2048)
     info = query_task(uid)
-    assert info.status == "success", (
-        f"{backend} failed: {info.error_message}"
-    )
-    assert _dominant(info.result) == "01", (
-        f"{backend} returned {info.result}; expected '01' as dominant key"
-    )
+    assert info.status == "success", f"{backend} failed: {info.error_message}"
+    assert _dominant(info.result) == "01", f"{backend} returned {info.result}; expected '01' as dominant key"
 
 
 # ---------------------------------------------------------------------------
 # Quafu normaliser (mocked raw response captured from quafu local sim)
 # ---------------------------------------------------------------------------
+
 
 def test_quafu_normalizer_reverses_bit_order():
     """Quafu reports c[0] as LEFTMOST char ('10'); normaliser must reverse."""
@@ -154,12 +152,11 @@ def test_quafu_adapter_query_reverses_bit_order():
 
     adapter = QuafuAdapter.__new__(QuafuAdapter)
     # Reproduce just the success branch of ``query``:
-    out = adapter.__class__.query.__wrapped__(adapter, "t") if hasattr(
-        adapter.__class__.query, "__wrapped__"
-    ) else None
+    out = adapter.__class__.query.__wrapped__(adapter, "t") if hasattr(adapter.__class__.query, "__wrapped__") else None
     # Fallback: invoke the post-processing block directly via normalizer
     # if the adapter relies on the same bit-reversal pathway.
     from uniqc.backend_adapter.task.normalizers import normalize_quafu
+
     normalised = normalize_quafu(_FakeResult(), task_id="t")
     assert normalised.counts == {"01": 1024}
 
@@ -167,6 +164,7 @@ def test_quafu_adapter_query_reverses_bit_order():
 # ---------------------------------------------------------------------------
 # Qiskit / IBM normaliser (no SDK call needed)
 # ---------------------------------------------------------------------------
+
 
 def test_qiskit_local_aer_endianness():
     """Sanity: Qiskit Aer's BitArray packs c[0] in bit 0 of the integer.

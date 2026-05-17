@@ -30,12 +30,11 @@ from __future__ import annotations
 
 __all__ = ["qpe_circuit", "qpe_example"]
 
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from uniqc.circuit_builder import Circuit
 
 from .amplitude_estimation import _copy_circuit_gates_controlled
-from .qft import qft_circuit
 
 
 def _controlled_phase(fragment: Circuit, control: int, target: int, theta: float) -> None:
@@ -53,7 +52,7 @@ def _controlled_phase(fragment: Circuit, control: int, target: int, theta: float
 
 def _inverse_qft_in_place(
     fragment: Circuit,
-    qubits: List[int],
+    qubits: list[int],
 ) -> None:
     """Apply textbook :math:`\\text{QFT}^\\dagger` (with bit-reversal swaps) on ``qubits``.
 
@@ -77,8 +76,8 @@ def qpe_circuit(
     n_precision: int,
     unitary_circuit: Circuit,
     *,
-    state_prep: Optional[Circuit] = None,
-    controlled_power: Optional[Callable[[Circuit, Circuit, int, int], None]] = None,
+    state_prep: Circuit | None = None,
+    controlled_power: Callable[[Circuit, Circuit, int, int], None] | None = None,
     measure: bool = True,
 ) -> Circuit:
     """Build a Quantum Phase Estimation circuit fragment.
@@ -116,9 +115,7 @@ def qpe_circuit(
         raise ValueError("qpe_circuit requires n_precision >= 1")
     n_system = unitary_circuit.max_qubit + 1
     if n_system < 1:
-        raise ValueError(
-            "qpe_circuit: unitary_circuit must contain at least one qubit"
-        )
+        raise ValueError("qpe_circuit: unitary_circuit must contain at least one qubit")
 
     system_qubits = list(range(n_system))
     precision_qubits = list(range(n_system, n_system + n_precision))

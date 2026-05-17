@@ -27,17 +27,41 @@ except ImportError:
 from . import error_model as error_model
 from .error_model import (
     AmplitudeDamping as AmplitudeDamping,
+)
+from .error_model import (
     BitFlip as BitFlip,
+)
+from .error_model import (
     Depolarizing as Depolarizing,
+)
+from .error_model import (
     ErrorLoader as ErrorLoader,
+)
+from .error_model import (
     ErrorLoader_GateSpecificError as ErrorLoader_GateSpecificError,
+)
+from .error_model import (
     ErrorLoader_GateTypeError as ErrorLoader_GateTypeError,
+)
+from .error_model import (
     ErrorLoader_GenericError as ErrorLoader_GenericError,
+)
+from .error_model import (
     ErrorModel as ErrorModel,
+)
+from .error_model import (
     Kraus1Q as Kraus1Q,
+)
+from .error_model import (
     PauliError1Q as PauliError1Q,
+)
+from .error_model import (
     PauliError2Q as PauliError2Q,
+)
+from .error_model import (
     PhaseFlip as PhaseFlip,
+)
+from .error_model import (
     TwoQubitDepolarizing as TwoQubitDepolarizing,
 )
 from .get_backend import create_simulator as create_simulator

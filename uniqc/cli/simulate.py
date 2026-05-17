@@ -3,17 +3,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints
-from .output import console, format_prob, print_error, print_json, print_table, write_output
-
-HELP = (
-    "Local circuit simulation\n"
-    f"  {build_ref_str('simulate')}"
+from .output import (
+    AI_HINTS_OPTION,
+    ai_hints_enabled,
+    build_ref_str,
+    console,
+    format_prob,
+    print_ai_hints,
+    print_error,
+    print_table,
+    write_output,
 )
+
+HELP = f"Local circuit simulation\n  {build_ref_str('simulate')}"
 
 
 def simulate(
@@ -22,13 +27,11 @@ def simulate(
         "statevector",
         "--backend",
         "-b",
-        help=(
-            "Backend type: statevector / density (alias: density_matrix, densitymatrix)"
-        ),
+        help=("Backend type: statevector / density (alias: density_matrix, densitymatrix)"),
     ),
     shots: int = typer.Option(1024, "--shots", "-s", help="Number of measurement shots"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Output file"),
     ai_hints: bool = AI_HINTS_OPTION,
 ):
     """Simulate a quantum circuit locally.
@@ -52,8 +55,7 @@ def simulate(
         backend_canonical = "density"
     else:
         print_error(
-            f"Unknown backend: {backend}. "
-            "Use 'statevector' or 'density' (alias: density_matrix, densitymatrix)."
+            f"Unknown backend: {backend}. Use 'statevector' or 'density' (alias: density_matrix, densitymatrix)."
         )
         raise typer.Exit(1)
     backend = backend_canonical
@@ -62,7 +64,7 @@ def simulate(
         result = _run_simulation(content, backend, shots)
     except Exception as e:
         print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     if format == "json":
         data = {"backend": backend, "shots": shots, "results": result}
@@ -105,11 +107,7 @@ def _run_simulation(content: str, backend: str, shots: int) -> dict[str, float]:
         # simulate_pmeasure returns a 1-D array/list of length 2^n indexed
         # by computational basis state.
         probs = sim.simulate_pmeasure(content)
-        return {
-            _fmt(i): float(p)
-            for i, p in enumerate(probs)
-            if float(p) > 1e-10
-        }
+        return {_fmt(i): float(p) for i, p in enumerate(probs) if float(p) > 1e-10}
 
     # density matrix backend
     counts = sim.simulate_shots(content, shots=shots)

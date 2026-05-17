@@ -41,14 +41,16 @@ class EntanglingGate(str, Enum):
         return self in _PARAMETRIC_ENTANGLING_GATES
 
 
-_PARAMETRIC_ENTANGLING_GATES = frozenset({
-    EntanglingGate.CRX,
-    EntanglingGate.CRY,
-    EntanglingGate.CRZ,
-    EntanglingGate.XX,
-    EntanglingGate.YY,
-    EntanglingGate.ZZ,
-})
+_PARAMETRIC_ENTANGLING_GATES = frozenset(
+    {
+        EntanglingGate.CRX,
+        EntanglingGate.CRY,
+        EntanglingGate.CRZ,
+        EntanglingGate.XX,
+        EntanglingGate.YY,
+        EntanglingGate.ZZ,
+    }
+)
 
 
 class EntanglementTopology(str, Enum):

@@ -115,9 +115,7 @@ class TestExtractCountsAndProbs:
         """``UnifiedResult`` (e.g. from ``wait_for_result``) is unwrapped."""
         from uniqc.backend_adapter.task.result_types import UnifiedResult
 
-        result = UnifiedResult.from_counts(
-            {"00": 512, "11": 488}, "dummy", "task-x"
-        )
+        result = UnifiedResult.from_counts({"00": 512, "11": 488}, "dummy", "task-x")
         counts, probs = extract_counts_and_probs(result)
 
         assert counts == {"00": 512, "11": 488}
@@ -130,9 +128,7 @@ class TestExtractCountsAndProbs:
         # Build a UnifiedResult that exposes probabilities (and shots) but
         # whose counts dict has been cleared to mimic an adapter that
         # only normalised probabilities.
-        result = UnifiedResult.from_probabilities(
-            {"00": 0.5, "11": 0.5}, 1000, "originq", "task-y"
-        )
+        result = UnifiedResult.from_probabilities({"00": 0.5, "11": 0.5}, 1000, "originq", "task-y")
         result.counts = {}
         counts, probs = extract_counts_and_probs(result)
 

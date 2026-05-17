@@ -25,7 +25,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from uniqc.backend_adapter.backend_info import BackendInfo
-    from uniqc.circuit_builder.qcircuit import Circuit
 
 __all__ = [
     "PLATFORM_BASIS_GATES",

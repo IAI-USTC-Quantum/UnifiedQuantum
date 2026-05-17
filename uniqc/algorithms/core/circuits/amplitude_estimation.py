@@ -7,11 +7,10 @@ __all__ = [
     "amplitude_estimation_example",
 ]
 
-from typing import List, Optional
 import math
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def _copy_circuit_gates(src: Circuit, dst: Circuit) -> None:
@@ -40,7 +39,7 @@ def _copy_circuit_gates_controlled(
         dst.record_qubit(qubits_list + new_ctrl)
 
 
-def _reflect_zero(circuit: Circuit, qubits: List[int]) -> None:
+def _reflect_zero(circuit: Circuit, qubits: list[int]) -> None:
     """Apply reflection about |0⟩: 2|0⟩⟨0| - I.
 
     Decomposition: X on all qubits → multi-controlled Z → X on all qubits.
@@ -68,7 +67,7 @@ def _reflect_zero(circuit: Circuit, qubits: List[int]) -> None:
 
 def _multi_controlled_x(
     circuit: Circuit,
-    controls: List[int],
+    controls: list[int],
     target: int,
 ) -> None:
     """Apply multi-controlled X gate for any number of controls.
@@ -108,9 +107,9 @@ def _multi_controlled_x(
 
 def grover_operator(
     *args,
-    oracle: Optional[Circuit] = None,
-    qubits: Optional[List[int]] = None,
-    state_prep: Optional[Circuit] = None,
+    oracle: Circuit | None = None,
+    qubits: list[int] | None = None,
+    state_prep: Circuit | None = None,
 ):
     r"""Build (or apply) one Grover iteration ``G = A · S₀ · A† · S_f``.
 
@@ -157,8 +156,8 @@ def grover_operator(
 
 def _build_grover_operator_fragment(
     oracle: Circuit,
-    qubits: Optional[List[int]],
-    state_prep: Optional[Circuit] = None,
+    qubits: list[int] | None,
+    state_prep: Circuit | None = None,
 ) -> Circuit:
     if qubits is None:
         raise TypeError(format_enriched_message("grover_operator requires qubits=...", "circuit_validation"))
@@ -188,10 +187,10 @@ def _build_grover_operator_fragment(
 
 def amplitude_estimation_circuit(
     *args,
-    oracle: Optional[Circuit] = None,
-    qubits: Optional[List[int]] = None,
-    eval_qubits: Optional[List[int]] = None,
-    state_prep: Optional[Circuit] = None,
+    oracle: Circuit | None = None,
+    qubits: list[int] | None = None,
+    eval_qubits: list[int] | None = None,
+    state_prep: Circuit | None = None,
 ):
     r"""Build (or apply) Quantum Amplitude Estimation (QAE).
 
@@ -217,7 +216,9 @@ def amplitude_estimation_circuit(
 
     if len(args) == 0:
         if oracle is None:
-            raise TypeError(format_enriched_message("amplitude_estimation_circuit requires an oracle", "circuit_validation"))
+            raise TypeError(
+                format_enriched_message("amplitude_estimation_circuit requires an oracle", "circuit_validation")
+            )
         return _build_qae_fragment(oracle, qubits, eval_qubits, state_prep)
 
     first = args[0]
@@ -237,14 +238,16 @@ def amplitude_estimation_circuit(
         circuit_in.add_circuit(fragment)
         return None
 
-    raise TypeError(format_enriched_message("amplitude_estimation_circuit: unrecognised call signature", "circuit_validation"))
+    raise TypeError(
+        format_enriched_message("amplitude_estimation_circuit: unrecognised call signature", "circuit_validation")
+    )
 
 
 def _build_qae_fragment(
     oracle: Circuit,
-    qubits: Optional[List[int]],
-    eval_qubits: Optional[List[int]],
-    state_prep: Optional[Circuit] = None,
+    qubits: list[int] | None,
+    eval_qubits: list[int] | None,
+    state_prep: Circuit | None = None,
 ) -> Circuit:
     if not isinstance(qubits, list):
         raise TypeError(format_enriched_message("qubits must be a list of qubit indices", "circuit_validation"))
@@ -267,7 +270,7 @@ def _build_qae_fragment(
             fragment.h(q)
 
     for i, ctrl in enumerate(eval_qubits):
-        n_iters = 2 ** i
+        n_iters = 2**i
         for _ in range(n_iters):
             _controlled_grover(fragment, oracle, qubits, ctrl)
 
@@ -281,15 +284,13 @@ def amplitude_estimation_example() -> Circuit:
     """Return a small QAE circuit for tests/docs."""
     oracle = Circuit()
     oracle.z(3)
-    return amplitude_estimation_circuit(
-        oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
-    )
+    return amplitude_estimation_circuit(oracle, qubits=[3, 4], eval_qubits=[0, 1, 2])
 
 
 def _controlled_grover(
     circuit: Circuit,
     oracle: Circuit,
-    qubits: List[int],
+    qubits: list[int],
     control_qubit: int,
 ) -> None:
     """Apply a controlled Grover iteration. Each gate is conditioned on control_qubit."""
@@ -333,7 +334,7 @@ def _controlled_grover(
         circuit.add_gate("H", q, control_qubits=[control_qubit])
 
 
-def _inverse_qft(circuit: Circuit, qubits: List[int]) -> None:
+def _inverse_qft(circuit: Circuit, qubits: list[int]) -> None:
     """Apply inverse QFT on the given qubits (without swaps)."""
     n = len(qubits)
     for j in range(n - 1, -1, -1):

@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from .refs import AI_HINTS, CMD_REFS, DOCS_URL, GITHUB_URL
+from .refs import AI_HINTS, CMD_REFS
 
 console = Console()
 err_console = Console(stderr=True)
@@ -191,11 +191,7 @@ def extract_counts_and_probs(
             counts = {k: int(round(p * n)) for k, p in probs.items()}
         return counts, probs
 
-    if (
-        isinstance(result, list)
-        and result
-        and all(isinstance(r, UnifiedResult) for r in result)
-    ):
+    if isinstance(result, list) and result and all(isinstance(r, UnifiedResult) for r in result):
         merged_counts: dict[str, int] = {}
         merged_probs_sum: dict[str, float] = {}
         for r in result:
@@ -209,9 +205,7 @@ def extract_counts_and_probs(
         if merged_probs_sum:
             n_circ = len(result) or 1
             probs = {k: v / n_circ for k, v in merged_probs_sum.items()}
-            counts = (
-                {k: int(round(p * shots)) for k, p in probs.items()} if shots else {}
-            )
+            counts = {k: int(round(p * shots)) for k, p in probs.items()} if shots else {}
             return counts, probs
         return {}, {}
 
@@ -219,18 +213,12 @@ def extract_counts_and_probs(
         return {}, {}
 
     # ---- Nested "counts" / "probabilities" envelope -----------------------
-    if isinstance(result, dict) and (
-        "counts" in result or "probabilities" in result
-    ):
+    if isinstance(result, dict) and ("counts" in result or "probabilities" in result):
         raw_counts = result.get("counts") or {}
         raw_probs = result.get("probabilities") or {}
 
-        counts: dict[str, int] = {
-            _normalize_state_key(k): int(v) for k, v in raw_counts.items()
-        }
-        probs: dict[str, float] = {
-            _normalize_state_key(k): float(v) for k, v in raw_probs.items()
-        }
+        counts: dict[str, int] = {_normalize_state_key(k): int(v) for k, v in raw_counts.items()}
+        probs: dict[str, float] = {_normalize_state_key(k): float(v) for k, v in raw_probs.items()}
 
         if counts and not probs:
             total = sum(counts.values()) or 1
@@ -282,9 +270,7 @@ def extract_counts_and_probs(
                 except (TypeError, ValueError):
                     continue
                 int_key = _key_to_int(k)
-                collected.append(
-                    (int_key if int_key is not None else str(k), count)
-                )
+                collected.append((int_key if int_key is not None else str(k), count))
 
         width = max(
             (k.bit_length() for k, _ in collected if isinstance(k, int)),
@@ -309,9 +295,7 @@ def extract_counts_and_probs(
 
         # Treat as probabilities.
         probs = {_normalize_state_key(k): float(v) for k, v in result.items()}
-        counts = (
-            {k: int(round(p * shots)) for k, p in probs.items()} if shots else {}
-        )
+        counts = {k: int(round(p * shots)) for k, p in probs.items()} if shots else {}
         return counts, probs
 
     return {}, {}

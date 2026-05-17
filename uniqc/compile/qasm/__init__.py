@@ -1,8 +1,5 @@
-from .qasm_line_parser import OpenQASM2_LineParser
-from .qasm_base_parser import OpenQASM2_BaseParser
-from .exceptions import (NotSupportedGateError,
-                         RegisterDefinitionError,
-                         RegisterNotFoundError,
-                         RegisterOutOfRangeError)
-
 from uniqc.circuit_builder.random_qasm import random_qasm
+
+from .exceptions import NotSupportedGateError, RegisterDefinitionError, RegisterNotFoundError, RegisterOutOfRangeError
+from .qasm_base_parser import OpenQASM2_BaseParser
+from .qasm_line_parser import OpenQASM2_LineParser

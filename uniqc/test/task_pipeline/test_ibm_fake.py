@@ -6,8 +6,6 @@ fake backends (no IBM Quantum credentials required).
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from uniqc import Circuit
@@ -18,6 +16,7 @@ pytestmark = pytest.mark.requires_qiskit
 def _has_fake_provider() -> bool:
     try:
         from qiskit.providers.fake_provider import GenericBackendV2  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -66,6 +65,7 @@ def _all_gates_circuit() -> Circuit:
 # IBMCircuitAdapter.adapt() tests
 # ---------------------------------------------------------------------------
 
+
 @requires_fake_provider
 class TestIBMCircuitAdapter:
     """Test that IBMCircuitAdapter produces valid qiskit QuantumCircuit objects."""
@@ -73,6 +73,7 @@ class TestIBMCircuitAdapter:
     @pytest.fixture
     def adapter(self):
         from uniqc.backend_adapter.circuit_adapter import IBMCircuitAdapter
+
         return IBMCircuitAdapter()
 
     def test_adapt_simple_circuit(self, adapter):
@@ -109,21 +110,25 @@ class TestIBMCircuitAdapter:
 # QiskitAdapter query() status normalization
 # ---------------------------------------------------------------------------
 
+
 @requires_fake_provider
 class TestQiskitStatusNormalization:
     """Verify _normalize_qiskit_status maps correctly."""
 
     def test_normalize_done(self):
         from uniqc.backend_adapter.task.adapters.qiskit_adapter import _normalize_qiskit_status
+
         assert _normalize_qiskit_status("DONE") == "success"
         assert _normalize_qiskit_status("COMPLETED") == "success"
 
     def test_normalize_failed(self):
         from uniqc.backend_adapter.task.adapters.qiskit_adapter import _normalize_qiskit_status
+
         for name in ("ERROR", "CANCELLED", "FAILED"):
             assert _normalize_qiskit_status(name) == "failed"
 
     def test_normalize_running(self):
         from uniqc.backend_adapter.task.adapters.qiskit_adapter import _normalize_qiskit_status
+
         for name in ("INITIALIZING", "QUEUED", "VALIDATING", "RUNNING", "EXECUTING"):
             assert _normalize_qiskit_status(name) == "running"

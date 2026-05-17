@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from uniqc.utils.expectation import (
-    calculate_expectation,
     calculate_exp_X,
     calculate_exp_Y,
+    calculate_expectation,
     calculate_multi_basis_expectation,
 )
 
@@ -590,9 +590,7 @@ class TestCalculateMultiBasisExpectation:
         z_result = {"00": 1.0}
         x_result = {"00": 1.0}  # H on both -> |00> (still |00> in comp basis)
         y_result = {"00": 1.0}  # Sdg H on both -> |00>
-        out = calculate_multi_basis_expectation(
-            {"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2
-        )
+        out = calculate_multi_basis_expectation({"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2)
         assert np.isclose(out["Z"], 1.0)
         assert np.isclose(out["X"], 1.0)
         assert np.isclose(out["Y"], 1.0)
@@ -602,18 +600,14 @@ class TestCalculateMultiBasisExpectation:
         z_result = {"11": 1.0}
         x_result = {"11": 1.0}  # H on both -> |-->, key still "11"
         y_result = {"11": 1.0}  # Sdg H on both -> |-->, key still "11"
-        out = calculate_multi_basis_expectation(
-            {"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2
-        )
+        out = calculate_multi_basis_expectation({"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2)
         assert np.isclose(out["Z"], 1.0)
         assert np.isclose(out["X"], -1.0)
         assert np.isclose(out["Y"], -1.0)
 
     def test_case_insensitive_labels(self):
         """Basis labels are case-insensitive (x=X, y=Y, z=Z)."""
-        out = calculate_multi_basis_expectation(
-            {"z": {"0": 1.0}, "x": {"0": 1.0}, "y": {"0": 1.0}}, nqubit=1
-        )
+        out = calculate_multi_basis_expectation({"z": {"0": 1.0}, "x": {"0": 1.0}, "y": {"0": 1.0}}, nqubit=1)
         assert np.isclose(out["z"], 1.0)
         assert np.isclose(out["x"], 1.0)
         assert np.isclose(out["y"], 1.0)
@@ -627,18 +621,14 @@ class TestCalculateMultiBasisExpectation:
     def test_multiple_custom_labels(self):
         """Multiple custom labels all treated as Z (ZZZ...Z Hamiltonian)."""
         result = {"000": 1.0}
-        out = calculate_multi_basis_expectation(
-            {"foo": result, "bar": result}, nqubit=3
-        )
+        out = calculate_multi_basis_expectation({"foo": result, "bar": result}, nqubit=3)
         assert np.isclose(out["foo"], 1.0)
         assert np.isclose(out["bar"], 1.0)
 
     def test_mixed_x_labels(self):
         """X, X0, X1 all dispatched to calculate_exp_X."""
         result = {"0": 1.0}
-        out = calculate_multi_basis_expectation(
-            {"X": result, "X0": result, "X1": result}, nqubit=1
-        )
+        out = calculate_multi_basis_expectation({"X": result, "X0": result, "X1": result}, nqubit=1)
         assert np.isclose(out["X"], 1.0)
         assert np.isclose(out["X0"], 1.0)
         assert np.isclose(out["X1"], 1.0)
@@ -646,17 +636,13 @@ class TestCalculateMultiBasisExpectation:
     def test_mixed_y_labels(self):
         """Y and Y0 both dispatched to calculate_exp_Y."""
         result = {"0": 1.0}
-        out = calculate_multi_basis_expectation(
-            {"Y": result, "Y0": result}, nqubit=1
-        )
+        out = calculate_multi_basis_expectation({"Y": result, "Y0": result}, nqubit=1)
         assert np.isclose(out["Y"], 1.0)
         assert np.isclose(out["Y0"], 1.0)
 
     def test_list_format_in_measured_results(self):
         """measured_results can contain list-format inputs for all bases."""
-        out = calculate_multi_basis_expectation(
-            {"Z": [1.0, 0.0], "X": [1.0, 0.0], "Y": [1.0, 0.0]}, nqubit=1
-        )
+        out = calculate_multi_basis_expectation({"Z": [1.0, 0.0], "X": [1.0, 0.0], "Y": [1.0, 0.0]}, nqubit=1)
         assert np.isclose(out["Z"], 1.0)
         assert np.isclose(out["X"], 1.0)
         assert np.isclose(out["Y"], 1.0)
@@ -683,9 +669,7 @@ class TestCalculateMultiBasisExpectation:
         z_result = {"00": 1.0}
         x_result = {"00": 1.0}  # H on both -> still |00>
         y_result = {"00": 1.0}  # Sdg H on both -> still |00>
-        out = calculate_multi_basis_expectation(
-            {"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2
-        )
+        out = calculate_multi_basis_expectation({"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2)
         assert np.isclose(out["Z"], 1.0)
         assert np.isclose(out["X"], 1.0)
         assert np.isclose(out["Y"], 1.0)
@@ -697,9 +681,7 @@ class TestCalculateMultiBasisExpectation:
         x_result = {"00": 0.5, "11": 0.5}
         # Y basis: Sdg H on both -> same outcomes
         y_result = {"00": 0.5, "11": 0.5}
-        out = calculate_multi_basis_expectation(
-            {"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2
-        )
+        out = calculate_multi_basis_expectation({"Z": z_result, "X": x_result, "Y": y_result}, nqubit=2)
         assert np.isclose(out["Z"], 1.0)
         assert np.isclose(out["X"], 0.0)
         assert np.isclose(out["Y"], 0.0)

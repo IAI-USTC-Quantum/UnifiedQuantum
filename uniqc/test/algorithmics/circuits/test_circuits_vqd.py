@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.circuits import vqd_circuit, vqd_overlap_circuit
+from uniqc.circuit_builder import Circuit
 
 
 class TestVQDCircuit:
