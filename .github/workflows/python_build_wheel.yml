@@ -36,20 +36,20 @@ jobs:
     steps:
     # 第一步：检出代码库
     - name: Checkout repository
-      uses: actions/checkout@v5 # 使用官方的 checkout action
+      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
       with:
         submodules: 'true'
         fetch-depth: 0  # Need full history for setuptools_scm version detection
 
     # 第二步：设置用于运行 cibuildwheel 的 Python 环境
     - name: Set up Python
-      uses: actions/setup-python@v6 # 使用官方的 setup-python action
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
       with:
         python-version: '3.12'
 
     # 第三步：用 cibuildwheel 按 pyproject.toml 中的矩阵构建 wheel
     - name: Build wheels
-      uses: pypa/cibuildwheel@v3.4.1
+      uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084  # v3.4.1
 
     - name: Validate wheel ABI
       run: python scripts/check_wheel_abi.py wheelhouse/*.whl
@@ -57,7 +57,7 @@ jobs:
     # 第五步：上传构建产物 (wheel 文件)
     # 将 wheelhouse/ 目录下的所有 .whl 文件作为 artifact 上传
     - name: Upload wheel artifact
-      uses: actions/upload-artifact@v5 # 使用官方的 upload-artifact action
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
       with:
         # 为 artifact 命名，包含 OS 和 Python 版本信息以便区分
         name: wheel-${{ matrix.os }}

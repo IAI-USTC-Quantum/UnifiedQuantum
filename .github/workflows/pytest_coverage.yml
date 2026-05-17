@@ -36,18 +36,23 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
       with:
         submodules: 'true'
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
       with:
-        python-version: '3.11'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install build dependencies
       run: |
@@ -67,19 +72,19 @@ jobs:
       run: uv pip install --system pytest pytest-cov
 
     - name: Run tests without coverage first (avoid dill serialization issue with qiskit+torchquantum)
-      run: pytest uniqc/test/ -v --no-cov --ignore=uniqc/test/transpiler/test_transpiler_qiskit.py -m "not cloud"
+      run: pytest uniqc/test/ -v --no-cov -m "not cloud"
 
     - name: Run tests with coverage (for coverage report only)
       run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v --no-cov-on-fail -m "not cloud" || true
 
     - name: Upload coverage report
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
       with:
-        name: coverage-report
+        name: coverage-report-py${{ matrix.python-version }}
         path: coverage.xml
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe  # v5.5.4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,8 +1,11 @@
 """Tests for transpiler qiskit_transpiler module."""
 import pytest
-import qiskit  # noqa: F401
 
-from uniqc.test._utils import uniq_test
+pytestmark = pytest.mark.requires_qiskit
+
+qiskit = pytest.importorskip("qiskit")
+
+from uniqc.test._utils import uniq_test  # noqa: E402
 
 
 @pytest.fixture(scope="module")
