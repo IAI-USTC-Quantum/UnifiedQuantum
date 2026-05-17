@@ -105,6 +105,7 @@ dev = [
     "pre-commit",
     "tomli",
     "pybind11-stubgen",
+    "httpx",
 ]
 docs = [
     "sphinx",
@@ -129,3 +130,23 @@ local_scheme = "no-local-version"
 [tool.setuptools.package-data]
 "uniqc" = ["*.pyi"]
 "uniqc.simulator" = ["uniqc_cpp.pyi"]
+
+[tool.coverage.run]
+source = ["uniqc"]
+omit = [
+    "uniqc/test/*",
+    "uniqc/_version.py",
+    "uniqc/**/__init__.py",
+    "*/site-packages/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false

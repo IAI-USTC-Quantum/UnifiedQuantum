@@ -61,11 +61,13 @@ def select_ansatz_config(
     # Select native entangling gate
     entangling_gate = _select_native_gate(backend_info)
 
+    # Restrict to the first n_qubits available on the chip — both branches need
+    # this list, so compute it up front.
+    available_qubits = sorted(adjacency.keys())[:n_qubits]
+
     # For non-CUSTOM topologies, generate edges based on the type
     # For CUSTOM, return the restricted edge list
     if topology_type == EntanglementTopology.CUSTOM:
-        # Restrict to first n_qubits
-        available_qubits = sorted(adjacency.keys())[:n_qubits]
         qubit_set = set(available_qubits)
         edges = [(u, v) for u, v in raw_edges if u in qubit_set and v in qubit_set]
         return topology_type, entangling_gate, edges
@@ -136,19 +138,22 @@ def _select_native_gate(backend_info: BackendInfo) -> EntanglingGate:
     """Select the best available native entangling gate."""
     # Try to get basis gates from backend info
     basis_gates = resolve_basis_gates(backend_info)
+    # ``resolve_basis_gates`` normalises to uppercase, but a few callers pass
+    # custom backends with mixed case — be case-insensitive on lookup.
+    basis_lower = {g.lower() for g in basis_gates}
 
     # Check for native gates in priority order
     gate_priority = ["cz", "ecr", "cx", "cnot", "iswap"]
 
     for gate in gate_priority:
-        if gate in basis_gates:
-            if gate in ("cz",):
+        if gate in basis_lower:
+            if gate == "cz":
                 return EntanglingGate.CZ
-            elif gate in ("ecr",):
+            elif gate == "ecr":
                 return EntanglingGate.CNOT  # ECR is similar to CNOT
             elif gate in ("cx", "cnot"):
                 return EntanglingGate.CNOT
-            elif gate in ("iswap",):
+            elif gate == "iswap":
                 return EntanglingGate.ISWAP
 
     # Default to CNOT

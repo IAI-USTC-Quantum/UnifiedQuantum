@@ -148,7 +148,6 @@ def xeb_cmd(
     try:
         from uniqc.backend_adapter.task.adapters import DummyAdapter, OriginQAdapter
 
-        adapter_kwargs: dict[str, Any] = {}
         chip_char = None
         if backend in ("dummy", "dummy:local", "dummy:local:simulator"):
             adapter = DummyAdapter()
@@ -292,7 +291,7 @@ def readout_cmd(
         print_info("Calibrating 1q readout...")
         for q in qubits:
             r = calibrator.calibrate_1q(q)
-            results[f"1q_q{q}"] = r
+            results[f"1q_q{q}"] = r.to_dict() if hasattr(r, "to_dict") else r
             console.print(f"  Qubit {q}: assignment fidelity = {r['assignment_fidelity']:.5f}")
 
     if readout_type in ("2q", "both"):
@@ -311,7 +310,7 @@ def readout_cmd(
         print_info(f"Calibrating 2q readout for pairs: {pairs}")
         for pu, pv in pairs:
             r = calibrator.calibrate_2q(pu, pv)
-            results[f"2q_{pu}_{pv}"] = r
+            results[f"2q_{pu}_{pv}"] = r.to_dict() if hasattr(r, "to_dict") else r
             console.print(f"  Pair ({pu},{pv}): assignment fidelity = {r['assignment_fidelity']:.5f}")
 
     print_success("Readout calibration complete!")

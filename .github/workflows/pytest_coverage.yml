@@ -69,13 +69,58 @@ jobs:
         uv pip install --system ".[all]" --no-build-isolation
 
     - name: Install test dependencies
-      run: uv pip install --system pytest pytest-cov
+      run: uv pip install --system pytest pytest-cov httpx
 
-    - name: Run tests without coverage first (avoid dill serialization issue with qiskit+torchquantum)
-      run: pytest uniqc/test/ -v --no-cov -m "not cloud"
+    # NOTE: torchquantum is intentionally NOT installed until after the main
+    # qiskit/dill-sensitive suite has finished. Installing torchquantum brings
+    # `dill` as a transitive dep, and once `dill` is importable, qiskit's
+    # pickle path for `qiskit.circuit.Qubit` fails with
+    #   "Tried to instantiate class 'Qubit._from_owned', but it does not exist!
+    #    Ensure that it is registered via torch::class_"
+    # in test_transpiler_qiskit. Running the qiskit tests first in a
+    # dill-free environment side-steps the issue.
 
-    - name: Run tests with coverage (for coverage report only)
-      run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v --no-cov-on-fail -m "not cloud" || true
+    - name: Run non-torchquantum tests (dill-free environment)
+      run: |
+        pytest uniqc/test/ -v --no-cov -m "not cloud" \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py
+
+    - name: Run non-torchquantum tests with coverage (dill-free environment)
+      run: |
+        pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml \
+          -v --no-cov-on-fail -m "not cloud" \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py \
+          || true
+
+    - name: Install torchquantum (fork; not installable from PyPI)
+      # See the NOTE above: this install brings `dill`, which is incompatible
+      # with the qiskit transpiler tests. We install it *after* the main pytest
+      # runs so the dill-sensitive suite stays clean.
+      run: |
+        uv pip install --system \
+          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
+
+    - name: Run torchquantum-touching tests
+      run: |
+        pytest \
+          uniqc/test/adapter/test_tq_algorithms.py \
+          uniqc/test/simulator/test_torchquantum_simulator.py \
+          uniqc/test/simulator/test_simulator_factory.py \
+          -v --no-cov -m "not cloud"
+
+    - name: Run torchquantum-touching tests with coverage (append)
+      run: |
+        pytest \
+          uniqc/test/adapter/test_tq_algorithms.py \
+          uniqc/test/simulator/test_torchquantum_simulator.py \
+          uniqc/test/simulator/test_simulator_factory.py \
+          --cov=uniqc --cov-append --cov-report=term-missing --cov-report=xml \
+          -v --no-cov-on-fail -m "not cloud" \
+          || true
 
     - name: Upload coverage report
       if: always()

@@ -4,3 +4,20 @@ coverage:
       default:
         target: auto
         threshold: 5%
+
+# Mirror the [tool.coverage.run] omit list in pyproject.toml so the headline
+# Codecov number reflects production code only.
+ignore:
+  - "uniqc/test/**"
+  - "uniqc/_version.py"
+  - "uniqc/**/__init__.py"
+  - "UniqcCpp/**"
+  - "frontend/**"
+  - "docs/**"
+  - "examples/**"
+  - "scripts/**"
+  - "site/**"
+  - "timeline_plot/**"
+  - "example-exec-logs/**"
+  - "conftest.py"
+  - "setup.py"

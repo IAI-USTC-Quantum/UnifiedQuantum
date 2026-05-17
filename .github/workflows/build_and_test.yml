@@ -105,13 +105,43 @@ jobs:
 
     - name: Install dev dependencies
       run: |
-        uv pip install --system pytest pytest-cov ruff
+        uv pip install --system pytest pytest-cov ruff httpx
 
-    - name: Run tests with deprecation monitoring
+    # NOTE: torchquantum is intentionally NOT installed until after the main
+    # qiskit/dill-sensitive suite has finished. Installing torchquantum brings
+    # `dill` as a transitive dep, and once `dill` is importable, qiskit's
+    # pickle path for `qiskit.circuit.Qubit` fails in test_transpiler_qiskit.
+    # Running the qiskit tests first in a dill-free environment side-steps it.
+
+    - name: Run non-torchquantum tests with deprecation monitoring (dill-free)
+      shell: bash
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
-        pytest uniqc/test/ -v --tb=short -m "not cloud"
+        pytest uniqc/test/ -v --tb=short -m "not cloud" \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py
+
+    - name: Install torchquantum (fork; Linux only, not installable from PyPI)
+      if: runner.os == 'Linux'
+      shell: bash
+      # See the NOTE above: this install brings `dill`, which is incompatible
+      # with the qiskit transpiler tests. Install after the main pytest runs.
+      run: |
+        uv pip install --system \
+          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
+
+    - name: Run torchquantum-touching tests in a separate process
+      shell: bash
+      env:
+        PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
+      run: |
+        pytest \
+          uniqc/test/adapter/test_tq_algorithms.py \
+          uniqc/test/simulator/test_torchquantum_simulator.py \
+          uniqc/test/simulator/test_simulator_factory.py \
+          -v --tb=short -m "not cloud"
 
     - name: Check for deprecation warnings (fail on error)
       if: runner.os == 'Linux'
