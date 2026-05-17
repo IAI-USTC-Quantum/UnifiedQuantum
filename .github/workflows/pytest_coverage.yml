@@ -80,11 +80,42 @@ jobs:
         uv pip install --system \
           "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
-    - name: Run tests without coverage first (avoid dill serialization issue with qiskit+torchquantum)
-      run: pytest uniqc/test/ -v --no-cov -m "not cloud"
+    - name: Run non-torchquantum tests (qiskit dill pickling breaks once torch is imported)
+      # Importing torchquantum registers C++ classes that conflict with qiskit's
+      # dill-based pickling of Qubit objects (test_transpiler_qiskit). Run the
+      # qiskit/dill-sensitive suite in a torch-free interpreter first.
+      run: |
+        pytest uniqc/test/ -v --no-cov -m "not cloud" \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py
 
-    - name: Run tests with coverage (for coverage report only)
-      run: pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml -v --no-cov-on-fail -m "not cloud" || true
+    - name: Run torchquantum-touching tests in a separate process
+      run: |
+        pytest \
+          uniqc/test/adapter/test_tq_algorithms.py \
+          uniqc/test/simulator/test_torchquantum_simulator.py \
+          uniqc/test/simulator/test_simulator_factory.py \
+          -v --no-cov -m "not cloud"
+
+    - name: Run non-torchquantum tests with coverage
+      run: |
+        pytest uniqc/test/ --cov=uniqc --cov-report=term-missing --cov-report=xml \
+          -v --no-cov-on-fail -m "not cloud" \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py \
+          || true
+
+    - name: Run torchquantum-touching tests with coverage (append)
+      run: |
+        pytest \
+          uniqc/test/adapter/test_tq_algorithms.py \
+          uniqc/test/simulator/test_torchquantum_simulator.py \
+          uniqc/test/simulator/test_simulator_factory.py \
+          --cov=uniqc --cov-append --cov-report=term-missing --cov-report=xml \
+          -v --no-cov-on-fail -m "not cloud" \
+          || true
 
     - name: Upload coverage report
       if: always()
