@@ -20,6 +20,7 @@ from __future__ import annotations
 
 __all__ = ["normalize_originq", "normalize_quafu", "normalize_ibm", "normalize_dummy"]
 
+import warnings
 from typing import Any, Dict, Optional
 
 from .result_types import UnifiedResult
@@ -33,16 +34,31 @@ def normalize_originq(
 ) -> UnifiedResult:
     """Normalize OriginQ Cloud result format.
 
-    OriginQ returns results in the format:
+    OriginQ returns results either in the legacy probability format::
+
         {'key': ['0x0', '0x1', ...], 'value': [0.5, 0.3, ...]}
 
-    where keys are hexadecimal bitstrings and values are probabilities.
+    where keys are hexadecimal bitstrings and values are probabilities, or
+    as a plain counts dict::
+
+        {0: 100, 1: 200, 7: 50}   # int outcome -> shot count
+        {'0x0': 100, '0x1': 200}  # hex string outcome -> shot count
 
     Args:
-        raw: Raw result dict from OriginQ Cloud API.
+        raw: Raw result dict from OriginQ Cloud API. Either the
+            ``{"key": [...], "value": [...]}`` probability form or a flat
+            counts dict mapping integer/hex/binary outcomes to shot counts.
         task_id: Task identifier.
-        shots: Number of shots (default 1000).
-        n_qubits: Number of qubits. If None, inferred from keys.
+        shots: Number of shots (default 1000). Ignored when ``raw`` is a
+            counts dict (in which case the sum of counts is used).
+        n_qubits: Number of qubits in the source circuit. If ``None`` the
+            width is inferred from the highest observed integer outcome via
+            :meth:`int.bit_length`, which is unsafe for sparse distributions
+            where the most-significant qubits happen to read ``0`` (the
+            resulting bitstrings will be shorter than the true register
+            width). Passing the explicit ``n_qubits`` from
+            ``circuit.qubit_num`` is strongly preferred and a
+            :class:`UserWarning` is emitted when it is omitted.
 
     Returns:
         UnifiedResult with normalized probabilities and counts.
@@ -53,8 +69,18 @@ def normalize_originq(
         >>> print(result.probabilities)
         {'00': 0.5, '11': 0.5}
     """
-    keys = raw.get("key", [])
-    values = raw.get("value", [])
+    is_probability_form = isinstance(raw, dict) and "key" in raw and "value" in raw
+
+    if is_probability_form:
+        keys = list(raw.get("key", []))
+        values = list(raw.get("value", []))
+    elif isinstance(raw, dict):
+        # Plain counts dict: {outcome: count}
+        keys = list(raw.keys())
+        values = list(raw.values())
+    else:
+        keys = []
+        values = []
 
     if not keys:
         return UnifiedResult.from_probabilities(
@@ -65,25 +91,67 @@ def normalize_originq(
             raw_result=raw,
         )
 
+    def _to_int(outcome: Any) -> int:
+        if isinstance(outcome, int):
+            return outcome
+        text = str(outcome).strip()
+        if text.startswith(("0x", "0X")):
+            return int(text, 16)
+        if text.startswith(("0b", "0B")):
+            return int(text, 2)
+        # Bare binary string (only 0/1 chars and at least one char)
+        if text and set(text) <= {"0", "1"}:
+            return int(text, 2)
+        # Decimal fallback
+        return int(text)
+
     # Determine number of qubits if not provided
     if n_qubits is None:
-        # Find max bitstring length from hex keys
-        max_val = max((int(k, 16) for k in keys), default=0)
+        warnings.warn(
+            "normalize_originq called without explicit n_qubits; "
+            "inferring width from max(outcome).bit_length() loses high-order "
+            "zero qubits for sparse distributions. Pass n_qubits=circuit.qubit_num.",
+            UserWarning,
+            stacklevel=2,
+        )
+        max_val = 0
+        for k in keys:
+            try:
+                max_val = max(max_val, _to_int(k))
+            except (ValueError, TypeError):
+                continue
         n_qubits = max(1, max_val.bit_length())
 
-    # Convert hex keys to binary bitstrings
-    probs: Dict[str, float] = {}
-    for hex_key, prob in zip(keys, values):
+    if is_probability_form:
+        probs: Dict[str, float] = {}
+        for outcome, prob in zip(keys, values, strict=False):
+            try:
+                int_val = _to_int(outcome)
+                bin_key = bin(int_val)[2:].zfill(n_qubits)
+                probs[bin_key] = float(prob)
+            except (ValueError, TypeError):
+                continue
+
+        return UnifiedResult.from_probabilities(
+            probabilities=probs,
+            shots=shots,
+            platform="originq",
+            task_id=task_id,
+            raw_result=raw,
+        )
+
+    # Counts form
+    counts: Dict[str, int] = {}
+    for outcome, count in zip(keys, values, strict=False):
         try:
-            int_val = int(hex_key, 16) if isinstance(hex_key, str) else int(hex_key)
+            int_val = _to_int(outcome)
             bin_key = bin(int_val)[2:].zfill(n_qubits)
-            probs[bin_key] = float(prob)
+            counts[bin_key] = counts.get(bin_key, 0) + int(count)
         except (ValueError, TypeError):
             continue
 
-    return UnifiedResult.from_probabilities(
-        probabilities=probs,
-        shots=shots,
+    return UnifiedResult.from_counts(
+        counts=counts,
         platform="originq",
         task_id=task_id,
         raw_result=raw,

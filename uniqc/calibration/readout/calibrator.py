@@ -10,12 +10,13 @@ from __future__ import annotations
 import pathlib
 import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from uniqc.circuit_builder import Circuit
 
-if False:
+if TYPE_CHECKING:
     from uniqc.backend_adapter.task.adapters.base import QuantumAdapter
+    from uniqc.calibration.results import ReadoutCalibrationResult
 
 __all__ = ["ReadoutCalibrator"]
 
