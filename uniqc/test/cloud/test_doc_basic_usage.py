@@ -145,11 +145,6 @@ class TestSubmitTaskDummyBackends:
         counts = _counts_dict(result)
         assert isinstance(counts, dict)
 
-    @pytest.mark.xfail(
-        reason="Pre-existing router bug: KeyError in _route_with_fidelity for "
-        "tiny circuits on large chips (independent of the doc/strict-format fix).",
-        strict=False,
-    )
     def test_chip_backed_dummy(self):
         task_id = submit_task(
             _bell_circuit(),
