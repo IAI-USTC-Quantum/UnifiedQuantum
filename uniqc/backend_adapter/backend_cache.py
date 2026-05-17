@@ -129,7 +129,8 @@ def cache_info(cache_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for platform_str, entry in cache.items():
         updated_at = entry.get("updated_at", 0)
-        age_seconds = now - updated_at
+        # Clamp at 0 to guard against tiny clock-skew negatives (see chip_cache).
+        age_seconds = max(0.0, now - updated_at)
         result[platform_str] = {
             "updated_at": updated_at,
             "age_seconds": age_seconds,

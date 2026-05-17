@@ -162,7 +162,10 @@ def chip_cache_info(
             continue
         key = chip.full_id
         mtime = path.stat().st_mtime
-        age_seconds = time.time() - mtime
+        # Clamp at 0: on Windows, st_mtime can be recorded with finer
+        # precision than time.time(), making the difference slightly negative
+        # immediately after a write.
+        age_seconds = max(0.0, time.time() - mtime)
         info[key] = {
             "platform": chip.platform.value,
             "chip_name": chip.chip_name,
