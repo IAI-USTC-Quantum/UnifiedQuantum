@@ -69,7 +69,16 @@ jobs:
         uv pip install --system ".[all]" --no-build-isolation
 
     - name: Install test dependencies
-      run: uv pip install --system pytest pytest-cov
+      run: uv pip install --system pytest pytest-cov httpx
+
+    - name: Install torchquantum (fork; not installable from PyPI)
+      # The upstream torchquantum on PyPI (0.1.8, 2022) pins qiskit<1.0 and is
+      # unusable here. We use a maintained fork with optional qiskit deps.
+      # This cannot live in the `[all]` extra because PyPI rejects published
+      # distributions whose metadata contains direct URL references.
+      run: |
+        uv pip install --system \
+          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
     - name: Run tests without coverage first (avoid dill serialization issue with qiskit+torchquantum)
       run: pytest uniqc/test/ -v --no-cov -m "not cloud"

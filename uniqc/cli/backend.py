@@ -338,7 +338,7 @@ def show(
         raise typer.Exit(1)  # noqa: B904
 
     if format == "json":
-        console.print_json(backend.to_dict())
+        console.print_json(data=backend.to_dict())
         return
 
     _print_backend_detail(backend)

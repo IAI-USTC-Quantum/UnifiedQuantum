@@ -105,7 +105,17 @@ jobs:
 
     - name: Install dev dependencies
       run: |
-        uv pip install --system pytest pytest-cov ruff
+        uv pip install --system pytest pytest-cov ruff httpx
+
+    - name: Install torchquantum (fork; Linux only, not installable from PyPI)
+      if: runner.os == 'Linux'
+      # The upstream torchquantum on PyPI (0.1.8, 2022) pins qiskit<1.0 and is
+      # unusable here. We use a maintained fork with optional qiskit deps.
+      # This cannot live in the `[all]` extra because PyPI rejects published
+      # distributions whose metadata contains direct URL references.
+      run: |
+        uv pip install --system \
+          "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
     - name: Run tests with deprecation monitoring
       env:
