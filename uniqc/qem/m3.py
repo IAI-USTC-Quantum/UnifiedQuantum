@@ -179,12 +179,14 @@ class M3Mitigator:
             C_inv = np.eye(n)
 
         n_corr = C_inv @ n_obs
-        # Renormalize to preserve total
-        if n_corr.sum() > 0:
-            n_corr = n_corr * (total / n_corr.sum())
-
-        # Clip negative values (can occur with ill-conditioned matrices)
+        # Clip first (push negatives to 0), then rescale so the corrected
+        # counts sum to the original total. Doing it in the opposite order
+        # would re-introduce a mismatch with ``total`` whenever clipping
+        # removed mass.
         n_corr = np.clip(n_corr, 0, None)
+        s = n_corr.sum()
+        if s > 0:
+            n_corr = n_corr * (total / s)
 
         return {int(i): float(v) for i, v in enumerate(n_corr)}
 

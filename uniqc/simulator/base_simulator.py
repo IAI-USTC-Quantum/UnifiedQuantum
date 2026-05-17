@@ -347,8 +347,8 @@ class BaseNoisySimulator(BaseSimulator):
 
         result_binary_list = [bit for bit in result_binary]
         # decide each measurement qubit has error or not
-        r = random.random()
         for i in range(measure_length):
+            r = random.random()
             measure_qubit_index = measure_qubit[i]
             measure_to = result_binary_list[i]
             error_rate01 = self.readout_error.get(measure_qubit_index, [0, 0])
