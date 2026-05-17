@@ -10,6 +10,7 @@ from ``uniqc.config`` first so that patching ``uniqc.config.CONFIG_FILE``
 propagates here.  All other symbols are then re-exported from ``uniqc.config``.
 """
 
+from uniqc.config import *  # noqa: F401,F403
 from uniqc.config import (  # noqa: F401  (local alias so both modules share the same binding)
     CONFIG_DIR,
     CONFIG_FILE,
@@ -18,5 +19,3 @@ from uniqc.config import (  # noqa: F401  (local alias so both modules share the
     PLATFORM_REQUIRED_FIELDS,
     SUPPORTED_PLATFORMS,
 )
-
-from uniqc.config import *  # noqa: F401,F403

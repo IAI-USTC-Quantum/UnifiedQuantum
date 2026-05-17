@@ -81,9 +81,7 @@ class XEBenchmarker:
             ``XEBResult`` with per-layer fidelity ``r``.
         """
         circuits = generate_1q_xeb_circuits(qubit, depths, n_circuits, seed=self.seed)
-        fidelity_by_depth = _mean_fidelities_by_depth(
-            circuits, depths, n_circuits, self
-        )
+        fidelity_by_depth = _mean_fidelities_by_depth(circuits, depths, n_circuits, self)
         fit = fit_exponential(depths, fidelity_by_depth)
 
         result = XEBResult(
@@ -247,9 +245,7 @@ class XEBenchmarker:
         except Exception:
             return None
 
-    def _get_noisy_probs(
-        self, originir: str, measured_qubits: list[int]
-    ) -> np.ndarray | None:
+    def _get_noisy_probs(self, originir: str, measured_qubits: list[int]) -> np.ndarray | None:
         """Get noisy probability distribution.
 
         Tries adapter.simulate_pmeasure (DummyAdapter with chip characterization)
@@ -415,15 +411,10 @@ def _circuit_fidelities(circuits: list, benchmarker: XEBenchmarker) -> list[floa
         return [_circuit_fidelity(c, benchmarker) for c in circuits]
 
     originirs = [c.originir for c in circuits]
-    measured_qubits_list = [
-        list(getattr(c, "measure_list", None) or range(c.qubit_num))
-        for c in circuits
-    ]
+    measured_qubits_list = [list(getattr(c, "measure_list", None) or range(c.qubit_num)) for c in circuits]
     counts_list = benchmarker._submit_batch_and_wait_counts(originirs)
     if len(counts_list) != len(circuits):
-        raise RuntimeError(
-            f"Batch returned {len(counts_list)} result(s) for {len(circuits)} circuit(s)"
-        )
+        raise RuntimeError(f"Batch returned {len(counts_list)} result(s) for {len(circuits)} circuit(s)")
 
     fidelities = []
     for originir, counts, measured_qubits in zip(originirs, counts_list, measured_qubits_list, strict=True):
@@ -450,9 +441,7 @@ def _circuit_fidelities(circuits: list, benchmarker: XEBenchmarker) -> list[floa
     return fidelities
 
 
-def _apply_readout_em_to_probs(
-    probs_arr: np.ndarray, readout_em: Any, measured_qubits: list[int]
-) -> np.ndarray:
+def _apply_readout_em_to_probs(probs_arr: np.ndarray, readout_em: Any, measured_qubits: list[int]) -> np.ndarray:
     """Apply readout EM confusion matrix to a probability vector.
 
     Works in probability space (exact pmeasure output) rather than counts,

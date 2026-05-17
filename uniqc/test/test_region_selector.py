@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from uniqc.backend_adapter.backend_info import Platform
+from uniqc.backend_adapter.region_selector import RegionSelector
 from uniqc.cli.chip_info import (
     ChipCharacterization,
     ChipGlobalInfo,
@@ -11,7 +12,6 @@ from uniqc.cli.chip_info import (
     TwoQubitData,
     TwoQubitGateData,
 )
-from uniqc.backend_adapter.region_selector import RegionSelector
 
 # ---------------------------------------------------------------------------
 # Fixtures

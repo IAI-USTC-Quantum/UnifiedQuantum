@@ -43,7 +43,6 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.config import load_quafu_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quafu
 from uniqc.cli.chip_info import (
     ChipCharacterization,
@@ -52,6 +51,7 @@ from uniqc.cli.chip_info import (
     TwoQubitData,
     TwoQubitGateData,
 )
+from uniqc.config import load_quafu_config
 
 if TYPE_CHECKING:
     pass  # type hints use string annotations via `from __future__ import annotations`
@@ -233,10 +233,7 @@ def _extract_quafu_calibration(
         TwoQubitData(
             qubit_u=u,
             qubit_v=v,
-            gates=tuple(
-                TwoQubitGateData(gate=gate, fidelity=fidelity)
-                for gate, fidelity in sorted(gates.items())
-            ),
+            gates=tuple(TwoQubitGateData(gate=gate, fidelity=fidelity) for gate, fidelity in sorted(gates.items())),
         )
         for (u, v), gates in sorted(pair_gates.items())
     )
@@ -289,10 +286,7 @@ def _compute_quafu_fidelity(chip_info: dict[str, Any]) -> dict[str, Any]:
     t1s = [float(item.t1) for item in calibration.single_qubit_data if item.t1 is not None]
     t2s = [float(item.t2) for item in calibration.single_qubit_data if item.t2 is not None]
     tq_fids = [
-        float(gate.fidelity)
-        for item in calibration.two_qubit_data
-        for gate in item.gates
-        if gate.fidelity is not None
+        float(gate.fidelity) for item in calibration.two_qubit_data for gate in item.gates if gate.fidelity is not None
     ]
 
     return {
@@ -418,12 +412,8 @@ class QuafuAdapter(QuantumAdapter):
                     )
                     entry["available_qubits"] = list(calibration.available_qubits)
                     entry["topology"] = [[edge.u, edge.v] for edge in calibration.connectivity]
-                    entry["per_qubit_calibration"] = [
-                        item.to_dict() for item in calibration.single_qubit_data
-                    ]
-                    entry["per_pair_calibration"] = [
-                        item.to_dict() for item in calibration.two_qubit_data
-                    ]
+                    entry["per_qubit_calibration"] = [item.to_dict() for item in calibration.single_qubit_data]
+                    entry["per_pair_calibration"] = [item.to_dict() for item in calibration.two_qubit_data]
                     entry["global_info"] = calibration.global_info.to_dict()
                     entry["calibrated_at"] = datetime.now(timezone.utc).isoformat()
             except Exception:  # noqa: BLE001

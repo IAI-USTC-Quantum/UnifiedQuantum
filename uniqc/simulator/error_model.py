@@ -67,6 +67,7 @@ class BitFlip(ErrorModel):
     Args:
         p: Bit-flip probability.
     """
+
     p: float
 
     def __init__(self, p: float) -> None:
@@ -92,6 +93,7 @@ class PhaseFlip(ErrorModel):
     Args:
         p: Phase-flip probability.
     """
+
     p: float
 
     def __init__(self, p: float) -> None:
@@ -117,6 +119,7 @@ class Depolarizing(ErrorModel):
     Args:
         p: Depolarizing probability.
     """
+
     p: float
 
     def __init__(self, p: float) -> None:
@@ -142,6 +145,7 @@ class TwoQubitDepolarizing(ErrorModel):
     Args:
         p: Depolarizing probability.
     """
+
     p: float
 
     def __init__(self, p: float) -> None:
@@ -170,6 +174,7 @@ class AmplitudeDamping(ErrorModel):
     Args:
         gamma: Damping rate (0 to 1).
     """
+
     gamma: float
 
     def __init__(self, gamma: float) -> None:
@@ -197,6 +202,7 @@ class PauliError1Q(ErrorModel):
         p_y: Probability of Y error.
         p_z: Probability of Z error.
     """
+
     p_x: float
     p_y: float
     p_z: float
@@ -226,6 +232,7 @@ class PauliError2Q(ErrorModel):
     Args:
         ps: List of 15 Pauli error probabilities.
     """
+
     ps: list[float]
 
     def __init__(self, ps: list[float]) -> None:
@@ -254,6 +261,7 @@ class Kraus1Q(ErrorModel):
     Args:
         kraus_ops: List of Kraus operators (2x2 matrices).
     """
+
     kraus_ops: list[list[complex]]
 
     def __init__(self, kraus_ops: list[list[complex]]) -> None:

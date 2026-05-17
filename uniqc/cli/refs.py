@@ -85,8 +85,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Getting started with circuit building",
-            "Use the Python API: from uniqc import Circuit. "
-            "See the docs for a full circuit builder guide.",
+            "Use the Python API: from uniqc import Circuit. See the docs for a full circuit builder guide.",
         ),
         (
             "Show circuit statistics",
@@ -126,8 +125,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Authentication error?",
-            "Run uniqc config validate to check your token, or "
-            "uniqc config set originq.token <YOUR_TOKEN> to set it.",
+            "Run uniqc config validate to check your token, or uniqc config set originq.token <YOUR_TOKEN> to set it.",
         ),
         (
             "Wrong backend?",
@@ -178,8 +176,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Filter by platform",
-            "Filter by platform: uniqc task list --platform originq. "
-            "Supported platforms: originq, quafu, ibm.",
+            "Filter by platform: uniqc task list --platform originq. Supported platforms: originq, quafu, ibm.",
         ),
         (
             "Filter by status",
@@ -271,14 +268,11 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Get your API token",
-            "OriginQ: https://q.本源量子.com\n"
-            "Quafu: https://quafu.baike.scut.cn/\n"
-            "IBM: https://quantum.ibm.com/",
+            "OriginQ: https://q.本源量子.com\nQuafu: https://quafu.baike.scut.cn/\nIBM: https://quantum.ibm.com/",
         ),
         (
             "After configuring",
-            "Run uniqc backend update to fetch available backends, "
-            "then uniqc backend list to pick one for submission.",
+            "Run uniqc backend update to fetch available backends, then uniqc backend list to pick one for submission.",
         ),
         (
             "Multiple profiles",

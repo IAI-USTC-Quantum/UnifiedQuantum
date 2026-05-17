@@ -4,8 +4,8 @@
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.measurement import basis_rotation_measurement
+from uniqc.circuit_builder import Circuit
 
 
 class TestDefaultBehavior:

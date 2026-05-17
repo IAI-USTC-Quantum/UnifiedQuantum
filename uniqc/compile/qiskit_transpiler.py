@@ -6,28 +6,28 @@ for optimizing quantum circuits with configurable topology and gate sets.
 
 __all__ = ["transpile_qasm", "transpile_originir"]
 import qiskit
-from qiskit import QuantumCircuit
 from qiskit.compiler import transpile
-from qiskit.transpiler import CouplingMap
-from qiskit.qasm2 import loads as qasm2_loads
-from qiskit.qasm2 import dumps as qasm2_dumps
 from qiskit.qasm2 import LEGACY_CUSTOM_INSTRUCTIONS
+from qiskit.qasm2 import dumps as qasm2_dumps
+from qiskit.qasm2 import loads as qasm2_loads
+from qiskit.transpiler import CouplingMap
 
 if __name__ == "__main__":
     from _utils import CompilationFailedError
 else:
     from ._utils import CompilationFailedError
 
-from typing import List, Tuple, Union, Optional
-from .converter import convert_qasm_to_oir, convert_oir_to_qasm
+
+from .converter import convert_oir_to_qasm, convert_qasm_to_oir
+
 
 def transpile_qasm(
-    qasm_strings: List[str],
-    topology: List[Union[List[int], Tuple[int, int]]] = None,
+    qasm_strings: list[str],
+    topology: list[list[int] | tuple[int, int]] = None,
     optimization_level: int = 1,
-    basis_gates: Optional[List[str]] = None,
-    initial_layout: Optional[List[int]] = None,
-) -> List[str]:
+    basis_gates: list[str] | None = None,
+    initial_layout: list[int] | None = None,
+) -> list[str]:
     """
     使用指定的拓扑、基本门和优化级别编译一组OPENQASM 2.0线路字符串。
 
@@ -50,10 +50,10 @@ def transpile_qasm(
         ImportError: 如果 Qiskit 未安装。
         QiskitError: 如果输入的 QASM 字符串无效或编译过程中发生错误。
         ValueError: 如果优化级别无效。
-    """        
+    """
     if not qasm_strings:
         return []
-    
+
     if isinstance(qasm_strings, str):
         qasm_strings = [qasm_strings]
         single_circuit = True
@@ -62,7 +62,7 @@ def transpile_qasm(
 
     try:
         if basis_gates is None:
-            basis_gates = ['cz', 'sx', 'rz']
+            basis_gates = ["cz", "sx", "rz"]
 
         if optimization_level not in [0, 1, 2, 3]:
             raise ValueError("Invalid optimization_level. Must be 0, 1, 2, or 3.")
@@ -105,17 +105,20 @@ def transpile_qasm(
     except CompilationFailedError as e:
         raise e
     except ImportError as e:
-        raise CompilationFailedError("Error: Qiskit is not installed. Please install it using 'pip install qiskit'") from e
+        raise CompilationFailedError(
+            "Error: Qiskit is not installed. Please install it using 'pip install qiskit'"
+        ) from e
     except qiskit.exceptions.QiskitError as e:
         raise CompilationFailedError(f"An error occurred during Qiskit operation: {e}") from e
     except Exception as e:
         raise CompilationFailedError(f"An unexpected error occurred: {e}") from e
 
+
 def transpile_originir(
-        originir_strings: List[str],
-        topology: List[Union[List[int], Tuple[int, int]]] = None,
-        optimization_level: int = 1,
-        basis_gates: Optional[List[str]] = None,
+    originir_strings: list[str],
+    topology: list[list[int] | tuple[int, int]] = None,
+    optimization_level: int = 1,
+    basis_gates: list[str] | None = None,
 ):
     """
     使用指定的拓扑、基本门和优化级别编译一组 OriginIR 线路字符串。
@@ -138,11 +141,11 @@ def transpile_originir(
     Raises:
         ImportError: 如果 Qiskit 未安装。
         QiskitError: 如果输入的 OriginIR 字符串无效或编译过程中发生错误。
-        ValueError: 如果优化级别无效。        
+        ValueError: 如果优化级别无效。
     """
     if not originir_strings:
         return []
-    
+
     if isinstance(originir_strings, str):
         originir_strings = [originir_strings]
         single_circuit = True
@@ -155,10 +158,7 @@ def transpile_originir(
         qasm_strs.append(qasm_str)
 
     transpiled_qasm_strs = transpile_qasm(
-        qasm_strs,
-        topology=topology,
-        optimization_level=optimization_level,
-        basis_gates=basis_gates
+        qasm_strs, topology=topology, optimization_level=optimization_level, basis_gates=basis_gates
     )
 
     output_originir_strs = []
@@ -170,7 +170,6 @@ def transpile_originir(
         return output_originir_strs[0]
     else:
         return output_originir_strs
-                 
 
 
 # --- 示例用法 ---
@@ -199,12 +198,12 @@ if __name__ == "__main__":
         cz q[0], q[1]; // 使用 CZ 门
         sx q[1];      // 使用 SX 门
         measure q -> c;
-        """
+        """,
     ]
 
     # 2. 定义目标拓扑结构 (例如，一个简单的线性链)
     # 0 -- 1 -- 2
-    custom_topology = [[0, 1], [1, 0], [1, 2], [2, 1]] # 需要双向连接
+    custom_topology = [[0, 1], [1, 0], [1, 2], [2, 1]]  # 需要双向连接
 
     # 3. 调用包装函数
     try:
@@ -217,7 +216,7 @@ if __name__ == "__main__":
 
         print("\n--- Transpiled QASM (Opt Level 1) ---")
         for i, qasm_out in enumerate(transpiled_qasm_list_opt1):
-            print(f"--- Circuit {i+1} ---")
+            print(f"--- Circuit {i + 1} ---")
             print(qasm_out)
             print("-" * 20)
 
@@ -225,16 +224,15 @@ if __name__ == "__main__":
         transpiled_qasm_list_opt3 = transpile_qasm(
             qasm_strings=qasm_input_list,
             topology=custom_topology,
-            optimization_level=3 # 更高的优化级别
+            optimization_level=3,  # 更高的优化级别
             # 使用默认 basis_gates ['cz', 'sx', 'rz']
         )
 
         print("\n--- Transpiled QASM (Opt Level 3) ---")
         for i, qasm_out in enumerate(transpiled_qasm_list_opt3):
-            print(f"--- Circuit {i+1} ---")
+            print(f"--- Circuit {i + 1} ---")
             print(qasm_out)
             print("-" * 20)
 
     except Exception as e:
         print(f"An error occurred during the example execution: {e}")
-

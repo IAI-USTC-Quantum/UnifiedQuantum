@@ -12,7 +12,6 @@ import numpy as np
 from uniqc.circuit_builder.qcircuit import Circuit
 from uniqc.exceptions import NotMatrixableError  # noqa: F401 — re-export
 
-
 _I = np.eye(2, dtype=np.complex128)
 _X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
 _Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)

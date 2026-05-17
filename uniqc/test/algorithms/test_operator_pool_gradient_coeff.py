@@ -14,24 +14,19 @@ finite-difference for two distinct non-unit coefficients.
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.ansatz._operator_pool import compute_operator_gradient
 from uniqc.algorithms.core.ansatz._pauli_unitary import _apply_cost_unitary
 from uniqc.algorithms.core.measurement.pauli_expectation import pauli_expectation
+from uniqc.circuit_builder import Circuit
 
 
-def _energy_at(base: Circuit, op_pauli: str, op_coeff: float,
-               hamiltonian, gamma: float, n_qubits: int) -> float:
+def _energy_at(base: Circuit, op_pauli: str, op_coeff: float, hamiltonian, gamma: float, n_qubits: int) -> float:
     c = Circuit(n_qubits)
     c.add_circuit(base)
     _apply_cost_unitary(c, [(op_pauli, op_coeff)], gamma)
-    return sum(
-        h_coeff * pauli_expectation(c, h_pauli, shots=None)
-        for h_pauli, h_coeff in hamiltonian
-    )
+    return sum(h_coeff * pauli_expectation(c, h_pauli, shots=None) for h_pauli, h_coeff in hamiltonian)
 
 
 @pytest.mark.parametrize("coeff", [0.7, 2.0])
@@ -45,9 +40,7 @@ def test_operator_gradient_matches_finite_difference(coeff: float) -> None:
     op_pauli = "X0X1"
     hamiltonian = [("Z0Z1", 1.0), ("X0", 0.3)]
 
-    analytic = compute_operator_gradient(
-        base, (op_pauli, coeff), hamiltonian, shots=None, n_qubits=n_qubits
-    )
+    analytic = compute_operator_gradient(base, (op_pauli, coeff), hamiltonian, shots=None, n_qubits=n_qubits)
 
     eps = 1e-4
     e_plus = _energy_at(base, op_pauli, coeff, hamiltonian, +eps, n_qubits)
@@ -55,6 +48,4 @@ def test_operator_gradient_matches_finite_difference(coeff: float) -> None:
     fd = (e_plus - e_minus) / (2 * eps)
 
     # The function returns |gradient|; finite difference is signed.
-    assert abs(analytic - abs(fd)) < 1e-3, (
-        f"coeff={coeff}: analytic={analytic}, |fd|={abs(fd)}"
-    )
+    assert abs(analytic - abs(fd)) < 1e-3, f"coeff={coeff}: analytic={analytic}, |fd|={abs(fd)}"

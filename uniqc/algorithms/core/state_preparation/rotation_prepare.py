@@ -6,16 +6,17 @@ one at a time, then reverses the gate sequence.
 
 __all__ = ["rotation_prepare"]
 
-from typing import List, Optional
+
 import numpy as np
-from uniqc.circuit_builder import Circuit
+
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def _apply_multiplexed_ry(
     circuit: Circuit,
     target: int,
-    controls: List[int],
+    controls: list[int],
     angles: np.ndarray,
 ) -> None:
     """Apply a uniformly-controlled Ry (multiplexed Ry).
@@ -31,14 +32,12 @@ def _apply_multiplexed_ry(
             circuit.ry(target, float(angles[0]))
         return
 
-    assert len(angles) == 2**n, (
-        f"Expected {2**n} angles for {n} controls, got {len(angles)}"
-    )
+    assert len(angles) == 2**n, f"Expected {2**n} angles for {n} controls, got {len(angles)}"
 
     # Recursive decomposition:
     # Split angles into even (k with MSB=0) and odd (k with MSB=1)
     even_angles = angles[0::2]  # control[0] = 0
-    odd_angles = angles[1::2]   # control[0] = 1
+    odd_angles = angles[1::2]  # control[0] = 1
 
     # Compute sum and difference
     sum_angles = (even_angles + odd_angles) / 2.0
@@ -55,7 +54,7 @@ def _apply_multiplexed_ry(
 def _apply_multiplexed_rz(
     circuit: Circuit,
     target: int,
-    controls: List[int],
+    controls: list[int],
     angles: np.ndarray,
 ) -> None:
     """Apply a uniformly-controlled Rz (multiplexed Rz)."""
@@ -66,9 +65,7 @@ def _apply_multiplexed_rz(
             circuit.rz(target, float(angles[0]))
         return
 
-    assert len(angles) == 2**n, (
-        f"Expected {2**n} angles for {n} controls, got {len(angles)}"
-    )
+    assert len(angles) == 2**n, f"Expected {2**n} angles for {n} controls, got {len(angles)}"
 
     even_angles = angles[0::2]
     odd_angles = angles[1::2]
@@ -85,7 +82,7 @@ def _apply_multiplexed_rz(
 def rotation_prepare(
     circuit: Circuit,
     target_vector: np.ndarray,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
 ) -> None:
     """Prepare an arbitrary quantum state from a complex amplitude vector.
 
@@ -124,7 +121,9 @@ def rotation_prepare(
 
     n = int(round(np.log2(d)))
     if 2**n != d:
-        raise ValueError(format_enriched_message(f"target_vector length ({d}) must be a power of 2", "circuit_validation"))
+        raise ValueError(
+            format_enriched_message(f"target_vector length ({d}) must be a power of 2", "circuit_validation")
+        )
 
     norm = np.linalg.norm(target_vector)
     if norm < 1e-15:
@@ -146,7 +145,7 @@ def rotation_prepare(
 
     for level in range(n):
         q = qubits[level]
-        controls = qubits[level + 1:]
+        controls = qubits[level + 1 :]
         n_ctrl = len(controls)
         n_blocks = 2**n_ctrl
 
@@ -160,8 +159,8 @@ def rotation_prepare(
         for k in range(n_blocks):
             # Reconstruct full indices: control pattern k determines bits
             # for qubits level+1..n-1, and the current qubit (level) varies.
-            idx_even = 2 * k      # level-th bit = 0
-            idx_odd = 2 * k + 1   # level-th bit = 1
+            idx_even = 2 * k  # level-th bit = 0
+            idx_odd = 2 * k + 1  # level-th bit = 1
 
             a_e = alpha[idx_even]
             a_o = alpha[idx_odd]
@@ -176,8 +175,8 @@ def rotation_prepare(
             if r_e > 1e-15 and r_o > 1e-15:
                 rz_angles[k] = np.angle(a_o) - np.angle(a_e)
 
-        gates_reverse.append(('rz', q, controls, rz_angles.copy()))
-        gates_reverse.append(('ry', q, controls, ry_angles.copy()))
+        gates_reverse.append(("rz", q, controls, rz_angles.copy()))
+        gates_reverse.append(("ry", q, controls, ry_angles.copy()))
 
         # Update alpha: collapse pairs
         new_alpha = np.zeros(n_blocks, dtype=complex)
@@ -189,14 +188,12 @@ def rotation_prepare(
             # Use the larger-magnitude element's phase as reference
             # to avoid phase noise when one amplitude is near zero
             ref = a_e if abs(a_e) >= abs(a_o) else a_o
-            new_alpha[k] = np.sqrt(
-                abs(a_e)**2 + abs(a_o)**2
-            ) * np.exp(1j * np.angle(ref))
+            new_alpha[k] = np.sqrt(abs(a_e) ** 2 + abs(a_o) ** 2) * np.exp(1j * np.angle(ref))
         alpha = new_alpha
 
     # Apply gates in REVERSE order (preparation = reverse of disentangling)
     for gate_type, q, controls, angles in reversed(gates_reverse):
-        if gate_type == 'ry':
+        if gate_type == "ry":
             _apply_multiplexed_ry(circuit, q, controls, angles)
         else:
             _apply_multiplexed_rz(circuit, q, controls, angles)

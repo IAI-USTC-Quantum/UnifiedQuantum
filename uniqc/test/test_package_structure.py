@@ -31,21 +31,13 @@ ALLOWED_TOP_LEVEL_PACKAGES = {
 
 
 def test_uniqc_root_contains_only_package_boundary_files() -> None:
-    python_files = {
-        path.name
-        for path in PACKAGE_ROOT.iterdir()
-        if path.is_file() and path.suffix == ".py"
-    }
+    python_files = {path.name for path in PACKAGE_ROOT.iterdir() if path.is_file() and path.suffix == ".py"}
 
     assert python_files == ALLOWED_TOP_LEVEL_FILES
 
 
 def test_uniqc_top_level_packages_match_architecture() -> None:
-    packages = {
-        path.name
-        for path in PACKAGE_ROOT.iterdir()
-        if path.is_dir() and (path / "__init__.py").exists()
-    }
+    packages = {path.name for path in PACKAGE_ROOT.iterdir() if path.is_dir() and (path / "__init__.py").exists()}
 
     assert packages == ALLOWED_TOP_LEVEL_PACKAGES
 

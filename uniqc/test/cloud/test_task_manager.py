@@ -12,15 +12,6 @@ from pathlib import Path
 
 import pytest
 
-from uniqc.exceptions import (
-    AuthenticationError,
-    BackendNotFoundError,
-    InsufficientCreditsError,
-    NetworkError,
-    QuotaExceededError,
-    TaskFailedError,
-    TaskNotFoundError,
-)
 from uniqc.backend_adapter.task.adapters.base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS
 from uniqc.backend_adapter.task_manager import (
     TaskInfo,
@@ -34,10 +25,20 @@ from uniqc.backend_adapter.task_manager import (
     list_tasks,
     save_task,
 )
+from uniqc.exceptions import (
+    AuthenticationError,
+    BackendNotFoundError,
+    InsufficientCreditsError,
+    NetworkError,
+    QuotaExceededError,
+    TaskFailedError,
+    TaskNotFoundError,
+)
 
 # =============================================================================
 # Test Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def temp_cache_dir(tmp_path: Path) -> Path:
@@ -62,6 +63,7 @@ def sample_task_info() -> TaskInfo:
 # =============================================================================
 # Test TaskInfo
 # =============================================================================
+
 
 class TestTaskInfo:
     """Tests for TaskInfo dataclass."""
@@ -116,6 +118,7 @@ class TestTaskInfo:
 # =============================================================================
 # Test Cache Management
 # =============================================================================
+
 
 class TestCacheManagement:
     """Tests for cache management functions (SQLite-backed)."""
@@ -203,6 +206,7 @@ class TestCacheManagement:
 # Test Error Mapping
 # =============================================================================
 
+
 class TestErrorMapping:
     """Tests for _map_adapter_error function."""
 
@@ -241,6 +245,7 @@ class TestErrorMapping:
 # Test Adapter Mapping
 # =============================================================================
 
+
 class TestAdapterMapping:
     """Tests for _get_adapter function."""
 
@@ -259,6 +264,7 @@ class TestAdapterMapping:
 # =============================================================================
 # Test TaskManager Class
 # =============================================================================
+
 
 class TestTaskManager:
     """Tests for TaskManager class."""
@@ -300,6 +306,7 @@ class TestTaskManager:
 # Test submit_task
 # =============================================================================
 
+
 class TestSubmitTask:
     """Tests for submit_task function."""
 
@@ -312,6 +319,7 @@ class TestSubmitTask:
 # =============================================================================
 # Test query_task (cloud tests)
 # =============================================================================
+
 
 @pytest.mark.cloud
 class TestQueryTask:
@@ -329,6 +337,7 @@ class TestQueryTask:
 # Test wait_for_result (cloud tests)
 # =============================================================================
 
+
 class TestWaitForResultUnit:
     """Unit tests for wait_for_result using mocks."""
 
@@ -345,6 +354,7 @@ class TestWaitForResultUnit:
 
         # Mock query_task to return the cached task immediately
         import uniqc.backend_adapter.task_manager as tm
+
         monkeypatch.setattr(tm, "query_task", lambda tid: task)
 
         result = wait_for_result("unwrap-test", timeout=1)
@@ -362,14 +372,13 @@ class TestWaitForResultUnit:
         )
 
         import uniqc.backend_adapter.task_manager as tm
+
         monkeypatch.setattr(tm, "query_task", lambda tid: task)
 
         result = wait_for_result("raw-result-test", timeout=1)
         assert result == {"00": 512, "11": 488}
 
-    def test_wait_for_result_timeout_raises_taskfailederror_on_final_failed_query(
-        self, monkeypatch
-    ):
+    def test_wait_for_result_timeout_raises_taskfailederror_on_final_failed_query(self, monkeypatch):
         """Timeout does a final uncached query; raises TaskFailedError if cloud reports FAILED."""
         from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus, wait_for_result
 
@@ -390,6 +399,7 @@ class TestWaitForResultUnit:
                 return mock_final_query(tid)
 
         import uniqc.backend_adapter.task_manager as tm
+
         monkeypatch.setattr(tm, "query_task", mock_query_task)
         # backend_module is imported as `from uniqc import backend as backend_module`
         monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
@@ -412,6 +422,7 @@ class TestWaitForResultUnit:
                 return mock_final_query(tid)
 
         import uniqc.backend_adapter.task_manager as tm
+
         monkeypatch.setattr(tm, "query_task", mock_query_task)
         monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
 
@@ -434,6 +445,7 @@ class TestWaitForResultCloud:
 # =============================================================================
 # Test submit_batch
 # =============================================================================
+
 
 class TestSubmitBatch:
     """Tests for submit_batch function."""

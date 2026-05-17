@@ -3,27 +3,26 @@
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
-from uniqc.simulator import Simulator
 from uniqc.algorithms.core.ansatz import (
+    EntanglementTopology,
+    EntanglingGate,
+    RotationGate,
     hea,
+    hea_param_count,
     hva,
     qaoa_ansatz,
     uccsd_ansatz,
-    hea_param_count,
-    EntanglingGate,
-    EntanglementTopology,
-    RotationGate,
 )
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator import Simulator
 
 
 def _statevector(circuit: Circuit) -> np.ndarray:
-    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
+    sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
     return sim.simulate_statevector(circuit.originir)
 
 
 class TestHEA:
-
     def run_test_basic(self):
         c = hea(n_qubits=3, depth=1)
         assert c.max_qubit + 1 == 3
@@ -52,7 +51,6 @@ class TestHEA:
 
 
 class TestQAOAAnsatz:
-
     def run_test_basic(self):
         H = [("Z0Z1", 1.0)]
         c = qaoa_ansatz(H, p=1, betas=np.array([0.5]), gammas=np.array([0.3]))
@@ -87,7 +85,6 @@ class TestQAOAAnsatz:
 
 
 class TestUCCSD:
-
     def run_test_basic(self):
         c = uccsd_ansatz(n_qubits=4, n_electrons=2)
         # X(0), X(1) → max_qubit at least 1
@@ -97,10 +94,12 @@ class TestUCCSD:
         # With zero params, should be Hartree-Fock: |0011> (first 2 occupied)
         c = uccsd_ansatz(n_qubits=4, n_electrons=2, params=np.zeros(5))
         # Only X(0) and X(1) are applied
-        sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
+        sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         # Need to ensure 4 qubits — touch all
-        c.x(2); c.x(2)
-        c.x(3); c.x(3)
+        c.x(2)
+        c.x(2)
+        c.x(3)
+        c.x(3)
         sv = sim.simulate_statevector(c.originir)
         expected = np.zeros(16, dtype=complex)
         expected[3] = 1.0  # |0011> = q0=1,q1=1
@@ -121,7 +120,6 @@ class TestUCCSD:
 
 
 class TestEnhancedHEA:
-
     def run_test_backward_compat(self):
         # Default HEA should work the same as before
         c = hea(n_qubits=4, depth=2)
@@ -183,7 +181,6 @@ class TestEnhancedHEA:
 
 
 class TestQAOAVariants:
-
     def run_test_xy_mixer(self):
         H = [("Z0Z1", 1.0)]
         c = qaoa_ansatz(H, p=1, mixer="xy")
@@ -202,7 +199,6 @@ class TestQAOAVariants:
 
 
 class TestHVA:
-
     def run_test_basic(self):
         groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
         c = hva(groups, p=2)
@@ -227,9 +223,9 @@ class TestHVA:
 
 
 class TestTopologyGenerator:
-
     def run_test_linear_edges(self):
         from uniqc.algorithms.core.ansatz._topology import generate_edges
+
         edges = generate_edges([0, 1, 2, 3], EntanglementTopology.LINEAR)
         assert len(edges) == 3
         assert (0, 1) in edges
@@ -238,6 +234,7 @@ class TestTopologyGenerator:
 
     def run_test_ring_edges(self):
         from uniqc.algorithms.core.ansatz._topology import generate_edges
+
         edges = generate_edges([0, 1, 2, 3], EntanglementTopology.RING)
         assert len(edges) == 4
         assert (0, 1) in edges
@@ -247,6 +244,7 @@ class TestTopologyGenerator:
 
     def run_test_full_edges(self):
         from uniqc.algorithms.core.ansatz._topology import generate_edges
+
         edges = generate_edges([0, 1, 2], EntanglementTopology.FULL)
         assert len(edges) == 3
         assert (0, 1) in edges
@@ -255,6 +253,7 @@ class TestTopologyGenerator:
 
     def run_test_brickwork_alternation(self):
         from uniqc.algorithms.core.ansatz._topology import generate_edges
+
         edges_even = generate_edges([0, 1, 2, 3], EntanglementTopology.BRICKWORK, layer_index=0)
         edges_odd = generate_edges([0, 1, 2, 3], EntanglementTopology.BRICKWORK, layer_index=1)
         # Even: (0,1), (2,3)
@@ -272,6 +271,7 @@ class TestAnsatzParameters:
     def run_test_hea_auto_generates_parameters(self):
         """HEA should auto-generate Parameters when params=None."""
         from uniqc.circuit_builder.parameter import Parameters
+
         c = hea(n_qubits=2, depth=1)
         assert c._params is not None
         assert isinstance(c._params, Parameters)
@@ -282,6 +282,7 @@ class TestAnsatzParameters:
     def run_test_hea_with_parameters_object(self):
         """HEA should accept Parameters object as input."""
         from uniqc.circuit_builder.parameter import Parameters
+
         params = Parameters("my_theta", size=4)  # 2 * 2 * 1 = 4
         params.bind([0.1] * 4)
         c = hea(n_qubits=2, depth=1, params=params)
@@ -291,6 +292,7 @@ class TestAnsatzParameters:
     def run_test_hea_with_numpy_backward_compat(self):
         """HEA should still accept numpy arrays for backward compatibility."""
         import numpy as np
+
         c = hea(n_qubits=2, depth=1, params=np.zeros(4))
         assert c._params is not None
         sv = _statevector(c)
@@ -299,6 +301,7 @@ class TestAnsatzParameters:
     def run_test_qaoa_parameters(self):
         """QAOA should auto-generate Parameters for betas and gammas."""
         from uniqc.circuit_builder.parameter import Parameters
+
         H = [("Z0Z1", 1.0)]
         c = qaoa_ansatz(H, p=1)
         assert c._params is not None
@@ -312,6 +315,7 @@ class TestAnsatzParameters:
     def run_test_qaoa_with_parameters(self):
         """QAOA should accept Parameters objects."""
         from uniqc.circuit_builder.parameter import Parameters
+
         betas = Parameters("beta", size=1)
         gammas = Parameters("gamma", size=1)
         betas.bind([0.5])
@@ -324,6 +328,7 @@ class TestAnsatzParameters:
     def run_test_hva_parameters(self):
         """HVA should auto-generate Parameters."""
         from uniqc.circuit_builder.parameter import Parameters
+
         groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
         c = hva(groups, p=1)
         assert c._params is not None
@@ -334,6 +339,7 @@ class TestAnsatzParameters:
     def run_test_hva_with_parameters(self):
         """HVA should accept Parameters object."""
         from uniqc.circuit_builder.parameter import Parameters
+
         params = Parameters("my_hva", size=2)
         params.bind([0.1, 0.2])
         groups = [[("Z0Z1", 1.0)], [("Z1Z2", 0.5)]]
@@ -344,6 +350,7 @@ class TestAnsatzParameters:
     def run_test_uccsd_parameters(self):
         """UCCSD should auto-generate Parameters (zero-initialized)."""
         from uniqc.circuit_builder.parameter import Parameters
+
         c = uccsd_ansatz(n_qubits=4, n_electrons=2)
         assert c._params is not None
         assert isinstance(c._params, Parameters)
@@ -354,6 +361,7 @@ class TestAnsatzParameters:
     def run_test_uccsd_with_parameters(self):
         """UCCSD should accept Parameters object."""
         from uniqc.circuit_builder.parameter import Parameters
+
         params = Parameters("my_uccsd", size=5)
         params.bind([0.1] * 5)
         c = uccsd_ansatz(n_qubits=4, n_electrons=2, params=params)
@@ -362,7 +370,6 @@ class TestAnsatzParameters:
 
     def run_test_hea_parameter_rebinding(self):
         """Parameters should be rebindable after circuit creation."""
-        from uniqc.circuit_builder.parameter import Parameters
         c = hea(n_qubits=2, depth=1)
         # Bind new values
         new_values = [0.5] * len(c._params)
@@ -374,7 +381,6 @@ class TestAnsatzParameters:
 
     def run_test_ma_qaoa_parameters(self):
         """MA-QAOA should handle multi-angle Parameters correctly."""
-        from uniqc.circuit_builder.parameter import Parameters
         H = [("Z0Z1", 1.0), ("Z1Z2", 0.5)]
         c = qaoa_ansatz(H, p=2, multi_angle=True)
         # 2 terms * 2 layers = 4 gammas, 3 qubits * 2 layers = 6 betas

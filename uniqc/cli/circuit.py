@@ -6,12 +6,17 @@ from pathlib import Path
 
 import typer
 
-from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints, print_error, print_table, write_output
-
-HELP = (
-    "Circuit format conversion (OriginIR <-> QASM)\n"
-    f"  {build_ref_str('circuit')}"
+from .output import (
+    AI_HINTS_OPTION,
+    ai_hints_enabled,
+    build_ref_str,
+    print_ai_hints,
+    print_error,
+    print_table,
+    write_output,
 )
+
+HELP = f"Circuit format conversion (OriginIR <-> QASM)\n  {build_ref_str('circuit')}"
 INPUT_FILE_ARGUMENT = typer.Argument(..., help="Input circuit file (OriginIR or QASM)", exists=True)
 FORMAT_OPTION = typer.Option(None, "--format", "-f", help="Output format: originir/qasm")
 OUTPUT_OPTION = typer.Option(None, "--output", "-o", help="Output file (default: stdout)")

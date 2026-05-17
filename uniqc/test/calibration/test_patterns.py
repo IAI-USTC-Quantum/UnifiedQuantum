@@ -1,10 +1,7 @@
 """Tests for parallel pattern generator (DSatur graph coloring)."""
 
-import pytest
-
 from uniqc.calibration.xeb.patterns import (
     ParallelPatternGenerator,
-    ParallelPatternResult,
 )
 
 
@@ -92,12 +89,7 @@ class TestCircuitMode:
     def test_circuit_sequential_gates(self):
         """Two CNOTs sharing a qubit → 2 rounds."""
         originir = (
-            "QINIT 3\n"
-            "CNOT q[0], q[1]\n"
-            "CNOT q[1], q[2]\n"
-            "MEASURE q[0], c[0]\n"
-            "MEASURE q[1], c[1]\n"
-            "MEASURE q[2], c[2]"
+            "QINIT 3\nCNOT q[0], q[1]\nCNOT q[1], q[2]\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\nMEASURE q[2], c[2]"
         )
         gen = ParallelPatternGenerator(topology=[])
         result = gen.from_circuit(originir)

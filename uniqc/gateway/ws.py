@@ -102,16 +102,10 @@ class EventBroadcaster:
     # -- convenience helpers --------------------------------------------------
 
     async def emit_task_updated(self, task_id: str, status: str) -> None:
-        await self.broadcast(
-            Event("task:updated", {"task_id": task_id, "status": status})
-        )
+        await self.broadcast(Event("task:updated", {"task_id": task_id, "status": status}))
 
-    async def emit_backend_status(
-        self, backend_id: str, status: str
-    ) -> None:
-        await self.broadcast(
-            Event("backend:status", {"backend_id": backend_id, "status": status})
-        )
+    async def emit_backend_status(self, backend_id: str, status: str) -> None:
+        await self.broadcast(Event("backend:status", {"backend_id": backend_id, "status": status}))
 
 
 # Global singleton

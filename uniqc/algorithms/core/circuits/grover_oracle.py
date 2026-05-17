@@ -17,15 +17,14 @@ References:
 __all__ = ["grover_oracle", "grover_diffusion", "grover_oracle_example"]
 
 import warnings
-from typing import List, Optional
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def _apply_mcz(
     circuit: Circuit,
-    controls: List[int],
+    controls: list[int],
     target: int,
 ) -> None:
     """Apply a multi-controlled Z gate.
@@ -54,7 +53,7 @@ def _apply_mcz(
 
 def _apply_mcx(
     circuit: Circuit,
-    controls: List[int],
+    controls: list[int],
     target: int,
 ) -> None:
     """Apply a multi-controlled X gate for any number of controls.
@@ -109,13 +108,15 @@ def _apply_mcx(
 
 def _build_grover_oracle_fragment(
     marked_state: int,
-    n_qubits: Optional[int] = None,
-    qubits: Optional[List[int]] = None,
-    ancilla: Optional[int] = None,
+    n_qubits: int | None = None,
+    qubits: list[int] | None = None,
+    ancilla: int | None = None,
 ) -> Circuit:
     """Internal builder: returns a fresh Grover oracle Circuit."""
     if marked_state < 0:
-        raise ValueError(format_enriched_message(f"marked_state must be non-negative, got {marked_state}", "circuit_validation"))
+        raise ValueError(
+            format_enriched_message(f"marked_state must be non-negative, got {marked_state}", "circuit_validation")
+        )
 
     n_bits = max(1, marked_state.bit_length())
     if qubits is None:
@@ -125,8 +126,11 @@ def _build_grover_oracle_fragment(
 
     if marked_state >= (1 << n):
         raise ValueError(
-            format_enriched_message(f"marked_state {marked_state} requires {marked_state.bit_length()} "
-            f"bits but only {n} qubits were provided", "circuit_validation")
+            format_enriched_message(
+                f"marked_state {marked_state} requires {marked_state.bit_length()} "
+                f"bits but only {n} qubits were provided",
+                "circuit_validation",
+            )
         )
 
     if ancilla is None:
@@ -154,10 +158,10 @@ def _build_grover_oracle_fragment(
 
 def grover_oracle(
     *args,
-    marked_state: Optional[int] = None,
-    qubits: Optional[List[int]] = None,
-    ancilla: Optional[int] = None,
-    n_qubits: Optional[int] = None,
+    marked_state: int | None = None,
+    qubits: list[int] | None = None,
+    ancilla: int | None = None,
+    n_qubits: int | None = None,
 ):
     r"""Construct a phase-flip oracle for a marked basis state.
 
@@ -180,16 +184,16 @@ def grover_oracle(
             marked_state = args[0]
         if marked_state is None:
             raise TypeError(format_enriched_message("grover_oracle requires marked_state", "circuit_validation"))
-        return _build_grover_oracle_fragment(
-            marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla
-        )
+        return _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
 
     # Legacy in-place: first arg is a Circuit
     circuit_in = args[0]
     if not isinstance(circuit_in, Circuit):
         raise TypeError(
-            format_enriched_message("grover_oracle: first positional arg must be int (marked_state) "
-            "or Circuit (deprecated in-place form)", "circuit_validation")
+            format_enriched_message(
+                "grover_oracle: first positional arg must be int (marked_state) or Circuit (deprecated in-place form)",
+                "circuit_validation",
+            )
         )
     if len(args) >= 2 and marked_state is None:
         marked_state = args[1]
@@ -201,9 +205,7 @@ def grover_oracle(
         DeprecationWarning,
         stacklevel=2,
     )
-    fragment = _build_grover_oracle_fragment(
-        marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla
-    )
+    fragment = _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
     circuit_in.add_circuit(fragment)
     # Return ancilla index for backward-compat
     if qubits is None:
@@ -215,8 +217,8 @@ def grover_oracle(
 
 
 def _build_grover_diffusion_fragment(
-    qubits: Optional[List[int]] = None,
-    n_qubits: Optional[int] = None,
+    qubits: list[int] | None = None,
+    n_qubits: int | None = None,
 ) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits if n_qubits is not None else 2))
@@ -242,9 +244,9 @@ def _build_grover_diffusion_fragment(
 
 def grover_diffusion(
     *args,
-    qubits: Optional[List[int]] = None,
-    ancilla: Optional[int] = None,
-    n_qubits: Optional[int] = None,
+    qubits: list[int] | None = None,
+    ancilla: int | None = None,
+    n_qubits: int | None = None,
 ):
     r"""Grover diffusion (amplitude amplification) operator.
 
@@ -283,8 +285,10 @@ def grover_diffusion(
         first.add_circuit(fragment)
         return None
     raise TypeError(
-        format_enriched_message("grover_diffusion: first positional arg must be int (n_qubits) "
-        "or Circuit (deprecated in-place form)", "circuit_validation")
+        format_enriched_message(
+            "grover_diffusion: first positional arg must be int (n_qubits) or Circuit (deprecated in-place form)",
+            "circuit_validation",
+        )
     )
 
 

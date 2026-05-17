@@ -11,12 +11,7 @@ from uniqc.simulator import MPSConfig, MPSSimulator
 
 
 def _bell_ir() -> str:
-    return (
-        "QINIT 2\n"
-        "CREG 2\n"
-        "H q[0]\n"
-        "CNOT q[0],q[1]\n"
-    )
+    return "QINIT 2\nCREG 2\nH q[0]\nCNOT q[0],q[1]\n"
 
 
 def _ghz_ir(n: int) -> str:
@@ -64,28 +59,30 @@ def test_xx_rotation_matches_dense():
     """Compare XX(theta) against the dense exp(-i theta/2 X⊗X) on a random
     single-qubit state preparation."""
     theta = 0.7
-    ir = (
-        "QINIT 2\n"
-        "CREG 2\n"
-        "RY q[0],(0.6)\n"
-        "RX q[1],(1.1)\n"
-        f"XX q[0],q[1],({theta})\n"
-    )
+    ir = f"QINIT 2\nCREG 2\nRY q[0],(0.6)\nRX q[1],(1.1)\nXX q[0],q[1],({theta})\n"
     sim = MPSSimulator()
     psi = sim.simulate_statevector(ir)
 
     # Dense reference (q0 as LSB).
     def kron(a, b):
         return np.kron(a, b)
+
     I2 = np.eye(2)
     X = np.array([[0, 1], [1, 0]], dtype=complex)
     Y = np.array([[0, -1j], [1j, 0]], dtype=complex)
-    def ry(t): return np.array([[math.cos(t/2), -math.sin(t/2)], [math.sin(t/2), math.cos(t/2)]], dtype=complex)
-    def rx(t): return np.array([[math.cos(t/2), -1j*math.sin(t/2)], [-1j*math.sin(t/2), math.cos(t/2)]], dtype=complex)
+
+    def ry(t):
+        return np.array([[math.cos(t / 2), -math.sin(t / 2)], [math.sin(t / 2), math.cos(t / 2)]], dtype=complex)
+
+    def rx(t):
+        return np.array(
+            [[math.cos(t / 2), -1j * math.sin(t / 2)], [-1j * math.sin(t / 2), math.cos(t / 2)]], dtype=complex
+        )
+
     # In q0-LSB convention dense gates on q1, q0 = kron(U1, U0)
     U_prep = kron(rx(1.1), ry(0.6))
     XX = kron(X, X)
-    U_xx = math.cos(theta/2) * np.eye(4) - 1j * math.sin(theta/2) * XX
+    U_xx = math.cos(theta / 2) * np.eye(4) - 1j * math.sin(theta / 2) * XX
     psi_ref = U_xx @ U_prep @ np.array([1, 0, 0, 0], dtype=complex)
     assert np.allclose(psi, psi_ref, atol=1e-9)
 
@@ -97,11 +94,7 @@ def test_long_range_rejected():
 
 
 def test_control_block_rejected():
-    ir = (
-        "QINIT 3\n"
-        "CREG 3\n"
-        "X q[0] controlled_by (q[1])\n"
-    )
+    ir = "QINIT 3\nCREG 3\nX q[0] controlled_by (q[1])\n"
     with pytest.raises(NotImplementedError, match="(?i)control"):
         MPSSimulator().simulate_pmeasure(ir)
 
@@ -118,11 +111,7 @@ def test_chi_truncation_records_error():
 
 def test_reversed_qubit_order_2q_gate():
     """CNOT q[2],q[1] should still produce GHZ-like correlations."""
-    ir = (
-        "QINIT 3\nCREG 3\nH q[2]\n"
-        "CNOT q[2],q[1]\n"
-        "CNOT q[1],q[0]\n"
-    )
+    ir = "QINIT 3\nCREG 3\nH q[2]\nCNOT q[2],q[1]\nCNOT q[1],q[0]\n"
     sim = MPSSimulator()
     probs = sim.simulate_pmeasure(ir)
     # |000> + |111> → indices 0 and 7, each 0.5

@@ -15,7 +15,7 @@ Key exports:
 """
 
 import math
-from typing import List, Optional, Tuple, Union
+
 from .qasm_spec import available_qasm_gates
 
 __all__ = [
@@ -73,51 +73,21 @@ QASM2_CUSTOM_GATE_DEFS = {
     # alongside the gates that depend on it (xy, uu15) so that strict parsers
     # accept the output.
     "ryy": (
-        "gate ryy(theta) a, b {\n"
-        "  rx(pi/2) a;\n"
-        "  rx(pi/2) b;\n"
-        "  rzz(theta) a, b;\n"
-        "  rx(-pi/2) a;\n"
-        "  rx(-pi/2) b;\n"
-        "}"
+        "gate ryy(theta) a, b {\n  rx(pi/2) a;\n  rx(pi/2) b;\n  rzz(theta) a, b;\n  rx(-pi/2) a;\n  rx(-pi/2) b;\n}"
     ),
     # iSWAP: |01> ↔ |10> with +i phase.
-    "iswap": (
-        "gate iswap a, b {\n"
-        "  s a;\n"
-        "  s b;\n"
-        "  h a;\n"
-        "  cx a, b;\n"
-        "  cx b, a;\n"
-        "  h b;\n"
-        "}"
-    ),
+    "iswap": ("gate iswap a, b {\n  s a;\n  s b;\n  h a;\n  cx a, b;\n  cx b, a;\n  h b;\n}"),
     # RPHI(theta, phi) = Rz(phi) Rx(theta) Rz(-phi) on a single qubit.
-    "rphi": (
-        "gate rphi(theta, phi) a {\n"
-        "  rz(-phi) a;\n"
-        "  rx(theta) a;\n"
-        "  rz(phi) a;\n"
-        "}"
-    ),
+    "rphi": ("gate rphi(theta, phi) a {\n  rz(-phi) a;\n  rx(theta) a;\n  rz(phi) a;\n}"),
     # PHASE2Q(theta1, theta2, theta_zz):
     #   diag(1, exp(i*theta1), exp(i*theta2), exp(i*(theta1 + theta2 + theta_zz))).
     # First listed qubit is the LSB (matches OriginIR convention).
     "phase2q": (
-        "gate phase2q(theta1, theta2, theta_zz) a, b {\n"
-        "  u1(theta1) a;\n"
-        "  u1(theta2) b;\n"
-        "  cu1(theta_zz) a, b;\n"
-        "}"
+        "gate phase2q(theta1, theta2, theta_zz) a, b {\n  u1(theta1) a;\n  u1(theta2) b;\n  cu1(theta_zz) a, b;\n}"
     ),
     # XY(theta) = exp(+i*theta/4 * (XX + YY)) (preserves |00> and |11>).
     # Equivalent to rxx(-theta/2)·ryy(-theta/2) since [XX, YY] = 0.
-    "xy": (
-        "gate xy(theta) a, b {\n"
-        "  rxx(-theta/2) a, b;\n"
-        "  ryy(-theta/2) a, b;\n"
-        "}"
-    ),
+    "xy": ("gate xy(theta) a, b {\n  rxx(-theta/2) a, b;\n  ryy(-theta/2) a, b;\n}"),
     # UU15 (KAK form): u3 ⊗ u3 ; xx · yy · zz ; u3 ⊗ u3 — 15 angles total.
     "uu15": (
         "gate uu15(a0, a1, a2, b0, b1, b2, txx, tyy, tzz, "
@@ -156,6 +126,7 @@ def collect_qasm2_custom_gates(opcode_list) -> list[str]:
             seen.add("ryy")
     return needed
 
+
 # direct mapping from OriginIR opcode to QASM2 operation
 QASM2_OriginIR_dict = {qasm: oir for (qasm, oir) in qasm2_oir_mapping}
 
@@ -176,7 +147,7 @@ def direct_mapping_qasm2_to_oir(qasm2_operation):
     Note: There are also operations that do not sastify "direct mapping"
     from QASM -> OIR or OIR -> QASM.
     """
-    return QASM2_OriginIR_dict.get(qasm2_operation, None)
+    return QASM2_OriginIR_dict.get(qasm2_operation)
 
 
 def get_opcode_from_QASM2(operation, qubits, cbits, parameters):
@@ -281,7 +252,7 @@ def get_opcode_from_QASM2(operation, qubits, cbits, parameters):
     return None
 
 
-def decompose_mcx_qasm_text(controls: List[int], target: int, qubit_num: int) -> str:
+def decompose_mcx_qasm_text(controls: list[int], target: int, qubit_num: int) -> str:
     """Decompose an n-control X (MCX) gate into QASM 2.0 Toffoli-ladder statements.
 
     Uses a clean-ancilla ladder (Barenco et al. 1995, adapted): n-2 workspace
@@ -318,7 +289,7 @@ def decompose_mcx_qasm_text(controls: List[int], target: int, qubit_num: int) ->
             "supports arbitrary-width multi-controlled gates natively."
         )
 
-    lines: List[str] = []
+    lines: list[str] = []
     # Forward ladder: compute AND(c0, c1, …, c_{n-2}) into workspace[-1].
     lines.append(f"ccx q[{controls[0]}], q[{controls[1]}], q[{workspace[0]}];")
     for i in range(1, n_workspace):
@@ -335,7 +306,7 @@ def decompose_mcx_qasm_text(controls: List[int], target: int, qubit_num: int) ->
 
 def get_QASM2_from_opcode(
     opcode,
-) -> Tuple[str, Union[int, List[int]], Union[int, List[int]], Union[float, List[float]]]:
+) -> tuple[str, int | list[int], int | list[int], float | list[float]]:
     """
     Return the corresponding QASM2 operation by given OriginIR operation.
 
@@ -447,14 +418,14 @@ def get_QASM2_from_opcode(
     return "_MCU_DECOMP_", (ctrl_list, target_qubit, operation_qasm2, parameters, False), None, None
 
 
-def _qasm_gate(name: str, qubit: int, param: Optional[float] = None) -> str:
+def _qasm_gate(name: str, qubit: int, param: float | None = None) -> str:
     """Format a single QASM 2.0 gate line."""
     if param is not None:
         return f"{name}({param}) q[{qubit}];"
     return f"{name} q[{qubit}];"
 
 
-def _scalar(params: Union[float, List[float]]) -> float:
+def _scalar(params: float | list[float]) -> float:
     """Extract a scalar from a parameter that may be a float or a single-element list."""
     if isinstance(params, list):
         return float(params[0])
@@ -465,7 +436,7 @@ def _abc_decompose(
     phi: float,
     theta: float,
     lam: float,
-    controls: List[int],
+    controls: list[int],
     target: int,
     qubit_num: int,
 ) -> str:
@@ -489,7 +460,7 @@ def _abc_decompose(
     c_ry = theta / 2
     c_rz2 = lam
 
-    lines: List[str] = []
+    lines: list[str] = []
 
     # A
     if abs(a_phi_lam) > 1e-15:
@@ -521,11 +492,11 @@ def _abc_decompose(
 
 
 def decompose_mcu_qasm_text(
-    controls: List[int],
+    controls: list[int],
     target: int,
     qubit_num: int,
     gate_qasm: str,
-    params: Optional[Union[float, List[float]]],
+    params: float | list[float] | None,
 ) -> str:
     """Decompose an n-control single-qubit gate into QASM 2.0 statements.
 

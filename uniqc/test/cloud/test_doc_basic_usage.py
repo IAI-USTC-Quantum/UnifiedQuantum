@@ -13,8 +13,8 @@ from __future__ import annotations
 import pytest
 
 from uniqc import (
-    Circuit,
     BackendNotFoundError,
+    Circuit,
     query_task,
     submit_task,
     wait_for_result,
@@ -100,9 +100,9 @@ class TestSubmitTaskDocBasicUsage:
         reaches the network layer.
         """
         from uniqc.exceptions import (
+            AuthenticationError,
             BackendNotAvailableError,
             BackendNotFoundError,
-            AuthenticationError,
             NetworkError,
             UnsupportedGateError,
         )

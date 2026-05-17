@@ -1,18 +1,17 @@
 """Tests for entangled state preparation circuits: GHZ, W, Cluster."""
 
-import math
-
 import numpy as np
 import pytest
 
+from uniqc.algorithms.core.circuits import cluster_state, ghz_state, w_state
 from uniqc.circuit_builder import Circuit
-from uniqc.algorithms.core.circuits import ghz_state, w_state, cluster_state
 
 
 def _simulate_probs(circuit, n_qubits):
     """Helper: run statevector simulation and return probability array."""
     from uniqc.simulator import Simulator
-    sim = Simulator(backend_type='statevector', least_qubit_remapping=False)
+
+    sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
     result = sim.simulate_statevector(circuit.qasm)
     probs = np.abs(result) ** 2
     return probs

@@ -51,17 +51,10 @@ def test_mitigate_counts_clips_then_preserves_total(tmp_path) -> None:
 
     # Sanity check: the raw linear inversion really does produce a negative.
     raw = np.linalg.inv(C) @ np.array([counts[0], counts[1]], dtype=float)
-    assert (raw < 0).any(), (
-        "Test setup is invalid — needs an inversion that yields a negative entry; "
-        f"got raw={raw}"
-    )
+    assert (raw < 0).any(), f"Test setup is invalid — needs an inversion that yields a negative entry; got raw={raw}"
 
     corrected = mit.mitigate_counts(counts)
 
     total_corr = sum(corrected.values())
-    assert total_corr == 1000, (
-        f"Total counts not preserved after mitigation: {total_corr} vs {total}"
-    )
-    assert all(v >= 0 for v in corrected.values()), (
-        f"Negative entries leaked through clipping: {corrected}"
-    )
+    assert total_corr == 1000, f"Total counts not preserved after mitigation: {total_corr} vs {total}"
+    assert all(v >= 0 for v in corrected.values()), f"Negative entries leaked through clipping: {corrected}"

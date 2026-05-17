@@ -80,10 +80,7 @@ def require(name: str, extra: str, install_hint: str | None = None):
         if install_hint is not None:
             raise MissingDependencyError(
                 name,
-                install_hint=(
-                    f"The package is installed but failed to import cleanly: {e!r}. "
-                    f"{install_hint}"
-                ),
+                install_hint=(f"The package is installed but failed to import cleanly: {e!r}. {install_hint}"),
             ) from e
         raise MissingDependencyError(
             name,

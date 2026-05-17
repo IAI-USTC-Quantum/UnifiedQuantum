@@ -75,9 +75,7 @@ def test_richardson_recovers_exact_for_polynomial() -> None:
     scales ``[1,2,3,4]`` and the quadratic above the zero-noise value
     is exactly ``1.0``.
     """
-    richardson = _resolve(
-        "richardson_extrapolation", "richardson", "extrapolate_richardson"
-    )
+    richardson = _resolve("richardson_extrapolation", "richardson", "extrapolate_richardson")
     if richardson is None:
         pytest.skip("Richardson ZNE extrapolation is not implemented yet")
 
@@ -93,9 +91,7 @@ def test_exponential_decay_extrapolates_to_intercept() -> None:
     The asymptotic value as ``s → 0`` is ``2.0 - 1.0 = 1.0``; the
     sampled points are chosen so the closed-form fit is unambiguous.
     """
-    exponential = _resolve(
-        "exponential_extrapolation", "exponential", "extrapolate_exponential"
-    )
+    exponential = _resolve("exponential_extrapolation", "exponential", "extrapolate_exponential")
     if exponential is None:
         pytest.skip("Exponential ZNE extrapolation is not implemented yet")
 

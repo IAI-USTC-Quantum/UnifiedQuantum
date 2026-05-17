@@ -6,12 +6,60 @@ functions can be imported directly from ``uniqc``.
 
 import warnings
 
+from .algorithms.core.ansatz import (
+    EntanglementTopology,
+    EntanglingGate,
+    RotationGate,
+    hea,
+    hea_param_count,
+    hva,
+    qaoa_ansatz,
+    uccsd_ansatz,
+)
+from .algorithms.core.circuits import (
+    amplitude_estimation_circuit,
+    amplitude_estimation_result,
+    cluster_state,
+    deutsch_jozsa_circuit,
+    deutsch_jozsa_oracle,
+    dicke_state_circuit,
+    ghz_state,
+    grover_diffusion,
+    grover_operator,
+    grover_oracle,
+    qft_circuit,
+    thermal_state_circuit,
+    vqd_ansatz,
+    vqd_circuit,
+    vqd_overlap_circuit,
+    w_state,
+)
+from .algorithms.core.measurement import (
+    BasisRotationMeasurement,
+    ClassicalShadow,
+    PauliExpectation,
+    StateTomography,
+    basis_rotation_measurement,
+    classical_shadow,
+    pauli_expectation,
+    shadow_expectation,
+    state_tomography,
+    tomography_summary,
+)
+from .algorithms.core.state_preparation import (
+    basis_state,
+    dicke_state,
+    hadamard_superposition,
+    rotation_prepare,
+    thermal_state,
+)
+from .algorithms.workflows import readout_em_workflow, xeb_workflow
 from .backend_adapter.backend import (
     DummyBackend,
     IBMBackend,
     OriginQBackend,
-    QuantumBackend,
     QuafuBackend,
+    QuantumBackend,
     QuarkBackend,
     get_backend,
     list_backends,
@@ -79,57 +127,23 @@ from .calibration import (
     load_calibration_result,
     save_calibration_result,
 )
-from .algorithms.core.ansatz import (
-    hea,
-    hea_param_count,
-    hva,
-    qaoa_ansatz,
-    uccsd_ansatz,
-    EntanglingGate,
-    EntanglementTopology,
-    RotationGate,
+from .circuit_builder import (
+    AnyQuantumCircuit,
+    Circuit,
+    NamedCircuit,
+    Parameter,
+    Parameters,
+    QReg,
+    QRegSlice,
+    Qubit,
+    circuit_def,
+    get_matrix,
+    normalize_to_circuit,
 )
-from .algorithms.core.circuits import (
-    amplitude_estimation_circuit,
-    amplitude_estimation_result,
-    cluster_state,
-    deutsch_jozsa_circuit,
-    deutsch_jozsa_oracle,
-    dicke_state_circuit,
-    ghz_state,
-    grover_diffusion,
-    grover_operator,
-    grover_oracle,
-    qft_circuit,
-    thermal_state_circuit,
-    vqd_ansatz,
-    vqd_circuit,
-    vqd_overlap_circuit,
-    w_state,
-)
-from .algorithms.core.measurement import (
-    basis_rotation_measurement,
-    BasisRotationMeasurement,
-    classical_shadow,
-    ClassicalShadow,
-    pauli_expectation,
-    PauliExpectation,
-    shadow_expectation,
-    state_tomography,
-    StateTomography,
-    tomography_summary,
-)
-from .algorithms.core.state_preparation import (
-    basis_state,
-    dicke_state,
-    hadamard_superposition,
-    rotation_prepare,
-    thermal_state,
-)
-from .algorithms.workflows import readout_em_workflow, xeb_workflow
-from .circuit_builder import AnyQuantumCircuit, Circuit, NamedCircuit, Parameter, Parameters, QReg, QRegSlice, Qubit, circuit_def, get_matrix, normalize_to_circuit
 from .compile import CompilationFailedError, CompilationResult, TranspilerConfig, compile
+from .compile.originir import OriginIR_BaseParser
 from .compile.policy import compile_for_backend, resolve_basis_gates, resolve_submit_language
+from .compile.qasm import OpenQASM2_BaseParser
 from .compile.validation import (
     VIRTUAL_Z_GATES,
     CompatibilityReport,
@@ -137,8 +151,6 @@ from .compile.validation import (
     compute_gate_depth,
     is_compatible,
 )
-from .compile.originir import OriginIR_BaseParser
-from .compile.qasm import OpenQASM2_BaseParser
 from .exceptions import (
     AuthenticationError,
     BackendError,
@@ -182,7 +194,7 @@ from .utils import (
 )
 
 try:
-    from .simulator import Simulator, NoisySimulator
+    from .simulator import NoisySimulator, Simulator
 except ImportError:
     Simulator = None  # type: ignore[assignment]
     NoisySimulator = None  # type: ignore[assignment]
@@ -205,8 +217,7 @@ try:
 except ImportError:
     __version__ = "0.0.0+unknown"
 
-from . import algorithms, calibration, qem  # noqa: E402,F401
-from . import config
+from . import algorithms, calibration, config, qem  # noqa: E402,F401
 
 _LAZY_EXPORTS = {
     "QuantumLayer": ("uniqc.torch_adapter", "QuantumLayer"),

@@ -66,9 +66,7 @@ class ReadoutEM:
         self.max_age_hours = max_age_hours
         self.cache_dir = cache_dir
         self.shots = shots
-        self._calibrator = ReadoutCalibrator(
-            adapter=adapter, shots=shots, cache_dir=cache_dir
-        )
+        self._calibrator = ReadoutCalibrator(adapter=adapter, shots=shots, cache_dir=cache_dir)
         # Cache of loaded M3Mitigator instances: (qubit_ident) → M3Mitigator
         self._mitigators: dict[str, Any] = {}
 
@@ -82,10 +80,7 @@ class ReadoutEM:
         from uniqc.backend_adapter.task.result_types import UnifiedResult
 
         if not isinstance(result, UnifiedResult):
-            raise TypeError(
-                "ReadoutEM.apply expects a UnifiedResult; "
-                f"got {type(result).__name__}."
-            )
+            raise TypeError(f"ReadoutEM.apply expects a UnifiedResult; got {type(result).__name__}.")
 
         if not result.counts:
             return result
@@ -173,16 +168,12 @@ class ReadoutEM:
     # 1q mitigation
     # -------------------------------------------------------------------------
 
-    def _mitigate_1q(
-        self, counts: dict[int, int], qubit: int
-    ) -> dict[int, float]:
+    def _mitigate_1q(self, counts: dict[int, int], qubit: int) -> dict[int, float]:
         """Apply 1-qubit readout EM to counts."""
         mit = self._get_mitigator_1q(qubit)
         return mit.mitigate_counts(counts)
 
-    def _mitigate_probs_1q(
-        self, probs: dict[int, float], qubit: int
-    ) -> dict[int, float]:
+    def _mitigate_probs_1q(self, probs: dict[int, float], qubit: int) -> dict[int, float]:
         """Apply 1-qubit readout EM to probabilities."""
         mit = self._get_mitigator_1q(qubit)
         return mit.mitigate_probabilities(probs)
@@ -205,16 +196,12 @@ class ReadoutEM:
     # 2q mitigation
     # -------------------------------------------------------------------------
 
-    def _mitigate_2q(
-        self, counts: dict[int, int], q0: int, q1: int
-    ) -> dict[int, float]:
+    def _mitigate_2q(self, counts: dict[int, int], q0: int, q1: int) -> dict[int, float]:
         """Apply 2-qubit joint readout EM to counts."""
         mit = self._get_mitigator_2q(q0, q1)
         return mit.mitigate_counts(counts)
 
-    def _mitigate_probs_2q(
-        self, probs: dict[int, float], q0: int, q1: int
-    ) -> dict[int, float]:
+    def _mitigate_probs_2q(self, probs: dict[int, float], q0: int, q1: int) -> dict[int, float]:
         """Apply 2-qubit joint readout EM to probabilities."""
         mit = self._get_mitigator_2q(q0, q1)
         return mit.mitigate_probabilities(probs)
@@ -237,9 +224,7 @@ class ReadoutEM:
     # Nq mitigation (per-qubit sequential approximation)
     # -------------------------------------------------------------------------
 
-    def _mitigate_nq(
-        self, counts: dict[int, int], qubits: list[int]
-    ) -> dict[int, float]:
+    def _mitigate_nq(self, counts: dict[int, int], qubits: list[int]) -> dict[int, float]:
         """Apply per-qubit readout EM sequentially for n>2 qubits.
 
         This is an approximation: each qubit is corrected independently
@@ -250,9 +235,7 @@ class ReadoutEM:
             result = self._apply_1q_matrix(result, q, bit_position, len(qubits))
         return result
 
-    def _mitigate_probs_nq(
-        self, probs: dict[int, float], qubits: list[int]
-    ) -> dict[int, float]:
+    def _mitigate_probs_nq(self, probs: dict[int, float], qubits: list[int]) -> dict[int, float]:
         """Apply per-qubit readout EM sequentially to probabilities."""
         result = {_outcome_to_int(k): float(v) for k, v in probs.items()}
         for bit_position, q in enumerate(qubits):
@@ -295,7 +278,7 @@ class ReadoutEM:
 
         Uses the tensor product structure: full_matrix = I⊗...⊗C⊗...⊗I.
         """
-        n = 2 ** n_total
+        n = 2**n_total
         try:
             C_inv = np.linalg.inv(C)
         except np.linalg.LinAlgError:

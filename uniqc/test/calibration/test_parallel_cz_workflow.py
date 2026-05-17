@@ -9,6 +9,7 @@ from uniqc.calibration.xeb import ParallelCZBenchmarker, parallel_patterns
 
 def _dummy_adapter(noise=None):
     from uniqc.backend_adapter.task.adapters import DummyAdapter
+
     if noise is None:
         return DummyAdapter()
     return DummyAdapter(noise_model=noise)
@@ -17,7 +18,10 @@ def _dummy_adapter(noise=None):
 def test_benchmarker_noiseless_returns_alpha_near_one(tmp_path):
     adapter = _dummy_adapter()
     bench = ParallelCZBenchmarker(
-        adapter=adapter, shots=4000, seed=2026, cache_dir=str(tmp_path),
+        adapter=adapter,
+        shots=4000,
+        seed=2026,
+        cache_dir=str(tmp_path),
     )
     result = bench.run(
         region_qubits=[0, 1, 2, 3],
@@ -28,9 +32,7 @@ def test_benchmarker_noiseless_returns_alpha_near_one(tmp_path):
     decays = result["per_pair_decays"]
     assert {(0, 1), (2, 3)} <= set(decays.keys())
     for pair, dec in decays.items():
-        assert dec.alpha == pytest.approx(1.0, abs=0.06), (
-            f"pair {pair}: expected noiseless alpha≈1, got {dec.alpha}"
-        )
+        assert dec.alpha == pytest.approx(1.0, abs=0.06), f"pair {pair}: expected noiseless alpha≈1, got {dec.alpha}"
     # Per-pair XEBResult cached + returned.
     assert {(0, 1), (2, 3)} <= set(result["per_pair_results"].keys())
     cached = list(tmp_path.glob("xeb_2q_parallel_*.json"))
@@ -41,7 +43,9 @@ def test_benchmarker_noisy_alpha_below_one():
     """A modest depolarising error per CZ should pull alpha clearly below 1."""
     adapter = _dummy_adapter(noise={"depol": 0.1, "readout": 0.0})
     bench = ParallelCZBenchmarker(
-        adapter=adapter, shots=4000, seed=2026,
+        adapter=adapter,
+        shots=4000,
+        seed=2026,
     )
     result = bench.run(
         region_qubits=[0, 1, 2, 3],

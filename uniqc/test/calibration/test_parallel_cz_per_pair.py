@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import collections
-
 import numpy as np
 import pytest
 
@@ -61,12 +59,15 @@ def test_pair_ideal_probs_matches_full_simulation_for_disjoint_pairs():
         )
         cycles.append((angles, pattern))
     sched = Schedule(
-        region_qubits=region, measured_qubits=region,
-        cycles=tuple(cycles), seed=0,
+        region_qubits=region,
+        measured_qubits=region,
+        cycles=tuple(cycles),
+        seed=0,
     )
 
     # Build the 4-qubit reference circuit and marginalise via numpy.
     from uniqc import Circuit
+
     c = Circuit()
     for angles, pat in sched.cycles:
         for q, (t, p, l) in zip(region, angles):
@@ -100,7 +101,11 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
     depths = [1, 2, 3, 4]
     instances = 12
     corpus = build_parallel_cz_xeb_corpus(
-        region, patterns, depths, instances, seed=2026,
+        region,
+        patterns,
+        depths,
+        instances,
+        seed=2026,
     )
     sim = Simulator(backend_type="statevector")
     rng = np.random.default_rng(0)
@@ -111,15 +116,17 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
         samples = rng.choice(len(probs), size=20000, p=probs)
         keys, vals = np.unique(samples, return_counts=True)
         counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals)}
-        records.append({
-            "record_id": pc.record_id,
-            "schedule": pc.schedule,
-            "pattern_idx": pc.pattern_idx,
-            "pattern": pc.pattern,
-            "depth": pc.depth,
-            "instance": pc.instance,
-            "counts": counts,
-        })
+        records.append(
+            {
+                "record_id": pc.record_id,
+                "schedule": pc.schedule,
+                "pattern_idx": pc.pattern_idx,
+                "pattern": pc.pattern,
+                "depth": pc.depth,
+                "instance": pc.instance,
+                "counts": counts,
+            }
+        )
 
     fits = per_pair_F_XEB(records, [(0, 1)])
     assert len(fits) == len(corpus)
@@ -139,7 +146,11 @@ def test_per_pair_F_XEB_detects_depolarising_decay():
     depths = [1, 2, 4, 6, 8]
     instances = 16
     corpus = build_parallel_cz_xeb_corpus(
-        region, patterns, depths, instances, seed=11,
+        region,
+        patterns,
+        depths,
+        instances,
+        seed=11,
     )
     sim = Simulator(backend_type="statevector")
     rng = np.random.default_rng(0)
@@ -150,20 +161,22 @@ def test_per_pair_F_XEB_detects_depolarising_decay():
         probs = probs / probs.sum()
         D = len(probs)
         # Apply a depth-dependent depolarising channel: F_d = p^d.
-        F_d = p_per_cycle ** pc.depth
+        F_d = p_per_cycle**pc.depth
         noisy = F_d * probs + (1 - F_d) / D
         samples = rng.choice(len(noisy), size=20000, p=noisy)
         keys, vals = np.unique(samples, return_counts=True)
         counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals)}
-        records.append({
-            "record_id": pc.record_id,
-            "schedule": pc.schedule,
-            "pattern_idx": pc.pattern_idx,
-            "pattern": pc.pattern,
-            "depth": pc.depth,
-            "instance": pc.instance,
-            "counts": counts,
-        })
+        records.append(
+            {
+                "record_id": pc.record_id,
+                "schedule": pc.schedule,
+                "pattern_idx": pc.pattern_idx,
+                "pattern": pc.pattern,
+                "depth": pc.depth,
+                "instance": pc.instance,
+                "counts": counts,
+            }
+        )
 
     fits = per_pair_F_XEB(records, [(0, 1)])
     decays = fit_pair_decays(fits)
@@ -181,9 +194,13 @@ def test_per_pair_F_XEB_skips_pairs_outside_measured():
     pc = corpus[0]
     counts = {format(0, "03b"): 1000}
     record = {
-        "record_id": pc.record_id, "schedule": pc.schedule,
-        "pattern_idx": pc.pattern_idx, "pattern": pc.pattern,
-        "depth": pc.depth, "instance": pc.instance, "counts": counts,
+        "record_id": pc.record_id,
+        "schedule": pc.schedule,
+        "pattern_idx": pc.pattern_idx,
+        "pattern": pc.pattern,
+        "depth": pc.depth,
+        "instance": pc.instance,
+        "counts": counts,
     }
     fits = per_pair_F_XEB([record], [(0, 1), (5, 6)])
     pairs_seen = {f.pair for f in fits}

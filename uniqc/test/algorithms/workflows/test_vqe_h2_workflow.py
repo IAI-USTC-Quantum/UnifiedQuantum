@@ -25,7 +25,6 @@ from uniqc.algorithms.workflows.vqe_workflow import (
     run_vqe_workflow,
 )
 
-
 # Standard H2/STO-3G Hamiltonian at R = 0.7414 Å, mapped to 2 qubits via
 # the parity transformation + 2-qubit reduction. Coefficients taken from
 # the literature (e.g. Kandala et al. 2017, supplementary). The sum of
@@ -35,7 +34,7 @@ H2_HAMILTONIAN = [
     ("ZI", -0.39793742),
     ("IZ", -0.39793742),
     ("ZZ", -0.0112801),
-    ("XX",  0.18093119),
+    ("XX", 0.18093119),
 ]
 
 FCI_ENERGY = -1.87983473  # analytic ground state (diagonalisation of H above)
@@ -87,8 +86,7 @@ def test_h2_vqe_minimum_energy_within_chemical_accuracy() -> None:
     # Variational principle: energy can never be *below* the analytic minimum
     # by more than numerical noise (state-vector floating-point error).
     assert result.energy >= FCI_ENERGY - 1e-4, (
-        f"VQE energy {result.energy} is below the analytic minimum "
-        f"{FCI_ENERGY} — variational principle violated."
+        f"VQE energy {result.energy} is below the analytic minimum {FCI_ENERGY} — variational principle violated."
     )
 
     # Soft signal: how close to chemical accuracy did we get? We do
@@ -116,6 +114,4 @@ def test_h2_vqe_smoke_returns_bound_state() -> None:
     assert math.isfinite(result.energy)
     # The bare HF reference (constant term) is already -1.0523732 Ha;
     # any reasonable variational step should at least match that.
-    assert result.energy < -1.0, (
-        f"depth-1 VQE failed to find a bound state: energy={result.energy}"
-    )
+    assert result.energy < -1.0, f"depth-1 VQE failed to find a bound state: energy={result.energy}"

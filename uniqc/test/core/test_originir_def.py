@@ -7,11 +7,8 @@ Tests cover:
 - Roundtrip DEF export/import
 """
 
-import pytest
-from uniqc.circuit_builder import Circuit
-from uniqc.circuit_builder.named_circuit import circuit_def, NamedCircuit
+from uniqc.circuit_builder.named_circuit import circuit_def
 from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
-
 
 # =============================================================================
 # TestOriginIRDefExport
@@ -23,6 +20,7 @@ class TestOriginIRDefExport:
 
     def test_def_export_simple(self):
         """Simple DEF block export."""
+
         @circuit_def(name="bell_pair", qregs={"q": 2})
         def bell_pair(circ, q):
             circ.h(q[0])
@@ -37,6 +35,7 @@ class TestOriginIRDefExport:
 
     def test_def_export_with_params(self):
         """DEF block export with parameters."""
+
         @circuit_def(name="rx_gate", qregs={"q": 1}, params=["theta"])
         def rx_gate(circ, q, theta):
             circ.rx(q[0], theta)
@@ -97,6 +96,7 @@ class TestOriginIRDefIntegration:
 
     def test_def_export_matches_expected_format(self):
         """Verify DEF export format is correct."""
+
         @circuit_def(name="h_gate", qregs={"q": 1})
         def h_gate(circ, q):
             circ.h(q[0])

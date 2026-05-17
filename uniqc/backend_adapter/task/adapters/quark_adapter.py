@@ -29,10 +29,10 @@ from uniqc.backend_adapter.task.adapters.base import (
     _dry_run_failed,
     _dry_run_success,
 )
-from uniqc.config import load_quark_config
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quark, check_quarkcircuit
 from uniqc.cli.chip_info import ChipGlobalInfo, SingleQubitData, TwoQubitData, TwoQubitGateData
 from uniqc.compile.converter import convert_oir_to_qasm
+from uniqc.config import load_quark_config
 
 _DEFAULT_CHIP = "Baihua"
 _DEFAULT_TASK_NAME = "UniqcQuantumTask"
@@ -209,9 +209,7 @@ def _extract_quark_backend_details(chip_info: dict[str, Any]) -> dict[str, Any]:
         "topology": [[edge.u, edge.v] for edge in sorted(topology, key=lambda edge: (edge.u, edge.v))],
         "available_qubits": sorted(available_qubits),
         "valid_gates": basis_gates,
-        "per_qubit_calibration": [
-            item.to_dict() for item in sorted(single_qubit_data, key=lambda item: item.qubit_id)
-        ],
+        "per_qubit_calibration": [item.to_dict() for item in sorted(single_qubit_data, key=lambda item: item.qubit_id)],
         "per_pair_calibration": [
             item.to_dict() for item in sorted(two_qubit_data, key=lambda item: (item.qubit_u, item.qubit_v))
         ],
@@ -360,7 +358,8 @@ class QuarkAdapter(QuantumAdapter):
                     entry.get("task_in_queue", entry.get("queue", 0)),
                     entry,
                 )
-                if isinstance(entry, dict) else entry
+                if isinstance(entry, dict)
+                else entry
                 for entry in raw
             ]
         return []
@@ -426,9 +425,28 @@ class QuarkAdapter(QuantumAdapter):
             backend_name=backend_name,
             circuit_qubits=_qasm_qubit_count(qasm),
             supported_gates=(
-                "h", "x", "y", "z", "s", "sdg", "t", "tdg", "sx", "sxdg",
-                "rx", "ry", "rz", "u1", "u2", "u3", "cx", "cz", "swap",
-                "ccx", "measure", "barrier",
+                "h",
+                "x",
+                "y",
+                "z",
+                "s",
+                "sdg",
+                "t",
+                "tdg",
+                "sx",
+                "sxdg",
+                "rx",
+                "ry",
+                "rz",
+                "u1",
+                "u2",
+                "u3",
+                "cx",
+                "cz",
+                "swap",
+                "ccx",
+                "measure",
+                "barrier",
             ),
             warnings=tuple(warnings),
         )

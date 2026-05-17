@@ -2,20 +2,18 @@
 
 __all__ = ["basis_rotation_measurement"]
 
-from typing import Optional, List, Union, Dict
-import numpy as np
 
+from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 from uniqc.simulator import Simulator
-from uniqc._error_hints import format_enriched_message
 
 
 def basis_rotation_measurement(
     circuit: Circuit,
-    qubits: Optional[List[int]] = None,
-    basis: Optional[Union[str, List[str]]] = None,
-    shots: Optional[int] = None,
-) -> Union[Dict[str, float], List[float]]:
+    qubits: list[int] | None = None,
+    basis: str | list[str] | None = None,
+    shots: int | None = None,
+) -> dict[str, float] | list[float]:
     """Measure a circuit by applying basis-rotation gates and then
     measuring in the computational (Z) basis.
 
@@ -77,10 +75,13 @@ def basis_rotation_measurement(
     # here so users get an actionable error instead of bad numbers.
     if not getattr(circuit, "measure_list", None):
         raise ValueError(
-            format_enriched_message("basis_rotation_measurement requires the circuit to already contain "
-            "MEASURE instructions (e.g. `circuit.measure(*qubits)`); "
-            "without them, basis rotations cannot be injected and the "
-            "returned distribution would silently be wrong for X/Y bases.", "measurement")
+            format_enriched_message(
+                "basis_rotation_measurement requires the circuit to already contain "
+                "MEASURE instructions (e.g. `circuit.measure(*qubits)`); "
+                "without them, basis rotations cannot be injected and the "
+                "returned distribution would silently be wrong for X/Y bases.",
+                "measurement",
+            )
         )
 
     if qubits is None:
@@ -97,8 +98,9 @@ def basis_rotation_measurement(
         basis_strs = list(basis.upper())
         if len(basis_strs) != n:
             raise ValueError(
-                format_enriched_message(f"basis string length ({len(basis_strs)}) must match "
-                f"len(qubits) ({n})", "measurement")
+                format_enriched_message(
+                    f"basis string length ({len(basis_strs)}) must match len(qubits) ({n})", "measurement"
+                )
             )
     elif isinstance(basis, list):
         if len(basis) != n:
@@ -107,13 +109,13 @@ def basis_rotation_measurement(
             )
         basis_strs = [b.upper() for b in basis]
     else:
-        raise TypeError(format_enriched_message(f"basis must be str, list, or None, got {type(basis).__name__}", "measurement"))
+        raise TypeError(
+            format_enriched_message(f"basis must be str, list, or None, got {type(basis).__name__}", "measurement")
+        )
 
     for b in basis_strs:
         if b not in ("I", "X", "Y", "Z"):
-            raise ValueError(
-                format_enriched_message(f"basis must only contain I/X/Y/Z, got: {b!r}", "measurement")
-            )
+            raise ValueError(format_enriched_message(f"basis must only contain I/X/Y/Z, got: {b!r}", "measurement"))
 
     if shots is not None and (not isinstance(shots, int) or shots <= 0):
         raise ValueError(format_enriched_message(f"shots must be a positive integer, got {shots}", "measurement"))
@@ -152,10 +154,16 @@ def basis_rotation_measurement(
         return {f"{k:0{n}b}": v for k, v in counts.items()}
 
 
-__all__ = list(set(globals().get("__all__", []) + [
-    "basis_rotation_measurement",
-    "BasisRotationMeasurement", "basis_rotation_measurement_example",
-]))
+__all__ = list(
+    set(
+        globals().get("__all__", [])
+        + [
+            "basis_rotation_measurement",
+            "BasisRotationMeasurement",
+            "basis_rotation_measurement_example",
+        ]
+    )
+)
 
 
 class BasisRotationMeasurement:
@@ -164,16 +172,16 @@ class BasisRotationMeasurement:
     def __init__(
         self,
         circuit: Circuit,
-        qubits: Optional[List[int]] = None,
-        basis: Optional[Union[str, List[str]]] = None,
-        shots: Optional[int] = None,
+        qubits: list[int] | None = None,
+        basis: str | list[str] | None = None,
+        shots: int | None = None,
     ) -> None:
         self.circuit = circuit.copy()
         self.qubits = qubits
         self.basis = basis
         self.shots = shots
 
-    def get_readout_circuits(self) -> List[Circuit]:
+    def get_readout_circuits(self) -> list[Circuit]:
         """Return the basis-rotated, measured circuit(s).
 
         For a single-basis measurement returns a one-element list.
@@ -201,9 +209,7 @@ class BasisRotationMeasurement:
         n = measured.max_qubit + 1
         for q in range(n):
             measured.measure(q)
-        return basis_rotation_measurement(
-            measured, qubits=self.qubits, basis=self.basis, shots=self.shots
-        )
+        return basis_rotation_measurement(measured, qubits=self.qubits, basis=self.basis, shots=self.shots)
 
 
 def basis_rotation_measurement_example():

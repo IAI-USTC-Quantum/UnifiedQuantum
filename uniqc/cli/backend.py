@@ -23,10 +23,7 @@ from uniqc.cli.output import (
 )
 
 app = typer.Typer(
-    help=(
-        "List, update, and inspect quantum cloud backends\n"
-        f"  {build_ref_str('backend-list')}"
-    ),
+    help=(f"List, update, and inspect quantum cloud backends\n  {build_ref_str('backend-list')}"),
 )
 
 

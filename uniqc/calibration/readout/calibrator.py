@@ -129,10 +129,10 @@ class ReadoutCalibrator:
         # 4 basis states: |00⟩, |01⟩, |10⟩, |11⟩
         # Index in confusion matrix: 0=|00⟩, 1=|01⟩, 2=|10⟩, 3=|11⟩
         prep_circuits = [
-            ([], 0),                                         # |00⟩ → idx 0
-            ([("X", qubit_v)], 2),                          # |01⟩ → idx 2
-            ([("X", qubit_u)], 1),                          # |10⟩ → idx 1
-            ([("X", qubit_u), ("X", qubit_v)], 3),          # |11⟩ → idx 3
+            ([], 0),  # |00⟩ → idx 0
+            ([("X", qubit_v)], 2),  # |01⟩ → idx 2
+            ([("X", qubit_u)], 1),  # |10⟩ → idx 1
+            ([("X", qubit_u), ("X", qubit_v)], 3),  # |11⟩ → idx 3
         ]
 
         confusion = [[0.0] * 4 for _ in range(4)]
@@ -169,9 +169,7 @@ class ReadoutCalibrator:
         """
         return {q: self.calibrate_1q(q) for q in qubits}
 
-    def calibrate_pairs(
-        self, pairs: list[tuple[int, int]]
-    ) -> dict[tuple[int, int], ReadoutCalibrationResult]:
+    def calibrate_pairs(self, pairs: list[tuple[int, int]]) -> dict[tuple[int, int], ReadoutCalibrationResult]:
         """Calibrate joint readout for multiple qubit pairs.
 
         Args:
@@ -186,9 +184,7 @@ class ReadoutCalibrator:
     # Internal helpers
     # -------------------------------------------------------------------------
 
-    def _run_prepared_state(
-        self, prep_gates: list[tuple[str, int]], qubit: int
-    ) -> dict[int, int]:
+    def _run_prepared_state(self, prep_gates: list[tuple[str, int]], qubit: int) -> dict[int, int]:
         """Run a 1-qubit calibration circuit and return measurement counts.
 
         Args:
@@ -262,9 +258,7 @@ class ReadoutCalibrator:
 
         raise TimeoutError(f"Timed out waiting for readout calibration task {task_id}")
 
-    def _submit_and_measure_2q(
-        self, circuit: Circuit, qubit_u: int, qubit_v: int
-    ) -> dict[int, int]:
+    def _submit_and_measure_2q(self, circuit: Circuit, qubit_u: int, qubit_v: int) -> dict[int, int]:
         """Submit a 2-qubit circuit and return counts as ``{0..3: n}``.
 
         Converts simulator outcome indices (``0="00"``, ``1="01"``,

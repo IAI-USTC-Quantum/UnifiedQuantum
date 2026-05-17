@@ -84,9 +84,7 @@ class ChipTopologyView:
                 {
                     (min(int(t.u), int(t.v)), max(int(t.u), int(t.v)))
                     for t in chip.connectivity
-                    if int(t.u) in enabled_set
-                    and int(t.v) in enabled_set
-                    and t.u != t.v
+                    if int(t.u) in enabled_set and int(t.v) in enabled_set and t.u != t.v
                 }
             )
         )
@@ -147,8 +145,7 @@ def _per_pair_2q_error(
             if g.fidelity is None:
                 continue
             err = max(0.0, 1.0 - float(g.fidelity))
-            key = (min(int(tq.qubit_u), int(tq.qubit_v)),
-                   max(int(tq.qubit_u), int(tq.qubit_v)))
+            key = (min(int(tq.qubit_u), int(tq.qubit_v)), max(int(tq.qubit_u), int(tq.qubit_v)))
             per_pair[key] = err
     edges = list(coupling_map)
     if per_pair:
@@ -157,15 +154,14 @@ def _per_pair_2q_error(
             present_vals = list(per_pair.values())
             med = statistics.median(present_vals) if present_vals else 1e-2
             n_filled = 0
-            for (a, b) in edges:
+            for a, b in edges:
                 key = (min(a, b), max(a, b))
                 if key not in per_pair:
                     per_pair[key] = float(med)
                     n_filled += 1
             if n_filled:
                 notes.append(
-                    f"{n_filled}/{len(edges)} edges had no 2q fidelity in cache; "
-                    f"filled with median err={med:.6f}"
+                    f"{n_filled}/{len(edges)} edges had no 2q fidelity in cache; filled with median err={med:.6f}"
                 )
         return per_pair, notes
 
@@ -179,9 +175,7 @@ def _per_pair_2q_error(
     if not all_fids:
         if not edges:
             return {}, notes
-        notes.append(
-            "no 2q fidelity data in cache; assuming err=1e-2 for every edge"
-        )
+        notes.append("no 2q fidelity data in cache; assuming err=1e-2 for every edge")
         return {(min(a, b), max(a, b)): 1e-2 for (a, b) in edges}, notes
     med = statistics.median(all_fids)
     err = max(0.0, 1.0 - float(med))
@@ -209,9 +203,7 @@ class Region:
         qset = set(self.qubits)
         for a, b in self.edges:
             if a not in qset or b not in qset:
-                raise ValueError(
-                    f"Edge {(a, b)} references qubit not in region {self.qubits}"
-                )
+                raise ValueError(f"Edge {(a, b)} references qubit not in region {self.qubits}")
 
 
 def _is_connected(qubits: Iterable[int], adj: dict[int, set[int]]) -> bool:
@@ -230,9 +222,7 @@ def _is_connected(qubits: Iterable[int], adj: dict[int, set[int]]) -> bool:
     return len(seen) == len(qset)
 
 
-def _induced_edges(
-    qubits: Iterable[int], adj: dict[int, set[int]]
-) -> list[tuple[int, int]]:
+def _induced_edges(qubits: Iterable[int], adj: dict[int, set[int]]) -> list[tuple[int, int]]:
     qset = set(qubits)
     out: set[tuple[int, int]] = set()
     for u in qset:
@@ -242,9 +232,7 @@ def _induced_edges(
     return sorted(out)
 
 
-def _region_score(
-    qubits: Iterable[int], view: ChipTopologyView, adj: dict[int, set[int]]
-) -> float:
+def _region_score(qubits: Iterable[int], view: ChipTopologyView, adj: dict[int, set[int]]) -> float:
     qubits = list(qubits)
     s = 0.0
     for v in qubits:
@@ -260,9 +248,7 @@ def _region_score(
     return s
 
 
-def _bfs_grow(
-    seed: int, n: int, adj: dict[int, set[int]], view: ChipTopologyView
-) -> list[int]:
+def _bfs_grow(seed: int, n: int, adj: dict[int, set[int]], view: ChipTopologyView) -> list[int]:
     chosen = [seed]
     chosen_set = {seed}
     while len(chosen) < n:
@@ -309,9 +295,7 @@ def _annealing_polish(
         return cur
     for _ in range(iterations):
         v = rng.choice(cur)
-        outside = [
-            u for q in cur for u in adj.get(q, ()) if u not in cur_set
-        ]
+        outside = [u for q in cur for u in adj.get(q, ()) if u not in cur_set]
         if not outside:
             break
         u = rng.choice(outside)
@@ -325,9 +309,7 @@ def _annealing_polish(
     return cur
 
 
-def pick_region(
-    view: ChipTopologyView, n: int, *, seed: int = 0
-) -> Region:
+def pick_region(view: ChipTopologyView, n: int, *, seed: int = 0) -> Region:
     """Select ``n`` connected qubits maximising ``Σ log f_v + Σ log f_e``.
 
     Uses greedy seed-and-grow over the highest-fidelity vertex, then a
@@ -337,16 +319,11 @@ def pick_region(
     if n <= 0:
         raise ValueError("n must be positive")
     if n > len(view.enabled_qubits):
-        raise ValueError(
-            f"Requested {n} qubits but only "
-            f"{len(view.enabled_qubits)} enabled."
-        )
+        raise ValueError(f"Requested {n} qubits but only {len(view.enabled_qubits)} enabled.")
     adj = view.adjacency()
     sorted_seeds = sorted(
         view.enabled_qubits,
-        key=lambda v: -(
-            (1.0 - view.e_1q.get(v, 1.0)) * (1.0 - view.e_ro.get(v, 1.0))
-        ),
+        key=lambda v: -((1.0 - view.e_1q.get(v, 1.0)) * (1.0 - view.e_ro.get(v, 1.0))),
     )
     rng = random.Random(seed)
     candidates: list[tuple[float, list[int]]] = []
@@ -354,14 +331,10 @@ def pick_region(
         grown = _bfs_grow(s, n, adj, view)
         if len(grown) != n or not _is_connected(grown, adj):
             continue
-        polished = _annealing_polish(
-            view, adj, grown, seed=rng.randint(0, 1_000_000)
-        )
+        polished = _annealing_polish(view, adj, grown, seed=rng.randint(0, 1_000_000))
         candidates.append((_region_score(polished, view, adj), polished))
     if not candidates:
-        raise RuntimeError(
-            f"No connected region of size {n} found on {len(view.enabled_qubits)} qubits."
-        )
+        raise RuntimeError(f"No connected region of size {n} found on {len(view.enabled_qubits)} qubits.")
     score, best = max(candidates, key=lambda t: t[0])
     qubits = tuple(sorted(best))
     edges = tuple(_induced_edges(qubits, adj))
@@ -387,29 +360,16 @@ def pick_chain_region(
     if forced_qubits is not None:
         qs = tuple(int(q) for q in forced_qubits)
         if len(qs) != length:
-            raise ValueError(
-                f"forced_qubits has length {len(qs)} but length={length} requested"
-            )
+            raise ValueError(f"forced_qubits has length {len(qs)} but length={length} requested")
         for i in range(length - 1):
             if qs[i + 1] not in adj.get(qs[i], set()):
-                raise ValueError(
-                    f"forced chain {qs}: qubits {qs[i]} and {qs[i+1]} are not adjacent"
-                )
+                raise ValueError(f"forced chain {qs}: qubits {qs[i]} and {qs[i + 1]} are not adjacent")
         induced = _induced_edges(qs, adj)
-        chain_edges = tuple(
-            sorted(
-                (min(qs[i], qs[i + 1]), max(qs[i], qs[i + 1]))
-                for i in range(length - 1)
-            )
-        )
+        chain_edges = tuple(sorted((min(qs[i], qs[i + 1]), max(qs[i], qs[i + 1])) for i in range(length - 1)))
         if set(induced) != set(chain_edges):
             extra = set(induced) - set(chain_edges)
-            raise ValueError(
-                f"forced chain {qs} is not chord-free; extra induced edges: {extra}"
-            )
-        return Region(
-            qubits=qs, edges=chain_edges, score=_region_score(qs, view, adj)
-        )
+            raise ValueError(f"forced chain {qs} is not chord-free; extra induced edges: {extra}")
+        return Region(qubits=qs, edges=chain_edges, score=_region_score(qs, view, adj))
 
     best: tuple[float, tuple[int, ...]] | None = None
     cap = 1_000_000
@@ -423,9 +383,7 @@ def pick_chain_region(
                 break
             if len(path) == length:
                 induced = _induced_edges(path, adj)
-                expected = {
-                    (min(a, b), max(a, b)) for a, b in zip(path, path[1:])
-                }
+                expected = {(min(a, b), max(a, b)) for a, b in zip(path, path[1:])}
                 if {(min(a, b), max(a, b)) for a, b in induced} != expected:
                     continue
                 s = _region_score(path, view, adj)
@@ -442,12 +400,7 @@ def pick_chain_region(
     if best is None:
         raise RuntimeError(f"no chord-free chain of length {length} found")
     qs = best[1]
-    chain_edges = tuple(
-        sorted(
-            (min(qs[i], qs[i + 1]), max(qs[i], qs[i + 1]))
-            for i in range(length - 1)
-        )
-    )
+    chain_edges = tuple(sorted((min(qs[i], qs[i + 1]), max(qs[i], qs[i + 1])) for i in range(length - 1)))
     return Region(qubits=qs, edges=chain_edges, score=best[0])
 
 
@@ -456,9 +409,7 @@ def pick_chain_region(
 # ---------------------------------------------------------------------------
 
 
-def parallel_patterns(
-    edges: Sequence[tuple[int, int]], *, max_K: int = 8
-) -> tuple[tuple[tuple[int, int], ...], ...]:
+def parallel_patterns(edges: Sequence[tuple[int, int]], *, max_K: int = 8) -> tuple[tuple[tuple[int, int], ...], ...]:
     """DSatur edge-coloring of ``edges`` into edge-disjoint matchings.
 
     Returns a tuple of patterns ``(P_0, ..., P_{K-1})``. Each pattern is
@@ -467,9 +418,7 @@ def parallel_patterns(
     coloring may spill an edge into a non-empty class — increase
     ``max_K`` to ``Δ + 1`` to avoid that.
     """
-    edge_list = [
-        (min(int(a), int(b)), max(int(a), int(b))) for (a, b) in edges
-    ]
+    edge_list = [(min(int(a), int(b)), max(int(a), int(b))) for (a, b) in edges]
     if not edge_list:
         return ()
     gen = ParallelPatternGenerator(edge_list)
@@ -477,9 +426,7 @@ def parallel_patterns(
     return result.groups
 
 
-def three_color_chip(
-    view: ChipTopologyView, *, max_K: int = 3
-) -> tuple[tuple[tuple[int, int], ...], ...]:
+def three_color_chip(view: ChipTopologyView, *, max_K: int = 3) -> tuple[tuple[tuple[int, int], ...], ...]:
     """Edge-color the chip's coupling map into ``≤max_K`` parallel patterns.
 
     Most superconducting chips have max-degree ≤ 3, so ``max_K = 3`` is

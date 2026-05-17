@@ -7,11 +7,10 @@ Reference:
 
 __all__ = ["dicke_state_circuit"]
 
-from typing import List, Optional
 import math
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def _gate_i(circuit: Circuit, q0: int, q1: int, n: int) -> None:
@@ -52,7 +51,7 @@ def _gate_ii_l(circuit: Circuit, q0: int, q1: int, q2: int, l: int, n: int) -> N
     circuit.cnot(q0, q2)
 
 
-def _scs(circuit: Circuit, qubits: List[int], n: int, k: int) -> None:
+def _scs(circuit: Circuit, qubits: list[int], n: int, k: int) -> None:
     """One Split-and-Cyclic-Shift (SCS) unitary SCS_{n,k}.
 
     *qubits* must have length k+1 (indices q_0 … q_k).
@@ -67,20 +66,23 @@ def _scs(circuit: Circuit, qubits: List[int], n: int, k: int) -> None:
 def _build_dicke_fragment(
     *,
     n_qubits: int,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     k: int = 1,
 ) -> Circuit:
     if qubits is None:
         qubits = list(range(n_qubits))
     n = len(qubits)
     if k < 1 or k > n:
-        raise ValueError(format_enriched_message(f"k must satisfy 1 <= k <= n (got k={k}, n={n})", "circuit_validation"))
+        raise ValueError(
+            format_enriched_message(f"k must satisfy 1 <= k <= n (got k={k}, n={n})", "circuit_validation")
+        )
 
     fragment = Circuit()
     # Use the verified state-vector-then-prepare implementation
     from uniqc.algorithms.core.state_preparation.dicke_state import (
         dicke_state as _dicke_state_reference,
     )
+
     _dicke_state_reference(fragment, qubits=qubits, k=k)
     return fragment
 
@@ -88,8 +90,8 @@ def _build_dicke_fragment(
 def dicke_state_circuit(
     first_arg=None,
     k: int = 1,
-    qubits: Optional[List[int]] = None,
-) -> Optional[Circuit]:
+    qubits: list[int] | None = None,
+) -> Circuit | None:
     r"""Build (or apply) a Dicke-state preparation fragment :math:`|D(n,k)\rangle`.
 
     Two calling conventions:

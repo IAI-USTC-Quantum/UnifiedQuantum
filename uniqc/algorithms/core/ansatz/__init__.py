@@ -11,7 +11,7 @@ __all__ = [
     "uccsd_ansatz",
 ]
 
-from ._types import EntanglingGate, EntanglementTopology, RotationGate
+from ._types import EntanglementTopology, EntanglingGate, RotationGate
 from .hea import hea, hea_param_count
 from .hva import hva
 from .qaoa_ansatz import qaoa_ansatz

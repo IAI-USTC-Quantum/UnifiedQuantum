@@ -6,12 +6,14 @@ combinatorial optimisation problems.
 
 __all__ = ["qaoa_ansatz"]
 
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
-import numpy as np
-from uniqc.circuit_builder import Circuit
-from uniqc._error_hints import format_enriched_message
+from typing import TYPE_CHECKING, Optional, Union
 
-from ._pauli_unitary import _parse_pauli_string, _apply_cost_unitary
+import numpy as np
+
+from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
+
+from ._pauli_unitary import _apply_cost_unitary, _parse_pauli_string
 
 if TYPE_CHECKING:
     from uniqc.circuit_builder.parameter import Parameters
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 def _apply_mixer_unitary(
     circuit: Circuit,
     n_qubits: int,
-    qubits: List[int],
+    qubits: list[int],
     beta: float,
 ) -> None:
     """Apply the mixer unitary exp(-i β Σ X_i) = Π Rx(2β)."""
@@ -32,11 +34,11 @@ def _apply_mixer_unitary(
 
 
 def qaoa_ansatz(
-    cost_hamiltonian: List[Tuple[str, float]],
+    cost_hamiltonian: list[tuple[str, float]],
     p: int = 1,
-    qubits: Optional[List[int]] = None,
-    betas: Optional[Union["Parameters", np.ndarray]] = None,
-    gammas: Optional[Union["Parameters", np.ndarray]] = None,
+    qubits: list[int] | None = None,
+    betas: Union["Parameters", np.ndarray] | None = None,
+    gammas: Union["Parameters", np.ndarray] | None = None,
     *,
     mixer: str = "x",
     initial_state: Optional["Circuit"] = None,
@@ -100,7 +102,7 @@ def qaoa_ansatz(
     from uniqc.circuit_builder.parameter import Parameters as ParamClass
 
     def _validate_and_convert_params(
-        params: Optional[Union[ParamClass, np.ndarray]],
+        params: ParamClass | np.ndarray | None,
         expected_len: int,
         name: str,
     ) -> ParamClass:
@@ -187,7 +189,7 @@ def qaoa_ansatz(
 
 def _apply_xy_mixer(
     circuit: Circuit,
-    qubits: List[int],
+    qubits: list[int],
     beta: float,
 ) -> None:
     """Apply the XY mixer: exp(-i β Σ_{i} (XX_i,i+1 + YY_i,i+1)).

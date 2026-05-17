@@ -343,41 +343,65 @@ class TestOriginQAdapterUnit:
         must use the topology index to look up the qubit pair instead of crashing.
         """
         # Minimal mock objects
-        mock_sq = type("MockSQ", (), {
-            "get_qubit_id": lambda self: 0,
-            "get_t1": lambda self: 50.0,
-            "get_t2": lambda self: 80.0,
-            "get_single_gate_fidelity": lambda self: 0.99,
-            "get_readout_fidelity": lambda self: 0.95,
-            "get_readout_fidelity_0": lambda self: 0.97,
-            "get_readout_fidelity_1": lambda self: 0.93,
-        })()
+        mock_sq = type(
+            "MockSQ",
+            (),
+            {
+                "get_qubit_id": lambda self: 0,
+                "get_t1": lambda self: 50.0,
+                "get_t2": lambda self: 80.0,
+                "get_single_gate_fidelity": lambda self: 0.99,
+                "get_readout_fidelity": lambda self: 0.95,
+                "get_readout_fidelity_0": lambda self: 0.97,
+                "get_readout_fidelity_1": lambda self: 0.93,
+            },
+        )()
 
-        mock_dq = type("MockDQ", (), {
-            # No get_qubit_u / get_qubit_v — this is the case being tested
-            "get_fidelity": lambda self: 0.85,
-        })()
+        mock_dq = type(
+            "MockDQ",
+            (),
+            {
+                # No get_qubit_u / get_qubit_v — this is the case being tested
+                "get_fidelity": lambda self: 0.85,
+            },
+        )()
 
-        mock_ci = type("MockCI", (), {
-            "qubits_num": lambda self: 5,
-            "get_chip_topology": lambda self: [(0, 1), (1, 2), (2, 3)],
-            "available_qubits": lambda self: [0, 1, 2, 3, 4],
-            "single_qubit_info": lambda self: [mock_sq],
-            "double_qubits_info": lambda self: [mock_dq],
-        })()
+        mock_ci = type(
+            "MockCI",
+            (),
+            {
+                "qubits_num": lambda self: 5,
+                "get_chip_topology": lambda self: [(0, 1), (1, 2), (2, 3)],
+                "available_qubits": lambda self: [0, 1, 2, 3, 4],
+                "single_qubit_info": lambda self: [mock_sq],
+                "double_qubits_info": lambda self: [mock_dq],
+            },
+        )()
 
-        mock_backend = type("MockBackend", (), {
-            "chip_info": lambda self: mock_ci,
-            "configuration": lambda self: type("MockCfg", (), {
-                "supported_gates": lambda self: ["x", "h", "cx", "cz"],
-                "single_qubit_gate_time": lambda self: 20.0,
-                "two_qubit_gate_time": lambda self: 300.0,
-            })(),
-        })()
+        mock_backend = type(
+            "MockBackend",
+            (),
+            {
+                "chip_info": lambda self: mock_ci,
+                "configuration": lambda self: type(
+                    "MockCfg",
+                    (),
+                    {
+                        "supported_gates": lambda self: ["x", "h", "cx", "cz"],
+                        "single_qubit_gate_time": lambda self: 20.0,
+                        "two_qubit_gate_time": lambda self: 300.0,
+                    },
+                )(),
+            },
+        )()
 
-        mock_service = type("MockService", (), {
-            "backend": lambda self, name: mock_backend,
-        })()
+        mock_service = type(
+            "MockService",
+            (),
+            {
+                "backend": lambda self, name: mock_backend,
+            },
+        )()
 
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
@@ -423,9 +447,14 @@ class TestOriginQNativeBatch:
                 self.mapping = False
                 self.optimization = True
 
-            def set_amend(self, v): self.amend = v
-            def set_mapping(self, v): self.mapping = v
-            def set_optimization(self, v): self.optimization = v
+            def set_amend(self, v):
+                self.amend = v
+
+            def set_mapping(self, v):
+                self.mapping = v
+
+            def set_optimization(self, v):
+                self.optimization = v
 
         adapter._QCloudOptions = _Opt
         adapter._QCloudJob = None
@@ -439,12 +468,12 @@ class TestOriginQNativeBatch:
         return adapter
 
     def test_native_batch_uses_run_list_and_returns_single_id(self, monkeypatch):
-        from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         captured = {}
 
         class FakeJob:
-            def job_id(self): return "BATCH-JOB-ID-1"
+            def job_id(self):
+                return "BATCH-JOB-ID-1"
 
         class FakeBackend:
             def chip_info(self):
@@ -464,7 +493,8 @@ class TestOriginQNativeBatch:
 
         # Fake QProg sentinel
         class FakeQProg:
-            def __init__(self, ir): self.ir = ir
+            def __init__(self, ir):
+                self.ir = ir
 
         adapter.translate_circuit = lambda ir: FakeQProg(ir)
         adapter._validate_backend = lambda name: None
@@ -483,6 +513,7 @@ class TestOriginQNativeBatch:
     def test_native_batch_disabled_falls_back_to_per_circuit_run(self):
         class FakeJob:
             _next = 0
+
             def job_id(self):
                 FakeJob._next += 1
                 return f"JOB-{FakeJob._next}"
@@ -492,9 +523,11 @@ class TestOriginQNativeBatch:
         class FakeBackend:
             def chip_info(self):
                 return type("CI", (), {"qubits_num": lambda self: 2})()
+
             def run(self, *args, **kwargs):
                 run_call_args.append((args, kwargs))
                 return FakeJob()
+
             def run_instruction(self, *a, **kw):
                 raise AssertionError("Should not call run_instruction")
 
@@ -504,7 +537,9 @@ class TestOriginQNativeBatch:
         adapter._ensure_imports = lambda: None
 
         ids = adapter.submit_batch(
-            ["c0", "c1", "c2"], shots=100, native_batch=False,
+            ["c0", "c1", "c2"],
+            shots=100,
+            native_batch=False,
             backend_name="WK_C180",
         )
         assert len(ids) == 3
@@ -520,14 +555,17 @@ class TestOriginQNativeBatch:
         run_calls: list = []
 
         class FakeJob:
-            def job_id(self): return "SINGLE-1"
+            def job_id(self):
+                return "SINGLE-1"
 
         class FakeBackend:
             def chip_info(self):
                 return type("CI", (), {"qubits_num": lambda self: 2})()
+
             def run(self, *args, **kwargs):
                 run_calls.append((args, kwargs))
                 return FakeJob()
+
             def run_instruction(self, *a, **kw):
                 raise AssertionError("Single-circuit batch should not call run_instruction")
 
@@ -551,7 +589,10 @@ class TestNativeBatchHighLevel:
 
         raw = [{"00": 100, "11": 100}, {"01": 200}]
         results = _wrap_as_unified_result_list(
-            raw, task_id="batch-1", backend="originq:WK_C180", shots=200,
+            raw,
+            task_id="batch-1",
+            backend="originq:WK_C180",
+            shots=200,
         )
         assert isinstance(results, list)
         assert len(results) == 2
@@ -566,7 +607,10 @@ class TestNativeBatchHighLevel:
 
         raw = {"result": [{"0": 50}, {"1": 50}], "status": "success"}
         results = _wrap_as_unified_result_list(
-            raw, task_id="b", backend="ibm", shots=50,
+            raw,
+            task_id="b",
+            backend="ibm",
+            shots=50,
         )
         assert len(results) == 2
         assert results[0].counts == {"0": 50}

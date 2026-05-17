@@ -1,5 +1,4 @@
 """Pytest tests for CLI circuit module."""
-import pytest
 
 
 class TestCLICircuit:

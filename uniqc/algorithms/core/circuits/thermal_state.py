@@ -2,18 +2,17 @@
 
 __all__ = ["thermal_state_circuit", "thermal_state_example"]
 
-from typing import List, Optional
 import math
 
-from uniqc.circuit_builder import Circuit
-from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc._error_hints import format_enriched_message
+from uniqc.algorithms._compat import dispatch_circuit_fragment
+from uniqc.circuit_builder import Circuit
 
 
 def _build_thermal_fragment(
     *,
     n_qubits: int,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     beta: float = 1.0,
 ) -> Circuit:
     if beta < 0:
@@ -33,8 +32,8 @@ def _build_thermal_fragment(
 def thermal_state_circuit(
     first_arg=None,
     beta: float = 1.0,
-    qubits: Optional[List[int]] = None,
-) -> Optional[Circuit]:
+    qubits: list[int] | None = None,
+) -> Circuit | None:
     r"""Build (or apply) a thermal-state preparation fragment for :math:`H=\sum_i Z_i`.
 
     Two calling conventions:

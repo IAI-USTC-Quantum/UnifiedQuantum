@@ -24,7 +24,6 @@ class OpenQASM2_LineParser:  # noqa: N801
     qreg/creg definitions, 1-4 qubit gates, parameterized gates, and measurements.
     """
 
-    
     # Fragment patterns
     identifier: str = r"([A-Za-z_][A-Za-z_\d]*)"
     blank: str = r" *"

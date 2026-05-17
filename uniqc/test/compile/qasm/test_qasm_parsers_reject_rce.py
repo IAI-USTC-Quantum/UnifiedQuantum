@@ -39,13 +39,7 @@ def test_line_parser_rejects_unsafe_param(tmp_path) -> None:
     happily resolve it because ``eval`` auto-injects ``__builtins__`` when
     the globals dict lacks the key.  ``safe_eval_param`` must reject it.
     """
-    qasm = (
-        "OPENQASM 2.0;\n"
-        'include "qelib1.inc";\n'
-        "qreg q[1];\n"
-        "creg c[1];\n"
-        "rx(__import__) q[0];\n"
-    )
+    qasm = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\ncreg c[1];\nrx(__import__) q[0];\n'
 
     parser = OpenQASM2_BaseParser()
     with pytest.raises(Exception) as exc_info:
@@ -57,10 +51,9 @@ def test_line_parser_rejects_unsafe_param(tmp_path) -> None:
     while err is not None:
         chain.append(err)
         err = err.__cause__ or err.__context__
-    assert any(
-        isinstance(e, ValueError) and "Unsafe QASM expression" in str(e)
-        for e in chain
-    ), f"Expected an Unsafe-QASM-expression ValueError, got chain={chain!r}"
+    assert any(isinstance(e, ValueError) and "Unsafe QASM expression" in str(e) for e in chain), (
+        f"Expected an Unsafe-QASM-expression ValueError, got chain={chain!r}"
+    )
 
 
 def test_custom_gate_body_rejects_rce_payload(tmp_path) -> None:
@@ -88,6 +81,4 @@ def test_custom_gate_body_rejects_rce_payload(tmp_path) -> None:
     with pytest.raises(Exception):
         parser.parse(qasm)
 
-    assert not os.path.exists(canary), (
-        f"RCE canary file {canary} was created — eval() executed the payload!"
-    )
+    assert not os.path.exists(canary), f"RCE canary file {canary} was created — eval() executed the payload!"

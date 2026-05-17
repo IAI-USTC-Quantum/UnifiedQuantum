@@ -31,6 +31,7 @@ PID_FILE = DEFAULT_CACHE_DIR / "gateway.pid"
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _read_pid() -> int | None:
     if not PID_FILE.exists():
         return None
@@ -68,17 +69,22 @@ def _resolve_uvicorn_cmd(host: str, port: int) -> list[str]:
     in that environment; otherwise falls back to sys.executable directly.
     """
     base_cmd = [
-        sys.executable, "-m", "uvicorn",
+        sys.executable,
+        "-m",
+        "uvicorn",
         "uniqc.gateway.server:create_app",
         "--factory",
-        "--host", host,
-        "--port", str(port),
+        "--host",
+        host,
+        "--port",
+        str(port),
     ]
     # Only use 'uv run' if uv is present AND uvicorn is available in it
     try:
         cp = subprocess.run(
             ["uv", "run", "--no-project", "python", "-c", "import uvicorn"],
-            capture_output=True, check=False,
+            capture_output=True,
+            check=False,
         )
         if cp.returncode == 0:
             return ["uv", "run", "--no-project", "--", *base_cmd]
@@ -91,14 +97,11 @@ def _resolve_uvicorn_cmd(host: str, port: int) -> list[str]:
 # Commands
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def start(
-    port: int | None = typer.Option(
-        None, "--port", "-p", help="Port to listen on (overrides config.yaml)"
-    ),
-    host: str | None = typer.Option(
-        None, "--host", help="Host to bind to (overrides config.yaml)"
-    ),
+    port: int | None = typer.Option(None, "--port", "-p", help="Port to listen on (overrides config.yaml)"),
+    host: str | None = typer.Option(None, "--host", help="Host to bind to (overrides config.yaml)"),
 ) -> None:
     """Start the gateway web UI server in the background."""
     cfg = load_gateway_config()

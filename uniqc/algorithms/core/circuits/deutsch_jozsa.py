@@ -13,16 +13,15 @@ preserved as a deprecated dispatch and emits :class:`DeprecationWarning`.
 __all__ = ["deutsch_jozsa_circuit", "deutsch_jozsa_oracle", "deutsch_jozsa_example"]
 
 import warnings
-from typing import List, Optional
 
-from uniqc.circuit_builder import Circuit
 from uniqc._error_hints import format_enriched_message
+from uniqc.circuit_builder import Circuit
 
 
 def deutsch_jozsa_oracle(
-    qubits: List[int],
+    qubits: list[int],
     balanced: bool = True,
-    target_bits: Optional[List[int]] = None,
+    target_bits: list[int] | None = None,
 ) -> Circuit:
     r"""Build a Deutsch-Jozsa oracle circuit.
 
@@ -58,7 +57,9 @@ def deutsch_jozsa_oracle(
     for idx in target_bits:
         if idx < 0 or idx >= n_qubits:
             raise ValueError(
-                format_enriched_message(f"target_bit {idx} out of range for {n_qubits} data qubits", "circuit_validation")
+                format_enriched_message(
+                    f"target_bit {idx} out of range for {n_qubits} data qubits", "circuit_validation"
+                )
             )
         oracle.cnot(qubits[idx], ancilla)
 
@@ -68,8 +69,8 @@ def deutsch_jozsa_oracle(
 def _build_dj_fragment(
     *,
     oracle: Circuit,
-    qubits: List[int],
-    ancilla: Optional[int] = None,
+    qubits: list[int],
+    ancilla: int | None = None,
 ) -> Circuit:
     if not isinstance(qubits, list):
         raise TypeError(format_enriched_message("qubits must be a list of qubit indices", "circuit_validation"))
@@ -81,8 +82,10 @@ def _build_dj_fragment(
         ancilla = max(qubits) + 1
     if oracle.qubit_num > 0 and oracle.qubit_num != n_data + 1:
         raise ValueError(
-            format_enriched_message(f"Oracle acts on {oracle.qubit_num} qubits, "
-            f"expected {n_data + 1} (data + ancilla)", "circuit_validation")
+            format_enriched_message(
+                f"Oracle acts on {oracle.qubit_num} qubits, expected {n_data + 1} (data + ancilla)",
+                "circuit_validation",
+            )
         )
 
     fragment = Circuit()
@@ -99,9 +102,9 @@ def _build_dj_fragment(
 
 def deutsch_jozsa_circuit(
     *args,
-    qubits: Optional[List[int]] = None,
-    ancilla: Optional[int] = None,
-    oracle: Optional[Circuit] = None,
+    qubits: list[int] | None = None,
+    ancilla: int | None = None,
+    oracle: Circuit | None = None,
 ):
     r"""Build (or apply) the Deutsch-Jozsa algorithm circuit.
 
@@ -130,7 +133,11 @@ def deutsch_jozsa_circuit(
     # Resolve dispatch
     if len(args) == 0:
         if oracle is None:
-            raise TypeError(format_enriched_message("deutsch_jozsa_circuit requires an oracle Circuit argument", "circuit_validation"))
+            raise TypeError(
+                format_enriched_message(
+                    "deutsch_jozsa_circuit requires an oracle Circuit argument", "circuit_validation"
+                )
+            )
         return _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
 
     if len(args) == 1:

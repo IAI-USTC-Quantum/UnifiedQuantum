@@ -2,8 +2,9 @@
 This file is used to convert the opcode to various quantum code formats.
 """
 
-from typing import List, Optional, Tuple, Union
-from .translate_qasm2_oir import OriginIR_QASM2_dict, get_QASM2_from_opcode, decompose_mcu_qasm_text
+from typing import Optional, Union
+
+from .translate_qasm2_oir import decompose_mcu_qasm_text, get_QASM2_from_opcode
 
 __all__ = [
     "make_header_originir",
@@ -18,10 +19,10 @@ __all__ = [
     "ParameterType",
 ]
 
-QubitType = Union[List[int], int]
-CbitType = Union[List[int], int]
-ParameterType = Optional[Union[List[float], float]]
-OpcodeType = Tuple[str, QubitType, CbitType, ParameterType, set, bool]
+QubitType = Union[list[int], int]
+CbitType = Union[list[int], int]
+ParameterType = Optional[list[float] | float]
+OpcodeType = tuple[str, QubitType, CbitType, ParameterType, set, bool]
 
 
 def make_header_originir(qubit_num: int, cbit_num: int) -> str:
@@ -35,8 +36,8 @@ def make_header_originir(qubit_num: int, cbit_num: int) -> str:
     Returns:
         str: The header of OriginIR code.
     """
-    ret = "QINIT {}\n".format(qubit_num)
-    ret += "CREG {}\n".format(cbit_num)
+    ret = f"QINIT {qubit_num}\n"
+    ret += f"CREG {cbit_num}\n"
     return ret
 
 
@@ -107,7 +108,7 @@ def opcode_to_line_originir(opcode: OpcodeType) -> str:
     return ret
 
 
-def make_measure_originir(measure_list: List[int]):
+def make_measure_originir(measure_list: list[int]):
     """
     Generate the measure statement of OriginIR code for the given measure list.
 
@@ -120,11 +121,11 @@ def make_measure_originir(measure_list: List[int]):
 
     ret = ""
     for i, meas_qubit in enumerate(measure_list):
-        ret += "MEASURE q[{}], c[{}]\n".format(meas_qubit, i)
+        ret += f"MEASURE q[{meas_qubit}], c[{i}]\n"
     return ret
 
 
-def make_header_qasm(qubit_num: int, cbit_num: int, custom_gates: Optional[List[str]] = None) -> str:
+def make_header_qasm(qubit_num: int, cbit_num: int, custom_gates: list[str] | None = None) -> str:
     """
     Generate the header of QASM code for the given qubit and cbit number.
 
@@ -145,16 +146,17 @@ def make_header_qasm(qubit_num: int, cbit_num: int, custom_gates: Optional[List[
     ret = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
     if custom_gates:
         from .translate_qasm2_oir import QASM2_CUSTOM_GATE_DEFS
+
         for name in custom_gates:
             gate_def = QASM2_CUSTOM_GATE_DEFS.get(name)
             if gate_def is not None:
                 ret += gate_def + "\n"
-    ret += "qreg q[{}];\n".format(qubit_num)
-    ret += "creg c[{}];\n".format(cbit_num)
+    ret += f"qreg q[{qubit_num}];\n"
+    ret += f"creg c[{cbit_num}];\n"
     return ret
 
 
-def opcode_to_line_qasm(opcode: OpcodeType, qubit_num: Optional[int] = None) -> str:
+def opcode_to_line_qasm(opcode: OpcodeType, qubit_num: int | None = None) -> str:
     """
     Convert the given opcode to QASM line format.
 
@@ -215,7 +217,7 @@ def opcode_to_line_qasm(opcode: OpcodeType, qubit_num: Optional[int] = None) -> 
     return ret
 
 
-def make_measure_qasm(measure_list: List[int]) -> str:
+def make_measure_qasm(measure_list: list[int]) -> str:
     """
     Generate the measure statement of QASM code for the given measure list.
 
@@ -228,5 +230,5 @@ def make_measure_qasm(measure_list: List[int]) -> str:
 
     ret = ""
     for i, meas_qubit in enumerate(measure_list):
-        ret += "measure q[{}] -> c[{}];\n".format(meas_qubit, i)
+        ret += f"measure q[{meas_qubit}] -> c[{i}];\n"
     return ret

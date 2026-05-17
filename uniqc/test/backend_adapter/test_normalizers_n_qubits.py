@@ -32,9 +32,7 @@ def test_explicit_n_qubits_pads_sparse_counts() -> None:
 
     keys = list(result.counts.keys())
     assert keys, "expected non-empty counts"
-    assert all(len(k) == 4 for k in keys), (
-        f"all bitstrings must be padded to width 4, got {keys}"
-    )
+    assert all(len(k) == 4 for k in keys), f"all bitstrings must be padded to width 4, got {keys}"
     # Outcome 7 -> '0111' under width 4 (rightmost bit = qubit 0)
     assert "0111" in result.counts
     assert result.counts["0111"] == 50
@@ -57,9 +55,7 @@ def test_missing_n_qubits_warns_and_uses_bit_length_fallback() -> None:
     keys = list(result.counts.keys())
     assert keys
     # Legacy behavior: max outcome (7) has bit_length 3
-    assert all(len(k) == 3 for k in keys), (
-        f"legacy fallback should yield width-3 keys, got {keys}"
-    )
+    assert all(len(k) == 3 for k in keys), f"legacy fallback should yield width-3 keys, got {keys}"
     assert "111" in result.counts
 
 

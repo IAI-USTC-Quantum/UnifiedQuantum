@@ -12,18 +12,17 @@ the design notes in the project README):
 
 __all__ = ["qft_circuit"]
 
-from typing import List, Optional
 import math
 
-from uniqc.circuit_builder import Circuit
-from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc._error_hints import format_enriched_message
+from uniqc.algorithms._compat import dispatch_circuit_fragment
+from uniqc.circuit_builder import Circuit
 
 
 def _build_qft_fragment(
     *,
     n_qubits: int,
-    qubits: Optional[List[int]] = None,
+    qubits: list[int] | None = None,
     swaps: bool = True,
 ) -> Circuit:
     """Pure fragment builder: returns a fresh ``Circuit`` containing QFT."""
@@ -51,7 +50,7 @@ def _build_qft_fragment(
     return fragment
 
 
-def qft_circuit(first_arg=None, qubits: Optional[List[int]] = None, swaps: bool = True):
+def qft_circuit(first_arg=None, qubits: list[int] | None = None, swaps: bool = True):
     r"""Build (or apply) a Quantum Fourier Transform fragment.
 
     Two calling conventions are supported:
@@ -96,4 +95,3 @@ def qft_circuit(first_arg=None, qubits: Optional[List[int]] = None, swaps: bool 
 def qft_example() -> Circuit:
     """Return a 3-qubit QFT circuit, used by docs and tests as a smoke example."""
     return qft_circuit(3)
-

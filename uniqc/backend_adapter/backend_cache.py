@@ -39,6 +39,7 @@ TTL_SECONDS = 24 * 60 * 60  # 24 hours
 # Low-level file I/O
 # ---------------------------------------------------------------------------
 
+
 def _read_cache(cache_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     """Return the parsed cache file, or an empty dict if absent/invalid."""
     path = (cache_dir or DEFAULT_CACHE_DIR) / CACHE_FILE
@@ -54,7 +55,7 @@ def _read_cache(cache_dir: Path | None = None) -> dict[str, dict[str, Any]]:
 
 def _write_cache(data: dict[str, dict[str, Any]], cache_dir: Path | None = None) -> None:
     """Atomically write the cache file."""
-    cache_dir = (cache_dir or DEFAULT_CACHE_DIR)
+    cache_dir = cache_dir or DEFAULT_CACHE_DIR
     cache_dir.mkdir(parents=True, exist_ok=True)
     path = cache_dir / CACHE_FILE
     tmp = path.with_suffix(".tmp")
@@ -69,6 +70,7 @@ def _write_cache(data: dict[str, dict[str, Any]], cache_dir: Path | None = None)
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def is_stale(platform: str, cache_dir: Path | None = None) -> bool:
     """Return True when the cached data for ``platform`` is absent or expired."""

@@ -68,8 +68,7 @@ def test_quark_chip_info_extracts_topology_and_gate_data():
     assert details["global_info"]["two_qubit_gate_time"] == pytest.approx(210.0)
 
     pair_data = {
-        (item["qubit_u"], item["qubit_v"]): item["gates"][0]["fidelity"]
-        for item in details["per_pair_calibration"]
+        (item["qubit_u"], item["qubit_v"]): item["gates"][0]["fidelity"] for item in details["per_pair_calibration"]
     }
     assert pair_data[(0, 1)] is None
     assert pair_data[(1, 2)] == pytest.approx(0.986)
@@ -95,10 +94,7 @@ def test_quark_backend_summary_uses_backend_cache_topology_and_gates():
     assert summary["topology"]["has_connectivity"] is True
     assert [node["id"] for node in summary["topology"]["nodes"]] == [0, 1, 2]
     assert "cz" in summary["supported_gates"]
-    edge_fids = {
-        (edge["u"], edge["v"]): edge["fidelity"]
-        for edge in summary["topology"]["edges"]
-    }
+    edge_fids = {(edge["u"], edge["v"]): edge["fidelity"] for edge in summary["topology"]["edges"]}
     assert edge_fids[(0, 1)] is None
     assert edge_fids[(1, 2)] == pytest.approx(0.986)
     assert summary["calibration"]["available"] is True

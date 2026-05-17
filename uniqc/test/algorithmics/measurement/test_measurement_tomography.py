@@ -4,8 +4,8 @@ density matrix verification, 3-qubit, and edge cases."""
 import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit
 from uniqc.algorithms.core.measurement import state_tomography, tomography_summary
+from uniqc.circuit_builder import Circuit
 
 
 class TestSingleQubitTomography:

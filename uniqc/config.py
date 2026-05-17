@@ -98,10 +98,10 @@ from uniqc.exceptions import (  # noqa: F401 — re-export for backward compat
     ProfileNotFoundError,
 )
 
-
 # ---------------------------------------------------------------------------
 # Core functions (also used by uniqc.backend_adapter.config via re-export)
 # ---------------------------------------------------------------------------
+
 
 def _ensure_config_dir() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -187,8 +187,7 @@ def get_platform_config(
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
             format_enriched_message(
-                f"Unsupported platform: {platform_name}. "
-                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                f"Unsupported platform: {platform_name}. Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
                 "config",
             )
         )
@@ -198,8 +197,7 @@ def get_platform_config(
     if profile not in config:
         raise ProfileNotFoundError(
             format_enriched_message(
-                f"Profile '{profile}' not found in configuration. "
-                f"Available profiles: {', '.join(config.keys())}",
+                f"Profile '{profile}' not found in configuration. Available profiles: {', '.join(config.keys())}",
                 "config",
             )
         )
@@ -248,10 +246,7 @@ def validate_config(
             platform_config = profile_config[platform_name]
 
             if not isinstance(platform_config, dict):
-                errors.append(
-                    f"Platform '{platform_name}' in profile '{profile_name}' "
-                    "must be a dictionary"
-                )
+                errors.append(f"Platform '{platform_name}' in profile '{profile_name}' must be a dictionary")
                 continue
 
             if platform_name == "quark":
@@ -274,24 +269,17 @@ def validate_config(
             unknown = set(platform_config.keys()) - known
             for key in sorted(unknown):
                 errors.append(
-                    f"Warning: unknown field '{key}' for platform "
-                    f"'{platform_name}' in profile '{profile_name}'"
+                    f"Warning: unknown field '{key}' for platform '{platform_name}' in profile '{profile_name}'"
                 )
 
             if platform_name == "ibm" and "proxy" in platform_config:
                 proxy = platform_config["proxy"]
                 if not isinstance(proxy, dict):
-                    errors.append(
-                        f"Proxy configuration for IBM in profile '{profile_name}' "
-                        "must be a dictionary"
-                    )
+                    errors.append(f"Proxy configuration for IBM in profile '{profile_name}' must be a dictionary")
                 else:
                     for proxy_type in ["http", "https"]:
                         if proxy_type in proxy and not isinstance(proxy[proxy_type], str):
-                            errors.append(
-                                f"Proxy '{proxy_type}' for IBM in profile "
-                                f"'{profile_name}' must be a string"
-                            )
+                            errors.append(f"Proxy '{proxy_type}' for IBM in profile '{profile_name}' must be a string")
 
     return errors
 
@@ -313,8 +301,7 @@ def update_platform_config(
     if platform_name not in SUPPORTED_PLATFORMS:
         raise PlatformNotFoundError(
             format_enriched_message(
-                f"Unsupported platform: {platform_name}. "
-                f"Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
+                f"Unsupported platform: {platform_name}. Supported platforms: {', '.join(SUPPORTED_PLATFORMS)}",
                 "config",
             )
         )
@@ -401,6 +388,7 @@ def get_ibm_config(profile: str | None = None) -> dict[str, Any]:
 # Platform-specific credential loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_platform_config(platform: str) -> dict[str, Any]:
     profile = get_active_profile()
     return get_platform_config(platform, profile)
@@ -435,8 +423,7 @@ def load_quafu_config() -> dict[str, Any]:
 
     raise ImportError(
         format_enriched_message(
-            "Quafu config not found. "
-            "Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "Quafu config not found. Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
             "config",
         )
     )
@@ -467,8 +454,7 @@ def load_ibm_config() -> dict[str, Any]:
 
     raise ImportError(
         format_enriched_message(
-            "IBM Quantum config not found. "
-            "Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
+            "IBM Quantum config not found. Run `uniqc config set ibm.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
             "config",
         )
     )

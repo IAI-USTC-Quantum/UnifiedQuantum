@@ -1,11 +1,12 @@
 """Tests for transpiler converter module."""
-from uniqc.test._utils import uniq_test, NotMatchError
+
+from uniqc.circuit_builder import Circuit
 from uniqc.compile.converter import convert_oir_to_qasm, convert_qasm_to_oir
 from uniqc.exceptions import CircuitTranslationError
-from uniqc.circuit_builder import Circuit
+from uniqc.test._utils import uniq_test
 
 
-@uniq_test('Test Transpiler Converter: OIR to QASM')
+@uniq_test("Test Transpiler Converter: OIR to QASM")
 def run_test_oir_to_qasm():
     """Test OriginIR to QASM conversion."""
     # Test simple circuit
@@ -16,8 +17,8 @@ def run_test_oir_to_qasm():
 
     qasm_str = convert_oir_to_qasm(originir_str)
 
-    assert 'OPENQASM 2.0' in qasm_str
-    assert 'qreg' in qasm_str
+    assert "OPENQASM 2.0" in qasm_str
+    assert "qreg" in qasm_str
     print(f"Converted QASM:\n{qasm_str}")
 
     # Test circuit with parameters
@@ -26,11 +27,11 @@ def run_test_oir_to_qasm():
     originir_str2 = circ2.originir
 
     qasm_str2 = convert_oir_to_qasm(originir_str2)
-    assert 'rx' in qasm_str2.lower()
+    assert "rx" in qasm_str2.lower()
     print(f"Parameterized QASM:\n{qasm_str2}")
 
 
-@uniq_test('Test Transpiler Converter: QASM to OIR')
+@uniq_test("Test Transpiler Converter: QASM to OIR")
 def run_test_qasm_to_oir():
     """Test QASM to OriginIR conversion."""
     qasm_str = """
@@ -45,12 +46,12 @@ measure q[1] -> c[1];
 """
     originir_str = convert_qasm_to_oir(qasm_str)
 
-    assert 'QINIT' in originir_str
-    assert 'CREG' in originir_str
+    assert "QINIT" in originir_str
+    assert "CREG" in originir_str
     print(f"Converted OriginIR:\n{originir_str}")
 
 
-@uniq_test('Test Transpiler Converter: Roundtrip')
+@uniq_test("Test Transpiler Converter: Roundtrip")
 def run_test_roundtrip():
     """Test roundtrip conversion OIR -> QASM -> OIR."""
     circ = Circuit(3)
@@ -67,7 +68,7 @@ def run_test_roundtrip():
     print(f"Converted OIR:\n{converted_oir}")
 
 
-@uniq_test('Test Transpiler Converter: Error Handling')
+@uniq_test("Test Transpiler Converter: Error Handling")
 def run_test_error_handling():
     """Test error handling for invalid inputs."""
     # Test invalid OriginIR
@@ -83,7 +84,7 @@ def run_test_error_handling():
         print(f"Caught expected error for invalid QASM: {e}")
 
 
-@uniq_test('Test Transpiler: draw lazy import')
+@uniq_test("Test Transpiler: draw lazy import")
 def test_draw_lazy_import():
     """Test that draw function can be imported without pyqpanda3."""
     from uniqc.compile import draw
@@ -102,5 +103,5 @@ def run_test_transpiler_converter():
     test_draw_lazy_import()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_test_transpiler_converter()

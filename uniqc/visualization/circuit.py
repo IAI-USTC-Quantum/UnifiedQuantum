@@ -5,21 +5,25 @@ quantum programs in OriginIR or QASM format.
 """
 
 __all__ = ["draw", "draw_html"]
-from pyqpanda3.core import draw_qprog, PIC_TYPE
+from pyqpanda3.core import PIC_TYPE, draw_qprog
 from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
-from uniqc.compile.converter import convert_qasm_to_oir, convert_oir_to_qasm
+
+from uniqc.compile.converter import convert_qasm_to_oir
+
 
 def _from_originir(originir_str):
     qprog = convert_originir_string_to_qprog(originir_str)
     return qprog
+
 
 def _from_qasm(qasm_str):
     oir_str = convert_qasm_to_oir(qasm_str)
     qprog = _from_originir(oir_str)
     return qprog
 
-def draw(ir_str, language='OriginIR'):
-    ''' 
+
+def draw(ir_str, language="OriginIR"):
+    """
     Draw the circuit in text format.
 
     Args:
@@ -28,12 +32,12 @@ def draw(ir_str, language='OriginIR'):
 
     Returns:
         qprog (QProg): The QProg object of the input circuit.
-    
-    '''
 
-    if language == 'OriginIR':
+    """
+
+    if language == "OriginIR":
         qprog = _from_originir(ir_str)
-    elif language == 'QASM':
+    elif language == "QASM":
         qprog = _from_qasm(ir_str)
     else:
         raise ValueError(f"Unsupported language: {language}. \n")
@@ -42,16 +46,16 @@ def draw(ir_str, language='OriginIR'):
     return qprog
 
 
-def draw_html(ir_str, language='OriginIR', output_path=None, *, title="Quantum circuit"):
+def draw_html(ir_str, language="OriginIR", output_path=None, *, title="Quantum circuit"):
     """Render a static HTML/SVG circuit diagram.
 
     The HTML output is intentionally static: gates expose parameters and raw
     operation data through native SVG hover tooltips, with no editable state or
     JavaScript dependency.
     """
-    if language == 'OriginIR':
+    if language == "OriginIR":
         circuit_text = ir_str
-    elif language == 'QASM':
+    elif language == "QASM":
         circuit_text = convert_qasm_to_oir(ir_str)
     else:
         raise ValueError(f"Unsupported language: {language}. \n")
@@ -61,14 +65,12 @@ def draw_html(ir_str, language='OriginIR', output_path=None, *, title="Quantum c
     return circuit_to_html(circuit_text, output_path=output_path, title=title)
 
 
-if __name__ == '__main__':
-    from uniqc.circuit_builder import random_originir, generate_sub_gateset_originir
+if __name__ == "__main__":
+    from uniqc.circuit_builder import generate_sub_gateset_originir, random_originir
 
     # small set
-    gate_set = ['H', 'X', 'Y', 'Z',
-                'RX', 'RY', 'RZ', 'RPhi', 'U3'
-                ]
-    
+    gate_set = ["H", "X", "Y", "Z", "RX", "RY", "RZ", "RPhi", "U3"]
+
     gate_set = generate_sub_gateset_originir(gate_set)
 
     originir_str = random_originir(n_qubits=5, n_gates=10, instruction_set=gate_set)

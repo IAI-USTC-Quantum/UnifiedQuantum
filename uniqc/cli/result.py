@@ -2,22 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 
-from .output import AI_HINTS_OPTION, ai_hints_enabled, build_ref_str, print_ai_hints
-from .output import extract_counts_and_probs, format_prob, print_error, print_json, print_table
-
-HELP = (
-    "Query task results from quantum cloud platforms\n"
-    f"  {build_ref_str('result')}"
+from .output import (
+    AI_HINTS_OPTION,
+    ai_hints_enabled,
+    build_ref_str,
+    extract_counts_and_probs,
+    format_prob,
+    print_ai_hints,
+    print_error,
+    print_json,
+    print_table,
 )
+
+HELP = f"Query task results from quantum cloud platforms\n  {build_ref_str('result')}"
 
 
 def result(
     task_id: str = typer.Argument(..., help="Task ID to query"),
-    platform: Optional[str] = typer.Option(None, "--platform", "-p", help="Platform: originq/quafu/ibm"),
+    platform: str | None = typer.Option(None, "--platform", "-p", help="Platform: originq/quafu/ibm"),
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for task completion"),
     timeout: float = typer.Option(300.0, "--timeout", help="Timeout in seconds"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table/json"),
@@ -105,8 +109,7 @@ def _print_result_table(task_id: str, result_data: dict | list) -> None:
         ]
     else:
         rows = [
-            [state, "-", format_prob(prob)]
-            for state, prob in sorted(probs.items(), key=lambda x: x[1], reverse=True)
+            [state, "-", format_prob(prob)] for state, prob in sorted(probs.items(), key=lambda x: x[1], reverse=True)
         ]
 
     print_table(

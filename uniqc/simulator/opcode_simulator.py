@@ -1,11 +1,15 @@
-'''Opcode simulator, a fundamental simulator for UnifiedQuantum.
+"""Opcode simulator, a fundamental simulator for UnifiedQuantum.
 It simulates from a basic opcode
-'''
+"""
+
 __all__ = ["backend_alias", "OpcodeSimulator"]
-from typing import List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
+
 import numpy as np
 from uniqc_cpp import *
+
 from uniqc.circuit_builder.qcircuit import OpcodeType
+
 if TYPE_CHECKING:
     from .uniqc_cpp import *
 
@@ -28,20 +32,19 @@ def backend_alias(backend_type):
     Raises:
         ValueError: If ``backend_type`` is not a recognised alias.
     """
-    statevector_alias = ['statevector', 'state_vector']
-    density_operator_alias = ['density_matrix', 'density_operator',
-                              'densitymatrix', 'densityoperator']
-    density_operator_qutip_alias = ['density_matrix_qutip', 'density_operator_qutip']
+    statevector_alias = ["statevector", "state_vector"]
+    density_operator_alias = ["density_matrix", "density_operator", "densitymatrix", "densityoperator"]
+    density_operator_qutip_alias = ["density_matrix_qutip", "density_operator_qutip"]
 
     backend_type = backend_type.lower()
     if backend_type in statevector_alias:
-        return 'statevector'
+        return "statevector"
     elif backend_type in density_operator_alias:
-        return 'density_operator'
+        return "density_operator"
     elif backend_type in density_operator_qutip_alias:
-        return 'density_operator_qutip'
+        return "density_operator_qutip"
     else:
-        raise ValueError(f'Unknown backend type: {backend_type}')
+        raise ValueError(f"Unknown backend type: {backend_type}")
 
 
 class OpcodeSimulator:
@@ -54,8 +57,9 @@ class OpcodeSimulator:
     Attributes:
         simulator: The underlying C++ simulator instance.
             typestr: Human-readable backend type string.
-    """   
-    def __init__(self, backend_type = 'statevector'):
+    """
+
+    def __init__(self, backend_type="statevector"):
         """Initialize the OpcodeSimulator.
 
         Args:
@@ -65,13 +69,13 @@ class OpcodeSimulator:
         """
         original_backend_type = backend_type
         backend_type = backend_alias(backend_type)
-        if backend_type =='statevector':
+        if backend_type == "statevector":
             self.SimulatorType = StatevectorSimulator
-            self.simulator_typestr = 'statevector'
-        elif backend_type == 'density_operator':
+            self.simulator_typestr = "statevector"
+        elif backend_type == "density_operator":
             self.SimulatorType = DensityOperatorSimulator
-            self.simulator_typestr = 'density_operator'
-        elif backend_type == 'density_operator_qutip':
+            self.simulator_typestr = "density_operator"
+        elif backend_type == "density_operator_qutip":
             try:
                 from .qutip_sim_impl import DensityOperatorSimulatorQutip
             except ImportError as exc:
@@ -83,10 +87,10 @@ class OpcodeSimulator:
                     "``pip install unified-quantum[simulation]``."
                 ) from exc
             self.SimulatorType = DensityOperatorSimulatorQutip
-            self.simulator_typestr = 'density_operator'
+            self.simulator_typestr = "density_operator"
         else:
-            raise ValueError(f'Unknown backend type: {backend_type}')
-        
+            raise ValueError(f"Unknown backend type: {backend_type}")
+
         self.simulator = self.SimulatorType()
 
     def _clear(self):
@@ -95,110 +99,92 @@ class OpcodeSimulator:
 
     def _simulate_common_gate(self, operation, qubit, cbit, parameter, is_dagger, control_qubits_set):
         """Dispatch a single gate to the underlying simulator."""
-        if operation == 'RX':
+        if operation == "RX":
             self.simulator.rx(qubit, parameter, control_qubits_set, is_dagger)
-        elif operation == 'RY':
+        elif operation == "RY":
             self.simulator.ry(qubit, parameter, control_qubits_set, is_dagger)
-        elif operation == 'RZ':
+        elif operation == "RZ":
             self.simulator.rz(qubit, parameter, control_qubits_set, is_dagger)
-        elif operation == 'U1':
+        elif operation == "U1":
             self.simulator.u1(qubit, parameter, control_qubits_set, is_dagger)
-        elif operation == 'U2':
+        elif operation == "U2":
             self.simulator.u2(qubit, parameter[0], parameter[1], control_qubits_set, is_dagger)
-        elif operation == 'H':
+        elif operation == "H":
             self.simulator.hadamard(qubit, control_qubits_set, is_dagger)
-        elif operation == 'X':
+        elif operation == "X":
             self.simulator.x(qubit, control_qubits_set, is_dagger)
-        elif operation == 'SX':
+        elif operation == "SX":
             self.simulator.sx(qubit, control_qubits_set, is_dagger)
-        elif operation == 'Y':
+        elif operation == "Y":
             self.simulator.y(qubit, control_qubits_set, is_dagger)
-        elif operation == 'Z':
+        elif operation == "Z":
             self.simulator.z(qubit, control_qubits_set, is_dagger)
-        elif operation == 'S':
+        elif operation == "S":
             self.simulator.s(qubit, control_qubits_set, is_dagger)
-        elif operation == 'T':
+        elif operation == "T":
             self.simulator.t(qubit, control_qubits_set, is_dagger)
-        elif operation == 'CZ':
-            self.simulator.cz(qubit[0], 
-                            qubit[1], control_qubits_set, is_dagger)
-        elif operation == 'SWAP':
-            self.simulator.swap(qubit[0], 
-                                qubit[1], control_qubits_set, is_dagger)
-        elif operation == 'ISWAP':
-            self.simulator.iswap(qubit[0], 
-                                qubit[1], control_qubits_set, is_dagger)
-        elif operation == 'TOFFOLI':
-            self.simulator.toffoli(qubit[0], 
-                                qubit[1], 
-                                qubit[2], control_qubits_set, is_dagger)
-        elif operation == 'CSWAP':
-            self.simulator.cswap(qubit[0], 
-                                qubit[1], 
-                                qubit[2], control_qubits_set, is_dagger)
-        elif operation == 'XY':
-            self.simulator.xy(qubit[0], qubit[1], 
-                              parameter, control_qubits_set, is_dagger)
-        elif operation == 'CNOT':
-            self.simulator.cnot(qubit[0], 
-                                qubit[1], control_qubits_set, is_dagger)  
-        elif operation == 'RPhi':
+        elif operation == "CZ":
+            self.simulator.cz(qubit[0], qubit[1], control_qubits_set, is_dagger)
+        elif operation == "SWAP":
+            self.simulator.swap(qubit[0], qubit[1], control_qubits_set, is_dagger)
+        elif operation == "ISWAP":
+            self.simulator.iswap(qubit[0], qubit[1], control_qubits_set, is_dagger)
+        elif operation == "TOFFOLI":
+            self.simulator.toffoli(qubit[0], qubit[1], qubit[2], control_qubits_set, is_dagger)
+        elif operation == "CSWAP":
+            self.simulator.cswap(qubit[0], qubit[1], qubit[2], control_qubits_set, is_dagger)
+        elif operation == "XY":
+            self.simulator.xy(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
+        elif operation == "CNOT":
+            self.simulator.cnot(qubit[0], qubit[1], control_qubits_set, is_dagger)
+        elif operation == "RPhi":
             self.simulator.rphi(qubit, parameter[0], parameter[1], control_qubits_set, is_dagger)
-        elif operation == 'RPhi90':
+        elif operation == "RPhi90":
             self.simulator.rphi90(qubit, parameter, control_qubits_set, is_dagger)
-        elif operation == 'RPhi180':
-            self.simulator.rphi180(qubit, parameter, control_qubits_set, is_dagger) 
-        elif operation == 'U3':
-            self.simulator.u3(qubit, parameter[0], parameter[1], parameter[2], 
-                              control_qubits_set, is_dagger) 
-        elif operation == 'XX':
-            self.simulator.xx(qubit[0],
-                              qubit[1],
-                              parameter, control_qubits_set, is_dagger) 
-        elif operation == 'YY':
-            self.simulator.yy(qubit[0],
-                              qubit[1],
-                              parameter, control_qubits_set, is_dagger) 
-        elif operation == 'ZZ':
-            self.simulator.zz(qubit[0],
-                              qubit[1],
-                              parameter, control_qubits_set, is_dagger)
-        elif operation == 'UU15':
-            self.simulator.uu15(qubit[0],
-                                qubit[1],
-                                parameter, control_qubits_set, True)
-        elif operation == 'PHASE2Q':
-            self.simulator.phase2q(qubit[0], qubit[1],
-                parameter[0], parameter[1], parameter[2], 
-                control_qubits_set, is_dagger)
-        elif operation == 'PauliError1Q':
+        elif operation == "RPhi180":
+            self.simulator.rphi180(qubit, parameter, control_qubits_set, is_dagger)
+        elif operation == "U3":
+            self.simulator.u3(qubit, parameter[0], parameter[1], parameter[2], control_qubits_set, is_dagger)
+        elif operation == "XX":
+            self.simulator.xx(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
+        elif operation == "YY":
+            self.simulator.yy(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
+        elif operation == "ZZ":
+            self.simulator.zz(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
+        elif operation == "UU15":
+            self.simulator.uu15(qubit[0], qubit[1], parameter, control_qubits_set, True)
+        elif operation == "PHASE2Q":
+            self.simulator.phase2q(
+                qubit[0], qubit[1], parameter[0], parameter[1], parameter[2], control_qubits_set, is_dagger
+            )
+        elif operation == "PauliError1Q":
             # parameter[0]: probability of X error
             # parameter[1]: probability of Y error
             # parameter[2]: probability of Z error
             self.simulator.pauli_error_1q(qubit, parameter[0], parameter[1], parameter[2])
-        elif operation == 'Depolarizing':
+        elif operation == "Depolarizing":
             # parameter: depolarizing probability
             self.simulator.depolarizing(qubit, parameter)
-        elif operation == 'BitFlip':
+        elif operation == "BitFlip":
             # parameter: bit flip probability
             self.simulator.bitflip(qubit, parameter)
-        elif operation == 'PhaseFlip':
+        elif operation == "PhaseFlip":
             # parameter: phase flip probability
             self.simulator.phaseflip(qubit, parameter)
-        elif operation == 'AmplitudeDamping':
+        elif operation == "AmplitudeDamping":
             # parameter: phase flip probability
             self.simulator.amplitude_damping(qubit, parameter)
-        elif operation == 'PauliError2Q':
+        elif operation == "PauliError2Q":
             # parameter: List[float]
             self.simulator.pauli_error_2q(qubit[0], qubit[1], parameter)
-        elif operation == 'TwoQubitDepolarizing':
+        elif operation == "TwoQubitDepolarizing":
             # parameter: depolarizing probability
             self.simulator.twoqubit_depolarizing(qubit[0], qubit[1], parameter)
-        elif operation == 'Kraus1Q':
+        elif operation == "Kraus1Q":
             # parameter: List[List[complex]]
             if not isinstance(parameter, list):
-                raise ValueError('Kraus1Q parameter should be a list of U22 matrices.')
-            
+                raise ValueError("Kraus1Q parameter should be a list of U22 matrices.")
+
             def build_u22(arr):
                 # the cases include the following:
                 # 1. a 2x2 np.ndarray
@@ -212,23 +198,23 @@ class OpcodeSimulator:
                     elif arr.shape == (4,):
                         return arr.tolist()
                     else:
-                        raise ValueError('Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.')
+                        raise ValueError("Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.")
                 elif isinstance(arr, list):
                     if len(arr) == 4:
                         return arr
-                    elif len(arr) == 2 and len(arr[0]) == 2 and len(arr[1]) == 2:   
+                    elif len(arr) == 2 and len(arr[0]) == 2 and len(arr[1]) == 2:
                         return [arr[0][0], arr[0][1], arr[1][0], arr[1][1]]
                     else:
-                        raise ValueError('Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.')
+                        raise ValueError("Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.")
                 else:
-                    raise ValueError('Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.')
-                
+                    raise ValueError("Kraus1Q parameter should be a 2x2 or 4-element list or numpy array.")
+
             parameters_ = [build_u22(arr) for arr in parameter]
             self.simulator.kraus1q(qubit, parameters_)
-        elif operation == 'AmplitudeDamping':
+        elif operation == "AmplitudeDamping":
             # parameter: gamma
             self.simulator.amplitude_damping(qubit, parameter)
-        elif operation == 'ECR':
+        elif operation == "ECR":
             # ECR (Echoed Cross-Resonance) decomposition using native gates.
             # ECR(0,1) = SX(0)·SX(1)·X(0)·X(1)·CNOT(0,1)·S(0)  (right-to-left)
             # SX is self-adjoint (SXdagger = SX).
@@ -248,20 +234,20 @@ class OpcodeSimulator:
                 self.simulator.x(qubit[1], control_qubits_set, False)
                 self.simulator.sx(qubit[0], control_qubits_set, False)
                 self.simulator.sx(qubit[1], control_qubits_set, False)
-        elif operation == 'I':
-            pass
-        elif operation == None:
-            pass
-        elif operation == 'QINIT':
-            pass
-        elif operation == 'CREG':
-            pass
-        elif operation == 'BARRIER':
+        elif (
+            operation == "I"
+            or operation == None
+            or operation == "QINIT"
+            or operation == "CREG"
+            or operation == "BARRIER"
+        ):
             pass
         else:
-            raise RuntimeError('Unknown Opcode operation. '
-                                f'Operation: {operation}.'
-                                f'Full opcode: {(operation, qubit, cbit, parameter, control_qubits_set, is_dagger)}')
+            raise RuntimeError(
+                "Unknown Opcode operation. "
+                f"Operation: {operation}."
+                f"Full opcode: {(operation, qubit, cbit, parameter, control_qubits_set, is_dagger)}"
+            )
 
     def simulate_gate(self, operation, qubit, cbit, parameter, is_dagger, control_qubits_set):
         """Apply a single gate opcode to the simulator.
@@ -280,7 +266,7 @@ class OpcodeSimulator:
         else:
             control_qubits_set = list()
 
-        self._simulate_common_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)    
+        self._simulate_common_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
 
     def simulate_opcodes_pmeasure(self, n_qubit, program_body, measure_qubits):
         """Compute measurement probabilities for a list of opcodes.
@@ -299,7 +285,7 @@ class OpcodeSimulator:
             self.simulate_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
         prob_list = self.simulator.pmeasure(measure_qubits)
         return prob_list
-    
+
     def simulate_opcodes_statevector(self, n_qubit, program_body):
         """Compute the final statevector after executing a list of opcodes.
 
@@ -313,15 +299,15 @@ class OpcodeSimulator:
         Raises:
             ValueError: If backend is density_matrix type.
         """
-        if self.simulator_typestr == 'density_matrix':
-            raise ValueError('Density matrix is not supported for statevector simulation.')
+        if self.simulator_typestr == "density_matrix":
+            raise ValueError("Density matrix is not supported for statevector simulation.")
         self.simulator.init_n_qubit(n_qubit)
         for opcode in program_body:
             operation, qubit, cbit, parameter, is_dagger, control_qubits_set = opcode
             self.simulate_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
         statevector = self.simulator.state
         return statevector
-    
+
     def simulate_opcodes_stateprob(self, n_qubit, program_body):
         """Compute state probabilities ``(|amplitude|^2)`` for all basis states.
 
@@ -335,20 +321,20 @@ class OpcodeSimulator:
         Raises:
             ValueError: If simulator type is unknown.
         """
-        if self.simulator_typestr == 'statevector':
+        if self.simulator_typestr == "statevector":
             statevector = self.simulate_opcodes_statevector(n_qubit, program_body)
             statevector = np.array(statevector)
             return np.abs(statevector) ** 2
 
-        if self.simulator_typestr == 'density_operator':
+        if self.simulator_typestr == "density_operator":
             self.simulator.init_n_qubit(n_qubit)
             for opcode in program_body:
                 operation, qubit, cbit, parameter, is_dagger, control_qubits_set = opcode
                 self.simulate_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
             return self.simulator.stateprob()
 
-        raise ValueError('Unknown simulator type.')
-    
+        raise ValueError("Unknown simulator type.")
+
     def simulate_opcodes_density_operator(self, n_qubit, program_body):
         """Compute the density matrix after executing a list of opcodes.
 
@@ -362,25 +348,25 @@ class OpcodeSimulator:
         Raises:
             ValueError: If simulator type is unknown.
         """
-        if self.simulator_typestr == 'density_operator':
+        if self.simulator_typestr == "density_operator":
             self.simulator.init_n_qubit(n_qubit)
             for opcode in program_body:
                 operation, qubit, cbit, parameter, is_dagger, control_qubits_set = opcode
                 self.simulate_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
             state = self.simulator.state
             state = np.array(state)
-            density_matrix = np.reshape(state, (2 ** n_qubit, 2 ** n_qubit), order='C')
+            density_matrix = np.reshape(state, (2**n_qubit, 2**n_qubit), order="C")
             return density_matrix
 
-        if self.simulator_typestr =='statevector':
+        if self.simulator_typestr == "statevector":
             statevector = self.simulate_opcodes_statevector(n_qubit, program_body)
             statevector = np.array(statevector)
             density_matrix = np.outer(statevector, np.conj(statevector))
             return density_matrix
 
-        raise ValueError('Unknown simulator type.')
-    
-    def simulate_opcodes_shot(self, n_qubit, program_body : List[OpcodeType], measure_qubits):
+        raise ValueError("Unknown simulator type.")
+
+    def simulate_opcodes_shot(self, n_qubit, program_body: list[OpcodeType], measure_qubits):
         """Execute a list of opcodes and return a single measurement sample.
 
         Args:
@@ -394,8 +380,8 @@ class OpcodeSimulator:
         Raises:
             NotImplementedError: If backend is density_operator type.
         """
-        if self.simulator_typestr == 'density_operator':
-            raise NotImplementedError('Density matrix is not supported for shot simulation.')
+        if self.simulator_typestr == "density_operator":
+            raise NotImplementedError("Density matrix is not supported for shot simulation.")
         self.simulator.init_n_qubit(n_qubit)
         for opcode in program_body:
             operation, qubit, cbit, parameter, is_dagger, control_qubits_set = opcode

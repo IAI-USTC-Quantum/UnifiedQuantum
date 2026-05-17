@@ -27,7 +27,6 @@ from uniqc.cli.chip_info import (
 )
 from uniqc.compile.compiler import _route_with_fidelity
 
-
 _N_QUBITS = 180
 
 
@@ -51,10 +50,7 @@ def _build_large_sparse_chip() -> tuple[ChipCharacterization, list[tuple[int, in
 
     # Only calibrate 5 qubits out of 180 (rest will have no SQ fidelity).
     calibrated_sq = {3: 0.999, 5: 0.998, 7: 0.997, 50: 0.995, 100: 0.990}
-    single_qubit_data = tuple(
-        SingleQubitData(qubit_id=q, single_gate_fidelity=f)
-        for q, f in calibrated_sq.items()
-    )
+    single_qubit_data = tuple(SingleQubitData(qubit_id=q, single_gate_fidelity=f) for q, f in calibrated_sq.items())
 
     # Only calibrate a couple of edges out of ~179.
     calibrated_edges = [
@@ -98,9 +94,7 @@ def test_route_with_fidelity_tiny_bell_on_large_sparse_chip():
     bell_originir = "QINIT 2\nH q[0]\nCNOT q[0], q[1]\n"
 
     # Must not raise (previously: KeyError in _route_with_fidelity).
-    routed_ir, swap_count, fidelity, initial_layout = _route_with_fidelity(
-        bell_originir, topology, chip
-    )
+    routed_ir, swap_count, fidelity, initial_layout = _route_with_fidelity(bell_originir, topology, chip)
 
     assert routed_ir == bell_originir, "router should not rewrite OriginIR"
     assert swap_count == 0, "this layer never inserts SWAPs"
@@ -113,17 +107,18 @@ def test_route_with_fidelity_tiny_bell_on_large_sparse_chip():
             assert q in chip_qubits, f"physical qubit {q} not in chip topology"
 
 
-@pytest.mark.parametrize("originir", [
-    "QINIT 1\nH q[0]\n",
-    "QINIT 2\nH q[0]\nCNOT q[0], q[1]\n",
-    "QINIT 2\nH q[0]\nCNOT q[1], q[0]\n",  # reversed edge ordering
-])
+@pytest.mark.parametrize(
+    "originir",
+    [
+        "QINIT 1\nH q[0]\n",
+        "QINIT 2\nH q[0]\nCNOT q[0], q[1]\n",
+        "QINIT 2\nH q[0]\nCNOT q[1], q[0]\n",  # reversed edge ordering
+    ],
+)
 def test_route_with_fidelity_tiny_circuits_no_keyerror(originir):
     """Single-qubit and reversed-edge two-qubit circuits also stay safe."""
     chip, topology = _build_large_sparse_chip()
-    routed_ir, swap_count, fidelity, _layout = _route_with_fidelity(
-        originir, topology, chip
-    )
+    routed_ir, swap_count, fidelity, _layout = _route_with_fidelity(originir, topology, chip)
     assert routed_ir == originir
     assert swap_count == 0
     assert 0.0 < fidelity <= 1.0

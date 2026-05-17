@@ -244,7 +244,11 @@ def _random_measured_6q_circuit(seed: int, depth: int = 18) -> Circuit:
     for _ in range(depth):
         _apply_random_gate(circuit, rng)
 
-    measured = list(range(6)) if seed % 2 == 0 else [int(q) for q in rng.choice(6, size=int(rng.integers(1, 6)), replace=False)]
+    measured = (
+        list(range(6))
+        if seed % 2 == 0
+        else [int(q) for q in rng.choice(6, size=int(rng.integers(1, 6)), replace=False)]
+    )
     circuit.measure(*measured)
     return circuit
 

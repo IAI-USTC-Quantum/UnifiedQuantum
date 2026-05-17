@@ -9,9 +9,10 @@ Tests the full workflow:
 """
 
 import math
-from uniqc.circuit_builder import Circuit, QReg, Qubit
+
+from uniqc.circuit_builder import Circuit
+from uniqc.circuit_builder.named_circuit import circuit_def
 from uniqc.circuit_builder.parameter import Parameter, Parameters
-from uniqc.circuit_builder.named_circuit import circuit_def, NamedCircuit
 
 
 def test_full_parametric_workflow():
@@ -94,6 +95,7 @@ def test_parameters_array():
 
 def test_nested_named_circuits():
     """Test nested named circuit definitions."""
+
     @circuit_def(name="h_gate", qregs={"q": 1})
     def h_gate(circ, q):
         circ.h(q[0])
@@ -115,6 +117,7 @@ def test_nested_named_circuits():
 
 def test_def_roundtrip():
     """Test DEF block export and parse."""
+
     @circuit_def(name="bell", qregs={"q": 2})
     def bell(circ, q):
         circ.h(q[0])

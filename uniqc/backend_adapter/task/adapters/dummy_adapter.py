@@ -131,8 +131,7 @@ class DummyAdapter(QuantumAdapter):
 
         if self.simulator_kind not in ("default", "mps"):
             raise ValueError(
-                f"DummyAdapter: unsupported simulator_kind={self.simulator_kind!r}. "
-                "Use 'default' or 'mps'."
+                f"DummyAdapter: unsupported simulator_kind={self.simulator_kind!r}. Use 'default' or 'mps'."
             )
 
         if self.simulator_kind == "mps" and (noise_model or chip_characterization):
@@ -200,9 +199,7 @@ class DummyAdapter(QuantumAdapter):
             return self._error_loader
 
         if self.chip_characterization is not None:
-            self._error_loader = self._build_error_loader_from_chip(
-                self.chip_characterization
-            )
+            self._error_loader = self._build_error_loader_from_chip(self.chip_characterization)
         elif self.noise_model is not None:
             self._error_loader = self._build_error_loader_from_model(self.noise_model)
         else:
@@ -315,9 +312,7 @@ class DummyAdapter(QuantumAdapter):
         )
         return loader
 
-    def _build_error_loader_from_model(
-        self, noise_model: dict[str, Any]
-    ) -> Any:
+    def _build_error_loader_from_model(self, noise_model: dict[str, Any]) -> Any:
         """Build error loader from an explicit noise model dict.
 
         Args:
@@ -554,16 +549,11 @@ class DummyAdapter(QuantumAdapter):
                 for op in parser.program_body:
                     operation, qubit, _c, _p, _d, controls = op
                     if controls:
-                        raise ValueError(
-                            f"MPS dummy backend rejects CONTROL blocks (gate {operation})"
-                        )
+                        raise ValueError(f"MPS dummy backend rejects CONTROL blocks (gate {operation})")
                     if isinstance(qubit, list) and len(qubit) == 2:
                         a, b = int(qubit[0]), int(qubit[1])
                         if abs(a - b) != 1:
-                            raise ValueError(
-                                f"MPS dummy backend rejects long-range 2q gate "
-                                f"{operation} on ({a},{b})"
-                            )
+                            raise ValueError(f"MPS dummy backend rejects long-range 2q gate {operation} on ({a},{b})")
             else:
                 sim.simulate_preprocess(originir)
         except Exception as exc:  # noqa: BLE001
@@ -738,6 +728,5 @@ def _normalise_readout_rates(value: Any) -> list[float]:
     if isinstance(value, (list, tuple)) and len(value) == 2:
         return [float(value[0]), float(value[1])]
     raise ValueError(
-        "noise_model['readout'] must be a scalar, a two-item list/tuple, "
-        "or a per-qubit dict of those values."
+        "noise_model['readout'] must be a scalar, a two-item list/tuple, or a per-qubit dict of those values."
     )
