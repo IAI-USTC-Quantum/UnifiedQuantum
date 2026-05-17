@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nADAPT-VQE Example: 2-Qubit Hamiltonian\n============================================================\nUsing 5 operators from minimal pool\n\nADAPT-VQE starting with 5 operators in pool\nHamiltonian: [('ZZ', -1.0), ('II', 0.5)]\n------------------------------------------------------------\nIter 1: E = 0.00000000, n_operators = 0\n  Best operator: YI, gradient = 1.00000000\nIter 2: E = -0.50000000, n_operators = 1\n  Best operator: YI, gradient = 1.00000000\nIter 3: E = -0.50000000, n_operators = 2\n  Best operator: YI, gradient = 1.00000000\nIter 4: E = -0.49998990, n_operators = 3\n  Best operator: YI, gradient = 0.99998990\nIter 5: E = -0.50000000, n_operators = 4\n  Best operator: IY, gradient = 1.00000000\nIter 6: E = -0.50000000, n_operators = 5\n  Best operator: YI, gradient = 1.00000000\nIter 7: E = -0.49960312, n_operators = 6\n  Best operator: YI, gradient = 0.99960312\nIter 8: E = -0.50000000, n_operators = 7\n  Best operator: YI, gradient = 1.00000000\nIter 9: E = -0.50000000, n_operators = 8\n  Best operator: YI, gradient = 1.00000000\nIter 10: E = -0.50000000, n_operators = 9\n  Best operator: YI, gradient = 1.00000000\n------------------------------------------------------------\nFinal energy: -0.50000000\nSelected 10 operators\n\n============================================================\nADAPT-VQE Results:\n  Energy: -0.50000000\n  Iterations: 10\n  Converged: False\n  Selected operators: 10\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    IY (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n    YI (coeff=1.00)\n\nComparison with standard VQE (HEA):\n  VQE Energy: -0.50000000\n  VQE Success: True\n",
+  "stdout": "============================================================\nADAPT-VQE Example: 2-Qubit Hamiltonian\n============================================================\nUsing 5 operators from minimal pool\n\nADAPT-VQE starting with 5 operators in pool\nHamiltonian: [('ZZ', -1.0), ('II', 0.5)]\n------------------------------------------------------------\nIter 1: E = 0.00000000, n_operators = 0\n  Best operator: XI, gradient = 0.00000000\n  Converged (gradient 0.00e+00 < 1.00e-04)\n------------------------------------------------------------\nFinal energy: 0.00000000\nSelected 0 operators\n\n============================================================\nADAPT-VQE Results:\n  Energy: 0.00000000\n  Iterations: 1\n  Converged: True\n  Selected operators: 0\n\nComparison with standard VQE (HEA):\n  VQE Energy: -0.50000000\n  VQE Success: True\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 2.166
+  "duration_seconds": 0.09
 }

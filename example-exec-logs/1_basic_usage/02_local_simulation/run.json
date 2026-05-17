@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{0: 1008, 7: 992}\n",
+  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{0: 998, 7: 1002}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.001
+  "duration_seconds": 0.002
 }

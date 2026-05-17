@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "== Direct MPSSimulator (N=32) ==\n  observed keys: [0, 4294967295]\n  total shots:   400\n  max bond dim:  2\n\n== dummy:local:mps-linear-32 backend (chi=8, forces truncation) ==\n  result: UnifiedResult(counts={'00000000000000000000000000000000': 200, '11111111111111111111111111111111': 200}, probabilities={'00000000000000000000000000000000': 0.5, '11111111111111111111111111111111': 0.5}, shots=400, platform='dummy', task_id='uqt_57729c1ef451437d8bb95191a52d832f', backend_name='dummy:local:mps-linear-32:chi=8:cutoff=1e-10', execution_time=None, error_message=None)\n\n== Parameter parsing ==\n  identifier:        dummy:local:mps-linear-8:chi=16:cutoff=1e-8:seed=7\n  available_qubits:  [0, 1, 2, 3, 4, 5, 6, 7]\n  simulator_kwargs:  {'chi_max': 16, 'svd_cutoff': 1e-08, 'seed': 7}\n",
+  "stdout": "== Direct MPSSimulator (N=32) ==\n  observed keys: [0, 4294967295]\n  total shots:   400\n  max bond dim:  2\n\n== dummy:local:mps-linear-32 backend (chi=8, forces truncation) ==\n  result: UnifiedResult(counts={'11111111111111111111111111111111': 210, '00000000000000000000000000000000': 190}, probabilities={'11111111111111111111111111111111': 0.525, '00000000000000000000000000000000': 0.475}, shots=400, platform='dummy', task_id='uqt_bdcbb90a4194447d9e8e02cf876029c6', backend_name='dummy:local:mps-linear-32:chi=8:cutoff=1e-10', execution_time=None, error_message=None)\n\n== Parameter parsing ==\n  identifier:        dummy:local:mps-linear-8:chi=16:cutoff=1e-8:seed=7\n  available_qubits:  [0, 1, 2, 3, 4, 5, 6, 7]\n  simulator_kwargs:  {'chi_max': 16, 'svd_cutoff': 1e-08, 'seed': 7}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 16.041
+  "duration_seconds": 17.064
 }

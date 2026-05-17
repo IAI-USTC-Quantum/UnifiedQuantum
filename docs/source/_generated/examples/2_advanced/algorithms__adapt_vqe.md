@@ -33,45 +33,18 @@ ADAPT-VQE starting with 5 operators in pool
 Hamiltonian: [('ZZ', -1.0), ('II', 0.5)]
 ------------------------------------------------------------
 Iter 1: E = 0.00000000, n_operators = 0
-  Best operator: YI, gradient = 1.00000000
-Iter 2: E = -0.50000000, n_operators = 1
-  Best operator: YI, gradient = 1.00000000
-Iter 3: E = -0.50000000, n_operators = 2
-  Best operator: YI, gradient = 1.00000000
-Iter 4: E = -0.49998990, n_operators = 3
-  Best operator: YI, gradient = 0.99998990
-Iter 5: E = -0.50000000, n_operators = 4
-  Best operator: IY, gradient = 1.00000000
-Iter 6: E = -0.50000000, n_operators = 5
-  Best operator: YI, gradient = 1.00000000
-Iter 7: E = -0.49960312, n_operators = 6
-  Best operator: YI, gradient = 0.99960312
-Iter 8: E = -0.50000000, n_operators = 7
-  Best operator: YI, gradient = 1.00000000
-Iter 9: E = -0.50000000, n_operators = 8
-  Best operator: YI, gradient = 1.00000000
-Iter 10: E = -0.50000000, n_operators = 9
-  Best operator: YI, gradient = 1.00000000
+  Best operator: XI, gradient = 0.00000000
+  Converged (gradient 0.00e+00 < 1.00e-04)
 ------------------------------------------------------------
-Final energy: -0.50000000
-Selected 10 operators
+Final energy: 0.00000000
+Selected 0 operators
 
 ============================================================
 ADAPT-VQE Results:
-  Energy: -0.50000000
-  Iterations: 10
-  Converged: False
-  Selected operators: 10
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    IY (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
-    YI (coeff=1.00)
+  Energy: 0.00000000
+  Iterations: 1
+  Converged: True
+  Selected operators: 0
 
 Comparison with standard VQE (HEA):
   VQE Energy: -0.50000000

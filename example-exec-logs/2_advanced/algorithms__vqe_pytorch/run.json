@@ -3,18 +3,18 @@
   "chapter": "2_advanced",
   "name": "algorithms__vqe_pytorch",
   "title": "VQE for H2 molecule using TorchQuantum backend with native PyTorch autograd.",
-  "verdict": "pass",
-  "skip_reason": null,
+  "verdict": "skip",
+  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
   "require": [
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nVQE for H2 Molecule — TorchQuantum Backend\n============================================================\n\nMolecule: H2 (STO-3G, 4 qubits)\nNuclear repulsion: 0.7149\nPauli terms: 15\nAnsatz: HEA depth=2, params=16\nExact FCI energy: -1.137274 Ha\n\n  Iter   20 | Energy: -0.451360\n  Iter   40 | Energy: -0.821531\n  Iter   60 | Energy: -0.873592\n  Iter   80 | Energy: -0.874786\n  Iter  100 | Energy: -0.875749\n\nFinal energy: -0.875749 Ha\nOptimal params: [-0.03990484029054642, -1.566797137260437, -0.021234773099422455, 1.6989964246749878] ...\n\nExpected: ~-1.10 Ha (simplified Hamiltonian)\n",
-  "stderr": "",
-  "warnings": [],
-  "figure_files": [],
-  "offending_lines": [],
-  "ignored_lines": [],
+  "stdout": null,
+  "stderr": null,
+  "warnings": null,
+  "figure_files": null,
+  "offending_lines": null,
+  "ignored_lines": null,
   "exception": null,
-  "duration_seconds": 4.286
+  "duration_seconds": null
 }

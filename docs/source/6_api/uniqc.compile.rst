@@ -18,6 +18,7 @@ Submodules
 
    uniqc.compile.compiler
    uniqc.compile.converter
+   uniqc.compile.decompose
    uniqc.compile.draw
    uniqc.compile.policy
    uniqc.compile.qiskit_transpiler

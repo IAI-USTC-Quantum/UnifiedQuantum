@@ -3,18 +3,18 @@
   "chapter": "2_advanced",
   "name": "algorithms__hybrid_model",
   "title": "Hybrid Classical-Quantum Model using TorchQuantum backend.",
-  "verdict": "pass",
-  "skip_reason": null,
+  "verdict": "skip",
+  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
   "require": [
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nHybrid Classical-Quantum Model — TorchQuantum Backend\n============================================================\n\nDataset: make_moons (100 samples)\nModel: HybridQCLModel (classical → quantum → classical)\nTotal parameters: 181\n  Encoder:  116\n  Quantum:  16\n  Decoder:  49\n\n  Epoch  10 | Loss: 0.6899 | Acc: 0.5000\n  Epoch  20 | Loss: 0.6469 | Acc: 0.8400\n  Epoch  30 | Loss: 0.5314 | Acc: 0.9100\n  Epoch  40 | Loss: 0.3401 | Acc: 0.9600\n  Epoch  50 | Loss: 0.1576 | Acc: 0.9800\n\nFinal accuracy: 0.9900\n",
-  "stderr": "",
-  "warnings": [],
-  "figure_files": [],
-  "offending_lines": [],
-  "ignored_lines": [],
+  "stdout": null,
+  "stderr": null,
+  "warnings": null,
+  "figure_files": null,
+  "offending_lines": null,
+  "ignored_lines": null,
   "exception": null,
-  "duration_seconds": 28.686
+  "duration_seconds": null
 }

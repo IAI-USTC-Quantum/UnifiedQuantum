@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.0.13` | `2026-05-14` | Merge pull request #99 from IAI-USTC-Quantum/release/v0.0.13 |
 | `v0.0.12` | `2026-05-07` | v0.0.12 — uniqc-managed task ID indirection layer (uqt_*) + native batch + cloud error propagation |
 | `v0.0.11.post1` | `2026-05-07` | v0.0.11.post1: chip-backed dummy relayout hotfix |
 | `v0.0.11` | `2026-05-07` | Release 0.0.11 |
@@ -25,19 +26,119 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.12..HEAD`
-- 提交数：54
-- 变更文件数：546
+- 对比区间：`v0.0.13..HEAD`
+- 提交数：43
+- 变更文件数：404
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `merge` | 16 |
+| `fix` | 7 |
+| `docs` | 6 |
+| `ci` | 4 |
+| `feat` | 2 |
+| `other` | 2 |
+| `refactor` | 2 |
+| `test` | 2 |
+| `chore` | 1 |
+| `style` | 1 |
+
+### 变更区域
+
+- `uniqc/test`: 113 个文件
+- `docs`: 69 个文件
+- `example-exec-logs`: 58 个文件
+- `uniqc/algorithms`: 40 个文件
+- `uniqc/backend_adapter`: 23 个文件
+- `examples`: 18 个文件
+- `uniqc/cli`: 14 个文件
+- `uniqc/compile`: 14 个文件
+- `uniqc/simulator`: 10 个文件
+- `uniqc/circuit_builder`: 9 个文件
+- `uniqc/calibration`: 7 个文件
+- `uniqc/gateway`: 7 个文件
+- `.github`: 5 个文件
+- `uniqc/visualization`: 3 个文件
+- `uniqc/qem`: 2 个文件
+- `uniqc/utils`: 2 个文件
+- `CHANGELOG.md`: 1 个文件
+- `README.md`: 1 个文件
+- `README_en.md`: 1 个文件
+- `codecov.yml`: 1 个文件
+- `pyproject.toml`: 1 个文件
+- `pytest.ini`: 1 个文件
+- `scripts`: 1 个文件
+- `uniqc/__init__.py`: 1 个文件
+- `uniqc/config.py`: 1 个文件
+- `uniqc/exceptions.py`: 1 个文件
+
+### 提交列表
+
+- `cd7203a` feat(submit): UnifiedOptions + QASM2 IR-decompose for cross-platform submit
+- `b4f601f` Merge pull request #100 from IAI-USTC-Quantum/fix/issue-81-82
+- `4e017b8` feat(ansatz): expand ansatz module with HEA, QAOA variants, HVA, and ADAPT-VQE
+- `e860d1f` refactor(ansatz): integrate Parameter/Parameters class for symbolic parameter management
+- `1855cce` docs: add ansatz examples and documentation
+- `f8ea20f` Merge origin/main into feature/ansatz-expansion
+- `c7ae9d7` fix(build_docs): preserve existing index.json entries when using --only
+- `29df387` fix(adapt-vqe): fix _parse_pauli_string for compact format and circuit sizing
+- `7a8298b` Merge pull request #101 from IAI-USTC-Quantum/feature/ansatz-expansion
+- `08e2838` docs: extract 算法实现示例 as standalone chapter 8_algorithms_examples
+- `dbbf762` Merge branch 'main' into main
+- `c4a0f65` docs: enable execution of torchquantum & matplotlib examples, switch figures to SVG
+- `da1c6e3` Merge pull request #102 from IAI-USTC-Quantum/doc/misc-doc-fixing
+- `d0dfc6a` docs(changelog): add unreleased section for post-v0.0.13 changes
+- `4b2804b` Merge pull request #103 from IAI-USTC-Quantum/doc/misc-doc-fixing
+- `623c5dd` docs: fix README CLI, quickstart submit template, ansatz import path, stale release notes
+- `7037a1a` ci: SHA-pin all actions, expand test matrix to Py 3.10-3.13, drop hard-ignore
+- `9cbebf5` fix(backend): explicit n_qubits in normalizer, TYPE_CHECKING import in calibrator
+- `c17f44c` fix(security): sandbox QASM param eval and 0600 config perms
+- `ade77ad` fix(quantum): Y-basis inverse, per-shot readout RNG, ADAPT grad, M3 clip order
+- `8361be9` merge: quantum semantics fixes (C-1, C-2, H-1, H-3)
+- `ec28428` merge: security sandbox fixes (C-3, C-4, H-6)
+- `ad7e01e` merge: backend normalize fixes (H-2, M-3)
+- `c347714` merge: docs/examples fixes (C-5, C-6, M-10, M-11, M-12)
+- `cf36f98` merge: CI meta fixes (H-7, H-8, H-9)
+- `5bef5c0` refactor(cleanup): M-1 timeline shadow, M-2 endian comment, M-4 B904 raise-from
+- `1ce15ab` test: add ZNE extrapolation, VQE H2 chemistry, QAOA maxcut regressions
+- `9992eee` fix(compiler): _route_with_fidelity no longer KeyErrors on tiny-circuit + large-chip
+- `aa245cb` merge: code cleanup (M-1, M-2, M-4)
+- `52eeb45` merge: test coverage (zne, vqe-h2, qaoa-maxcut)
+- `3c19b75` merge: _route_with_fidelity fix + tiny-circuit test
+- `aed7b7d` style: apply ruff --fix and ruff format across uniqc/
+- `91bd9f2` Merge pull request #105 from IAI-USTC-Quantum/fix/audit-p2-p3
+- `6245c79` Merge pull request #104 from IAI-USTC-Quantum/fix/audit-p0-p1
+- `a307371` docs: use canonical 'provider:chip' backend form everywhere
+- `2a6f58e` Merge pull request #106 from IAI-USTC-Quantum/docs/canonical-backend-form
+- `2a8d726` chore(coverage): phase 1+4+5+2 coverage improvements
+- `d742cbf` ci: split torchquantum-touching tests into a separate pytest invocation
+- `3786539` ci: install torchquantum AFTER main pytest (dill breaks qiskit Qubit pickle)
+- `5be82e7` ci(windows): force bash shell for multi-line pytest invocations
+- `bce06a4` test(config): skip file-mode assertion on Windows
+- `fd2014a` Merge pull request #107 from IAI-USTC-Quantum/chore/coverage-improvements-phase1
+- `dfcb540` fix(cache): clamp age_seconds to non-negative for Windows clock precision
+
+## v0.0.13
+
+- 发布日期：`2026-05-14`
+- 发布标题：Merge pull request #99 from IAI-USTC-Quantum/release/v0.0.13
+- 补充说明：Release/v0.0.13
+- 对比区间：`v0.0.12..v0.0.13`
+- 提交数：57
+- 变更文件数：548
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `merge` | 17 |
 | `fix` | 13 |
 | `docs` | 11 |
 | `feat` | 8 |
 | `other` | 3 |
+| `chore` | 2 |
 | `build` | 1 |
 | `refactor` | 1 |
 | `test` | 1 |
@@ -49,9 +150,9 @@
 - `example-exec-logs`: 50 个文件
 - `uniqc/test`: 42 个文件
 - `uniqc/algorithms`: 22 个文件
-- `uniqc/backend_adapter`: 13 个文件
+- `uniqc/backend_adapter`: 14 个文件
 - `uniqc/cli`: 8 个文件
-- `uniqc/simulator`: 7 个文件
+- `uniqc/simulator`: 8 个文件
 - `uniqc/calibration`: 6 个文件
 - `uniqc/circuit_builder`: 5 个文件
 - `uniqc/compile`: 4 个文件
@@ -133,6 +234,9 @@
 - `759138a` Merge pull request #97 from IAI-USTC-Quantum/fix/resolve-release-gaps
 - `47ebb1b` fix(release): unbreak IBM discovery, batch-result shape, and chip-backed dummy compile
 - `a994020` Merge pull request #98 from IAI-USTC-Quantum/fix/pre-release
+- `a5a17bc` chore(release): pre-release polish for v0.0.13
+- `1b6ddce` chore(release): v0.0.13
+- `ae34c30` Merge pull request #99 from IAI-USTC-Quantum/release/v0.0.13
 
 ## v0.0.12
 

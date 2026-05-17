@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    uniqc.algorithms.core.ansatz.hea
+   uniqc.algorithms.core.ansatz.hva
    uniqc.algorithms.core.ansatz.qaoa_ansatz
    uniqc.algorithms.core.ansatz.uccsd
 

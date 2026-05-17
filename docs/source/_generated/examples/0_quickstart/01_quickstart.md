@@ -7,7 +7,7 @@
 ``dummy:local:simulator`` 上跑一遍。如果你正确装好了 ``unified-quantum`` 并能跑通
 这个脚本，就证明环境是可用的。
 
-真机提交把 ``backend`` 换成 ``"originq"`` 即可（推荐先在 ``uniqc config init`` 里
+真机提交把 ``backend`` 换成 ``"originq:WK_C180"`` 即可（推荐先在 ``uniqc config init`` 里
 配好 ``originq.token``）。要先离线检查可加 ``dry_run=True``。
 
 **Source code**
@@ -28,11 +28,11 @@ MEASURE q[0], c[0]
 MEASURE q[1], c[1]
 
 == Local simulator counts ==
-{0: 511, 3: 513}
+{3: 520, 0: 504}
 == dummy:local:simulator counts ==
-UnifiedResult(counts={'00': 512, '11': 512}, probabilities={'00': 0.5, '11': 0.5}, shots=1024, platform='dummy', task_id='uqt_c086ba46ed25463880c7c045ef5ddebf', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+UnifiedResult(counts={'00': 512, '11': 512}, probabilities={'00': 0.5, '11': 0.5}, shots=1024, platform='dummy', task_id='uqt_f54533e824524fe1badd63b8a34d9d16', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 
 Real-chip submission template (uncomment after `uniqc config set originq.token ...`):
-    submit_task(circuit, backend='originq', shots=1000, backend_name='WK_C180')
+    submit_task(circuit, backend='originq:WK_C180', shots=1000)
 ```
 

@@ -3,18 +3,18 @@
   "chapter": "2_advanced",
   "name": "algorithms__qnn_classifier",
   "title": "QNN Binary Classifier using TorchQuantum backend.",
-  "verdict": "pass",
-  "skip_reason": null,
+  "verdict": "skip",
+  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
   "require": [
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nQNN Binary Classifier — TorchQuantum Backend\n============================================================\n\nDataset: make_moons (100 samples, 2 features)\nModel: QNN (n_qubits=4, depth=2)\nParameters: 16\n\n  Epoch  10 | Loss: 1.0679 | Acc: 0.5000\n  Epoch  20 | Loss: 0.9206 | Acc: 0.5100\n  Epoch  30 | Loss: 0.8185 | Acc: 0.5100\n  Epoch  40 | Loss: 0.7491 | Acc: 0.5300\n  Epoch  50 | Loss: 0.7014 | Acc: 0.5800\n\nFinal accuracy: 0.5800\n",
-  "stderr": "",
-  "warnings": [],
-  "figure_files": [],
-  "offending_lines": [],
-  "ignored_lines": [],
+  "stdout": null,
+  "stderr": null,
+  "warnings": null,
+  "figure_files": null,
+  "offending_lines": null,
+  "ignored_lines": null,
   "exception": null,
-  "duration_seconds": 23.318
+  "duration_seconds": null
 }
