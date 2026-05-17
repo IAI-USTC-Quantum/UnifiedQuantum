@@ -7,6 +7,7 @@ against ``tmp_path`` so it runs in the default suite.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -66,6 +67,8 @@ def test_load_config_invalid_yaml_raises(isolate_config):
 
 
 def test_save_config_sets_restrictive_perms(isolate_config):
+    if sys.platform.startswith("win"):
+        pytest.skip("POSIX file-mode bits aren't enforced on Windows")
     cfg.save_config({"a": 1})
     # On Linux/macOS, the file mode should be 0o600
     mode = isolate_config.stat().st_mode & 0o777
