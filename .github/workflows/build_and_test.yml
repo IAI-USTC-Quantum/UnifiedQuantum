@@ -114,6 +114,7 @@ jobs:
     # Running the qiskit tests first in a dill-free environment side-steps it.
 
     - name: Run non-torchquantum tests with deprecation monitoring (dill-free)
+      shell: bash
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
@@ -124,6 +125,7 @@ jobs:
 
     - name: Install torchquantum (fork; Linux only, not installable from PyPI)
       if: runner.os == 'Linux'
+      shell: bash
       # See the NOTE above: this install brings `dill`, which is incompatible
       # with the qiskit transpiler tests. Install after the main pytest runs.
       run: |
@@ -131,6 +133,7 @@ jobs:
           "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
     - name: Run torchquantum-touching tests in a separate process
+      shell: bash
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
