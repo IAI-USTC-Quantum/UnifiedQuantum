@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`UnifiedOptions` cross-platform submission options** — new `UnifiedOptions`
+  dataclass (`uniqc.backend_adapter.task.options`) lets you write
+  backend-agnostic submission code. Pass the same instance to `submit_task`
+  against any platform and uniqc translates high-level intent (`optimize_level`,
+  `error_mitigation`, `auto_mapping`, `shots`, `backend_name`) into each
+  platform's specific `BackendOptions` payload. Unsupported options emit
+  `UserWarning` (or raise `BackendOptionsError` when `strict=True`).
+  `BackendOptionsFactory.normalize_options()` now accepts `UnifiedOptions`
+  alongside `BackendOptions`, `dict`, and `None`.
+- **Ansatz module expansion** — the `uniqc.algorithms.core.ansatz` package is
+  significantly expanded with new variational ansatz families and supporting
+  infrastructure:
+  - `hva()` — Hardware Variational Ansatz factory for hardware-efficient
+    variational circuits with configurable rotation and entangling layers.
+  - `hea_param_count()` — utility to compute the parameter count of an HEA
+    circuit before building it.
+  - **ADAPT-VQE** (`_operator_pool.py`) — adaptive derivative-assembled
+    pseudo-trotter VQE with a Pauli operator pool and greedy operator
+    selection.
+  - **QAOA variants** (`qaoa_ansatz.py`) — expanded QAOA module with support
+    for problem-specific mixer Hamiltonians and multi-round schedules.
+  - **HEA expansion** (`hea.py`) — hardware-efficient ansatz now supports
+    configurable entanglement topologies and rotation gate sets.
+  - **Type system** (`_types.py`) — new `EntanglingGate`, `EntanglementTopology`,
+    and `RotationGate` enums for type-safe ansatz configuration.
+  - **Hardware-aware selection** (`_hardware_aware.py`) —
+    `select_ansatz_config()` automatically picks the best topology and
+    entangling gate based on hardware connectivity and basis gates.
+  - **Pauli unitary** (`_pauli_unitary.py`) — Pauli-string to unitary matrix
+    construction for operator pool generation.
+  - **Topology utilities** (`_topology.py`) — graph-topology helpers for
+    ansatz edge generation.
+- **`Parameter` / `Parameters` class** (`uniqc.circuit_builder.parameter`) —
+  symbolic parameter management for variational circuits, replacing raw
+  float lists with named, indexable parameter containers.
+- **QASM2 IR decompose for cross-platform submit** (`uniqc.compile.decompose`) —
+  new `decompose_to_qasm2()` function that converts circuits to OpenQASM 2.0
+  with gate decomposition suitable for cross-platform submission.
+- **Documentation chapter 8: Algorithm examples** — new standalone chapter
+  (`docs/source/8_algorithms_examples/`) extracting algorithm implementation
+  examples from the advanced chapter for better discoverability.
+- **TorchQuantum & matplotlib examples** — new executable examples
+  demonstrating `TorchQuantumLayer` integration and matplotlib figure
+  generation, with figures switched from PNG to SVG format.
+
+### Fixed
+
+- **ADAPT-VQE `_parse_pauli_string`** — fixed parsing of compact Pauli string
+  format (e.g. `"ZIZ"`) and corrected circuit sizing when the qubit count
+  differs from the Pauli string length.
+- **`build_docs --only` clobbering index.json** — the `--only` flag now
+  preserves existing `index.json` entries instead of overwriting them with
+  only the selected subset.
+
+### Changed
+
+- **Documentation structure** — algorithm implementation examples extracted
+  from `docs/source/2_advanced/` into a new standalone
+  `docs/source/8_algorithms_examples/` chapter covering circuit building
+  blocks, core algorithms, variational hybrid methods, state preparation,
+  measurement/tomography, and real-hardware workflows.
+
 ## [0.0.13] - 2026-05-14
 
 This release unifies the front-door surface of UnifiedQuantum: a single
