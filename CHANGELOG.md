@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.14] - 2026-05-18
+
+This release brings a major expansion of the variational algorithm toolkit, a
+new cross-platform submission options layer, and QASM2 IR decompose for
+cross-platform submission. The documentation is reorganised with a dedicated
+algorithm examples chapter and new TorchQuantum / matplotlib examples.
+
 ### Added
 
 - **`UnifiedOptions` cross-platform submission options** — new `UnifiedOptions`
@@ -62,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`build_docs --only` clobbering index.json** — the `--only` flag now
   preserves existing `index.json` entries instead of overwriting them with
   only the selected subset.
+- **Windows clock precision** (`cache.py`) — `age_seconds` is now clamped to
+  non-negative to prevent negative age values on Windows where clock
+  resolution can cause backwards time jumps.
 
 ### Changed
 
