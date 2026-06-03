@@ -213,6 +213,9 @@ class Circuit:
         self._control_stack: list[tuple[int, ...]] = []
         # Named parameters attached to this circuit (for parametric circuits)
         self._params: Parameters | None = None
+        # Tensor parameter map: opcode index -> torch.Tensor
+        # Enables differentiable circuit execution (no hard torch dependency).
+        self.param_map: dict = {}
 
         # Handle qregs parameter
         if qregs is not None:
@@ -313,6 +316,7 @@ class Circuit:
         new_circuit._active_controls = self._active_controls.copy()
         new_circuit._active_dagger = self._active_dagger
         new_circuit._control_stack = list(self._control_stack)
+        new_circuit.param_map = dict(self.param_map)
         return new_circuit
 
     def _make_originir_circuit(self) -> str:
@@ -519,6 +523,56 @@ class Circuit:
         """Add all gates from another circuit into this circuit."""
         for op in other.opcode_list:
             self.add_gate(*op)
+
+    # ------------------------------------------------------------------
+    # Tensor parameter support (for differentiable circuit execution)
+    # ------------------------------------------------------------------
+
+    def set_param(self, opcode_idx: int, tensor) -> None:
+        """Register a differentiable tensor for the parametric gate at *opcode_idx*.
+
+        Args:
+            opcode_idx: Index into :pyattr:`opcode_list`.
+            tensor: A ``torch.Tensor`` (typically with ``requires_grad=True``).
+
+        Raises:
+            IndexError: If *opcode_idx* is out of range.
+        """
+        if opcode_idx < 0 or opcode_idx >= len(self.opcode_list):
+            raise IndexError(
+                f"opcode_idx {opcode_idx} out of range [0, {len(self.opcode_list)})"
+            )
+        self.param_map[opcode_idx] = tensor
+
+    def set_param_last(self, tensor) -> int:
+        """Register a tensor for the most recently added gate.
+
+        Convenience wrapper around :pymeth:`set_param` for the common pattern
+        of registering a parameter immediately after adding a gate.
+
+        Returns:
+            The opcode index that was registered.
+        """
+        idx = len(self.opcode_list) - 1
+        self.param_map[idx] = tensor
+        return idx
+
+    def get_param(self, opcode_idx: int):
+        """Get the tensor parameter registered for *opcode_idx*.
+
+        Raises:
+            KeyError: If no tensor is registered for this opcode.
+        """
+        return self.param_map[opcode_idx]
+
+    @property
+    def tensor_params(self) -> list:
+        """Return all registered tensor parameters (for passing to an optimizer)."""
+        return list(self.param_map.values())
+
+    def has_tensor_params(self) -> bool:
+        """Check whether this circuit has any registered tensor parameters."""
+        return len(self.param_map) > 0
 
     @property
     def depth(self) -> int:
