@@ -33,11 +33,18 @@ class OriginIR_BaseParser:
         self.program_body = []
         self.raw_originir = None
         self.measure_qubits: list[tuple[int, int]] = []
+        self.qram_declarations: dict[str, tuple[int, int]] = {}
 
     def _extract_qinit_statement(self, lines):
         for i, line in enumerate(lines):
             operation, q, c, parameter, dagger_flag, control_qubits = OriginIR_LineParser.parse_line(line.strip())
             if operation is None:
+                continue
+            # Skip QRAMDECL lines that appear before QINIT.
+            if operation == "QRAMDECL":
+                name, addr_size, data_size = q
+                self.qram_declarations[name] = (addr_size, data_size)
+                OriginIR_LineParser._declared_qram_names.add(name)
                 continue
             if operation != "QINIT":
                 raise ValueError("OriginIR input does not have correct QINIT statement.")
@@ -52,6 +59,12 @@ class OriginIR_BaseParser:
             operation, q, c, parameter, dagger_flag, control_qubits = OriginIR_LineParser.parse_line(lines[i].strip())
 
             if operation is None:
+                continue
+            # Skip QRAMDECL lines that appear between QINIT and CREG.
+            if operation == "QRAMDECL":
+                name, addr_size, data_size = q
+                self.qram_declarations[name] = (addr_size, data_size)
+                OriginIR_LineParser._declared_qram_names.add(name)
                 continue
             if operation != "CREG":
                 raise ValueError("OriginIR input does not have correct CREG statement.")
@@ -86,6 +99,9 @@ class OriginIR_BaseParser:
         current_lineno = self._extract_qinit_statement(lines)
         current_lineno = self._extract_creg_statement(lines, current_lineno)
 
+        # Reset and re-register declared QRAM names for this parse session.
+        OriginIR_LineParser._declared_qram_names = set(self.qram_declarations.keys())
+
         control_qubits_set = set()
         dagger_count = 0
         dagger_stack = []
@@ -97,6 +113,13 @@ class OriginIR_BaseParser:
                 line.strip()
             )
             if operation is None:
+                continue
+
+            # Handle QRAMDECL early — before qubit range checks (qubits is metadata tuple here)
+            if operation == "QRAMDECL":
+                name, addr_size, data_size = qubits
+                self.qram_declarations[name] = (addr_size, data_size)
+                OriginIR_LineParser._declared_qram_names.add(name)
                 continue
 
             # check if the operational qubit and cbit are within range
@@ -219,7 +242,10 @@ class OriginIR_BaseParser:
         Returns:
             str: Extended OriginIR string representation.
         """
-        ret = f"QINIT {self.n_qubit}\n"
+        ret = ""
+        for name, (addr_size, data_size) in self.qram_declarations.items():
+            ret += f"QRAMDECL {name} {addr_size},{data_size}\n"
+        ret += f"QINIT {self.n_qubit}\n"
         ret += f"CREG {self.n_cbit}\n"
         body_lines = [opcode_to_line_originir(opcode) for opcode in self.program_body]
         ret += "\n".join(body_lines)
@@ -249,6 +275,10 @@ class OriginIR_BaseParser:
             uniqc.Circuit object.
         """
         circuit = Circuit()
+
+        # Transfer QRAM declarations
+        for name, (addr_size, data_size) in self.qram_declarations.items():
+            circuit.qram_declarations[name] = (addr_size, data_size)
 
         for opcode in self.program_body:
             operation, qubits, cbit, parameter, dagger_flag, control_qubits = opcode

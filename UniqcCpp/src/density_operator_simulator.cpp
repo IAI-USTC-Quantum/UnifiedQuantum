@@ -808,11 +808,58 @@ namespace uniqc
     {
         CHECK_PROBABILITY_BOUND(gamma)
         CHECK_QUBIT_RANGE(qn)
-        
+
         auto E0 = u22_t{ 1, 0, 0, sqrt(1 - gamma) };
         auto E1 = u22_t{ 0, sqrt(gamma), 0, 0 };
 
         kraus1q(qn, { E0, E1 });
+    }
+
+    void DensityOperatorSimulator::qram(
+        const std::vector<size_t>& addr_qubits,
+        const std::vector<size_t>& data_qubits,
+        const std::vector<size_t>& data_array)
+    {
+        for (auto qn : addr_qubits)
+            CHECK_QUBIT_RANGE(qn)
+        for (auto qn : data_qubits)
+            CHECK_QUBIT_RANGE(qn)
+
+        // Compute permutation: perm[i] = i XOR data_mask(addr(i))
+        size_t dim = pow2(total_qubit);
+        size_t addr_size = addr_qubits.size();
+        size_t data_size = data_qubits.size();
+
+        std::vector<size_t> perm(dim);
+        for (size_t i = 0; i < dim; ++i)
+        {
+            size_t addr = 0;
+            for (size_t b = 0; b < addr_size; ++b)
+                if ((i >> addr_qubits[b]) & 1) addr |= (1ull << b);
+
+            size_t val = data_array[addr];
+            size_t data_mask = 0;
+            for (size_t b = 0; b < data_size; ++b)
+                if ((val >> b) & 1) data_mask |= (1ull << data_qubits[b]);
+
+            perm[i] = i ^ data_mask;
+        }
+
+        // Apply ρ' = P·ρ·P^T by permuting rows then columns.
+        std::vector<complex_t> new_state(state.size());
+
+        // Row permutation: new_state[i*dim + j] = state[perm[i]*dim + j]
+        for (size_t i = 0; i < dim; ++i)
+        {
+            size_t pi = perm[i];
+            for (size_t j = 0; j < dim; ++j)
+                new_state[i * dim + j] = state[pi * dim + j];
+        }
+
+        // Column permutation: state[i*dim + j] = new_state[i*dim + perm[j]]
+        for (size_t i = 0; i < dim; ++i)
+            for (size_t j = 0; j < dim; ++j)
+                state[i * dim + j] = new_state[i * dim + perm[j]];
     }
 
     dtype DensityOperatorSimulator::get_prob_map(const std::map<size_t, int>& measure_qubits)

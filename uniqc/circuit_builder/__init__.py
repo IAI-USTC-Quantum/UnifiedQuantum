@@ -37,6 +37,7 @@ from .originir_ext_spec import (
 from .parameter import Parameter, Parameters
 from .qasm_spec import available_qasm_gates, generate_sub_gateset_qasm
 from .qcircuit import Circuit
+from .qram import QRAM
 from .qubit import QReg, QRegSlice, Qubit
 from .random_originir import (
     build_full_measurements as _build_full_measurements,

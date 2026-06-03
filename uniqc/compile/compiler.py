@@ -805,6 +805,13 @@ def _originir_to_circuit(originir_str: str) -> Circuit:
                 if q_match is not None and c_match is not None:
                     pending_measurements[int(c_match.group(1))] = int(q_match.group(1))
                 continue
+            if stripped.startswith("QRAMDECL"):
+                qm = re.match(r"QRAMDECL\s+(\w+)\s+(\d+)\s*,\s*(\d+)", stripped)
+                if qm:
+                    qn = qm.group(1)
+                    OriginIR_LineParser._declared_qram_names.add(qn)
+                    circuit.qram_declarations[qn] = (int(qm.group(2)), int(qm.group(3)))
+                continue
             # Skip unparseable lines
             continue
 
@@ -825,6 +832,18 @@ def _originir_to_circuit(originir_str: str) -> Circuit:
             q_ids = [int(q) for q in re.findall(r"q\[(\d+)\]", stripped)]
             if q_ids:
                 circuit.barrier(*q_ids)
+            continue
+        if op == "QRAMDECL":
+            # qubit is (name, addr_size, data_size)
+            qn, a, d = qubit
+            OriginIR_LineParser._declared_qram_names.add(qn)
+            circuit.qram_declarations[qn] = (a, d)
+            continue
+        if op in OriginIR_LineParser._declared_qram_names:
+            # QRAM call — qubit list is the list of qubit indices
+            q_ids = [int(q) for q in re.findall(r"q\[(\d+)\]", stripped)]
+            if q_ids:
+                circuit.add_gate(op, q_ids)
             continue
 
         # Map gate name to Circuit method

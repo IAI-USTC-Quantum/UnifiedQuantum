@@ -46,6 +46,7 @@ class BaseSimulator:
         self.backend_type = backend_type
         self.opcode_simulator = OpcodeSimulator(self.backend_type)
         self.parser = None  # Note: parser must be set by subclass.
+        self.qram_objects: dict = {}  # name -> QRAM instances
         self._handle_kwargs(extra_kwargs)
 
     def _handle_kwargs(self, kwargs: dict):
@@ -60,6 +61,51 @@ class BaseSimulator:
         self.measure_qubit = []
         self.qubit_mapping = dict()
         self.opcode_simulator = OpcodeSimulator(self.backend_type)
+        self.qram_objects = {}
+
+    def _register_qrams(self):
+        """Create QRAM objects from parser declarations and register them in the opcode simulator.
+
+        The QRAM objects are accessible via ``self.qram_objects[name]``. Users can
+        write data into them before running the simulation. The opcode simulator
+        holds a reference to each QRAM's internal data list, so mutations are
+        visible during simulation without re-registration.
+
+        If called again with identical declarations (e.g. from
+        ``simulate_statevector`` which re-preprocesses), existing QRAM objects
+        and their data are preserved.
+        """
+        from uniqc.circuit_builder.qram import QRAM
+
+        new_decls = self.parser.qram_declarations
+
+        # Check if existing QRAM objects match the new declarations.
+        # If so, preserve them (user may have written data into them).
+        if self.qram_objects and set(self.qram_objects.keys()) == set(new_decls.keys()):
+            match = all(
+                (self.qram_objects[name].addr_size == addr_size
+                 and self.qram_objects[name].data_size == data_size)
+                for name, (addr_size, data_size) in new_decls.items()
+            )
+            if match:
+                # Re-register existing objects into the fresh opcode_simulator.
+                self.opcode_simulator.qram_registry = {}
+                for name, qram in self.qram_objects.items():
+                    addr_size, data_size = new_decls[name]
+                    self.opcode_simulator.register_qram(
+                        name, addr_size, data_size, qram._data
+                    )
+                return
+
+        # Create fresh QRAM objects.
+        self.qram_objects = {}
+        self.opcode_simulator.qram_registry = {}
+        for name, (addr_size, data_size) in new_decls.items():
+            qram = QRAM(name, addr_size, data_size)
+            self.qram_objects[name] = qram
+            # Share the data list reference — writes to qram.write() are
+            # visible to the C++ simulator via this same list object.
+            self.opcode_simulator.register_qram(name, addr_size, data_size, qram._data)
 
     def _add_used_qubit(self, qubit):
         if qubit in self.qubit_mapping:
@@ -168,6 +214,10 @@ class BaseSimulator:
         """
         self._clear()
         self.parser.parse(originir)
+
+        # Register QRAM objects from parser declarations.
+        self._register_qrams()
+
         # update self.qubit_mapping
         self._extract_actual_used_qubits()
 

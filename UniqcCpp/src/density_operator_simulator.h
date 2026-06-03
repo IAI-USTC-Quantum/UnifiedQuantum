@@ -61,6 +61,11 @@ namespace uniqc {
         void kraus2q(size_t qn, size_t qn2, const Kraus2Q& kraus_ops);
         void amplitude_damping(size_t qn, double gamma);
 
+        /* QRAM: |addr⟩|data⟩ → |addr⟩|data ⊕ data_array[addr]⟩ */
+        void qram(const std::vector<size_t>& addr_qubits,
+                  const std::vector<size_t>& data_qubits,
+                  const std::vector<size_t>& data_array);
+
         dtype get_prob_map(const std::map<size_t, int>& measure_qubits);
         dtype get_prob(size_t qn, int state);
         std::vector<dtype> pmeasure_list(const std::vector<size_t>& measure_list);

@@ -768,6 +768,19 @@ namespace uniqc {
         amplitude_damping_unsafe_impl(state, qn, gamma, total_qubit);
     }
 
+    void StatevectorSimulator::qram(
+        const std::vector<size_t>& addr_qubits,
+        const std::vector<size_t>& data_qubits,
+        const std::vector<size_t>& data_array)
+    {
+        for (auto qn : addr_qubits)
+            CHECK_QUBIT_RANGE(qn)
+        for (auto qn : data_qubits)
+            CHECK_QUBIT_RANGE(qn)
+
+        qram_permutation_impl(state, addr_qubits, data_qubits, data_array, total_qubit);
+    }
+
 
     dtype StatevectorSimulator::get_prob(const std::map<size_t, int> &measure_qubits)
     {
