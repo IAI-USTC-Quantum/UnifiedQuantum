@@ -12,6 +12,7 @@ __all__ = [
     "make_measure_originir",
     "make_measure_qasm",
     "opcode_to_line_originir",
+    "opcode_to_line_originir_official",
     "opcode_to_line_qasm",
     "OpcodeType",
     "QubitType",
@@ -106,6 +107,56 @@ def opcode_to_line_originir(opcode: OpcodeType) -> str:
     # print(ret)
 
     return ret
+
+
+def opcode_to_line_originir_official(opcode: OpcodeType) -> str:
+    """Convert a single opcode to strict official OriginIR format.
+
+    Unlike :func:`opcode_to_line_originir`, this function emits
+    ``DAGGER``/``ENDDAGGER`` and ``CONTROL``/``ENDCONTROL`` *blocks*
+    rather than the inline ``dagger`` suffix and ``controlled_by(...)``
+    clause.  The resulting text is valid under the official OriginIR
+    specification accepted by OriginQ cloud.
+
+    For opcodes with no dagger flag and no control qubits the output is
+    identical to :func:`opcode_to_line_originir`.
+    """
+    operation, qubit, cbit, parameter, dagger_flag, control_qubits_set = opcode
+
+    if not operation:
+        raise RuntimeError("Unexpected error. Operation is empty.")
+
+    # Build the bare gate line (no dagger / controlled_by suffixes).
+    ret = operation
+    if isinstance(qubit, list):
+        ret += " " + ", ".join([f"q[{q}]" for q in qubit])
+    else:
+        ret += f" q[{qubit}]"
+
+    if parameter is not None and (not hasattr(parameter, "__len__") or len(parameter) > 0):
+        ret += ", ("
+        if hasattr(parameter, "__iter__") and not isinstance(parameter, str):
+            ret += ", ".join([str(p) for p in parameter])
+        else:
+            ret += str(parameter)
+        ret += ")"
+
+    if cbit:
+        ret += ", "
+        ret += f"c[{cbit}]" if cbit else ""
+
+    gate_line = ret + "\n"
+
+    # Wrap in CONTROL block if control qubits exist.
+    if control_qubits_set:
+        ctrl_args = ", ".join([f"q[{q}]" for q in control_qubits_set])
+        gate_line = f"CONTROL {ctrl_args}\n{gate_line}ENDCONTROL\n"
+
+    # Wrap in DAGGER block if dagger flag is set.
+    if dagger_flag:
+        gate_line = f"DAGGER\n{gate_line}ENDDAGGER\n"
+
+    return gate_line.rstrip("\n")
 
 
 def make_measure_originir(measure_list: list[int]):

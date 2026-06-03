@@ -20,6 +20,7 @@ from .opcode import (
     make_measure_originir,
     make_measure_qasm,
     opcode_to_line_originir,
+    opcode_to_line_originir_official,
     opcode_to_line_qasm,
 )
 
@@ -329,6 +330,18 @@ class Circuit:
         measure = make_measure_qasm(self.measure_list)
         return header + circuit_str + "\n" + measure
 
+    def _make_originir_official_circuit(self) -> str:
+        """Generate strict official OriginIR — decompose ext gates, block format."""
+        from uniqc.compile.decompose import decompose_for_originir
+
+        decomposed = decompose_for_originir(self)
+        header = make_header_originir(decomposed.qubit_num, decomposed.cbit_num)
+        circuit_str = "\n".join(
+            [opcode_to_line_originir_official(op) for op in decomposed.opcode_list]
+        )
+        measure = make_measure_originir(decomposed.measure_list)
+        return header + circuit_str + "\n" + measure
+
     @property
     def circuit(self) -> str:
         """Generate the circuit in OriginIR format."""
@@ -387,6 +400,31 @@ class Circuit:
     def to_extended_originir(self) -> str:
         """Export the circuit in extended OriginIR format (full form with QINIT/CREG/MEASURE)."""
         return self.originir
+
+    def to_originir_official(self) -> str:
+        """Export the circuit as strict official OriginIR.
+
+        Extended gates are decomposed to the official gate set, and inline
+        ``dagger`` / ``controlled_by`` syntax is replaced with block-level
+        ``DAGGER`` / ``CONTROL`` delimiters.  The output is suitable for
+        submission to OriginQ cloud.
+        """
+        return self._make_originir_official_circuit()
+
+    @property
+    def originir_official(self) -> str:
+        """Generate the circuit in strict official OriginIR format."""
+        return self._make_originir_official_circuit()
+
+    @classmethod
+    def from_originir_ext(cls, originir_ext_str: str) -> Circuit:
+        """Create a Circuit from an OriginIR-ext string.
+
+        Equivalent to :meth:`from_originir` — both parse the same
+        superset syntax.  This alias makes the intent explicit when
+        working with OriginIR-ext source.
+        """
+        return cls.from_originir(originir_ext_str)
 
     def to_qiskit_circuit(self):
         """Convert to a ``qiskit.QuantumCircuit``.

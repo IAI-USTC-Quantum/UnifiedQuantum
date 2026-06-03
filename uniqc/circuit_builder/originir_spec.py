@@ -20,9 +20,40 @@ __all__ = [
     "available_originir_error_channels_without_kraus",
     "generate_sub_gateset_originir",
     "generate_sub_error_channel_originir",
+    "OFFICIAL_ORIGINIR_GATES",
+    "available_originir_official_gates",
 ]
 
+# ──────────────────────────────────────────────────────────────────────
+# Official OriginIR gate lists (accepted by OriginQ cloud service)
+# ──────────────────────────────────────────────────────────────────────
+
 available_originir_1q_gates = ["H", "X", "Y", "Z", "S", "SX", "T", "I"]
+available_originir_1q1p_gates = [
+    "RX",
+    "RY",
+    "RZ",
+    "U1",
+    "RPhi90",
+    "RPhi180",
+]
+available_originir_1q2p_gates = ["RPhi", "U2"]
+available_originir_1q3p_gates = ["U3"]
+available_originir_2q_gates = [
+    "CNOT",
+    "CZ",
+    "ECR",
+    "ISWAP",
+]  # TODO: SQISWAP
+available_originir_2q1p_gates = [
+    "XX",
+    "YY",
+    "ZZ",
+    "XY",
+]
+available_originir_2q3p_gates = ["PHASE2Q"]
+available_originir_2q15p_gates = ["UU15"]
+available_originir_3p_gates = ["TOFFOLI", "CSWAP"]
 available_originir_1q1p_gates = [
     "RX",
     "RY",
@@ -80,6 +111,38 @@ available_originir_gates.update({gatename: {"qubit": 2, "param": 15} for gatenam
 available_originir_gates.update({gatename: {"qubit": 3, "param": 0} for gatename in available_originir_3p_gates})
 
 available_originir_gates.update({gatename: {"qubit": -1, "param": 0} for gatename in available_barrier_gates})
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Official OriginIR gate set (subset accepted by OriginQ cloud)
+# ──────────────────────────────────────────────────────────────────────
+# These are the gates that OriginQ's pyQPanda parser recognizes without
+# any custom definitions.  Extended gates (ECR, ISWAP, XX, YY, ZZ, XY,
+# PHASE2Q, UU15, RPhi, RPhi90, RPhi180) must be decomposed to this set
+# before cloud submission.
+
+_official_1q = ["H", "X", "Y", "Z", "S", "SX", "T", "I"]
+_official_1q1p = ["RX", "RY", "RZ", "U1"]
+_official_1q2p = ["U2"]
+_official_1q3p = ["U3"]
+_official_2q = ["CNOT", "CZ", "SWAP"]
+_official_3q = ["TOFFOLI", "CSWAP"]
+_official_barrier = ["BARRIER"]
+
+OFFICIAL_ORIGINIR_GATES: frozenset[str] = frozenset(
+    _official_1q + _official_1q1p + _official_1q2p + _official_1q3p
+    + _official_2q + _official_3q + _official_barrier
+)
+
+available_originir_official_gates: dict[str, dict] = {
+    g: {"qubit": 1, "param": 0} for g in _official_1q
+}
+available_originir_official_gates.update({g: {"qubit": 1, "param": 1} for g in _official_1q1p})
+available_originir_official_gates.update({g: {"qubit": 1, "param": 2} for g in _official_1q2p})
+available_originir_official_gates.update({g: {"qubit": 1, "param": 3} for g in _official_1q3p})
+available_originir_official_gates.update({g: {"qubit": 2, "param": 0} for g in _official_2q})
+available_originir_official_gates.update({g: {"qubit": 3, "param": 0} for g in _official_3q})
+available_originir_official_gates.update({g: {"qubit": -1, "param": 0} for g in _official_barrier})
 
 
 def generate_sub_gateset_originir(gate_list):

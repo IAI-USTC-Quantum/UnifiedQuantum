@@ -3,14 +3,14 @@ from .compiler import CompilationResult as CompilationResult
 from .compiler import TranspilerConfig as TranspilerConfig
 from .compiler import compile as compile
 from .converter import convert_oir_to_qasm as convert_oir_to_qasm
+from .converter import convert_originir_ext_to_originir as convert_originir_ext_to_originir
 from .converter import convert_qasm_to_oir as convert_qasm_to_oir
 from .decompose import (
+    ORIGINIR_EXT_DECOMPOSABLE_GATES as ORIGINIR_EXT_DECOMPOSABLE_GATES,
     QASM2_UNREPRESENTABLE_GATES as QASM2_UNREPRESENTABLE_GATES,
-)
-from .decompose import (
+    decompose_for_originir as decompose_for_originir,
     decompose_for_qasm2 as decompose_for_qasm2,
-)
-from .decompose import (
+    decompose_opcode_for_originir as decompose_opcode_for_originir,
     decompose_opcode_for_qasm2 as decompose_opcode_for_qasm2,
 )
 from .policy import (
