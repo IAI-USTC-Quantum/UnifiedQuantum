@@ -169,6 +169,7 @@ class Circuit:
     def __init__(
         self,
         qregs: dict[str, int] | list[QReg] | int | None = None,
+        param_dict: dict[str, object] | None = None,
     ) -> None:
         """Initialize a quantum circuit.
 
@@ -178,6 +179,10 @@ class Circuit:
                 - list[QReg]: List of QReg objects
                 - int: Total number of qubits (backward compatible)
                 - None: No predefined registers (backward compatible)
+            param_dict: Optional mapping of parameter names to ``torch.Tensor``
+                values.  Gate methods accept parameter names (strings) which
+                are resolved through this dict and auto-registered in
+                :pyattr:`param_map`.
 
         Examples:
             >>> # Backward compatible - no registers
@@ -193,6 +198,11 @@ class Circuit:
             >>> from uniqc.circuit_builder import QReg
             >>> qr_a = QReg(name="a", size=4)
             >>> c = Circuit(qregs=[qr_a])
+
+            >>> # Differentiable circuit with named parameters
+            >>> params = {"theta": nn.Parameter(torch.tensor(0.5))}
+            >>> c = Circuit(1, param_dict=params)
+            >>> c.ry(0, "theta")
         """
         from .qubit import QReg as QRegClass
 
@@ -216,6 +226,8 @@ class Circuit:
         # Tensor parameter map: opcode index -> torch.Tensor
         # Enables differentiable circuit execution (no hard torch dependency).
         self.param_map: dict = {}
+        # Named parameter dict (optional) for name-based gate param references.
+        self._param_dict: dict[str, object] | None = param_dict
 
         # Handle qregs parameter
         if qregs is not None:
@@ -317,6 +329,7 @@ class Circuit:
         new_circuit._active_dagger = self._active_dagger
         new_circuit._control_stack = list(self._control_stack)
         new_circuit.param_map = dict(self.param_map)
+        new_circuit._param_dict = self._param_dict  # shared reference
         return new_circuit
 
     def _make_originir_circuit(self) -> str:
@@ -474,6 +487,22 @@ class Circuit:
                 self.max_qubit = max(self.max_qubit, qubit)
         self.qubit_num = self.max_qubit + 1
 
+    def _resolve_param_strings(self, params: ParamSpec) -> ParamSpec:
+        """Resolve string parameter names via ``_param_dict``.
+
+        Returns the params with any name strings replaced by the corresponding
+        tensor/value from ``_param_dict``.  If no ``_param_dict`` is set or
+        params contains no strings, returns *params* unchanged.
+        """
+        if params is None or self._param_dict is None:
+            return params
+        if isinstance(params, str):
+            return self._param_dict[params]
+        if isinstance(params, (list, tuple)):
+            resolved = [self._param_dict[p] if isinstance(p, str) else p for p in params]
+            return type(params)(resolved)  # preserve list/tuple type
+        return params
+
     def add_gate(
         self,
         operation: str,
@@ -515,22 +544,21 @@ class Circuit:
             merged_controls = base if base else None  # type: ignore[assignment]
             # XOR active-dagger with the explicit dagger flag.
             merged_dagger = dagger ^ self._active_dagger
-        # Detect torch.Tensor params — store a float placeholder in the opcode
-        # and register the tensor in param_map for differentiable execution.
-        opcode_params = params
+        # Resolve string param names via _param_dict, then detect tensors.
+        opcode_params = self._resolve_param_strings(params)
         _has_torch = "torch" in __import__("sys").modules
-        if _has_torch and params is not None:
+        if _has_torch and opcode_params is not None:
             import torch as _torch
-            if isinstance(params, _torch.Tensor):
+            if isinstance(opcode_params, _torch.Tensor):
                 opcode_idx = len(self.opcode_list)
-                self.param_map[opcode_idx] = params
-                opcode_params = float(params.detach().cpu().item())
-            elif isinstance(params, (list, tuple)) and any(isinstance(p, _torch.Tensor) for p in params):
+                self.param_map[opcode_idx] = opcode_params
+                opcode_params = float(opcode_params.detach().cpu().item())
+            elif isinstance(opcode_params, (list, tuple)) and any(isinstance(p, _torch.Tensor) for p in opcode_params):
                 opcode_idx = len(self.opcode_list)
                 self.param_map[opcode_idx] = _torch.stack(
-                    [p if isinstance(p, _torch.Tensor) else _torch.tensor(float(p)) for p in params]
+                    [p if isinstance(p, _torch.Tensor) else _torch.tensor(float(p)) for p in opcode_params]
                 )
-                opcode_params = [float(p.detach().cpu().item()) if isinstance(p, _torch.Tensor) else float(p) for p in params]
+                opcode_params = [float(p.detach().cpu().item()) if isinstance(p, _torch.Tensor) else float(p) for p in opcode_params]
 
         opcode: OpCode = (operation, resolved_qubits, cbits, opcode_params, merged_dagger, merged_controls)  # type: ignore[assignment]
         self.opcode_list.append(opcode)
@@ -590,6 +618,15 @@ class Circuit:
     def has_tensor_params(self) -> bool:
         """Check whether this circuit has any registered tensor parameters."""
         return len(self.param_map) > 0
+
+    @property
+    def param_dict(self) -> dict[str, object] | None:
+        """The named parameter dictionary, if provided at construction."""
+        return self._param_dict
+
+    @param_dict.setter
+    def param_dict(self, value: dict[str, object] | None) -> None:
+        self._param_dict = value
 
     @property
     def depth(self) -> int:
