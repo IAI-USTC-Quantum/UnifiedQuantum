@@ -220,6 +220,7 @@ except ImportError:
 from . import algorithms, calibration, config, qem  # noqa: E402,F401
 
 _LAZY_EXPORTS = {
+    "expectation": ("uniqc.torch_adapter", "expectation"),
     "QuantumLayer": ("uniqc.torch_adapter", "QuantumLayer"),
     "TorchQuantumLayer": ("uniqc.torch_adapter", "TorchQuantumLayer"),
     "HybridQCLModel": ("uniqc.algorithms.core.training.hybrid_model", "HybridQCLModel"),
@@ -371,6 +372,7 @@ __all__ = [
     "dicke_state",
     "dicke_state_circuit",
     "dry_run_task",
+    "expectation",
     "fetch_all_backends",
     "fetch_platform_backends",
     "find_cached_results",
