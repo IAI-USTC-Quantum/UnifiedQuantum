@@ -165,7 +165,7 @@ class TwoQubitDepolarizing(ErrorModel):
         """
         if not isinstance(qubits, list) or len(qubits) != 2:
             raise ValueError("TwoQubitDepolarizing error model requires two qubits")
-        return [("TwoQubitDepolarizing", q, None, self.p, None, None) for q in qubits]
+        return [("TwoQubitDepolarizing", qubits, None, self.p, None, None)]
 
 
 class AmplitudeDamping(ErrorModel):
@@ -252,7 +252,7 @@ class PauliError2Q(ErrorModel):
         """
         if not isinstance(qubits, list) or len(qubits) != 2:
             raise ValueError("PauliError2Q error model requires two qubits")
-        return [("PauliError2Q", q, None, self.ps, None, None) for q in qubits]
+        return [("PauliError2Q", qubits, None, self.ps, None, None)]
 
 
 class Kraus1Q(ErrorModel):
@@ -381,10 +381,9 @@ class ErrorLoader_GateSpecificError(ErrorLoader_GateTypeError):
         super().insert_error(opcode)
         if gate == "CZ":
             qubits = [min(qubits[0], qubits[1]), max(qubits[0], qubits[1])]
-        if isinstance(qubits, list):
-            qubits = tuple(qubits)
-        key = (gate, qubits)
+        qubits_list = qubits if isinstance(qubits, list) else [qubits]
+        key = (gate, tuple(qubits_list))
         gate_specific_error = self.gate_specific_error.get(key, [])
         for noise_model in gate_specific_error:
-            noise_opcodes = noise_model.generate_error_opcode(qubits)
+            noise_opcodes = noise_model.generate_error_opcode(qubits_list)
             self.opcodes.extend(noise_opcodes)
