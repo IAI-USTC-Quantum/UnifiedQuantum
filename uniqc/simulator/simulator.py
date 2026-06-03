@@ -80,7 +80,11 @@ class Simulator(BaseSimulator):
         quantum_code = _to_originir_str(quantum_code)
 
         # Try OriginIR first.
+        # Preserve QRAM data across re-preprocessing (e.g. when
+        # simulate_statevector calls this internally).
+        prev_qram_objects = self.qram_objects.copy()
         self._clear()
+        self.qram_objects = prev_qram_objects
         self.parser = OriginIR_BaseParser()
         try:
             self.parser.parse(quantum_code)
@@ -90,6 +94,7 @@ class Simulator(BaseSimulator):
             self.parser = OpenQASM2_BaseParser()
             self.parser.parse(quantum_code)
 
+        self._register_qrams()
         self._extract_actual_used_qubits()
 
         if self.available_qubits or self.available_topology:
@@ -150,8 +155,10 @@ class NoisySimulator(BaseNoisySimulator):
         """
         quantum_code = _to_originir_str(quantum_code)
 
-        # Try OriginIR first.
+        # Preserve QRAM data across re-preprocessing.
+        prev_qram_objects = self.qram_objects.copy()
         self._clear()
+        self.qram_objects = prev_qram_objects
         self.parser = OriginIR_BaseParser()
         try:
             self.parser.parse(quantum_code)
@@ -160,6 +167,7 @@ class NoisySimulator(BaseNoisySimulator):
             self.parser = OpenQASM2_BaseParser()
             self.parser.parse(quantum_code)
 
+        self._register_qrams()
         self._extract_actual_used_qubits()
 
         if self.available_qubits or self.available_topology:

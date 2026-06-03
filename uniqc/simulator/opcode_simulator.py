@@ -59,6 +59,19 @@ class OpcodeSimulator:
             typestr: Human-readable backend type string.
     """
 
+    _KNOWN_GATE_NAMES: frozenset[str] = frozenset({
+        "RX", "RY", "RZ", "U1", "U2", "U3",
+        "H", "X", "Y", "Z", "S", "SX", "T",
+        "CZ", "SWAP", "ISWAP", "CNOT",
+        "TOFFOLI", "CSWAP",
+        "XY", "XX", "YY", "ZZ",
+        "UU15", "PHASE2Q", "ECR",
+        "RPhi", "RPhi90", "RPhi180",
+        "PauliError1Q", "PauliError2Q",
+        "Depolarizing", "BitFlip", "PhaseFlip", "AmplitudeDamping",
+        "TwoQubitDepolarizing", "Kraus1Q",
+    })
+
     def __init__(self, backend_type="statevector"):
         """Initialize the OpcodeSimulator.
 
@@ -92,10 +105,23 @@ class OpcodeSimulator:
             raise ValueError(f"Unknown backend type: {backend_type}")
 
         self.simulator = self.SimulatorType()
+        self.qram_registry: dict[str, tuple[int, int, list[int]]] = {}
 
     def _clear(self):
         """Reset the simulator by creating a fresh simulator instance."""
         self.simulator = self.SimulatorType()
+        self.qram_registry = {}
+
+    def register_qram(self, name: str, addr_size: int, data_size: int, data_array: list[int]) -> None:
+        """Register a QRAM data array for simulation.
+
+        Args:
+            name: QRAM identifier (matches the operation name in opcodes).
+            addr_size: Number of address qubits.
+            data_size: Number of data qubits.
+            data_array: Reference to the data list (shared with the QRAM object).
+        """
+        self.qram_registry[name] = (addr_size, data_size, data_array)
 
     def _simulate_common_gate(self, operation, qubit, cbit, parameter, is_dagger, control_qubits_set):
         """Dispatch a single gate to the underlying simulator."""
@@ -236,12 +262,21 @@ class OpcodeSimulator:
                 self.simulator.sx(qubit[1], control_qubits_set, False)
         elif (
             operation == "I"
-            or operation == None
+            or operation is None
             or operation == "QINIT"
             or operation == "CREG"
             or operation == "BARRIER"
+            or operation == "QRAMDECL"
         ):
             pass
+        elif operation not in self._KNOWN_GATE_NAMES:
+            # Check if this is a registered QRAM call.
+            if operation in self.qram_registry:
+                addr_size, data_size, data_array = self.qram_registry[operation]
+                addr_qubits = qubit[:addr_size]
+                data_qubits = qubit[addr_size:]
+                self.simulator.qram(addr_qubits, data_qubits, data_array)
+            # else: truly unknown meta-operation — silently skip.
         else:
             raise RuntimeError(
                 "Unknown Opcode operation. "

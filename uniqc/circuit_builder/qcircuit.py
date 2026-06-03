@@ -230,6 +230,8 @@ class Circuit:
         self._param_dict: dict[str, object] | None = param_dict
         # Auto-created nn.Parameters keyed by ("GATE_NAME", opcode_idx).
         self._auto_params: dict[tuple[str, int], object] = {}
+        # QRAM declarations: name -> (addr_size, data_size)
+        self.qram_declarations: dict[str, tuple[int, int]] = {}
 
         # Handle qregs parameter
         if qregs is not None:
@@ -336,7 +338,10 @@ class Circuit:
         return new_circuit
 
     def _make_originir_circuit(self) -> str:
-        header = make_header_originir(self.qubit_num, self.cbit_num)
+        qram_header = ""
+        for name, (addr_size, data_size) in self.qram_declarations.items():
+            qram_header += f"QRAMDECL {name} {addr_size},{data_size}\n"
+        header = qram_header + make_header_originir(self.qubit_num, self.cbit_num)
         circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
         measure = make_measure_originir(self.measure_list)
         return header + circuit_str + "\n" + measure
@@ -542,7 +547,7 @@ class Circuit:
         resolved_qubits = self._resolve_qubit(qubits)
         resolved_controls = self._resolve_qubit(control_qubits) if control_qubits is not None else None
 
-        if operation in {"BARRIER", "I"}:
+        if operation in {"BARRIER", "I"} or operation in self.qram_declarations:
             # These gates have no controlled / dagger semantics; store as-is.
             merged_controls: QubitSpec = resolved_controls
             merged_dagger = dagger
@@ -729,7 +734,7 @@ class Circuit:
         for opcode in self.opcode_list:
             op_name, qubits, _, _, _, control_qubits = opcode
 
-            if op_name in ("I", "BARRIER"):
+            if op_name in ("I", "BARRIER") or op_name in self.qram_declarations:
                 continue
 
             if not isinstance(qubits, list):
@@ -1099,6 +1104,37 @@ class Circuit:
             *qubits: Qubits to include in the barrier.
         """
         self.add_gate("BARRIER", list(qubits))
+
+    def qram_declare(self, name: str, addr_size: int, data_size: int) -> None:
+        """Declare a QRAM with the given address and data sizes.
+
+        Args:
+            name: Unique name for this QRAM.
+            addr_size: Number of address qubits.
+            data_size: Number of data qubits.
+        """
+        if name in self.qram_declarations:
+            raise ValueError(f"QRAM '{name}' is already declared in this circuit.")
+        self.qram_declarations[name] = (addr_size, data_size)
+
+    def qram_call(self, name: str, *qubits: QubitInput) -> None:
+        """Add a QRAM call to the circuit.
+
+        Args:
+            name: Name of a previously declared QRAM.
+            *qubits: Qubit list (addr bits followed by data bits).
+        """
+        if name not in self.qram_declarations:
+            raise ValueError(f"QRAM '{name}' has not been declared. Call qram_declare() first.")
+        addr_size, data_size = self.qram_declarations[name]
+        total = addr_size + data_size
+        resolved = self._resolve_qubit(list(qubits))
+        if isinstance(resolved, list) and len(resolved) != total:
+            raise ValueError(
+                f"QRAM '{name}' expects {total} qubits ({addr_size} addr + {data_size} data), "
+                f"got {len(resolved)}."
+            )
+        self.add_gate(name, list(qubits))
 
     # ─────────────────── Measurement ───────────────────
 

@@ -18,6 +18,9 @@ class OriginIR_LineParser:
     1-3 qubit gates, parameterized gates, dagger flags, and control qubits.
     """
 
+    #: Names declared via QRAMDECL; populated at runtime by the base parser.
+    _declared_qram_names: set = set()
+
     opname = r"([A-Za-z][A-Za-z\d]*)"
     blank = r" *"
     qid = r"q *\[ *(\d+) *\]"
@@ -311,6 +314,17 @@ class OriginIR_LineParser:
     )
     regexp_enddef_str = "^ENDDEF$"
 
+    # QRAMDECL name addr_size,data_size
+    regexp_qramdecl_str = (
+        r"^QRAMDECL"
+        + blank
+        + r"([A-Za-z_][A-Za-z0-9_]*)"
+        + blank
+        + r"(\d+)\s*,\s*(\d+)"
+        + blank
+        + "$"
+    )
+
     regexp_1q = re.compile(regexp_1q_str)
     regexp_2q = re.compile(regexp_2q_str)
     regexp_3q = re.compile(regexp_3q_str)
@@ -326,6 +340,7 @@ class OriginIR_LineParser:
     regexp_control = re.compile(regexp_control_str)
     regexp_def = re.compile(regexp_def_str)
     regexp_enddef = re.compile(regexp_enddef_str)
+    regexp_qramdecl = re.compile(regexp_qramdecl_str)
     regexp_qid = re.compile(qid)
 
     def __init__(self):
@@ -655,6 +670,34 @@ class OriginIR_LineParser:
         return ("DEF", qubits, params, name)
 
     @staticmethod
+    def handle_qramdecl(line):
+        """Parse a QRAMDECL statement.
+
+        Format: QRAMDECL name addr_size,data_size
+
+        Returns:
+            tuple: ("QRAMDECL", name, addr_size, data_size)
+        """
+        matches = OriginIR_LineParser.regexp_qramdecl.match(line.strip())
+        if not matches:
+            raise ValueError(f"Invalid QRAMDECL line: {line}")
+        name = matches.group(1)
+        addr_size = int(matches.group(2))
+        data_size = int(matches.group(3))
+        return "QRAMDECL", name, addr_size, data_size
+
+    @staticmethod
+    def handle_qram_call(line, qram_name):
+        """Parse a QRAM call line (same format as BARRIER: variable qubit list).
+
+        Returns:
+            tuple: (qram_name, qubit_indices)
+        """
+        qubits = OriginIR_LineParser.regexp_qid.findall(line)
+        qubit_indices = [int(q) for q in qubits]
+        return qram_name, qubit_indices
+
+    @staticmethod
     def parse_line(line):
         """Parse a single OriginIR line and return operation details.
 
@@ -770,6 +813,16 @@ class OriginIR_LineParser:
                 control_qubits = []
             elif operation == "ENDDEF":
                 operation = "ENDDEF"
+                dagger_flag = False
+                control_qubits = []
+            elif operation == "QRAMDECL":
+                operation, name, addr_size, data_size = OriginIR_LineParser.handle_qramdecl(line)
+                q = (name, addr_size, data_size)
+                dagger_flag = False
+                control_qubits = []
+            elif operation in OriginIR_LineParser._declared_qram_names:
+                # QRAM call — same syntax as BARRIER (variable qubit list)
+                operation, q = OriginIR_LineParser.handle_qram_call(line, operation)
                 dagger_flag = False
                 control_qubits = []
             else:

@@ -87,5 +87,13 @@ namespace uniqc {
 
         dtype get_prob_unsafe_impl(const std::vector<complex_t>& state, const std::map<size_t, int> measure_map, size_t total_qubit);
 
+        /* QRAM permutation: |addr⟩|data⟩ → |addr⟩|data ⊕ d[addr]⟩ */
+        void qram_permutation_impl(
+            std::vector<complex_t>& state,
+            const std::vector<size_t>& addr_qubits,
+            const std::vector<size_t>& data_qubits,
+            const std::vector<size_t>& data_array,
+            size_t total_qubit);
+
     } // namespace statevector_simulator_impl
 } // namespace uniqc

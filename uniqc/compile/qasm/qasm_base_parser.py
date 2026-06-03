@@ -48,6 +48,9 @@ class OpenQASM2_BaseParser:
         # for measurement mapping
         self.measure_qubits: list[tuple[int, int]] = list()
 
+        # QRAM declarations (not supported in QASM, but needed for interface compatibility)
+        self.qram_declarations: dict[str, tuple[int, int]] = {}
+
     def _format_and_check(self):
         """Format the original qasm code and check if it is valid.
 

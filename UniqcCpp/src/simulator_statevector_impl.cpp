@@ -722,5 +722,66 @@ namespace statevector_simulator_impl {
             return prob;
         }
 
+        // ============================================================
+        // QRAM permutation: |addr⟩|data⟩ → |addr⟩|data ⊕ d[addr]⟩
+        //
+        // This is a self-inverse permutation (applying twice = identity).
+        // For each basis state i:
+        //   1. Extract address bits → addr
+        //   2. Look up val = data_array[addr]
+        //   3. XOR val into data bits → j
+        //   4. Swap amplitudes state[i] ↔ state[j] (once per pair)
+        // ============================================================
+        void qram_permutation_impl(
+            std::vector<complex_t>& state,
+            const std::vector<size_t>& addr_qubits,
+            const std::vector<size_t>& data_qubits,
+            const std::vector<size_t>& data_array,
+            size_t total_qubit)
+        {
+            size_t dim = pow2(total_qubit);
+            size_t addr_size = addr_qubits.size();
+            size_t data_size = data_qubits.size();
+
+            std::vector<bool> visited(dim, false);
+
+            for (size_t i = 0; i < dim; ++i)
+            {
+                if (visited[i]) continue;
+
+                // Extract address from basis state i
+                size_t addr = 0;
+                for (size_t b = 0; b < addr_size; ++b)
+                {
+                    if ((i >> addr_qubits[b]) & 1)
+                        addr |= (1ull << b);
+                }
+
+                // Look up data value
+                size_t val = data_array[addr];
+                if (val == 0) {
+                    // XOR with 0 is identity — no swap needed
+                    visited[i] = true;
+                    continue;
+                }
+
+                // Build data mask: set bits in statevector index where val has 1s
+                size_t data_mask = 0;
+                for (size_t b = 0; b < data_size; ++b)
+                {
+                    if ((val >> b) & 1)
+                        data_mask |= (1ull << data_qubits[b]);
+                }
+
+                size_t j = i ^ data_mask;
+                if (j != i)
+                {
+                    std::swap(state[i], state[j]);
+                    visited[j] = true;
+                }
+                visited[i] = true;
+            }
+        }
+
 } // namespace statevector_simulator_impl
 } // namespace uniqc

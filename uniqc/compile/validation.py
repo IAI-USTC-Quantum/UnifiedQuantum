@@ -89,6 +89,7 @@ _NON_GATE_OPS: frozenset[str] = frozenset(
         "ENDDAGGER",
         "DEF",
         "ENDDEF",
+        "QRAMDECL",
         "I",
     }
 )
@@ -165,6 +166,8 @@ def _iter_gate_opcodes(circuit: Circuit):
     Resolves control qubits embedded in opcodes so that they participate in
     depth and topology checks.
     """
+    qram_names = getattr(circuit, "qram_declarations", None) or {}
+
     for op in circuit.opcode_list:
         # OpCode = (op_name, qubits, cbits, params, dagger, control_qubits)
         op_name, qubits, _cbits, _params, _dagger, control_qubits = op
@@ -184,7 +187,8 @@ def _iter_gate_opcodes(circuit: Circuit):
 
         is_measure = name == "MEASURE"
         is_barrier = name == "BARRIER"
-        yield name, qubit_list, (is_measure or is_barrier)
+        is_qram = op_name in qram_names
+        yield name, qubit_list, (is_measure or is_barrier or is_qram)
 
     # Trailing measurements collected via circuit.measure(...) but not pushed
     # to opcode_list yet.
