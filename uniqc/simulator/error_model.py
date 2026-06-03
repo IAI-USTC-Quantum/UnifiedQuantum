@@ -165,7 +165,7 @@ class TwoQubitDepolarizing(ErrorModel):
         """
         if not isinstance(qubits, list) or len(qubits) != 2:
             raise ValueError("TwoQubitDepolarizing error model requires two qubits")
-        return [("TwoQubitDepolarizing", q, None, self.p, None, None) for q in qubits]
+        return [("TwoQubitDepolarizing", qubits, None, self.p, None, None)]
 
 
 class AmplitudeDamping(ErrorModel):
@@ -252,7 +252,7 @@ class PauliError2Q(ErrorModel):
         """
         if not isinstance(qubits, list) or len(qubits) != 2:
             raise ValueError("PauliError2Q error model requires two qubits")
-        return [("PauliError2Q", q, None, self.ps, None, None) for q in qubits]
+        return [("PauliError2Q", qubits, None, self.ps, None, None)]
 
 
 class Kraus1Q(ErrorModel):
