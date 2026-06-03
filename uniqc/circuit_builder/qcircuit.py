@@ -624,7 +624,12 @@ class Circuit:
 
         Returns:
             The opcode index that was registered.
+
+        Raises:
+            IndexError: If the circuit has no gates.
         """
+        if not self.opcode_list:
+            raise IndexError("Cannot set_param_last on an empty circuit (no gates)")
         idx = len(self.opcode_list) - 1
         self.param_map[idx] = tensor
         return idx

@@ -57,7 +57,7 @@ class TestParamMapBasics:
 
     def test_set_param_last_empty_circuit_raises(self):
         c = Circuit()
-        with pytest.raises(IndexError, match="out of range"):
+        with pytest.raises(IndexError):
             c.set_param_last(object())
 
     def test_tensor_params_returns_all(self):
