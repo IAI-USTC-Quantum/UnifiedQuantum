@@ -515,6 +515,8 @@ class Circuit:
         dagger: bool = False,
         control_qubits: QubitInput = None,
         has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
     ) -> None:
         """Add a gate to the circuit.
 
@@ -529,6 +531,12 @@ class Circuit:
                 this gate's rotation angle(s).  The created parameter is stored
                 in :pyattr:`_auto_params` and registered in :pyattr:`param_map`.
                 Requires PyTorch.
+            trainable: Whether the auto-created parameter is trainable
+                (``requires_grad``).  Only used when *has_param=True*.
+            init_params: Custom initial value(s) for the auto-created parameter.
+                A scalar or list/tuple matching the gate's *num_params*.
+                Defaults to ``Uniform(-π, π)`` (TorchQuantum convention).
+                Only used when *has_param=True*.
         """
         # Resolve qubit references to integers
         resolved_qubits = self._resolve_qubit(qubits)
@@ -572,7 +580,10 @@ class Circuit:
         if has_param:
             opcode_idx = len(self.opcode_list)
             if opcode_params is None:
-                opcode_params = self._auto_init_param(operation, opcode_idx)
+                opcode_params = self._auto_init_param(
+                    operation, opcode_idx,
+                    trainable=trainable, init_params=init_params,
+                )
             elif not _has_torch:
                 raise ImportError("has_param requires PyTorch. Install with: pip install unified-quantum[pytorch]")
 
@@ -645,17 +656,36 @@ class Circuit:
         "XX": 1, "YY": 1, "ZZ": 1,
     }
 
-    def _auto_init_param(self, gate_name: str, opcode_idx: int):
+    def _auto_init_param(
+        self,
+        gate_name: str,
+        opcode_idx: int,
+        trainable: bool = True,
+        init_params: object = None,
+    ):
         """Create an ``nn.Parameter`` for *gate_name* and register it.
+
+        Shape follows TorchQuantum convention: ``[1, num_params]``.
+        Default initialization: ``Uniform(-π, π)`` when *init_params* is *None*.
 
         Returns a float placeholder for the opcode ``params`` field.
         """
+        import math as _math
         import torch as _torch
         n = self._PARAM_COUNTS.get(gate_name, 1)
-        p = _torch.nn.Parameter(_torch.randn(n) * 0.1)
+        if init_params is not None:
+            if isinstance(init_params, (list, tuple)):
+                p = _torch.nn.Parameter(_torch.tensor(init_params, dtype=_torch.float32).reshape(1, -1))
+            else:
+                p = _torch.nn.Parameter(_torch.full((1, n), float(init_params), dtype=_torch.float32))
+        else:
+            p = _torch.nn.Parameter(_torch.empty(1, n).uniform_(-_math.pi, _math.pi))
+        p.requires_grad = trainable
         self._auto_params[(gate_name, opcode_idx)] = p
-        self.param_map[opcode_idx] = p if n > 1 else p[0]
-        return float(p[0].detach().cpu().item()) if n == 1 else [float(x) for x in p.detach().cpu()]
+        # param_map stores the squeezed view for the simulator
+        self.param_map[opcode_idx] = p.squeeze(0) if n > 1 else p[0, 0]
+        vals = p.detach().cpu().flatten().tolist()
+        return vals[0] if n == 1 else vals
 
     @property
     def params(self) -> list:
@@ -820,47 +850,38 @@ class Circuit:
 
     # ─────────────────── Single-qubit parametric gates ───────────────────
 
-    def rx(self, qn: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
+    def rx(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
+           trainable: bool = True, init_params: object = None) -> None:
         """Apply RX rotation gate.
 
         Args:
             qn: Target qubit - can be int, Qubit, or QRegSlice
             theta: Rotation angle in radians.  Omit when *has_param=True*.
-            has_param: Auto-create a trainable ``nn.Parameter`` for this gate.
+            has_param: Auto-create an ``nn.Parameter`` for this gate.
+            trainable: Whether the parameter is trainable (only with *has_param*).
+            init_params: Custom initial value.  Default: ``Uniform(-π, π)``.
         """
-        self.add_gate("RX", qn, params=theta, has_param=has_param)
+        self.add_gate("RX", qn, params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def ry(self, qn: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
-        """Apply RY rotation gate.
+    def ry(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
+           trainable: bool = True, init_params: object = None) -> None:
+        """Apply RY rotation gate."""
+        self.add_gate("RY", qn, params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-        Args:
-            qn: Target qubit - can be int, Qubit, or QRegSlice
-            theta: Rotation angle in radians.  Omit when *has_param=True*.
-            has_param: Auto-create a trainable ``nn.Parameter`` for this gate.
-        """
-        self.add_gate("RY", qn, params=theta, has_param=has_param)
+    def rz(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
+           trainable: bool = True, init_params: object = None) -> None:
+        """Apply RZ rotation gate."""
+        self.add_gate("RZ", qn, params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def rz(self, qn: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
-        """Apply RZ rotation gate.
-
-        Args:
-            qn: Target qubit - can be int, Qubit, or QRegSlice
-            theta: Rotation angle in radians.  Omit when *has_param=True*.
-            has_param: Auto-create a trainable ``nn.Parameter`` for this gate.
-        """
-        self.add_gate("RZ", qn, params=theta, has_param=has_param)
-
-    def rphi(self, qn: QubitInput, theta: float = None, phi: float = None, *, has_param: bool = False) -> None:
-        """Apply RPhi rotation gate.
-
-        Args:
-            qn: Target qubit - can be int, Qubit, or QRegSlice
-            theta: Polar rotation angle in radians.  Omit when *has_param=True*.
-            phi: Azimuthal angle in radians.  Omit when *has_param=True*.
-            has_param: Auto-create trainable parameters for this gate.
-        """
+    def rphi(self, qn: QubitInput, theta: float = None, phi: float = None, *,
+             has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+        """Apply RPhi rotation gate."""
         params = [theta, phi] if not has_param else None
-        self.add_gate("RPhi", qn, params=params, has_param=has_param)
+        self.add_gate("RPhi", qn, params=params, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
     def p(self, qn: QubitInput, lam: float) -> None:
         """Apply phase gate P(λ), equivalent to U1.
@@ -996,37 +1017,43 @@ class Circuit:
 
     # ─────────────────── Parametric gates ───────────────────
 
-    def u1(self, qn: QubitInput, lam: float = None, *, has_param: bool = False) -> None:
+    def u1(self, qn: QubitInput, lam: float = None, *, has_param: bool = False,
+           trainable: bool = True, init_params: object = None) -> None:
         """Apply U1 single-parameter unitary gate."""
-        self.add_gate("U1", qn, params=lam, has_param=has_param)
+        self.add_gate("U1", qn, params=lam, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def u2(self, qn: QubitInput, phi: float = None, lam: float = None, *, has_param: bool = False) -> None:
+    def u2(self, qn: QubitInput, phi: float = None, lam: float = None, *,
+           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
         """Apply U2 two-parameter unitary gate."""
         params = [phi, lam] if not has_param else None
-        self.add_gate("U2", qn, params=params, has_param=has_param)
+        self.add_gate("U2", qn, params=params, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def u3(self, qn: QubitInput, theta: float = None, phi: float = None, lam: float = None, *, has_param: bool = False) -> None:
+    def u3(self, qn: QubitInput, theta: float = None, phi: float = None, lam: float = None, *,
+           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
         """Apply U3 three-parameter unitary gate."""
         params = [theta, phi, lam] if not has_param else None
-        self.add_gate("U3", qn, params=params, has_param=has_param)
+        self.add_gate("U3", qn, params=params, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def xx(self, q1: QubitInput, q2: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
+    def xx(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
+           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
         """Apply XX Ising interaction gate."""
-        self.add_gate("XX", [q1, q2], params=theta, has_param=has_param)
+        self.add_gate("XX", [q1, q2], params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def yy(self, q1: QubitInput, q2: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
+    def yy(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
+           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
         """Apply YY Ising interaction gate."""
-        self.add_gate("YY", [q1, q2], params=theta, has_param=has_param)
+        self.add_gate("YY", [q1, q2], params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
-    def zz(self, q1: QubitInput, q2: QubitInput, theta: float = None, *, has_param: bool = False) -> None:
-        """Apply ZZ Ising interaction gate.
-
-        Args:
-            q1: First qubit - can be int, Qubit, or QRegSlice
-            q2: Second qubit - can be int, Qubit, or QRegSlice
-            theta: Interaction angle in radians.
-        """
-        self.add_gate("ZZ", [q1, q2], params=theta)
+    def zz(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
+           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+        """Apply ZZ Ising interaction gate."""
+        self.add_gate("ZZ", [q1, q2], params=theta, has_param=has_param,
+                       trainable=trainable, init_params=init_params)
 
     def xy(self, q1: QubitInput, q2: QubitInput, theta: float) -> None:
         """Apply XY Ising interaction gate.
