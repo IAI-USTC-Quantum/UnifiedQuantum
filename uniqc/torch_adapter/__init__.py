@@ -8,6 +8,7 @@ This module provides tools for integrating quantum circuits with PyTorch:
 """
 
 from .batch_executor import batch_execute, batch_execute_with_params
+from .expectation import expectation
 from .gradient import compute_all_gradients, parameter_shift_gradient
 from .quantum_layer import QuantumLayer
 
@@ -17,6 +18,7 @@ except ImportError:
     pass
 
 __all__ = [
+    "expectation",
     "parameter_shift_gradient",
     "compute_all_gradients",
     "QuantumLayer",
