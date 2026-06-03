@@ -381,10 +381,9 @@ class ErrorLoader_GateSpecificError(ErrorLoader_GateTypeError):
         super().insert_error(opcode)
         if gate == "CZ":
             qubits = [min(qubits[0], qubits[1]), max(qubits[0], qubits[1])]
-        if isinstance(qubits, list):
-            qubits = tuple(qubits)
-        key = (gate, qubits)
+        qubits_list = qubits if isinstance(qubits, list) else [qubits]
+        key = (gate, tuple(qubits_list))
         gate_specific_error = self.gate_specific_error.get(key, [])
         for noise_model in gate_specific_error:
-            noise_opcodes = noise_model.generate_error_opcode(qubits)
+            noise_opcodes = noise_model.generate_error_opcode(qubits_list)
             self.opcodes.extend(noise_opcodes)
