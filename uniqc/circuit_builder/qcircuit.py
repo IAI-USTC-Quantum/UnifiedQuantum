@@ -515,7 +515,24 @@ class Circuit:
             merged_controls = base if base else None  # type: ignore[assignment]
             # XOR active-dagger with the explicit dagger flag.
             merged_dagger = dagger ^ self._active_dagger
-        opcode: OpCode = (operation, resolved_qubits, cbits, params, merged_dagger, merged_controls)  # type: ignore[assignment]
+        # Detect torch.Tensor params — store a float placeholder in the opcode
+        # and register the tensor in param_map for differentiable execution.
+        opcode_params = params
+        _has_torch = "torch" in __import__("sys").modules
+        if _has_torch and params is not None:
+            import torch as _torch
+            if isinstance(params, _torch.Tensor):
+                opcode_idx = len(self.opcode_list)
+                self.param_map[opcode_idx] = params
+                opcode_params = float(params.detach().cpu().item())
+            elif isinstance(params, (list, tuple)) and any(isinstance(p, _torch.Tensor) for p in params):
+                opcode_idx = len(self.opcode_list)
+                self.param_map[opcode_idx] = _torch.stack(
+                    [p if isinstance(p, _torch.Tensor) else _torch.tensor(float(p)) for p in params]
+                )
+                opcode_params = [float(p.detach().cpu().item()) if isinstance(p, _torch.Tensor) else float(p) for p in params]
+
+        opcode: OpCode = (operation, resolved_qubits, cbits, opcode_params, merged_dagger, merged_controls)  # type: ignore[assignment]
         self.opcode_list.append(opcode)
         self.record_qubit(resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits])
 

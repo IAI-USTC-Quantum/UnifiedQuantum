@@ -160,39 +160,38 @@ class TestGradientFlow:
     def test_dz_dry_theta(self):
         """d⟨Z⟩/dθ for RY(θ)|0⟩ = -sin(θ)"""
         c = Circuit(1)
-        c.ry(0, 0.0)
         theta = torch.tensor(0.5, requires_grad=True)
-        expval = expectation(c, [("Z", 1.0)], param_map={0: theta})
+        c.ry(0, theta)
+        expval = expectation(c, [("Z", 1.0)])
         expval.backward()
-        expected = -torch.sin(theta)
-        assert abs(theta.grad.item() - expected.item()) < 1e-5
+        assert abs(theta.grad.item() - (-math.sin(0.5))) < 1e-5
 
     def test_gradient_at_zero(self):
         """d⟨Z⟩/dθ at θ=0 should be 0 (extremum of cos)"""
         c = Circuit(1)
-        c.ry(0, 0.0)
         theta = torch.tensor(0.0, requires_grad=True)
-        expval = expectation(c, [("Z", 1.0)], param_map={0: theta})
+        c.ry(0, theta)
+        expval = expectation(c, [("Z", 1.0)])
         expval.backward()
         assert abs(theta.grad.item()) < 1e-6
 
     def test_gradient_at_pi_half(self):
         """d⟨Z⟩/dθ at θ=π/2 should be -1"""
         c = Circuit(1)
-        c.ry(0, 0.0)
         theta = torch.tensor(math.pi / 2, requires_grad=True)
-        expval = expectation(c, [("Z", 1.0)], param_map={0: theta})
+        c.ry(0, theta)
+        expval = expectation(c, [("Z", 1.0)])
         expval.backward()
         assert abs(theta.grad.item() - (-1.0)) < 1e-5
 
     def test_multi_param_gradient(self):
         """Gradients w.r.t. two independent RY angles."""
         c = Circuit(2)
-        c.ry(0, 0.0)
-        c.ry(1, 0.0)
         t0 = torch.tensor(0.3, requires_grad=True)
         t1 = torch.tensor(0.7, requires_grad=True)
-        expval = expectation(c, [("ZI", 1.0)], param_map={0: t0, 1: t1})
+        c.ry(0, t0)
+        c.ry(1, t1)
+        expval = expectation(c, [("ZI", 1.0)])
         expval.backward()
         # ⟨ZI⟩ = cos(t0), so d/dt0 = -sin(t0), d/dt1 = 0
         assert abs(t0.grad.item() - (-math.sin(0.3))) < 1e-5
@@ -201,26 +200,25 @@ class TestGradientFlow:
     def test_two_qubit_hamiltonian_gradient(self):
         """Gradient through ZZ Hamiltonian."""
         c = Circuit(2)
-        c.ry(0, 0.0)
-        c.ry(1, 0.0)
-        c.cnot(0, 1)
         t0 = torch.tensor(0.5, requires_grad=True)
         t1 = torch.tensor(0.3, requires_grad=True)
-        expval = expectation(c, [("ZZ", 1.0)], param_map={0: t0, 1: t1})
+        c.ry(0, t0)
+        c.ry(1, t1)
+        c.cnot(0, 1)
+        expval = expectation(c, [("ZZ", 1.0)])
         expval.backward()
-        # Just verify gradients exist and are finite
         assert t0.grad is not None and torch.isfinite(t0.grad)
         assert t1.grad is not None and torch.isfinite(t1.grad)
 
     def test_nn_parameter_integration(self):
-        """Full optimizer step with nn.Parameter via param_map."""
+        """Full optimizer step with nn.Parameter."""
         c = Circuit(1)
-        c.ry(0, 0.0)
         params = torch.nn.Parameter(torch.tensor([1.0]))
+        c.ry(0, params[0])
         opt = torch.optim.SGD([params], lr=0.1)
         original = params.item()
         opt.zero_grad()
-        expval = expectation(c, [("Z", 1.0)], param_map={0: params[0]})
+        expval = expectation(c, [("Z", 1.0)])
         expval.backward()
         opt.step()
         assert params.item() != original
@@ -263,17 +261,15 @@ class TestCircuitParamMap:
 
     def test_uses_circuit_param_map(self):
         c = Circuit(1)
-        c.ry(0, 0.0)
         theta = torch.tensor(0.5, requires_grad=True)
-        c.set_param(0, theta)
+        c.ry(0, theta)  # tensor auto-registered in param_map
         expval = expectation(c, [("Z", 1.0)])
         expval.backward()
         assert abs(theta.grad.item() - (-math.sin(0.5))) < 1e-5
 
     def test_explicit_overrides_circuit(self):
         c = Circuit(1)
-        c.ry(0, 0.0)
-        c.set_param(0, torch.tensor(0.0))  # circuit param = 0
+        c.ry(0, torch.tensor(0.0))  # circuit param = 0
         override = torch.tensor(0.5, requires_grad=True)
         expval = expectation(c, [("Z", 1.0)], param_map={0: override})
         expval.backward()
@@ -326,10 +322,8 @@ class TestHEATrainingFlow:
         idx = 0
         for _ in range(depth):
             for q in range(n_qubits):
-                c.rz(q, 0.0)
-                c.set_param_last(params[idx]); idx += 1
-                c.ry(q, 0.0)
-                c.set_param_last(params[idx]); idx += 1
+                c.rz(q, params[idx]); idx += 1
+                c.ry(q, params[idx]); idx += 1
             for q in range(n_qubits):
                 c.cnot(q, (q + 1) % n_qubits)
 
@@ -352,12 +346,12 @@ class TestHEATrainingFlow:
     def test_gradient_shapes(self):
         """Gradients have correct shape for multi-param circuit."""
         c = Circuit(2)
-        c.ry(0, 0.0)
-        c.ry(1, 0.0)
-        c.cnot(0, 1)
         t0 = torch.tensor(0.5, requires_grad=True)
         t1 = torch.tensor(0.3, requires_grad=True)
-        expval = expectation(c, [("ZZ", 1.0)], param_map={0: t0, 1: t1})
+        c.ry(0, t0)
+        c.ry(1, t1)
+        c.cnot(0, 1)
+        expval = expectation(c, [("ZZ", 1.0)])
         expval.backward()
         assert t0.grad.shape == ()
         assert t1.grad.shape == ()
