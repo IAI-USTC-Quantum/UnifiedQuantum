@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from uniqc.circuit_builder import Circuit
     from uniqc.cli.chip_info import ChipCharacterization
 
-OutputFormat = Literal["circuit", "originir", "qasm", "auto"]
+OutputFormat = Literal["circuit", "originir", "originir-ext", "qasm", "auto"]
 
 # Default basis gates for superconducting qubit platforms
 _DEFAULT_BASIS_GATES = ("cz", "sx", "rz")
@@ -280,8 +280,13 @@ def compile_with_config(
     from uniqc.circuit_builder.normalize import resolve_output_format
 
     target_format = resolve_output_format(output_format, input_type)
-    if target_format == "originir":
+    if target_format == "originir-ext":
         return convert_qasm_to_oir(transpiled_qasm)
+    if target_format == "originir":
+        from .converter import convert_originir_ext_to_originir
+
+        originir_ext = convert_qasm_to_oir(transpiled_qasm)
+        return convert_originir_ext_to_originir(originir_ext)
     if target_format == "qasm":
         return transpiled_qasm
 
@@ -389,8 +394,12 @@ def compile_full(
     from uniqc.circuit_builder.normalize import resolve_output_format
 
     target_format = resolve_output_format(output_format, input_type)
-    if target_format == "originir":
+    if target_format == "originir-ext":
         output = convert_qasm_to_oir(transpiled_qasm)
+    elif target_format == "originir":
+        from .converter import convert_originir_ext_to_originir
+
+        output = convert_originir_ext_to_originir(convert_qasm_to_oir(transpiled_qasm))
     elif target_format == "qasm":
         output = transpiled_qasm
     else:

@@ -154,5 +154,5 @@ def resolve_output_format(output_format: str, type: str) -> str:
         Canonical format: ``"originir"`` or ``"qasm"``.
     """
     if output_format == "auto":
-        return "originir" if type in ("circuit", "originir") else "qasm"
+        return "originir-ext" if type in ("circuit", "originir") else "qasm"
     return output_format

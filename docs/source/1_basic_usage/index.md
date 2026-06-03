@@ -35,6 +35,8 @@ API 参考链接和它在用户文档中实际出现的章节，避免出现"API
 
 circuit
 originir
+originir_official
+originir_relationship
 qasm
 simulation
 submit_task

@@ -1,8 +1,13 @@
-# OriginIR
+# OriginIR-ext 规范
+
+> **本文档描述的是 OriginIR-ext**——UnifiedQuantum 的默认本地量子线路描述语言。它是官方 OriginIR 的超集，额外支持 ECR/ISWAP/XX/YY/ZZ/XY/PHASE2Q/UU15/RPhi/RPhi90/RPhi180 等扩展门、DEF/ENDDEF 子程序、error channels 以及 inline dagger/controlled_by 语法。
+>
+> 官方 OriginIR（本源量子云服务接受的子集）规范见 [OriginIR 官方规范](originir_official.md)。
+> 三种语言的完整关系说明见 [OriginIR、OriginIR-ext 与 OpenQASM 2.0 的关系](originir_relationship.md)。
 
 ## 什么时候进入本页
 
-当你需要理解 `circuit.originir` 输出的文本格式，或者想知道 OriginIR 在 {mod}`uniqc.compile.originir` 中扮演什么角色时，看本页。
+当你需要理解 `circuit.originir` 输出的文本格式，或者想知道 OriginIR-ext 在 {mod}`uniqc.compile.originir` 中扮演什么角色时，看本页。
 
 ## 本页解决的问题
 
