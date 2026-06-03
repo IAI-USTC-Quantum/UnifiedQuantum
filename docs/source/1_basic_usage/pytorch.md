@@ -262,10 +262,133 @@ results = batch_execute_with_params(
 
 4. **GPU 支持**：QuantumLayer 的参数在 GPU 上，但量子计算本身在 CPU 上执行。
 
+## 原生训练（推荐）
+
+> 无需 TorchQuantum 依赖，使用原生 PyTorch 态矢量模拟。
+
+### 快速上手：has_param
+
+```python
+import torch
+from uniqc.circuit_builder.qcircuit import Circuit
+from uniqc.torch_adapter.expectation import expectation
+
+# 构建电路 — has_param=True 自动创建 nn.Parameter
+c = Circuit(2)
+c.ry(0, has_param=True)      # 自动创建可训练参数
+c.ry(1, has_param=True)
+c.cnot(0, 1)
+
+# 定义哈密顿量
+hamiltonian = [("ZZ", 1.0), ("ZI", -0.5), ("IZ", -0.5)]
+
+# 训练
+opt = torch.optim.Adam(c.params, lr=0.05)
+for step in range(100):
+    opt.zero_grad()
+    energy = expectation(c, hamiltonian)  # 可微的 ⟨ψ|H|ψ⟩
+    energy.backward()
+    opt.step()
+```
+
+### 参数风格
+
+UnifiedQuantum 支持三种参数传递方式，与 TorchQuantum API 对齐：
+
+**风格 1：has_param（最简洁）**
+
+```python
+c = Circuit(2)
+c.ry(0, has_param=True)                          # 可训练，随机初始化
+c.ry(1, has_param=True, trainable=False)         # 冻结参数
+c.rz(0, has_param=True, init_params=0.5)         # 自定义初始值
+c.u3(0, has_param=True, init_params=[0.1, 0.2, 0.3])  # 多参数门
+
+# 访问参数
+c.params                    # 所有 nn.Parameter（可直接传给优化器）
+c.get_params_by_gate("RY")  # 按门类型筛选
+```
+
+**风格 2：param_dict（命名引用）**
+
+```python
+params = {
+    "theta": torch.nn.Parameter(torch.tensor(0.5)),
+    "phi":   torch.nn.Parameter(torch.tensor(0.3)),
+}
+c = Circuit(2, param_dict=params)
+c.ry(0, "theta")
+c.u3(0, "theta", "phi", 0.0)
+```
+
+**风格 3：直接传入 tensor**
+
+```python
+theta = torch.tensor(0.5, requires_grad=True)
+c = Circuit(1)
+c.ry(0, theta)  # tensor 自动注册到 param_map
+```
+
+### expectation() 函数
+
+`expectation()` 是后端无关的可微期望值计算函数：
+
+```python
+from uniqc.torch_adapter import expectation
+
+# 默认使用 virtual 后端（原生 PyTorch 态矢量模拟）
+energy = expectation(c, [("ZZ", 1.0), ("ZI", -0.5)])
+
+# 可切换后端
+energy = expectation(c, [("Z", 1.0)], backend="torchquantum")
+```
+
+**与旧版 QuantumLayer 的区别：**
+
+| 特性 | QuantumLayer（旧） | expectation()（新） |
+|------|-------------------|-------------------|
+| 梯度方法 | Parameter-shift（2N 次模拟） | PyTorch autograd（1 次模拟） |
+| TorchQuantum 依赖 | 无 | 无 |
+| Hamiltonian 支持 | 单一项 | 多项累加 |
+| 后端切换 | 不支持 | 支持（virtual / torchquantum） |
+| 参数管理 | 手动定义 Parameter | has_param 自动创建 |
+
+### 完整 VQE 示例
+
+```python
+import torch
+from uniqc.circuit_builder.qcircuit import Circuit
+from uniqc.torch_adapter.expectation import expectation
+
+# HEA ansatz
+n_qubits, depth = 2, 2
+c = Circuit(n_qubits)
+for _ in range(depth):
+    for q in range(n_qubits):
+        c.rz(q, has_param=True)
+        c.ry(q, has_param=True)
+    for q in range(n_qubits):
+        c.cnot(q, (q + 1) % n_qubits)
+
+# H₂ 哈密顿量
+hamiltonian = [("ZZ", 0.5), ("ZI", 0.5), ("IZ", 0.5), ("XX", -0.25)]
+
+# 训练
+opt = torch.optim.Adam(c.params, lr=0.05)
+for step in range(200):
+    opt.zero_grad()
+    energy = expectation(c, hamiltonian)
+    energy.backward()
+    opt.step()
+    if step % 50 == 0:
+        print(f"Step {step}: E = {energy.item():.4f}")
+```
+
 ## 相关 API
 
 - {mod}`uniqc.torch_adapter` — PyTorch 集成模块
-- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装
+- {func}`uniqc.torch_adapter.expectation` — 后端无关的可微期望值
+- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装（旧版）
 - {func}`uniqc.torch_adapter.parameter_shift_gradient` — Parameter-shift 梯度计算
 - {func}`uniqc.torch_adapter.batch_execute` — 并行电路执行
 - {func}`uniqc.torch_adapter.batch_execute_with_params` — 参数化批量执行

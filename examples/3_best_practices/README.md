@@ -1,6 +1,6 @@
 # Best Practices Examples
 
-11 release-time path-check scripts. Each example carries a docstring directive
+12 release-time path-check scripts. Each example carries a docstring directive
 header (`[doc-require: ...]`, `[doc-warning-ignore: ...]`, ...) consumed by
 `scripts/build_docs.py` so the docs build can decide whether to (re-)run it.
 
@@ -17,6 +17,7 @@ header (`[doc-require: ...]`, `[doc-warning-ignore: ...]`, ...) consumed by
 | `08_torch_quantum_training.py` | torch optimizer + parameter-shift gradient |
 | `09_calibration_qem_dummy.py` | readout calibration + `ReadoutEM` mitigation |
 | `10_xeb_workflow_dummy.py` | end-to-end 1q XEB workflow with noise model |
+| `11_native_torch_training.py` | native `expectation()` with `has_param` / `param_dict` / tensor |
 
 Run a single example directly:
 

@@ -1,6 +1,6 @@
 # 最佳实践
 
-11 个发布前**可重跑的完整场景**：从配置/缓存、构造电路、编译、API/CLI 提交、变分线路、
+12 个发布前**可重跑的完整场景**：从配置/缓存、构造电路、编译、API/CLI 提交、变分线路、
 Torch 集成，到 calibration + QEM、XEB workflow。每一个都对应
 ``examples/3_best_practices/<n>_*.py``，并由 ``scripts/build_docs.py`` 在文档构建时
 按 ``[doc-require:]`` 门控自动重跑。
@@ -20,6 +20,7 @@ Torch 集成，到 calibration + QEM、XEB workflow。每一个都对应
 | 08 Torch 集成 |  |  | ✓ |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
 | 09 Calibration + QEM |  |  |  |  | ✓ |  |  | ✓ |  |  | ✓ |
 | 10 XEB workflow |  |  | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
+| 11 原生 Torch 训练 |  |  | ✓ |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
 
 ## 案例
 
@@ -54,6 +55,9 @@ Torch 集成，到 calibration + QEM、XEB workflow。每一个都对应
 ```
 
 ```{include} ../_generated/examples/3_best_practices/10_xeb_workflow_dummy.md
+```
+
+```{include} ../_generated/examples/3_best_practices/11_native_torch_training.md
 ```
 
 ## 发布前重跑
