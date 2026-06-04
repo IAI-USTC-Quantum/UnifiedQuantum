@@ -41,8 +41,15 @@ Two highlights for users:
     boilerplate.
   - ``Circuit.param_dict`` — name-keyed access to parameters for friendly
     state-dict round-trips.
-  - ``Circuit.has_param`` — TorchQuantum-aligned semantics: ``True`` only
-    when at least one parameter is a tensor (i.e., actually trainable).
+  - ``Circuit.has_param`` (property) / ``Circuit.has_tensor_params()``
+    (method) — TorchQuantum-aligned semantics: ``True`` only when at
+    least one parameter is a tensor (i.e., actually trainable).
+    Both names are public and equivalent; ``has_param`` is the
+    TorchQuantum-style alias kept for naming familiarity, while
+    ``has_tensor_params()`` is the underlying implementation. Note that
+    this no-argument query is **distinct** from the ``has_param`` keyword
+    argument on ``add_gate`` / convenience gate methods, which opts-in
+    to auto-creating an ``nn.Parameter`` for that gate.
   - ``Circuit.set_param_last`` — convenience setter for the most recently
     added parametric gate, with a proper ``IndexError`` when the circuit
     has no parametric gates yet.

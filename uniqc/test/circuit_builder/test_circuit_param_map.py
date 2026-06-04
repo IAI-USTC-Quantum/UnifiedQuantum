@@ -86,6 +86,56 @@ class TestParamMapBasics:
 
 
 # =============================================================================
+# TestHasParamAlias
+# =============================================================================
+
+
+class TestHasParamAlias:
+    """Tests for Circuit.has_param — TorchQuantum-aligned alias for has_tensor_params()."""
+
+    def test_alias_is_property(self):
+        # The alias must be a no-argument property, not a method, so that
+        # ``circuit.has_param`` mirrors TorchQuantum's API surface.
+        assert isinstance(type(Circuit()).has_param, property)
+
+    def test_alias_empty_circuit_is_false(self):
+        c = Circuit()
+        assert c.has_param is False
+        assert c.has_param == c.has_tensor_params()
+
+    def test_alias_python_float_param_is_false(self):
+        # Pure-Python float parameters do not auto-register tensors.
+        c = Circuit(1)
+        c.ry(0, 0.5)
+        assert c.has_param is False
+        assert c.has_param == c.has_tensor_params()
+
+    def test_alias_set_param_makes_it_true(self):
+        c = Circuit(1)
+        c.ry(0, 0.0)
+        c.set_param(0, "sentinel")
+        assert c.has_param is True
+        assert c.has_param == c.has_tensor_params()
+
+    def test_alias_add_gate_has_param_kwarg_makes_it_true(self):
+        # add_gate(..., has_param=True) auto-creates an nn.Parameter and
+        # registers it in param_map, which the no-arg has_param property
+        # should detect.
+        pytest.importorskip("torch")
+        c = Circuit(1)
+        c.ry(0, has_param=True)
+        assert c.has_param is True
+        assert c.has_param == c.has_tensor_params()
+
+    def test_alias_tensor_param_makes_it_true(self):
+        torch = pytest.importorskip("torch")
+        c = Circuit(1)
+        c.ry(0, theta=torch.tensor(0.5, requires_grad=True))
+        assert c.has_param is True
+        assert c.has_param == c.has_tensor_params()
+
+
+# =============================================================================
 # TestCopy
 # =============================================================================
 

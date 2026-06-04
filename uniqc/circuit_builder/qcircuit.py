@@ -672,6 +672,20 @@ class Circuit:
         """Check whether this circuit has any registered tensor parameters."""
         return len(self.param_map) > 0
 
+    @property
+    def has_param(self) -> bool:
+        """TorchQuantum-aligned alias for :meth:`has_tensor_params`.
+
+        Returns ``True`` only when at least one parameter is a tensor
+        (i.e., actually trainable). Pure Python-float parameters return
+        ``False``.
+
+        This is a no-argument property, distinct from the ``has_param``
+        keyword argument on :meth:`add_gate` / convenience gate methods
+        (which opts-in to auto-creating an ``nn.Parameter`` for that gate).
+        """
+        return self.has_tensor_params()
+
     # ---- has_param auto-initialization ---------------------------------------
 
     # Number of rotation angles per parametric gate.
