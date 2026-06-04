@@ -22,11 +22,16 @@ Two highlights for users:
   reachable by name. A new backend-agnostic ``expectation()`` returns a
   differentiable expectation value across simulator backends. See the
   new best-practice example ``examples/3_best_practices/11_native_torch_training.py``.
-- ``OriginIR-ext`` is a strict superset of OriginIR that adds gate-list
-  primitives (e.g. ``GLIST``) and converts back to standard OriginIR via
-  ``uniqc.originir_ext.to_originir``. Useful when you want to author
-  larger gate blocks ergonomically but still submit through the official
-  OriginIR path.
+- ``OriginIR-ext`` is now formally separated from official (OriginQ-accepted)
+  ``OriginIR``. OriginIR-ext is a strict superset that adds extended gates
+  (``ECR``/``ISWAP``/``XX``/``YY``/``ZZ``/``XY``/``PHASE2Q``/``UU15``/
+  ``RPhi``/``RPhi90``/``RPhi180``), the ``QRAM`` instruction,
+  ``DEF``/``ENDDEF`` subroutine blocks, error channels, and inline
+  ``dagger`` / ``controlled_by(...)`` syntax. ``circuit.originir`` emits
+  OriginIR-ext by default; before submitting to the OriginQ cloud call
+  ``Circuit.to_originir_official()`` (or, on raw text,
+  ``uniqc.compile.convert_originir_ext_to_originir()``) to decompose
+  ext-only constructs back to the official subset.
 
 ### Added
 
@@ -45,9 +50,22 @@ Two highlights for users:
     when passed into ``add_gate`` / convenience gate methods.
   - ``simulator.expectation()`` — backend-agnostic differentiable
     expectation value (statevector / TorchQuantum simulators).
-- **OriginIR-ext superset language** (#115): ``uniqc.originir_ext`` with
-  ``GLIST`` and other gate-list primitives, plus a strict
-  ``to_originir()`` converter that emits official OriginIR.
+- **OriginIR-ext superset language** (#115): the default local circuit
+  language is now formally split from official (OriginQ-accepted) OriginIR.
+  OriginIR-ext adds the extended gates
+  ``ECR``/``ISWAP``/``XX``/``YY``/``ZZ``/``XY``/``PHASE2Q``/``UU15``/
+  ``RPhi``/``RPhi90``/``RPhi180``, the ``QRAM`` instruction,
+  ``DEF``/``ENDDEF`` subroutine blocks, error channels, and inline
+  ``dagger`` / ``controlled_by(...)`` syntax. The strict converter
+  ``uniqc.compile.convert_originir_ext_to_originir()`` (also available as
+  the ``Circuit.to_originir_official()`` method) decomposes every ext-only
+  construct back to official OriginIR so ext circuits remain submittable
+  to the OriginQ cloud. The full ext gate inventory is exposed as
+  ``uniqc.circuit_builder.available_originir_ext_gates`` and the ext-only
+  subset as ``uniqc.circuit_builder.EXTENDED_GATES_ONLY``. See
+  ``docs/source/1_basic_usage/originir_relationship.md`` for the
+  language-relationship reference and ``docs/source/1_basic_usage/originir.md``
+  for the full OriginIR-ext specification.
 - **`11_native_torch_training` best-practice example** — end-to-end
   training loop using only native ``Circuit.param_map`` + ``expectation()``.
 - **Python 3.14 support**: cp310–cp314 wheels are now built. Core uniqc
