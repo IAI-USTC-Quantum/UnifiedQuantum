@@ -262,8 +262,9 @@ class UnifiedResult:
             Expectation value in range [-1, 1].
 
         Note:
-            This is a simplified implementation. For complex observables,
-            use uniqc.analyzer module.
+            This is a simplified, sample-based implementation. For arbitrary
+            Hamiltonians and/or differentiable expectation values from a
+            statevector, use :func:`uniqc.expectation` instead.
         """
         if observable != "Z":
             raise NotImplementedError("Only Z observable is currently supported")
