@@ -3,7 +3,6 @@
 """
 
 from __future__ import annotations
-
 import collections.abc
 import typing
 
@@ -108,6 +107,12 @@ class DensityOperatorSimulator:
     def pmeasure(self, arg0: typing.SupportsInt | typing.SupportsIndex) -> list[float]: ...
     @typing.overload
     def pmeasure(self, arg0: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex]) -> list[float]: ...
+    def qram(
+        self,
+        addr_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        data_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        data_array: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+    ) -> None: ...
     def rphi(
         self,
         qn: typing.SupportsInt | typing.SupportsIndex,
@@ -395,6 +400,12 @@ class StatevectorSimulator:
     def pmeasure(
         self, measure_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex]
     ) -> list[float]: ...
+    def qram(
+        self,
+        addr_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        data_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        data_array: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+    ) -> None: ...
     def rphi(
         self,
         qn: typing.SupportsInt | typing.SupportsIndex,
