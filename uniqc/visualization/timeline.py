@@ -60,6 +60,7 @@ class TimelineGate:
     end: float = 0.0
     layer: int = 0
     raw: str | None = None
+    is_qram: bool = False
 
     @property
     def resources(self) -> tuple[int, ...]:
@@ -117,6 +118,7 @@ class _ProgramEntry:
     control_qubits: tuple[int, ...] = ()
     explicit_start: float | None = None
     raw: str | None = None
+    is_qram: bool = False
 
     @property
     def resources(self) -> tuple[int, ...]:
@@ -514,6 +516,7 @@ def _normalise_program(compiled_prog: Any) -> list[_ProgramEntry]:
 
 def _opcode_list_to_entries(circuit: Any) -> list[_ProgramEntry]:
     entries: list[_ProgramEntry] = []
+    qram_names = set(getattr(circuit, "qram_declarations", None) or {})
     for opcode in getattr(circuit, "opcode_list", []):
         operation, qubits, cbits, params, _dagger, control_qubits = opcode
         all_qubits = _to_int_tuple(qubits)
@@ -525,6 +528,7 @@ def _opcode_list_to_entries(circuit: Any) -> list[_ProgramEntry]:
                 cbits=_to_int_tuple(cbits),
                 control_qubits=_to_int_tuple(control_qubits),
                 raw=str(opcode),
+                is_qram=str(operation) in qram_names,
             )
         )
     measure_list = getattr(circuit, "measure_list", None) or []
@@ -547,9 +551,16 @@ def _originir_to_entries(originir: str) -> list[_ProgramEntry]:
     except ImportError:
         return entries
 
+    qram_names: set[str] = set()
     for line in originir.splitlines():
         stripped = line.strip()
         if not stripped:
+            continue
+        # Detect QRAMDECL lines to track QRAM names for visualization
+        if stripped.upper().startswith("QRAMDECL"):
+            parts = stripped.split()
+            if len(parts) >= 2:
+                qram_names.add(parts[1])
             continue
         try:
             op, qubit, cbit, param, dagger, ctrl = OriginIR_LineParser.parse_line(stripped)
@@ -565,6 +576,7 @@ def _originir_to_entries(originir: str) -> list[_ProgramEntry]:
                 cbits=_to_int_tuple(cbit),
                 control_qubits=_to_int_tuple(ctrl),
                 raw=stripped,
+                is_qram=str(op) in qram_names,
             )
         )
     return entries
@@ -724,6 +736,7 @@ def _layered_circuit_schedule(entries: list[_ProgramEntry]) -> TimelineSchedule:
                 end=float(layer + 1),
                 layer=layer,
                 raw=entry.raw,
+                is_qram=entry.is_qram,
             )
         )
 
@@ -801,6 +814,23 @@ def _schedule_to_svg(schedule: TimelineSchedule, *, use_timing: bool) -> str:
                 parts.append(
                     f'<line class="barrier" x1="{center_x:.2f}" x2="{center_x:.2f}" y1="{y - 20}" y2="{y + 20}"/>'
                 )
+            parts.append("</g>")
+            continue
+
+        if gate.is_qram:
+            # QRAM: draw a single tall rectangle spanning all qubit wires
+            fill = _gate_color(gate)
+            rect_top = min(ys) - gate_h / 2
+            rect_bottom = max(ys) + gate_h / 2
+            rect_height = rect_bottom - rect_top
+            label = html.escape(_gate_label(gate.name))
+            label_y = (min(ys) + max(ys)) / 2 + 1
+            parts.append(f"<g><title>{tooltip}</title>")
+            parts.append(
+                f'<rect class="gate" x="{x:.2f}" y="{rect_top:.2f}" '
+                f'width="{width:.2f}" height="{rect_height:.2f}" fill="{fill}" stroke="#374151" stroke-width="1.6"/>'
+            )
+            parts.append(f'<text class="gate-text" x="{center_x:.2f}" y="{label_y:.2f}">{label}</text>')
             parts.append("</g>")
             continue
 
@@ -907,6 +937,8 @@ def _gate_color(gate: TimelineGate) -> str:
     upper = gate.name.upper()
     if upper in _MEASURE_GATES:
         return "#d1d5db"
+    if gate.is_qram:
+        return "#e0e7ff"
     if gate.is_virtual:
         return "#ecfdf5"
     if len(gate.resources) >= 2:

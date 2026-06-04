@@ -360,6 +360,102 @@ TOFFOLI q[0], q[1], q[2]
 CSWAP q[0], q[1], q[2]
 ```
 
+### QRAM（量子随机存取存储器）
+
+QRAM 是 OriginIR-ext 的扩展特性，提供二进制寻址的经典数据存储，集成在量子线路中。其量子操作语义为：
+
+$$|\\text{addr}\\rangle|\\text{data}\\rangle \\longrightarrow |\\text{addr}\\rangle|\\text{data} \\oplus d[\\text{addr}]\\rangle$$
+
+其中 $d[\\text{addr}]$ 是存储在地址 $\\text{addr}$ 处的经典整数值。该操作是**自逆**的（连续应用两次恢复原态）。
+
+> **注意**：QRAM 仅在 OriginIR-ext 中支持，不支持导出为 OpenQASM 2.0 或官方 OriginIR。包含 QRAM 的线路无法提交到 OriginQ 云平台。
+
+#### 声明语法（QRAMDECL）
+
+在 QINIT 之前或之后使用 `QRAMDECL` 声明 QRAM：
+
+```
+QRAMDECL <name> <addr_size>,<data_size>
+```
+
+**参数：**
+- `<name>`：QRAM 实例名称，由字母、数字、下划线组成
+- `<addr_size>`：地址量子比特数，决定可寻址条目数（$2^{\\text{addr\\_size}}$）
+- `<data_size>`：数据量子比特数，决定可存储最大值（$2^{\\text{data\\_size}} - 1$）
+
+#### 调用语法
+
+声明后，使用 QRAM 名称作为操作名，后跟量子比特列表（地址比特在前，数据比特在后）：
+
+```
+<name> q[<addr_0>], ..., q[<addr_n>], q[<data_0>], ..., q[<data_m>]
+```
+
+量子比特总数必须等于 `addr_size + data_size`。
+
+**示例：**
+```text
+QRAMDECL my_ram 2,3
+QINIT 5
+CREG 0
+
+// 地址比特：q[0], q[1]（2 位）；数据比特：q[2], q[3], q[4]（3 位）
+my_ram q[0], q[1], q[2], q[3], q[4]
+```
+
+#### 完整示例
+
+```text
+QRAMDECL lookup 2,3
+QINIT 5
+CREG 0
+
+H q[0]
+H q[1]
+lookup q[0], q[1], q[2], q[3], q[4]
+MEASURE q[2], c[0]
+```
+
+#### Python API 等价代码
+
+```python
+from uniqc import Circuit
+from uniqc.circuit_builder import QRAM
+
+c = Circuit(5)
+c.qram_declare("lookup", addr_size=2, data_size=3)
+c.h(0)
+c.h(1)
+c.qram_call("lookup", 0, 1, 2, 3, 4)
+c.measure(2)
+
+print(c.originir)
+# QRAMDECL lookup 2,3
+# QINIT 5
+# CREG 0
+# H q[0]
+# H q[1]
+# lookup q[0], q[1], q[2], q[3], q[4]
+# MEASURE q[2], c[0]
+```
+
+#### 运行时数据管理
+
+QRAM 的数据在模拟器中以经典数组形式存储，可在仿真前写入：
+
+```python
+from uniqc.simulator import Simulator
+
+sim = Simulator()
+sim.simulate_preprocess(c)
+
+# 写入数据：地址 1 存储值 5
+sim.qram_objects["lookup"].write(1, 5)
+
+# 执行仿真
+result = sim.simulate_statevector(c)
+```
+
 ### BARRIER
 
 BARRIER 用于在量子比特之间插入屏障，防止编译器对屏障前后的操作进行重排或优化。

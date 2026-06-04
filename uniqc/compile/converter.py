@@ -23,7 +23,16 @@ def convert_oir_to_qasm(originir_str: str) -> str:
     try:
         originir_parser = OriginIR_BaseParser()
         originir_parser.parse(originir_str)
+        if originir_parser.qram_declarations:
+            raise CircuitTranslationError(
+                "Circuit contains QRAM declarations which cannot be converted to "
+                "OpenQASM 2.0. QRAM is an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format="qasm2",
+            )
         return originir_parser.to_qasm()
+    except CircuitTranslationError:
+        raise
     except Exception as e:
         raise CircuitTranslationError(
             format_enriched_message(f"Failed to convert OriginIR to OpenQASM2: {e}", "compilation")
@@ -58,8 +67,17 @@ def convert_originir_ext_to_originir(originir_ext_str: str) -> str:
     try:
         parser = OriginIR_BaseParser()
         parser.parse(originir_ext_str)
+        if parser.qram_declarations:
+            raise CircuitTranslationError(
+                "Circuit contains QRAM declarations which cannot be converted to "
+                "official OriginIR. QRAM is an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format="originir",
+            )
         circuit = parser.to_circuit()
         return circuit.to_originir_official()
+    except CircuitTranslationError:
+        raise
     except Exception as e:
         raise CircuitTranslationError(
             format_enriched_message(

@@ -14,6 +14,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import TYPE_CHECKING, Union
 
+from uniqc.exceptions import CircuitTranslationError
+
 from .opcode import (
     make_header_originir,
     make_header_qasm,
@@ -347,6 +349,13 @@ class Circuit:
         return header + circuit_str + "\n" + measure
 
     def _make_qasm_circuit(self) -> str:
+        if self.qram_declarations:
+            raise CircuitTranslationError(
+                "Circuit contains QRAM operations which cannot be exported to "
+                "OpenQASM 2.0. QRAM is an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format="qasm2",
+            )
         from .translate_qasm2_oir import collect_qasm2_custom_gates
 
         custom_gates = collect_qasm2_custom_gates(self.opcode_list)
@@ -357,6 +366,13 @@ class Circuit:
 
     def _make_originir_official_circuit(self) -> str:
         """Generate strict official OriginIR — decompose ext gates, block format."""
+        if self.qram_declarations:
+            raise CircuitTranslationError(
+                "Circuit contains QRAM operations which cannot be converted to "
+                "official OriginIR. QRAM is an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format="originir",
+            )
         from uniqc.compile.decompose import decompose_for_originir
 
         decomposed = decompose_for_originir(self)

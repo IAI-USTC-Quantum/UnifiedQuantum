@@ -4,7 +4,8 @@ OriginIR-ext extends the official OriginIR (accepted by OriginQ cloud) with:
 
 - **Extended gates**: ECR, ISWAP, XX, YY, ZZ, XY, PHASE2Q, UU15, RPhi, RPhi90,
   RPhi180  (all decomposable to official gates for cloud submission)
-- **Extended features**: DEF/ENDDEF blocks, error channels for noise simulation
+- **Extended features**: DEF/ENDDEF blocks, QRAM (Quantum RAM) instructions,
+  error channels for noise simulation
 - **Extended syntax**: inline ``dagger`` suffix, inline ``controlled_by(q[...])``
   clause (as an alternative to DAGGER/CONTROL blocks)
 
@@ -45,6 +46,11 @@ available_originir_ext_gates: dict[str, dict] = dict(_official_gates)
 # SWAP is in the official set (and in the QASM mapping) but was not in
 # available_originir_gates.  Add it so the ext superset is truly a superset.
 available_originir_ext_gates.setdefault("SWAP", {"qubit": 2, "param": 0})
+
+# QRAM (Quantum Random Access Memory) — a variable-qubit extension declared
+# via ``QRAMDECL`` and invoked by name.  ``qubit: -1`` indicates the qubit
+# count is determined at runtime by the declaration (like BARRIER).
+available_originir_ext_gates.setdefault("QRAM", {"qubit": -1, "param": 0})
 
 # Extended gates that go beyond the official OriginIR specification.
 # These must be decomposed before submission to OriginQ cloud.

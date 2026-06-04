@@ -209,6 +209,13 @@ def compile_with_config(
     # Normalize any input type to a Circuit and record the detected type
     circuit_obj, input_type = _resolve_input(circuit)
 
+    # QRAM operations cannot be compiled through the QASM-based pipeline
+    if getattr(circuit_obj, "qram_declarations", None):
+        raise CompilationFailedError(
+            "Compilation is not supported for circuits containing QRAM operations. "
+            "QRAM is an OriginIR-ext feature that cannot be converted to QASM for transpilation."
+        )
+
     # Resolve topology
     if backend_info is not None and backend_info.topology:
         topology = [(e.u, e.v) for e in backend_info.topology]
@@ -336,6 +343,13 @@ def compile_full(
 
     # Normalize any input type to a Circuit and record the detected type
     circuit_obj, input_type = _resolve_input(circuit)
+
+    # QRAM operations cannot be compiled through the QASM-based pipeline
+    if getattr(circuit_obj, "qram_declarations", None):
+        raise CompilationFailedError(
+            "Compilation is not supported for circuits containing QRAM operations. "
+            "QRAM is an OriginIR-ext feature that cannot be converted to QASM for transpilation."
+        )
 
     # Resolve topology
     if backend_info is not None and backend_info.topology:
