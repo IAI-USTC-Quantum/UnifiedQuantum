@@ -96,7 +96,13 @@ jobs:
           --ignore=uniqc/test/simulator/test_simulator_factory.py \
           || true
 
+    # NOTE: torchquantum (via our fork) depends on `tensorflow>=2.4.1`, and
+    # tensorflow does not yet publish wheels for CPython 3.14 (`cp314`). Until
+    # upstream tensorflow ships 3.14 wheels, the torchquantum install + tests
+    # are skipped on Python 3.14. The 3.10–3.13 matrix entries still exercise
+    # the torchquantum integration.
     - name: Install torchquantum (fork; not installable from PyPI)
+      if: matrix.python-version != '3.14'
       # See the NOTE above: this install brings `dill`, which is incompatible
       # with the qiskit transpiler tests. We install it *after* the main pytest
       # runs so the dill-sensitive suite stays clean.
@@ -105,6 +111,7 @@ jobs:
           "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
 
     - name: Run torchquantum-touching tests
+      if: matrix.python-version != '3.14'
       run: |
         pytest \
           uniqc/test/adapter/test_tq_algorithms.py \
@@ -113,6 +120,7 @@ jobs:
           -v --no-cov -m "not cloud"
 
     - name: Run torchquantum-touching tests with coverage (append)
+      if: matrix.python-version != '3.14'
       run: |
         pytest \
           uniqc/test/adapter/test_tq_algorithms.py \
