@@ -168,6 +168,9 @@ cython_debug/
 .vscode/
 .vs/
 
+# Claude Code / Copilot CLI per-repo agent state and worktrees
+.claude/
+
 # output path
 origin_online_info_verify/
 quafu_online_info_verify/
