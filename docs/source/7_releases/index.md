@@ -36,6 +36,18 @@
 - 装包 / 配置出问题时，先跑一遍 ``uv run uniqc doctor``——``v0.0.13`` 新增了这个环境
   自检命令。
 
+## 弃用政策（0.1.0 兼容性悬崖）
+
+```{toctree}
+:maxdepth: 1
+
+deprecation_policy
+```
+
+[弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md) 详细说明：所有在 ``0.0.x``
+中通过 ``DeprecationWarning`` 标记的公共 API，将在 ``0.1.0`` 中移除或不再保证兼容性。
+跨越 ``0.0.x → 0.1.0`` 升级前，请清理所有 ``DeprecationWarning``。
+
 ## 发布前可验证路径检查
 
 在创建新的 ``v*`` tag 前，维护者必须完成一次人工可验证路径检查，确认用户主路径没有失效。
@@ -50,6 +62,48 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.0.15`
+
+v0.0.15 重点更新：**原生 PyTorch 参数集成**、**OriginIR-ext 超集语言**、
+**弃用政策（0.1.0 兼容性悬崖）**、**Python 3.14 支持**。
+
+升级到 ``v0.0.15`` 时最值得先确认的是：
+
+- **你是否在用 `[quark]` extra。** 从本版起 `pip install unified-quantum[all]`
+  **不再包含** `[quark]`。如需 Quark 平台支持，必须显式安装
+  `pip install unified-quantum[quark]`，且仅限 **Python 3.12–3.13 + Linux / macOS**。
+  这是打包契约变更（不是弃用警告），详见 [CHANGELOG](https://github.com/IAI-USTC-Quantum/UnifiedQuantum/blob/main/CHANGELOG.md)。
+- **你是否在用 Python 3.14。** 本版起支持 Python 3.14（`requires-python >= 3.10, < 3.15`），
+  但 `[originq]` 和 `[quark]` 在 py3.14 上不可用（上游无 cp314 wheel）。
+  芯片缓存路径（`dummy:originq:*`）在 py3.14 上仍然可用，仅实时云端连接需要
+  对应 SDK。详见 [安装说明 - Python 3.14 注意事项](../0_quickstart/installation.md)。
+- **你是否在用已弃用的 API。** 本版建立了项目级弃用政策：所有在 `0.0.x` 中触发
+  `DeprecationWarning` 的公共 API **将在 `0.1.0` 中移除**。当前弃用清单包括：
+  `simulator.get_backend()`、`IBMAdapter`、`quafu_adapter`、以及所有
+  `*_circuit(circuit, ...)` in-place 形式。所有弃用警告消息现在都包含
+  字面量 `"uniqc 0.1.0"`，方便 `grep` 和 `pytest.warns` 过滤。
+  详见 [弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md)。
+- **你是否在用 `Circuit` 的参数化功能。** 本版新增 `param_map` / `param_dict` /
+  `has_param` / `set_param_last`，使 `torch.Tensor` 参数成为一等公民——
+  通过 `add_gate` 传入的张量参数会自动注册为 `nn.Parameter` 并可通过名称访问。
+  新增的 `simulator.expectation()` 跨后端可微期望值接口。
+  详见新的最佳实践示例 `examples/3_best_practices/11_native_torch_training.py`。
+- **你是否在手动拼接 OriginIR。** 本版新增 OriginIR-ext 超集语言（`GLIST` 等
+  gate-list 原语），可通过 `uniqc.originir_ext.to_originir()` 转换回标准 OriginIR。
+- **`dummy:originq:*` 路径不再需要 `pyqpanda3`。** 本版修复了一个 bug：当芯片
+  缓存已存在时，chip-backed dummy 路径不再强制要求安装云 SDK。
+
+#### Python 3.14 限制一览
+
+| Extra | py3.14 状态 | 说明 |
+|-------|-----------|------|
+| `[originq]` | ❌ 不可用 | `pyqpanda3` 无 cp314 wheel |
+| `[quark]` | ❌ 不可用 | `srpc`/`quarkcircuit` 无 cp314 标准 wheel |
+| `[simulation]` | ✅ 可用 | QuTiP 已有 cp314 wheel |
+| `[visualization]` | ✅ 可用 | matplotlib 已有 cp314 wheel |
+| `[pytorch]` | ✅ 可用 | torch 已有 cp314 wheel |
+| `[all]` | ✅ 可用 | 不再包含 `[quark]` |
 
 ### `v0.0.14`
 

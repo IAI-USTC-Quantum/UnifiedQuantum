@@ -12,8 +12,6 @@ preserved as a deprecated dispatch and emits :class:`DeprecationWarning`.
 
 __all__ = ["deutsch_jozsa_circuit", "deutsch_jozsa_oracle", "deutsch_jozsa_example"]
 
-import warnings
-
 from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 
@@ -146,10 +144,11 @@ def deutsch_jozsa_circuit(
         if oracle is None:
             return _build_dj_fragment(oracle=first, qubits=qubits, ancilla=ancilla)
         # Legacy: first arg is the in-place circuit
-        warnings.warn(
-            "deutsch_jozsa_circuit(circuit, oracle=...) (in-place form) is deprecated. "
-            "Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "deutsch_jozsa_circuit(circuit, oracle=...) (in-place form)",
+            replacement="deutsch_jozsa_circuit(oracle, qubits=...) with add_circuit()",
             stacklevel=2,
         )
         fragment = _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
@@ -159,10 +158,11 @@ def deutsch_jozsa_circuit(
     if len(args) >= 2:
         # Legacy positional: (circuit, oracle, qubits=..., ancilla=...)
         circuit_in, ora = args[0], args[1]
-        warnings.warn(
-            "deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form) is deprecated. "
-            "Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form)",
+            replacement="deutsch_jozsa_circuit(oracle, qubits=...) with add_circuit()",
             stacklevel=2,
         )
         fragment = _build_dj_fragment(oracle=ora, qubits=qubits, ancilla=ancilla)

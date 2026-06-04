@@ -16,8 +16,6 @@ References:
 
 __all__ = ["grover_oracle", "grover_diffusion", "grover_oracle_example"]
 
-import warnings
-
 from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 
@@ -199,10 +197,11 @@ def grover_oracle(
         marked_state = args[1]
     if marked_state is None:
         raise TypeError(format_enriched_message("grover_oracle requires marked_state", "circuit_validation"))
-    warnings.warn(
-        "grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. "
-        "Use grover_oracle(marked_state, qubits=...) and add_circuit().",
-        DeprecationWarning,
+    from uniqc._deprecation import warn_removed_in_0_1_0
+
+    warn_removed_in_0_1_0(
+        "grover_oracle(circuit, marked_state, ...) (in-place form)",
+        replacement="grover_oracle(marked_state, qubits=...) with add_circuit()",
         stacklevel=2,
     )
     fragment = _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
@@ -263,10 +262,11 @@ def grover_diffusion(
         grover_diffusion(c, qubits=[0, 1, 2])
     """
     if ancilla is not None:
-        warnings.warn(
-            "The 'ancilla' argument of grover_diffusion() is unused and will be "
-            "removed in a future release.  Remove it from your call site.",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "The 'ancilla' argument of grover_diffusion()",
+            detail="It is unused; remove it from your call site",
             stacklevel=2,
         )
     if len(args) == 0:
@@ -275,10 +275,11 @@ def grover_diffusion(
     if isinstance(first, int):
         return _build_grover_diffusion_fragment(qubits=qubits, n_qubits=first)
     if isinstance(first, Circuit):
-        warnings.warn(
-            "grover_diffusion(circuit, ...) (in-place form) is deprecated. "
-            "Use grover_diffusion(qubits=...) and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "grover_diffusion(circuit, ...) (in-place form)",
+            replacement="grover_diffusion(qubits=...) with add_circuit()",
             stacklevel=2,
         )
         fragment = _build_grover_diffusion_fragment(qubits=qubits, n_qubits=n_qubits)

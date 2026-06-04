@@ -9,10 +9,10 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.5012 █████████████████████████\n   |1111⟩: 0.4988 ████████████████████████\n\n Dominant basis states (2):\n   |0000⟩: 0.5012\n   |1111⟩: 0.4988\n",
+  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.4990 ████████████████████████\n   |1111⟩: 0.5010 █████████████████████████\n\n Dominant basis states (2):\n   |1111⟩: 0.5010\n   |0000⟩: 0.4990\n",
   "stderr": "",
   "warnings": [
-    "DeprecationWarning: ghz_state(circuit, ...) (in-place form) is deprecated and will be removed in a future release. Use the fragment form `ghz_state(n_qubits, ...) -> Circuit` and merge with `circuit.add_circuit(fragment)`. (entangled_states.py:52)"
+    "DeprecationWarning: ghz_state(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `the fragment form `ghz_state(n_qubits, ...) -> Circuit` with `circuit.add_circuit(fragment)`` instead. (entangled_states.py:66)"
   ],
   "figure_files": [],
   "offending_lines": [],

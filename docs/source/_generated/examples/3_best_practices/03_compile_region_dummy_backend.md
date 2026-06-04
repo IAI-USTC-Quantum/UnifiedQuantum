@@ -16,7 +16,7 @@
 ```text
 backend: dummy:virtual-line-3
 compiled OriginIR:
-QINIT 3
+QINIT 2
 CREG 0
 RZ q[0], (1.5707963267948966)
 SX q[0]

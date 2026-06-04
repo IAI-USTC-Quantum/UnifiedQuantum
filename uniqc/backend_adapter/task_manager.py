@@ -1656,14 +1656,15 @@ def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
     # Try platform-id lookup via the shard index.
     found = _store().find_uniqc_id_by_platform_id(task_id)
     if found is not None:
-        import warnings
+        from uniqc._deprecation import warn_removed_in_0_1_0
 
-        warnings.warn(
-            f"Task lookup via platform id {task_id!r} is deprecated; "
-            f"use the uniqc id {found!r} instead. The platform id will "
-            "still resolve via the shard index but this fallback may "
-            "be removed in a future release.",
-            DeprecationWarning,
+        warn_removed_in_0_1_0(
+            f"Task lookup via platform id {task_id!r}",
+            replacement=f"the uniqc id {found!r}",
+            detail=(
+                "The platform id still resolves via the shard index but this "
+                "fallback is removed in uniqc 0.1.0"
+            ),
             stacklevel=3,
         )
         return found, True

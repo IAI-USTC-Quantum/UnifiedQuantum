@@ -2,8 +2,6 @@
 
 __all__ = ["vqd_circuit", "vqd_ansatz", "vqd_overlap_circuit", "vqd_example"]
 
-import warnings
-
 import numpy as np
 
 from uniqc._error_hints import format_enriched_message
@@ -112,11 +110,11 @@ def vqd_circuit(
             ansatz_params = args[1]
         if len(args) >= 3 and prev_states is None:
             prev_states = args[2]
-        warnings.warn(
-            "vqd_circuit(circuit, ansatz_params, prev_states, ...) (in-place form) is "
-            "deprecated. Use vqd_ansatz(n_qubits, ansatz_params, prev_states, ...) "
-            "and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "vqd_circuit(circuit, ansatz_params, prev_states, ...) (in-place form)",
+            replacement="vqd_ansatz(n_qubits, ansatz_params, prev_states, ...) with add_circuit()",
             stacklevel=2,
         )
         if qubits is None:

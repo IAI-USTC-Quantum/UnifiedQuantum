@@ -20,7 +20,7 @@ Use [references/report-template.md](references/report-template.md) for the repor
 
 1. Confirm the release candidate:
    - Current branch, commit, tag candidate, and version from `uniqc/_version.py` or package metadata.
-   - `README.md`, `README_en.md`, `CHANGELOG.md`, `pyproject.toml`, and `docs/source/releases/`.
+   - `README.md`, `README_en.md`, `CHANGELOG.md`, `pyproject.toml`, and `docs/source/7_releases/`.
 2. Check the worktree:
    - `git status -sb`
    - Do not mix unrelated local changes into the release report. Report them as environment risk if they affect execution.
@@ -68,16 +68,16 @@ The best-practices section is a release gate.
 Run:
 
 ```bash
-uv run python scripts/generate_best_practice_notebooks.py
+uv run python scripts/build_docs.py --only 3_best_practices
 cd docs
 uv run make html
 ```
 
 Then inspect:
 
-- `docs/source/guide/best_practices.md`
-- `docs/source/best_practices/index.md`
-- every notebook under `docs/source/best_practices/*.ipynb`
+- `docs/source/1_basic_usage/best_practices.md`
+- `docs/source/3_best_practices/index.md`
+- every generated chapter under `docs/source/_generated/examples/3_best_practices/*.md`
 - generated HTML pages for broken rendering, stale outputs, or inconsistent command names.
 
 Best-practices failures are blockers unless the affected feature is explicitly removed from the release.
@@ -131,7 +131,7 @@ Note: `uniqc submit` takes a single `--backend BACKEND_ID` flag (no
 `--platform` option). `uniqc backend list/update`, `uniqc task list`, and
 `uniqc result` *do* accept `--platform`.
 
-Confirm the docs match the help output and actual behavior. Do not recommend `python -m uniqc`; the supported module fallback is `python -m uniqc.cli`. There is no `uniqc workflow` CLI subcommand; `docs/source/cli/workflow.md` is a workflow guide page, and interactive next-step guidance is exposed by `--ai-hints` / `--ai-hint`.
+Confirm the docs match the help output and actual behavior. Do not recommend `python -m uniqc`; the supported module fallback is `python -m uniqc.cli`. There is no `uniqc workflow` CLI subcommand; `docs/source/4_cli/workflow.md` is a workflow guide page, and interactive next-step guidance is exposed by `--ai-hints` / `--ai-hint`.
 
 Also verify the AI-hint paths:
 
@@ -191,7 +191,7 @@ Compare docs to software, not just by reading prose.
 Check at least:
 
 - `pyproject.toml` `project.scripts` contains `uniqc = "uniqc.cli.main:app"` and docs use `uniqc` / `python -m uniqc.cli`.
-- CLI docs under `docs/source/cli/` describe commands that exist in `uv run uniqc --help`.
+- CLI docs under `docs/source/4_cli/` describe commands that exist in `uv run uniqc --help`.
 - Best-practices code imports current top-level APIs from `uniqc` where expected.
 - New docs do not encourage old entries for new code: `uniqc.transpiler`, `uniqc.task`, `uniqc.qasm`, `uniqc.originir`, `uniqc.pytorch`, `uniqc.analyzer`.
 - Dummy backend semantics are consistent:

@@ -10,6 +10,8 @@ All tests stay offline (no cloud creds, no network).
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from uniqc import (
@@ -18,6 +20,16 @@ from uniqc import (
     query_task,
     submit_task,
     wait_for_result,
+)
+
+# OriginQ-routed paths require ``pyqpanda3`` (the ``[originq]`` extra). On
+# Python 3.14 ``pyqpanda3`` is not available yet (see
+# ``docs/source/7_releases/deprecation_policy.md``), so the tests that
+# actually need the OriginQ SDK skip cleanly there.
+_HAS_PYQPANDA3 = importlib.util.find_spec("pyqpanda3") is not None
+requires_pyqpanda3 = pytest.mark.skipif(
+    not _HAS_PYQPANDA3,
+    reason="OriginQ SDK (pyqpanda3) not installed — gated out on Python 3.14",
 )
 
 
@@ -79,6 +91,7 @@ class TestSubmitTaskDocBasicUsage:
         )
         assert task_id
 
+    @requires_pyqpanda3
     def test_bare_provider_id_is_rejected_with_helpful_chip_list(self):
         """Per the strict-format rule documented in submit_task.md, calling
         with ``backend='originq'`` and no chip kwarg must error and surface
@@ -89,6 +102,7 @@ class TestSubmitTaskDocBasicUsage:
         assert "provider:chip-name" in msg
         assert "originq" in msg
 
+    @requires_pyqpanda3
     def test_legacy_backend_name_kwarg_still_works(self):
         """Backward-compat: ``backend='originq', backend_name='WK_C180'``
         is normalised to ``'originq:WK_C180'`` instead of being rejected.

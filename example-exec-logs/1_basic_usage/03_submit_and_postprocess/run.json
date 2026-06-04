@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "task_id: uqt_d847f0a75a994122a74dc3ce4c156fcd\ncounts: {'001': 0, '011': 500, '101': 0, '111': 500}\nprobabilities: {'001': 0.0, '011': 0.5, '101': 0.0, '111': 0.5}\nstatus: success\n<ZII> = +0.0000\n<IIZ> = -1.0000\nmanual prob conversion: {'001': np.float64(0.0), '011': np.float64(0.5), '101': np.float64(0.0), '111': np.float64(0.5)}\n",
+  "stdout": "task_id: uqt_ff73f1d2119248d6999e0863f231277b\ncounts: {'001': 0, '011': 500, '101': 0, '111': 500}\nprobabilities: {'001': 0.0, '011': 0.5, '101': 0.0, '111': 0.5}\nstatus: success\n<ZII> = +0.0000\n<IIZ> = -1.0000\nmanual prob conversion: {'001': np.float64(0.0), '011': np.float64(0.5), '101': np.float64(0.0), '111': np.float64(0.5)}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.017
+  "duration_seconds": 0.021
 }

@@ -11,6 +11,7 @@ Submodules
    uniqc.circuit_builder.named_circuit
    uniqc.circuit_builder.normalize
    uniqc.circuit_builder.opcode
+   uniqc.circuit_builder.originir_ext_spec
    uniqc.circuit_builder.originir_spec
    uniqc.circuit_builder.parameter
    uniqc.circuit_builder.qasm_spec

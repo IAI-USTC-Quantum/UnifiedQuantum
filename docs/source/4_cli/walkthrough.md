@@ -4,6 +4,8 @@
 真实的样子。本页内容由 ``examples/4_cli/01_cli_walkthrough.py`` 自动生成，
 保证只要本地能 `make html`，示例就可运行。
 
+## 示例
+
 ```{include} ../_generated/examples/4_cli/01_cli_walkthrough.md
 ```
 

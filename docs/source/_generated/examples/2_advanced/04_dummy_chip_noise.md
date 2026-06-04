@@ -28,16 +28,16 @@
   description:     Unconstrained noiseless local simulator
   topology:        None
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_9a02c4b299934f019a914bdb535eedc0', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_bbc5e2bf30dc4348a8ff131fd943750f', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 == dummy:local:virtual-line-3 ==
   description:     Noiseless virtual 3-qubit line topology
   topology:        [[0, 1], [1, 2]]
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_15861f9aa3ca4426aa729ddcc0753763', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_3e6b9dbbd59b40d995182340aeaa5e04', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
 == dummy:local:mps-linear-3:chi=8 ==
   description:     Noiseless MPS simulator on a 3-qubit linear chain, chi=8
   topology:        [[0, 1], [1, 2]]
   simulator_kwargs: {'chi_max': 8}
-  counts:          UnifiedResult(counts={'000': 139, '111': 117}, probabilities={'000': 0.54296875, '111': 0.45703125}, shots=256, platform='dummy', task_id='uqt_ddef6695275449a0b0762ace7686fe6a', backend_name='dummy:local:mps-linear-3:chi=8', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 120, '111': 136}, probabilities={'000': 0.46875, '111': 0.53125}, shots=256, platform='dummy', task_id='uqt_6911d4c912964698a3374fe2726bbdd5', backend_name='dummy:local:mps-linear-3:chi=8', execution_time=None, error_message=None)
 ```
 

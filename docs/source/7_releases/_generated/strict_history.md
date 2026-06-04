@@ -7,6 +7,8 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.0.14.post1` | `2026-06-03` | Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode |
+| `v0.0.14` | `2026-05-18` | Release v0.0.14 |
 | `v0.0.13` | `2026-05-14` | Merge pull request #99 from IAI-USTC-Quantum/release/v0.0.13 |
 | `v0.0.12` | `2026-05-07` | v0.0.12 — uniqc-managed task ID indirection layer (uqt_*) + native batch + cloud error propagation |
 | `v0.0.11.post1` | `2026-05-07` | v0.0.11.post1: chip-backed dummy relayout hotfix |
@@ -26,17 +28,86 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.13..HEAD`
-- 提交数：43
-- 变更文件数：404
+- 对比区间：`v0.0.14.post1..HEAD`
+- 提交数：11
+- 变更文件数：24
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `merge` | 16 |
+| `feat` | 7 |
+| `merge` | 2 |
+| `docs` | 1 |
+| `fix` | 1 |
+
+### 变更区域
+
+- `docs`: 6 个文件
+- `uniqc/circuit_builder`: 6 个文件
+- `uniqc/compile`: 4 个文件
+- `uniqc/test`: 3 个文件
+- `examples`: 2 个文件
+- `uniqc/torch_adapter`: 2 个文件
+- `uniqc/__init__.py`: 1 个文件
+
+### 提交列表
+
+- `44e79d6` feat: add OriginIR-ext superset language with converter to official OriginIR
+- `01fb711` Merge pull request #115 from IAI-USTC-Quantum/feature/originir-ext
+- `a6128e0` feat(circuit): add param_map for native tensor parameter support
+- `ba0405f` feat(simulator): add backend-agnostic differentiable expectation()
+- `3276459` feat(circuit): auto-register tensor params in add_gate
+- `f1e0d6c` feat(circuit): add param_dict for named parameter references
+- `db1149d` feat(circuit): add has_param for automatic nn.Parameter creation
+- `3c795bd` feat(circuit): align has_param with TorchQuantum conventions
+- `ddf3867` docs: add native torch training best practice and update pytorch guide
+- `68450bc` fix(circuit): raise IndexError on set_param_last with empty circuit
+- `653ae8c` Merge pull request #116 from IAI-USTC-Quantum/feat/circuit-param-map
+
+## v0.0.14.post1
+
+- 发布日期：`2026-06-03`
+- 发布标题：Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode
+- 补充说明：fix(error_model): pass qubit list instead of splitting into separate …
+- 对比区间：`v0.0.14..v0.0.14.post1`
+- 提交数：3
+- 变更文件数：2
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `fix` | 2 |
+| `merge` | 1 |
+
+### 变更区域
+
+- `uniqc/simulator`: 1 个文件
+- `uniqc/test`: 1 个文件
+
+### 提交列表
+
+- `5e0f620` fix(error_model): pass qubit list instead of splitting into separate opcodes
+- `5a62298` fix(error_model): qubits tuple/list mismatch in GateSpecificError loader
+- `6dcdac4` Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode
+
+## v0.0.14
+
+- 发布日期：`2026-05-18`
+- 发布标题：Release v0.0.14
+- 补充说明：Release v0.0.14
+- 对比区间：`v0.0.13..v0.0.14`
+- 提交数：46
+- 变更文件数：390
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `merge` | 17 |
+| `docs` | 8 |
 | `fix` | 7 |
-| `docs` | 6 |
 | `ci` | 4 |
 | `feat` | 2 |
 | `other` | 2 |
@@ -48,8 +119,8 @@
 ### 变更区域
 
 - `uniqc/test`: 113 个文件
-- `docs`: 69 个文件
-- `example-exec-logs`: 58 个文件
+- `docs`: 64 个文件
+- `example-exec-logs`: 49 个文件
 - `uniqc/algorithms`: 40 个文件
 - `uniqc/backend_adapter`: 23 个文件
 - `examples`: 18 个文件
@@ -119,6 +190,9 @@
 - `bce06a4` test(config): skip file-mode assertion on Windows
 - `fd2014a` Merge pull request #107 from IAI-USTC-Quantum/chore/coverage-improvements-phase1
 - `dfcb540` fix(cache): clamp age_seconds to non-negative for Windows clock precision
+- `735aa5e` docs: regenerate apidoc, examples, and release history; drop stale ansatz stubs
+- `8cc4461` docs(release): prepare v0.0.14 release
+- `1e0cbe4` Merge pull request #108 from IAI-USTC-Quantum/release/v0.0.14
 
 ## v0.0.13
 

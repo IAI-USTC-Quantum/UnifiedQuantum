@@ -3,6 +3,8 @@
 下面这个例子把"构造线路 → 本地模拟 → 通过 ``submit_task`` 在 dummy 上跑一遍 → 真机
 提交模板"四件事一次走完。如果你的 ``unified-quantum`` 装好了，运行它应该不报错。
 
+## 示例
+
 ```{include} ../_generated/examples/0_quickstart/01_quickstart.md
 ```
 

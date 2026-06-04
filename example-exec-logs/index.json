@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-17T23:26:49Z",
+  "generated_at": "2026-06-04T02:20:43Z",
   "real_cloud": false,
   "results": [
     {
@@ -9,7 +9,7 @@
       "title": "01 — Quickstart: install, simulate, submit",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 2.79,
+      "duration_seconds": 2.679,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -20,7 +20,7 @@
       "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.0,
+      "duration_seconds": 0.001,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -42,7 +42,7 @@
       "title": "03 — Submit to dummy + result post-processing",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.017,
+      "duration_seconds": 0.021,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -64,7 +64,7 @@
       "title": "05 — Visualize circuits and results",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.077,
+      "duration_seconds": 0.098,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -75,7 +75,7 @@
       "title": "01 — Compile internals: levels, basis gates, virtual backends",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.025,
+      "duration_seconds": 0.031,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -84,8 +84,8 @@
       "chapter": "2_advanced",
       "name": "02_region_selector",
       "title": "02 — RegionSelector: pick a high-fidelity sub-region of a chip",
-      "verdict": "not-executed",
-      "skip_reason": null,
+      "verdict": "skip",
+      "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
       "n_ignored": 0
@@ -97,7 +97,7 @@
       "title": "03 — Variational quantum algorithm: a tiny QAOA loop",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.004,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -108,7 +108,7 @@
       "title": "04 — Dummy chip noise: ``dummy:<platform>:<backend>``",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.173,
+      "duration_seconds": 0.193,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -130,7 +130,7 @@
       "title": "06 — Error mitigation: M3 / readout EM",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.001,
+      "duration_seconds": 0.002,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -141,7 +141,7 @@
       "title": "07 — Matrix-product-state simulator on a long linear chain",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 17.064,
+      "duration_seconds": 17.623,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -152,7 +152,7 @@
       "title": "ADAPT-VQE Example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.09,
+      "duration_seconds": 0.098,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -163,7 +163,7 @@
       "title": "Grover's search algorithm — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.004,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -185,7 +185,7 @@
       "title": "Hamiltonian Variational Ansatz (HVA) -- complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.036,
+      "duration_seconds": 0.034,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -218,7 +218,7 @@
       "title": "Quantum Approximate Optimization Algorithm (QAOA) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.253,
+      "duration_seconds": 0.254,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -240,7 +240,7 @@
       "title": "QAOA Variants -- XY Mixer, Warm-Start, and MA-QAOA.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.005,
+      "duration_seconds": 0.006,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -284,7 +284,7 @@
       "title": "Variational Quantum Eigensolver (VQE) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.212,
+      "duration_seconds": 0.221,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -306,7 +306,7 @@
       "title": "Quantum Amplitude Estimation (QAE) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.007,
+      "duration_seconds": 0.005,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -328,7 +328,7 @@
       "title": "Dicke state preparation circuit — example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.007,
+      "duration_seconds": 0.006,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -383,7 +383,7 @@
       "title": "Variational Quantum Deflation (VQD) — complete example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.516,
+      "duration_seconds": 0.522,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -394,7 +394,7 @@
       "title": "Classical Shadow tomography — measurement example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.067,
+      "duration_seconds": 0.064,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -405,7 +405,7 @@
       "title": "Full quantum state tomography — measurement example.",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.011,
+      "duration_seconds": 0.013,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -436,8 +436,8 @@
       "chapter": "2_advanced",
       "name": "wk180__readout_em",
       "title": "WK180 readout EM example for UnifiedQuantum.",
-      "verdict": "not-executed",
-      "skip_reason": null,
+      "verdict": "skip",
+      "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
       "n_ignored": 0
@@ -447,8 +447,8 @@
       "chapter": "2_advanced",
       "name": "wk180__xeb",
       "title": "WK180 chip-wide parallel-CZ XEB example for UnifiedQuantum.",
-      "verdict": "not-executed",
-      "skip_reason": null,
+      "verdict": "skip",
+      "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
       "n_ignored": 0
@@ -471,7 +471,7 @@
       "title": "01 — 裸 Circuit、本地模拟与结果可视化",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.068,
+      "duration_seconds": 0.073,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -482,7 +482,7 @@
       "title": "02 — Named Circuit 与可复用线路",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.076,
+      "duration_seconds": 0.081,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -493,7 +493,7 @@
       "title": "03 — 编译、拓扑与虚拟后端",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.011,
+      "duration_seconds": 0.01,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -515,7 +515,7 @@
       "title": "05 — CLI 提交完整链路",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 3.561,
+      "duration_seconds": 3.115,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -524,9 +524,9 @@
       "chapter": "3_best_practices",
       "name": "06_cloud_backend_template",
       "title": "06 — 云后端提交模板与 dry-run",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.0,
+      "verdict": "skip",
+      "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
+      "duration_seconds": null,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -537,7 +537,7 @@
       "title": "07 — 简单变分量子线路",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.114,
+      "duration_seconds": 0.12,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -548,7 +548,7 @@
       "title": "08 — Torch 集成后的量子线路",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.595,
+      "duration_seconds": 0.632,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -559,7 +559,7 @@
       "title": "09 — Calibration + QEM",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.223,
+      "duration_seconds": 0.101,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -570,7 +570,18 @@
       "title": "10 — XEB workflow",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.108,
+      "duration_seconds": 0.136,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/3_best_practices/11_native_torch_training.py",
+      "chapter": "3_best_practices",
+      "name": "11_native_torch_training",
+      "title": "11 — 原生 Torch 训练（不依赖 TorchQuantum）",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.502,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -581,7 +592,7 @@
       "title": "01 — CLI walkthrough: all the ``uniqc`` subcommands",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 17.153,
+      "duration_seconds": 15.461,
       "n_offending": 0,
       "n_ignored": 0
     },
@@ -592,7 +603,7 @@
       "title": "01 — Gateway / WebUI: programmatic launch and persistence",
       "verdict": "pass",
       "skip_reason": null,
-      "duration_seconds": 0.161,
+      "duration_seconds": 0.193,
       "n_offending": 0,
       "n_ignored": 0
     }

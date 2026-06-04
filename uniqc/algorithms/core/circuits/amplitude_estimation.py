@@ -124,8 +124,6 @@ def grover_operator(
         c = Circuit()
         grover_operator(c, oracle, qubits=[0, 1, 2])   # mutates c
     """
-    import warnings as _warnings
-
     # Resolve dispatch
     if len(args) == 0:
         if oracle is None:
@@ -141,10 +139,11 @@ def grover_operator(
         # Legacy: first = circuit, second = oracle
         circuit_in = first
         ora = args[1] if len(args) >= 2 else oracle
-        _warnings.warn(
-            "grover_operator(circuit, oracle, qubits=...) (in-place form) is deprecated. "
-            "Use grover_operator(oracle, qubits=...) and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "grover_operator(circuit, oracle, qubits=...) (in-place form)",
+            replacement="grover_operator(oracle, qubits=...) with add_circuit()",
             stacklevel=2,
         )
         fragment = _build_grover_operator_fragment(ora, qubits, state_prep)
@@ -212,8 +211,6 @@ def amplitude_estimation_circuit(
     The optional ``state_prep`` Circuit replaces the default ``H^{⊗n}``
     state preparation on the search register.
     """
-    import warnings as _warnings
-
     if len(args) == 0:
         if oracle is None:
             raise TypeError(
@@ -228,10 +225,11 @@ def amplitude_estimation_circuit(
     if isinstance(first, Circuit) and (len(args) >= 2 or oracle is not None):
         circuit_in = first
         ora = args[1] if len(args) >= 2 else oracle
-        _warnings.warn(
-            "amplitude_estimation_circuit(circuit, oracle, ...) (in-place form) is "
-            "deprecated. Use amplitude_estimation_circuit(oracle, ...) and add_circuit().",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "amplitude_estimation_circuit(circuit, oracle, ...) (in-place form)",
+            replacement="amplitude_estimation_circuit(oracle, ...) with add_circuit()",
             stacklevel=2,
         )
         fragment = _build_qae_fragment(ora, qubits, eval_qubits, state_prep)

@@ -12,7 +12,7 @@
   "stdout": " Deutsch-Jozsa Algorithm — 3 data qubits\n Oracle type: balanced\n\n Results (top outcomes):\n   |000⟩  100.0% ← all zeros\n\n  → CONSTANT function (all measurements = |000⟩)\n\n  ✓ Run complete.\n",
   "stderr": "",
   "warnings": [
-    "DeprecationWarning: deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form) is deprecated. Use deutsch_jozsa_circuit(oracle, qubits=...) and add_circuit(). (deutsch-jozsa.py:51)"
+    "DeprecationWarning: deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `deutsch_jozsa_circuit(oracle, qubits=...) with add_circuit()` instead. (deutsch_jozsa.py:163)"
   ],
   "figure_files": [],
   "offending_lines": [],

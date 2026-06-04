@@ -118,12 +118,20 @@ def test_ibm_chip_characterization_uses_target_per_edge_errors():
 
 
 def test_ibm_backend_summary_uses_cached_per_edge_details_without_chip_cache():
+    """Regression: per-edge fidelities flow into gateway summary even without
+    a populated chip cache.
+
+    Targets :class:`QiskitAdapter` directly. The deprecated :class:`IBMAdapter`
+    is just a thin delegate over ``QiskitAdapter``; testing the underlying
+    adapter both covers the live code path and survives the 0.1.0 removal
+    of ``IBMAdapter`` (see ``docs/source/7_releases/deprecation_policy.md``).
+    """
     from uniqc.backend_adapter.backend_registry import _normalise_ibm
-    from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+    from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
     from uniqc.gateway.api.backends import _backend_summary
 
-    adapter = IBMAdapter.__new__(IBMAdapter)
-    adapter._delegate = type("Delegate", (), {"_service": _Service(_Backend())})()
+    adapter = QiskitAdapter.__new__(QiskitAdapter)
+    adapter._service = _Service(_Backend())
 
     raw = adapter.list_backends()
     backend = _normalise_ibm(raw)[0]

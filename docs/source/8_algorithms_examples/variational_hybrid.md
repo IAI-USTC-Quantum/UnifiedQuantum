@@ -4,6 +4,8 @@
 本节分别展示纯经典优化器驱动版本和 PyTorch 集成版本，以及量子‑经典混合模型
 和量子神经网络 / 卷积分类器。
 
+## VQE / QAOA
+
 ```{include} ../_generated/examples/2_advanced/algorithms__vqe.md
 ```
 

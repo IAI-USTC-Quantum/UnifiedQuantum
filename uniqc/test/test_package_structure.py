@@ -7,6 +7,7 @@ PACKAGE_ROOT = PROJECT_ROOT / "uniqc"
 
 ALLOWED_TOP_LEVEL_FILES = {
     "__init__.py",
+    "_deprecation.py",
     "_error_hints.py",
     "_version.py",
     "config.py",

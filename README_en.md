@@ -120,7 +120,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ### Requirements
 
-- Python 3.10 – 3.13
+- Python 3.10 – 3.14
 
 ### From PyPI (Recommended)
 
@@ -293,3 +293,8 @@ Issues, pull requests, and emails are all welcome. Interested in quantum computi
 ## Status
 
 🚧 Actively developing. API may change.
+
+> **Starting from v0.0.15**: All public APIs that emit `DeprecationWarning` during
+> `0.0.x` releases **will be removed in `0.1.0`**. Before upgrading, run
+> `pytest -W error::DeprecationWarning` to clean up all deprecation warnings.
+> See [Deprecation Policy](docs/source/7_releases/deprecation_policy.md).

@@ -78,12 +78,18 @@ def get_backend(
     program_type: str = "originir",
     **kwargs,
 ) -> BaseSimulator | TorchQuantumSimulator | MPSSimulator:
-    """Deprecated: use :func:`get_simulator` or :func:`create_simulator`."""
-    import warnings
+    """Deprecated: use :func:`get_simulator` or :func:`create_simulator`.
 
-    warnings.warn(
-        "uniqc.simulator.get_backend() is deprecated. Use get_simulator() or create_simulator() instead.",
-        DeprecationWarning,
+    .. deprecated::
+        This function will be removed in uniqc 0.1.0. See
+        :doc:`/source/7_releases/deprecation_policy` for the project-wide
+        0.0.x → 0.1.0 compatibility cliff.
+    """
+    from uniqc._deprecation import warn_removed_in_0_1_0
+
+    warn_removed_in_0_1_0(
+        "uniqc.simulator.get_backend()",
+        replacement="get_simulator() or create_simulator()",
         stacklevel=2,
     )
     return create_simulator(backend=backend_type, program_type=program_type, **kwargs)

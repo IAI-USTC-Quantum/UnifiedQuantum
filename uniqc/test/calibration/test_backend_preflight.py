@@ -109,7 +109,19 @@ class TestEnsureBackendReady:
         with pytest.raises(MissingDependencyError, match="uniqc_cpp"):
             ensure_backend_ready("local")
 
-    def test_dummy_provider_raises_without_sdk(self, monkeypatch):
+    def test_dummy_provider_raises_without_sdk_when_cache_missing(self, monkeypatch):
+        """Chip-backed dummy (``dummy:<provider>:<chip>``) runs locally
+        using the cached chip topology. When the cache is missing and the
+        SDK is also missing, we cannot refresh — so we must raise
+        :class:`MissingDependencyError` pointing the user at the SDK.
+
+        When the cache IS present, the same backend identifier works
+        without the SDK (see
+        ``test_dummy_provider_works_without_sdk_when_cache_present``).
+        See ``docs/source/7_releases/deprecation_policy.md`` for the
+        rationale (e.g. Python 3.14 has no ``pyqpanda3`` wheel yet but
+        must still support chip-backed dummy paths via shipped caches).
+        """
         monkeypatch.setattr(
             "uniqc.backend_adapter.preflight.check_pyqpanda3",
             lambda: False,
@@ -118,10 +130,48 @@ class TestEnsureBackendReady:
             "uniqc.backend_adapter.preflight.check_uniqc_cpp",
             lambda: True,
         )
-        with pytest.raises(MissingDependencyError) as excinfo:
+        # Force the cache lookup to report 'no cache' so the preflight
+        # has to attempt a refresh, which requires the SDK.
+        with (
+            mock.patch(
+                "uniqc.backend_adapter.preflight._load_chip_cache",
+                return_value=(None, mock.Mock(exists=lambda: False)),
+            ),
+            pytest.raises(MissingDependencyError) as excinfo,
+        ):
             ensure_backend_ready("dummy:originq:WK_C180")
         # Install hint must mention pyqpanda3.
         assert "pyqpanda3" in str(excinfo.value)
+
+    def test_dummy_provider_works_without_sdk_when_cache_present(self, monkeypatch):
+        """Mirror of the above for the success path: cached chip + no SDK
+        → preflight succeeds and returns the chip. This is the policy
+        path that keeps chip-backed dummy backends usable on Python 3.14
+        (where ``pyqpanda3`` is not yet installable)."""
+        monkeypatch.setattr(
+            "uniqc.backend_adapter.preflight.check_pyqpanda3",
+            lambda: False,
+        )
+        monkeypatch.setattr(
+            "uniqc.backend_adapter.preflight.check_uniqc_cpp",
+            lambda: True,
+        )
+        sentinel = mock.Mock(spec=[], chip_name="WK_C180")
+        with (
+            mock.patch(
+                "uniqc.backend_adapter.preflight._load_chip_cache",
+                return_value=(sentinel, mock.Mock(exists=lambda: True)),
+            ),
+            mock.patch(
+                "uniqc.backend_adapter.preflight._chip_age_hours",
+                return_value=0.5,
+            ),
+        ):
+            result = ensure_backend_ready(
+                "dummy:originq:WK_C180",
+                max_age_hours=24.0,
+            )
+        assert result is sentinel
 
     def test_provider_raises_without_sdk(self, monkeypatch):
         monkeypatch.setattr(

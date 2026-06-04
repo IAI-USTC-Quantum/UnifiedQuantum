@@ -11,20 +11,24 @@
 
    Note: ``pyquafu`` requires ``numpy<2`` and may downgrade your environment.
 
+   **The entire ``quafu_adapter`` module will be removed in uniqc 0.1.0.**
+   See :doc:`/source/7_releases/deprecation_policy` for the project-wide cliff.
+
 Translates OriginIR circuits to Quafu QuantumCircuit objects and submits
 via the ``quafu`` package (User / Task API).  No raw REST calls.
 """
 
 from __future__ import annotations
 
-import warnings
+from uniqc._deprecation import warn_removed_in_0_1_0
 
-warnings.warn(
-    "uniqc.backend_adapter.task.adapters.quafu_adapter is deprecated; "
-    "the Quafu platform SDK (pyquafu) is no longer maintained and the "
-    "[quafu] extra has been removed. Install pyquafu manually if needed "
-    "(pip install pyquafu, requires numpy<2).",
-    DeprecationWarning,
+warn_removed_in_0_1_0(
+    "uniqc.backend_adapter.task.adapters.quafu_adapter",
+    detail=(
+        "The Quafu platform SDK (pyquafu) is no longer maintained and the "
+        "[quafu] extra has been removed; install pyquafu manually if needed "
+        "(`pip install pyquafu`, requires numpy<2)"
+    ),
     stacklevel=2,
 )
 

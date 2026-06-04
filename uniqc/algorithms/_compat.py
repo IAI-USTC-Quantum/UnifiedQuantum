@@ -17,7 +17,6 @@ support **both** signatures during the deprecation cycle:
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable
 from typing import Any
 
@@ -56,12 +55,14 @@ def dispatch_circuit_fragment(
     extra_kwargs = dict(extra_kwargs or {})
 
     if isinstance(first_arg, Circuit):
-        warnings.warn(
-            f"{name}(circuit, ...) (in-place form) is deprecated and will be "
-            f"removed in a future release. Use the fragment form "
-            f"`{name}(n_qubits, ...) -> Circuit` and merge with "
-            f"`circuit.add_circuit(fragment)`.",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            f"{name}(circuit, ...) (in-place form)",
+            replacement=(
+                f"the fragment form `{name}(n_qubits, ...) -> Circuit` "
+                f"with `circuit.add_circuit(fragment)`"
+            ),
             stacklevel=3,
         )
         target = first_arg

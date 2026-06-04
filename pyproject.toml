@@ -9,7 +9,7 @@ dynamic = ["version"]
 description = "UnifiedQuantum - A unified, non-commercial quantum computing aggregation framework."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 authors = [
     { name = "Agony", email = "chenzhaoyun@iai.ustc.edu.cn" },
 ]
@@ -24,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Operating System :: Microsoft :: Windows",
@@ -53,15 +54,27 @@ dependencies = [
 uniqc = "uniqc.cli.main:app"
 
 [project.optional-dependencies]
-originq = ["pyqpanda3"]
+# pyqpanda3 has no cp314 wheel as of 0.3.5 — gate to Python < 3.14
+# until upstream publishes one.
+originq = ["pyqpanda3; python_version < '3.14'"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
 pytorch = ["torch"]
-quark = ["quarkstudio; python_version >= '3.12'", "quarkcircuit; python_version >= '3.12'", "ipython"]
+# quarkstudio/quarkcircuit are Linux/macOS x86 (no win32 wheel) and their
+# transitive deps (srpc, proxy.py) don't yet have stable cp314 wheels —
+# gate to py>=3.12 and py<3.14 and non-win32 so cross-platform resolvers
+# (uv) don't fail on win32 / cp314 splits.
+quark = [
+    "quarkstudio; python_version >= '3.12' and python_version < '3.14' and sys_platform != 'win32'",
+    "quarkcircuit; python_version >= '3.12' and python_version < '3.14' and sys_platform != 'win32'",
+    "ipython",
+]
+# [all] is intentionally the portable, broadly-installable superset.
+# It excludes [quark] because quark deps have no win32 wheels and would
+# break uv lock resolution on Windows. Install [quark] explicitly on
+# Linux/macOS if you need the Quark platform path.
 all = [
-    "quarkstudio; python_version >= '3.12'",
-    "quarkcircuit; python_version >= '3.12'",
-    "pyqpanda3",
+    "pyqpanda3; python_version < '3.14'",
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
     "torch",
@@ -77,7 +90,7 @@ include = ["uniqc*"]
 exclude = ["uniqc.test*"]
 
 [tool.cibuildwheel]
-build = "cp310-* cp311-* cp312-* cp313-*"
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
 skip = "*-musllinux_* *-win32"
 test-command = "python -c \"import uniqc_cpp\""
 

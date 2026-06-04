@@ -26,47 +26,53 @@
 
 ```text
 == uniqc --help ==
-                                                                                                                        
- Usage: python -m uniqc.cli [OPTIONS] COMMAND [ARGS]...                                                                 
-                                                                                                                        
- UnifiedQuantum CLI — A lightweight quantum computing framework GitHub  |  Documentation                                
-                                                                                                                        
- Pass --ai-hints/--ai-hint, set UNIQC_AI_HINTS=1, or run uniqc config always-ai-hint on to show AI workflow guidance.   
- AI Agent 安装建议：                                                                                                    
- Codex:  npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'                              
- Claude Code: npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'                   
-                                                                                                                        
- 默认按仓库安装本仓库全部 skill（推荐）。                                                                               
-                                                                                                                        
-╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --version             -V        Show version and exit                                                                │
-│ --install-completion            Install completion for the current shell.                                            │
-│ --show-completion               Show completion for the current shell, to copy it or customize the installation.     │
-│ --help                          Show this message and exit.                                                          │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ circuit    Circuit format conversion (OriginIR <-> QASM)                                                             │
-│            CLI Docs  |  GitHub                                                                                       │
-│ simulate   Local circuit simulation                                                                                  │
-│            CLI Docs  |  GitHub                                                                                       │
-│ submit     Submit circuits to quantum cloud platforms                                                                │
-│            CLI Docs  |  GitHub                                                                                       │
-│ result     Query task results from quantum cloud platforms                                                           │
-│            CLI Docs  |  GitHub                                                                                       │
-│ doctor     Run diagnostics to verify your uniqc installation                                                         │
-│            CLI Docs  |  GitHub                                                                                       │
-│ config     Manage API key and configuration                                                                          │
-│            CLI Docs  |  GitHub                                                                                       │
-│ task       Manage submitted tasks                                                                                    │
-│            CLI Docs  |  GitHub                                                                                       │
-│ backend    List, update, and inspect quantum cloud backends                                                          │
-│            CLI Docs  |  GitHub                                                                                       │
-│ calibrate  Run chip calibration experiments — XEB benchmarking (1q/2q/parallel), readout error calibration, and      │
-│            parallel execution pattern analysis. Results are cached to ~/.uniqc/calibration_cache/ with TTL freshness │
-│            enforcement.                                                                                              │
-│            CLI Docs  |  GitHub                                                                                       │
-│ gateway    Manage the uniqc gateway web UI server.                                                                   │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+                                                                                
+ Usage: python -m uniqc.cli [OPTIONS] COMMAND [ARGS]...                         
+                                                                                
+ UnifiedQuantum CLI — A lightweight quantum computing framework GitHub  |       
+ Documentation                                                                  
+                                                                                
+ Pass --ai-hints/--ai-hint, set UNIQC_AI_HINTS=1, or run uniqc config           
+ always-ai-hint on to show AI workflow guidance.                                
+ AI Agent 安装建议：                                                            
+ Codex:  npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex  
+ --skill '*'                                                                    
+ Claude Code: npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent   
+ claude-code --skill '*'                                                        
+                                                                                
+ 默认按仓库安装本仓库全部 skill（推荐）。                                       
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --version             -V        Show version and exit                        │
+│ --install-completion            Install completion for the current shell.    │
+│ --show-completion               Show completion for the current shell, to    │
+│                                 copy it or customize the installation.       │
+│ --help                          Show this message and exit.                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ circuit    Circuit format conversion (OriginIR <-> QASM)                     │
+│            CLI Docs  |  GitHub                                               │
+│ simulate   Local circuit simulation                                          │
+│            CLI Docs  |  GitHub                                               │
+│ submit     Submit circuits to quantum cloud platforms                        │
+│            CLI Docs  |  GitHub                                               │
+│ result     Query task results from quantum cloud platforms                   │
+│            CLI Docs  |  GitHub                                               │
+│ doctor     Run diagnostics to verify your uniqc installation                 │
+│            CLI Docs  |  GitHub                                               │
+│ config     Manage API key and configuration                                  │
+│            CLI Docs  |  GitHub                                               │
+│ task       Manage submitted tasks                                            │
+│            CLI Docs  |  GitHub                                               │
+│ backend    List, update, and inspect quantum cloud backends                  │
+│            CLI Docs  |  GitHub                                               │
+│ calibrate  Run chip calibration experiments — XEB benchmarking               │
+│            (1q/2q/parallel), readout error calibration, and parallel         │
+│            execution pattern analysis. Results are cached to                 │
+│            ~/.uniqc/calibration_cache/ with TTL freshness enforcement.       │
+│            CLI Docs  |  GitHub                                               │
+│ gateway    Manage the uniqc gateway web UI server.                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
 
 
 == uniqc backend list (dummy only; cloud backends require credentials) ==
@@ -81,9 +87,9 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 6 backends, updated 11h ago
-    quafu: 16 backends, updated 19d ago (stale)
-    ibm: 3 backends, updated 11h ago
+    originq: 7 backends, updated 2h ago
+    quafu: 16 backends, updated 36d ago (stale)
+    ibm: 3 backends, updated 2h ago
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -96,7 +102,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_92115352805e495aa66e49c981308252",
+  "task_id": "uqt_c0fddd263aa349fd8eda28875dadbc5b",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -111,22 +117,22 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_92115352805e495aa66e49c981308252",
+  "task_id": "uqt_c0fddd263aa349fd8eda28875dadbc5b",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
 }
 
 == uniqc task list (most recent few) ==
-                                                         Tasks                                                          
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
-┃ Task ID                              ┃ Platform                              ┃ Status  ┃ Shots ┃ Submit Time         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_92115352805e495aa66e49c981308252 │ dummy:local:simulator                 │ success │ 64    │ 2026-05-17T23:26:45 │
-│ uqt_ed3f17897c5f44c88fd8696722ae7d50 │ dummy:local:simulator                 │ success │ 64    │ 2026-05-17T23:26:30 │
-│ uqt_eae7e360b52a40f28686206ebb385441 │ dummy:local:simulator                 │ success │ 128   │ 2026-05-17T23:26:27 │
-│ uqt_bdcbb90a4194447d9e8e02cf876029c6 │ dummy:local:mps-linear-32:chi=8:cuto… │ success │ 400   │ 2026-05-17T23:26:26 │
-│ uqt_ddef6695275449a0b0762ace7686fe6a │ dummy:local:mps-linear-3:chi=8        │ success │ 256   │ 2026-05-17T23:26:09 │
-└──────────────────────────────────────┴───────────────────────────────────────┴─────────┴───────┴─────────────────────┘
+                                     Tasks                                      
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+│ uqt_c0fddd263aa3… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T02:20:… │
+│ uqt_2ac0c6951ba9… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T02:20:… │
+│ uqt_c8d4bc4c2edd… │ dummy:local:simu… │ success │ 128   │ 2026-06-04T02:20:… │
+│ uqt_aced42169999… │ dummy:local:mps-… │ success │ 400   │ 2026-06-04T02:20:… │
+│ uqt_6911d4c91296… │ dummy:local:mps-… │ success │ 256   │ 2026-06-04T02:20:… │
+└───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

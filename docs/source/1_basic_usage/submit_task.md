@@ -250,7 +250,12 @@ noisy_task = submit_task(circuit, backend='dummy:originq:WK_C180')  # 真实 bac
 > **注意**：`backend='dummy:*'` 系列以及 `dummy=True` 的提交不会触发"必须带 chip"
 > 的规范格式校验——dummy 路径只用于本地验证，由 dummy 适配器自行处理子标识符。
 
-> **弃用警告**：`dummy=True` 参数已弃用，请改用 `backend='dummy:local:simulator'`。如果你想模拟某个真实芯片，请使用 `backend='dummy:<platform>:<backend>'`，例如 `backend='dummy:originq:WK_C180'`。这一类 chip-backed dummy 是规则型写法，不会出现在 backend 列表中。
+> **弃用警告**：`dummy=True` 参数已弃用（将在 `0.1.0` 移除），请改用
+> `backend='dummy:local:simulator'`。如果你想模拟某个真实芯片，请使用
+> `backend='dummy:<platform>:<backend>'`，例如
+> `backend='dummy:originq:WK_C180'`。这一类 chip-backed dummy 是规则型写法，
+> 不会出现在 backend 列表中。
+> 详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。
 
 ### Dummy 模式适用场景
 

@@ -10,7 +10,6 @@ QiskitRuntimeService reference:
 
 from __future__ import annotations
 
-import warnings
 from typing import Any
 
 from uniqc.backend_adapter.task.adapters.base import (
@@ -262,10 +261,12 @@ class IBMAdapter(QuantumAdapter):
     name = "ibm"
 
     def __init__(self, proxy: dict[str, str] | str | None = None) -> None:
-        warnings.warn(
-            "IBMAdapter is deprecated. Use QiskitAdapter instead. "
-            "It provides the same functionality via qiskit-ibm-runtime.",
-            DeprecationWarning,
+        from uniqc._deprecation import warn_removed_in_0_1_0
+
+        warn_removed_in_0_1_0(
+            "IBMAdapter",
+            replacement="QiskitAdapter",
+            detail="It provides the same functionality via qiskit-ibm-runtime",
             stacklevel=2,
         )
         from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter

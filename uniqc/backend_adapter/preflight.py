@@ -507,11 +507,17 @@ def ensure_backend_ready(
             "but lacks a provider. This is a bug — please report it."
         )
 
-    # Both 'dummy_provider' and 'provider' need the SDK installed.
-    _check_provider_dep(target.provider)
-    # Provider-backed dummy uses the local sim under the hood.
+    # Provider-backed dummy (``dummy:<provider>:<chip>``) runs entirely
+    # locally using the cached chip topology and the local C++ simulator.
+    # It only needs the cloud SDK if we have to refresh the chip cache
+    # (handled below). Skip the SDK preflight here so that environments
+    # without the cloud SDK installed — for example, Python 3.14 where
+    # the ``[originq]`` / ``[quark]`` extras are gated out — can still
+    # exercise chip-backed dummy paths.
     if target.kind == "dummy_provider":
         _require_local_simulator()
+    else:
+        _check_provider_dep(target.provider)
 
     if target.chip_name is None:
         # Bare provider with no chip name — nothing to cache.
@@ -533,4 +539,9 @@ def ensure_backend_ready(
             f"{'missing' if chip is None else f'stale ({age_h:.1f}h old)'} "
             "and refresh is disabled."
         )
+    # A refresh from the live provider requires the cloud SDK. For
+    # provider-backed dummy we skipped the SDK check above, so re-check
+    # here before we try to refresh.
+    if target.kind == "dummy_provider":
+        _check_provider_dep(target.provider)
     return _refresh_chip(target.provider, target.chip_name)

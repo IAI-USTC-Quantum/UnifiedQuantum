@@ -11,6 +11,12 @@
 > # 永久生效（推荐）
 > uv pip install --python-preference managed --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
 > ```
+>
+> **已知问题**：清华镜像可能缺少 `quarkcircuit` 等包（返回 HTTP 404）。如果
+> `uv sync --extra quark` 报依赖解析失败，请临时切换到 PyPI 官方源：
+> ```bash
+> UV_INDEX_URL=https://pypi.org/simple/ uv sync --extra quark
+> ```
 
 ### 从 PyPI 安装
 
@@ -29,9 +35,27 @@ uv pip install unified-quantum
 #### 平台要求
 
 - **操作系统**：跨平台，支持 Windows、Linux、macOS
-- **Python**：>= 3.10, < 3.14
+- **Python**：>= 3.10, < 3.15
 - **C++ 编译器**：支持 C++17（MSVC / gcc / clang）
 - **CMake**：>= 3.26
+
+> **Python 3.14 注意事项**：v0.0.15 起支持 Python 3.14（`<3.15`），但以下可选
+> extra 在 Python 3.14 上**不可用**（上游尚未发布 cp314 wheel）：
+>
+> | Extra | Python 3.14 状态 | 替代方案 |
+> |-------|-----------------|---------|
+> | `[originq]` | ❌ 不可用（`pyqpanda3` 无 cp314 wheel） | 使用 Python 3.10–3.13 |
+> | `[quark]` | ❌ 不可用（`srpc` / `quarkcircuit` 无 cp314 标准 wheel） | 使用 Python 3.12–3.13 |
+> | `[simulation]` | ✅ 可用 | — |
+> | `[visualization]` | ✅ 可用 | — |
+> | `[pytorch]` | ✅ 可用 | — |
+>
+> 在 Python 3.14 上安装 `[originq]` 或 `[quark]` 不会报错，但相关依赖不会被安装。
+> 尝试提交到 OriginQ 时会收到 `MissingDependencyError` 并附带安装提示。
+> 芯片缓存（`dummy:originq:*`、`dummy:quark:*`）在 Python 3.14 上仍然可用——
+> 仅实时云端连接需要对应 SDK。
+>
+> 等上游发布 cp314 wheel 后，将通过 patch 版本（如 `0.0.15.post1`）恢复支持。
 
 #### 获取源码
 
@@ -140,6 +164,9 @@ uv pip install unified-quantum[originq]
 pip install unified-quantum[originq]
 ```
 
+> **Python 3.14 用户**：此 extra 在 Python 3.14 上会被 marker 门控跳过。使用
+> Python 3.10–3.13 以获取 OriginQ 平台支持。
+
 ### QuarkStudio / Quark 平台
 
 ```bash
@@ -148,7 +175,13 @@ uv pip install unified-quantum[quark]
 pip install unified-quantum[quark]
 ```
 
-> **注意**：`[quark]` extra 包含 `quarkstudio` 和 `quarkcircuit`。前者负责 `Task.status/run/result`，后者用于读取芯片拓扑、耦合器保真度、可用门和校准信息。QuarkStudio 当前仅面向 Python 3.12 及以上版本解析安装。
+> **注意**：`[quark]` extra 包含 `quarkstudio` 和 `quarkcircuit`。前者负责 `Task.status/run/result`，后者用于读取芯片拓扑、耦合器保真度、可用门和校准信息。
+>
+> - 可用范围：**Python 3.12–3.13、Linux / macOS**。`win32` 和 Python ≥ 3.14 上
+>   该 extra 会被 marker 门控跳过（不报错，但不安装 `quarkstudio` /
+>   `quarkcircuit`）。
+> - 从 v0.0.15 起，`[all]` **不再包含** `[quark]`。如需 Quark 平台支持，
+>   请显式安装 `[quark]`。
 
 ### IBM / Qiskit 平台
 
@@ -186,13 +219,34 @@ pip install unified-quantum[pytorch]
 
 ### 安装所有可选依赖
 
-`[all]` 会安装当前维护的可选功能依赖。
+`[all]` 安装跨平台兼容的可选功能依赖（`[simulation]` + `[visualization]` +
+`[pytorch]` + `[originq]` + `[quafu]` 等）。
+
+> **v0.0.15 Breaking Change**：`[all]` **不再包含** `[quark]`。之前 `[all]`
+> 因为 `quarkcircuit` 在 `win32` 和 Python 3.14 上缺少 wheel，导致跨平台
+> 解析失败。如需 Quark 平台支持，请显式安装 `pip install unified-quantum[quark]`
+> （仅限 Python 3.12–3.13 + Linux / macOS）。
 
 ```bash
 uv pip install unified-quantum[all]
 # 或 pip
 pip install unified-quantum[all]
 ```
+
+## 弃用政策
+
+v0.0.15 建立了明确的弃用时间线：**所有在 `0.0.x` 中触发 `DeprecationWarning`
+的公共 API 将在 `0.1.0` 中移除或不再保证兼容性**。
+
+当前已弃用的 API 包括：
+
+- `uniqc.simulator.get_backend()` — 改用 `get_simulator()` / `create_simulator()`
+- `IBMAdapter` 类 — 改用 `QiskitAdapter`
+- `quafu_adapter` 模块 — Quafu 平台已停止维护
+- 所有 `*_circuit(circuit, ...)` in-place 形式 — 改用 fragment 形式
+
+详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。
+升级前请运行 `pytest -W error::DeprecationWarning` 清理所有弃用警告。
 
 ## 开发者补充
 

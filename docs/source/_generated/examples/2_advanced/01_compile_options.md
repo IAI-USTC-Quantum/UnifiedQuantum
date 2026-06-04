@@ -22,7 +22,7 @@
 
 ```text
 == compile target: dummy:virtual-line-4 ==
-QINIT 4
+QINIT 2
 CREG 2
 RZ q[0], (1.5707963267948966)
 SX q[0]
@@ -37,7 +37,7 @@ MEASURE q[0], c[0]
 MEASURE q[1], c[1]
 
 == compile target: dummy:virtual-grid-2x2 ==
-QINIT 4
+QINIT 2
 CREG 2
 RZ q[0], (1.5707963267948966)
 SX q[0]

@@ -9,15 +9,15 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   94.8% ← TARGET\n    |100⟩    1.0%\n    |010⟩    1.0%\n    |110⟩    0.8%\n    |011⟩    0.7%\n\n  Target probability: 94.8%\n  ✓ Done.\n",
+  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   94.4% ← TARGET\n    |001⟩    0.9%\n    |000⟩    0.9%\n    |100⟩    0.8%\n    |110⟩    0.8%\n\n  Target probability: 94.4%\n  ✓ Done.\n",
   "stderr": "",
   "warnings": [
-    "DeprecationWarning: grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. Use grover_oracle(marked_state, qubits=...) and add_circuit(). (grover_oracle.py:38)",
-    "DeprecationWarning: The 'ancilla' argument of grover_diffusion() is unused and will be removed in a future release.  Remove it from your call site. (grover_oracle.py:39)",
-    "DeprecationWarning: grover_diffusion(circuit, ...) (in-place form) is deprecated. Use grover_diffusion(qubits=...) and add_circuit(). (grover_oracle.py:39)",
-    "DeprecationWarning: grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. Use grover_oracle(marked_state, qubits=...) and add_circuit(). (grover_oracle.py:38)",
-    "DeprecationWarning: The 'ancilla' argument of grover_diffusion() is unused and will be removed in a future release.  Remove it from your call site. (grover_oracle.py:39)",
-    "DeprecationWarning: grover_diffusion(circuit, ...) (in-place form) is deprecated. Use grover_diffusion(qubits=...) and add_circuit(). (grover_oracle.py:39)"
+    "DeprecationWarning: grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `grover_oracle(marked_state, qubits=...) with add_circuit()` instead. (grover_oracle.py:202)",
+    "DeprecationWarning: The 'ancilla' argument of grover_diffusion() is deprecated. It is unused; remove it from your call site It will be removed in uniqc 0.1.0. (grover_oracle.py:267)",
+    "DeprecationWarning: grover_diffusion(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `grover_diffusion(qubits=...) with add_circuit()` instead. (grover_oracle.py:280)",
+    "DeprecationWarning: grover_oracle(circuit, marked_state, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `grover_oracle(marked_state, qubits=...) with add_circuit()` instead. (grover_oracle.py:202)",
+    "DeprecationWarning: The 'ancilla' argument of grover_diffusion() is deprecated. It is unused; remove it from your call site It will be removed in uniqc 0.1.0. (grover_oracle.py:267)",
+    "DeprecationWarning: grover_diffusion(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `grover_diffusion(qubits=...) with add_circuit()` instead. (grover_oracle.py:280)"
   ],
   "figure_files": [],
   "offending_lines": [],

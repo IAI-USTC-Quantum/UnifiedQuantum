@@ -3,8 +3,8 @@
   "chapter": "2_advanced",
   "name": "wk180__xeb",
   "title": "WK180 chip-wide parallel-CZ XEB example for UnifiedQuantum.",
-  "verdict": "not-executed",
-  "skip_reason": null,
+  "verdict": "skip",
+  "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
   "require": [
     "originq"
   ],

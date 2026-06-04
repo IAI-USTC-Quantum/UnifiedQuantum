@@ -1,0 +1,41 @@
+{
+  "example": "examples/3_best_practices/11_native_torch_training.py",
+  "chapter": "3_best_practices",
+  "name": "11_native_torch_training",
+  "title": "11 — 原生 Torch 训练（不依赖 TorchQuantum）",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "pytorch",
+    "matplotlib"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "=== 风格 1: has_param ===\n  初始能量: -0.8093\n  最终能量: -1.0000\n  参数数: 2\n\n=== 风格 2: param_dict ===\n  初始能量: 0.0994\n  最终能量: -0.9974\n\n=== 风格 3: 直接传入 tensor ===\n  初始能量: 0.0974\n  最终能量: -0.9977\n",
+  "stderr": "",
+  "warnings": [
+    "UserWarning: Glyph 21407 (\\N{CJK UNIFIED IDEOGRAPH-539F}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 29983 (\\N{CJK UNIFIED IDEOGRAPH-751F}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 35757 (\\N{CJK UNIFIED IDEOGRAPH-8BAD}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 32451 (\\N{CJK UNIFIED IDEOGRAPH-7EC3}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 65306 (\\N{FULLWIDTH COLON}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 19977 (\\N{CJK UNIFIED IDEOGRAPH-4E09}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 31181 (\\N{CJK UNIFIED IDEOGRAPH-79CD}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 21442 (\\N{CJK UNIFIED IDEOGRAPH-53C2}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 25968 (\\N{CJK UNIFIED IDEOGRAPH-6570}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 39118 (\\N{CJK UNIFIED IDEOGRAPH-98CE}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 26684 (\\N{CJK UNIFIED IDEOGRAPH-683C}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 23545 (\\N{CJK UNIFIED IDEOGRAPH-5BF9}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 27604 (\\N{CJK UNIFIED IDEOGRAPH-6BD4}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 22522 (\\N{CJK UNIFIED IDEOGRAPH-57FA}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 24577 (\\N{CJK UNIFIED IDEOGRAPH-6001}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 33021 (\\N{CJK UNIFIED IDEOGRAPH-80FD}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)",
+    "UserWarning: Glyph 37327 (\\N{CJK UNIFIED IDEOGRAPH-91CF}) missing from font(s) DejaVu Sans. (11_native_torch_training.py:103)"
+  ],
+  "figure_files": [
+    "figure-01.svg"
+  ],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.502
+}

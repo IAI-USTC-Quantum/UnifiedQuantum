@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.15] - 2026-06-04
+
+This release focuses on **native PyTorch parameter integration**, an
+**OriginIR-ext superset language**, the project-wide **0.1.0 deprecation
+cliff policy**, and **Python 3.14 support**. It also closes the gaps
+documented in `RELEASE_REPORT_0.0.15.md`.
+
+Two highlights for users:
+
+- ``Circuit`` now exposes ``param_map`` / ``param_dict`` / ``has_param`` /
+  ``set_param_last`` so trainable parameters are first-class — gates with
+  ``torch.Tensor`` operands are auto-registered as ``nn.Parameter``\s and
+  reachable by name. A new backend-agnostic ``expectation()`` returns a
+  differentiable expectation value across simulator backends. See the
+  new best-practice example ``examples/3_best_practices/11_native_torch_training.py``.
+- ``OriginIR-ext`` is a strict superset of OriginIR that adds gate-list
+  primitives (e.g. ``GLIST``) and converts back to standard OriginIR via
+  ``uniqc.originir_ext.to_originir``. Useful when you want to author
+  larger gate blocks ergonomically but still submit through the official
+  OriginIR path.
+
+### Added
+
+- **Native PyTorch parameter integration** (#116):
+  - ``Circuit.param_map`` — register tensor-valued parameters explicitly
+    or implicitly via ``add_gate`` so trainable circuits work without
+    boilerplate.
+  - ``Circuit.param_dict`` — name-keyed access to parameters for friendly
+    state-dict round-trips.
+  - ``Circuit.has_param`` — TorchQuantum-aligned semantics: ``True`` only
+    when at least one parameter is a tensor (i.e., actually trainable).
+  - ``Circuit.set_param_last`` — convenience setter for the most recently
+    added parametric gate, with a proper ``IndexError`` when the circuit
+    has no parametric gates yet.
+  - Tensor parameters are auto-registered as ``nn.Parameter`` instances
+    when passed into ``add_gate`` / convenience gate methods.
+  - ``simulator.expectation()`` — backend-agnostic differentiable
+    expectation value (statevector / TorchQuantum simulators).
+- **OriginIR-ext superset language** (#115): ``uniqc.originir_ext`` with
+  ``GLIST`` and other gate-list primitives, plus a strict
+  ``to_originir()`` converter that emits official OriginIR.
+- **`11_native_torch_training` best-practice example** — end-to-end
+  training loop using only native ``Circuit.param_map`` + ``expectation()``.
+- **Python 3.14 support**: cp310–cp314 wheels are now built. Core uniqc
+  and the ``[simulation]``, ``[visualization]``, ``[pytorch]`` extras
+  install cleanly on Python 3.14.
+- **Deprecation policy doc** —
+  ``docs/source/7_releases/deprecation_policy.md`` formalises the
+  **0.0.x → 0.1.0 compatibility cliff**: every API currently emitting
+  ``DeprecationWarning`` will be removed or stop being maintained at
+  ``0.1.0``. See ``uniqc._deprecation.warn_removed_in_0_1_0`` for the
+  central helper.
+
+### Changed
+
+- **All ``DeprecationWarning`` messages now mention the 0.1.0 cliff
+  explicitly.** Messages route through the new
+  ``uniqc._deprecation.warn_removed_in_0_1_0`` helper and contain the
+  literal substring ``"uniqc 0.1.0"`` for machine-grep compatibility.
+  Affected sites: ``simulator.get_backend``, ``IBMAdapter``,
+  ``QuafuAdapter`` (module-level), task lookup by platform id in
+  ``backend_adapter.task_manager``, and the in-place forms of
+  ``qft_circuit``, ``deutsch_jozsa_circuit``, ``dicke_state_circuit``,
+  ``thermal_state_circuit``, ``cluster_state``, ``ghz_state``,
+  ``w_state``, ``amplitude_estimation_circuit``, ``grover_oracle``,
+  ``grover_diffusion`` (including its unused ``ancilla`` kwarg),
+  ``grover_operator``, ``vqd_circuit``.
+- **``Circuit.has_param`` semantics** — aligned with TorchQuantum: returns
+  ``True`` only when at least one parameter is a ``torch.Tensor``. Pure
+  Python-float parameters now return ``False`` (they are "fixed", not
+  "trainable").
+- **`[all]` extra no longer pulls in `[quark]`.** ``quarkstudio`` /
+  ``quarkcircuit`` have no win32 wheels and their transitive deps
+  (``srpc``, ``proxy.py``) currently lack stable cp314 wheels, which
+  broke ``uv sync --extra all --upgrade`` on cross-platform resolvers.
+  Install the Quark platform path explicitly with ``[quark]`` on
+  Linux/macOS + Python 3.12–3.13. ``[all]`` is now the portable,
+  broadly-installable superset.
+- **`[originq]` extra is gated to `python_version < '3.14'`** until
+  ``pyqpanda3`` ships a cp314 wheel. The core package supports cp314 in
+  full; the OriginQ platform path requires Python 3.10–3.13. This is a
+  packaging-contract change, called out here per the deprecation policy
+  (it is not a ``DeprecationWarning``).
+- **`requires-python` widened to `>=3.10,<3.15`** and the cp314 trove
+  classifier is published.
+- **Pre-release SKILL aligned to the real codebase** — corrected
+  ``scripts/generate_best_practice_notebooks.py`` → ``scripts/build_docs.py
+  --only 3_best_practices``, and the stale ``docs/source/best_practices/``
+  / ``docs/source/releases/`` paths → ``docs/source/3_best_practices/``
+  / ``docs/source/7_releases/``.
+
+### Fixed
+
+- **`Circuit.set_param_last` on an empty circuit** now raises a proper
+  ``IndexError`` instead of silently mis-indexing.
+- **24 MyST `Non-consecutive header level increase; H1 to H3` warnings**
+  in ``docs/source/0_quickstart/end_to_end.md``,
+  ``docs/source/4_cli/walkthrough.md``, and
+  ``docs/source/8_algorithms_examples/*.md`` — fixed by adding ``##``
+  section wrappers so the auto-generated example ``###`` headings nest
+  cleanly under each host page.
+- **`test_ibm_backend_summary_uses_cached_per_edge_details_without_chip_cache`**
+  no longer relies on the deprecated ``IBMAdapter`` delegate's hidden
+  ``_service`` plumbing; refactored to instantiate ``QiskitAdapter``
+  directly so the regression is preserved after ``IBMAdapter`` removal
+  in 0.1.0.
+
+### Deprecated
+
+- **All currently-deprecated APIs are on track for removal in 0.1.0.**
+  See ``docs/source/7_releases/deprecation_policy.md`` for the
+  authoritative list and the project's compatibility-cliff wording.
+  Notable entries:
+  - ``uniqc.simulator.get_backend()`` — use ``get_simulator()`` /
+    ``create_simulator()``.
+  - ``IBMAdapter`` class — use ``QiskitAdapter``.
+  - Entire ``uniqc.backend_adapter.task.adapters.quafu_adapter`` module
+    (Quafu platform path; ``[quafu]`` extra was already removed).
+  - In-place ``*_circuit(circuit, ...)`` forms of every algorithm builder
+    (use the fragment form ``*_circuit(n_qubits, ...) -> Circuit`` with
+    ``circuit.add_circuit(fragment)``).
+  - ``grover_diffusion(..., ancilla=...)`` keyword argument (unused).
+  - Task lookup by platform task id (use the uniqc ``uqt_*`` id).
+
 ## [0.0.14] - 2026-05-18
 
 This release brings a major expansion of the variational algorithm toolkit, a
