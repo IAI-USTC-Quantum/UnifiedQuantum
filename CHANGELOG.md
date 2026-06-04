@@ -48,8 +48,9 @@ Two highlights for users:
     has no parametric gates yet.
   - Tensor parameters are auto-registered as ``nn.Parameter`` instances
     when passed into ``add_gate`` / convenience gate methods.
-  - ``simulator.expectation()`` — backend-agnostic differentiable
-    expectation value (statevector / TorchQuantum simulators).
+  - ``uniqc.expectation()`` — backend-agnostic differentiable expectation
+    value (statevector / TorchQuantum simulators), exposed at the
+    top level (``from uniqc import expectation``).
 - **OriginIR-ext superset language** (#115): the default local circuit
   language is now formally split from official (OriginQ-accepted) OriginIR.
   OriginIR-ext adds the extended gates
