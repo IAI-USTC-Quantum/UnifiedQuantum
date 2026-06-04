@@ -16,6 +16,7 @@ Submodules
    uniqc.circuit_builder.parameter
    uniqc.circuit_builder.qasm_spec
    uniqc.circuit_builder.qcircuit
+   uniqc.circuit_builder.qram
    uniqc.circuit_builder.qubit
    uniqc.circuit_builder.random_originir
    uniqc.circuit_builder.random_qasm

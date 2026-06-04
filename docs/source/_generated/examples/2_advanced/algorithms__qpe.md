@@ -33,18 +33,18 @@ References:
  Unitary: t
 
  Measurement results:
-   |0000⟩  prob= 41.7%  phase=0.0000 ← most likely
-   |0111⟩  prob= 40.3%  phase=0.4375
-   |0100⟩  prob=  5.4%  phase=0.2500
-   |0011⟩  prob=  5.3%  phase=0.1875
-   |0101⟩  prob=  2.3%  phase=0.3125
-   |0010⟩  prob=  1.9%  phase=0.1250
-   |0001⟩  prob=  1.5%  phase=0.0625
+   |0111⟩  prob= 41.2%  phase=0.4375 ← most likely
+   |0000⟩  prob= 40.6%  phase=0.0000
+   |0011⟩  prob=  5.4%  phase=0.1875
+   |0100⟩  prob=  5.1%  phase=0.2500
+   |0010⟩  prob=  2.7%  phase=0.1250
+   |0101⟩  prob=  2.0%  phase=0.3125
+   |0001⟩  prob=  1.6%  phase=0.0625
    |0110⟩  prob=  1.5%  phase=0.3750
 
- Estimated phase:  0.0000
+ Estimated phase:  0.4375
  True phase:       0.0000
- Absolute error:   0.0000
+ Absolute error:   0.4375
   ✓ QPE complete.
 ```
 

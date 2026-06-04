@@ -9,7 +9,7 @@
     "matplotlib"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "counts: {0: 484, 7: 540}\nprobabilities: {'000': 0.47265625, '111': 0.52734375}\n",
+  "stdout": "counts: {7: 493, 0: 531}\nprobabilities: {'111': 0.4814453125, '000': 0.5185546875}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [

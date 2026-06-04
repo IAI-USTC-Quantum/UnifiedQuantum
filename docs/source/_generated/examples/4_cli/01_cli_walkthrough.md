@@ -87,9 +87,9 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 2h ago
+    originq: 7 backends, updated 8h ago
     quafu: 16 backends, updated 36d ago (stale)
-    ibm: 3 backends, updated 2h ago
+    ibm: 3 backends, updated 8h ago
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -102,7 +102,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_c0fddd263aa349fd8eda28875dadbc5b",
+  "task_id": "uqt_df80e742c3ba440b95e0098c539a101f",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -117,7 +117,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_c0fddd263aa349fd8eda28875dadbc5b",
+  "task_id": "uqt_df80e742c3ba440b95e0098c539a101f",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -128,11 +128,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_c0fddd263aa3… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T02:20:… │
-│ uqt_2ac0c6951ba9… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T02:20:… │
-│ uqt_c8d4bc4c2edd… │ dummy:local:simu… │ success │ 128   │ 2026-06-04T02:20:… │
-│ uqt_aced42169999… │ dummy:local:mps-… │ success │ 400   │ 2026-06-04T02:20:… │
-│ uqt_6911d4c91296… │ dummy:local:mps-… │ success │ 256   │ 2026-06-04T02:20:… │
+│ uqt_df80e742c3ba… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T08:22:… │
+│ uqt_e61c39788af8… │ dummy:local:simu… │ success │ 64    │ 2026-06-04T08:22:… │
+│ uqt_349d9d398ce0… │ dummy:local:simu… │ success │ 128   │ 2026-06-04T08:22:… │
+│ uqt_3919b3ca7d3c… │ dummy:local:mps-… │ success │ 400   │ 2026-06-04T08:22:… │
+│ uqt_6565cc6f327c… │ dummy:local:mps-… │ success │ 256   │ 2026-06-04T08:22:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

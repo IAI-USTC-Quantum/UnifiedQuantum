@@ -29,27 +29,42 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.14.post1..HEAD`
-- 提交数：11
-- 变更文件数：24
+- 提交数：17
+- 变更文件数：174
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `feat` | 7 |
-| `merge` | 2 |
-| `docs` | 1 |
+| `feat` | 10 |
+| `merge` | 3 |
+| `docs` | 2 |
+| `ci` | 1 |
 | `fix` | 1 |
 
 ### 变更区域
 
-- `docs`: 6 个文件
-- `uniqc/circuit_builder`: 6 个文件
-- `uniqc/compile`: 4 个文件
-- `uniqc/test`: 3 个文件
+- `docs`: 62 个文件
+- `example-exec-logs`: 54 个文件
+- `uniqc/compile`: 8 个文件
+- `uniqc/test`: 8 个文件
+- `UniqcCpp`: 7 个文件
+- `uniqc/circuit_builder`: 7 个文件
+- `uniqc/algorithms`: 5 个文件
+- `uniqc/backend_adapter`: 4 个文件
+- `uniqc/simulator`: 4 个文件
+- `.github`: 2 个文件
 - `examples`: 2 个文件
 - `uniqc/torch_adapter`: 2 个文件
+- `.claude`: 1 个文件
+- `CHANGELOG.md`: 1 个文件
+- `README.md`: 1 个文件
+- `README_en.md`: 1 个文件
+- `RELEASE_REPORT_0.0.15.md`: 1 个文件
+- `pyproject.toml`: 1 个文件
 - `uniqc/__init__.py`: 1 个文件
+- `uniqc/_deprecation.py`: 1 个文件
+- `uniqc/visualization`: 1 个文件
 
 ### 提交列表
 
@@ -64,6 +79,12 @@
 - `ddf3867` docs: add native torch training best practice and update pytorch guide
 - `68450bc` fix(circuit): raise IndexError on set_param_last with empty circuit
 - `653ae8c` Merge pull request #116 from IAI-USTC-Quantum/feat/circuit-param-map
+- `42a4551` feat(qram): add QRAM instruction with C++ simulation support
+- `929d676` Merge pull request #117 from IAI-USTC-Quantum/feat/qram-instruction
+- `4579a59` feat: v0.0.15 release — PyTorch param integration, Python 3.14, deprecation policy
+- `17bd640` feat(qram): add ext-spec registration, docs, visualization, and conversion guards
+- `32c6029` ci: skip torchquantum install + tests on Python 3.14
+- `4c29e29` docs(0.0.15): fix CHANGELOG and release notes to cite real OriginIR-ext API
 
 ## v0.0.14.post1
 

@@ -7,7 +7,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{0: 1002, 7: 998}\n",
+  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{0: 1005, 7: 995}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

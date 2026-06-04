@@ -23,13 +23,13 @@ Usage:
 
   Iterations: 2
   Results (top 5):
-    |101⟩   94.4% ← TARGET
+    |101⟩   94.0% ← TARGET
+    |110⟩    1.1%
+    |010⟩    1.1%
     |001⟩    0.9%
-    |000⟩    0.9%
-    |100⟩    0.8%
-    |110⟩    0.8%
+    |000⟩    0.8%
 
-  Target probability: 94.4%
+  Target probability: 94.0%
   ✓ Done.
 ```
 

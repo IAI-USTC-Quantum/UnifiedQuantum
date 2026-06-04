@@ -9,7 +9,7 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.690918   0.683325\n  |001⟩    0.089478   0.092478\n  |010⟩    0.094360   0.092478\n  |011⟩    0.010498   0.012516\n  |100⟩    0.089233   0.092478\n  |101⟩    0.010986   0.012516\n  |110⟩    0.013184   0.012516\n  |111⟩    0.001343   0.001694\n",
+  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.686279   0.683325\n  |001⟩    0.090332   0.092478\n  |010⟩    0.092529   0.092478\n  |011⟩    0.010864   0.012516\n  |100⟩    0.092773   0.092478\n  |101⟩    0.013062   0.012516\n  |110⟩    0.012207   0.012516\n  |111⟩    0.001953   0.001694\n",
   "stderr": "",
   "warnings": [
     "DeprecationWarning: thermal_state_circuit(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `the fragment form `thermal_state_circuit(n_qubits, ...) -> Circuit` with `circuit.add_circuit(fragment)`` instead. (thermal_state.py:62)"
