@@ -688,14 +688,32 @@ class OriginIR_LineParser:
 
     @staticmethod
     def handle_qram_call(line, qram_name):
-        """Parse a QRAM call line (same format as BARRIER: variable qubit list).
+        """Parse a QRAM call line: ``name q[..], q[..], ... [dagger] [controlled_by(...)]``.
+
+        The address/data qubit list uses the same variable-length syntax as
+        BARRIER. The optional inline ``dagger`` keyword and
+        ``controlled_by(...)`` clause (extended-syntax suffixes shared with
+        ordinary gates) are parsed independently of the qubit list so that
+        controlled QRAM round-trips through OriginIR-ext text. QRAM XOR-loads
+        are self-inverse, so ``dagger`` is accepted for symmetry but does not
+        change execution semantics.
 
         Returns:
-            tuple: (qram_name, qubit_indices)
+            tuple: (qram_name, qubit_indices, dagger_flag, control_qubits)
         """
-        qubits = OriginIR_LineParser.regexp_qid.findall(line)
-        qubit_indices = [int(q) for q in qubits]
-        return qram_name, qubit_indices
+        # Strip the leading operation name, then split off any
+        # `controlled_by(...)` clause before scanning for qubit indices —
+        # otherwise q[..] references inside the controlled_by(...) clause
+        # would be mistaken for address/data qubits.
+        remainder = line[len(qram_name):]
+        before_control, sep, control_clause = remainder.partition("controlled_by")
+        dagger_flag = bool(re.search(r"\bdagger\b", before_control))
+        before_control = re.sub(r"\bdagger\b", "", before_control)
+        qubit_indices = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(before_control)]
+        control_qubits = (
+            [int(q) for q in OriginIR_LineParser.regexp_qid.findall(control_clause)] if sep else []
+        )
+        return qram_name, qubit_indices, dagger_flag, control_qubits
 
     @staticmethod
     def parse_line(line):
@@ -821,10 +839,9 @@ class OriginIR_LineParser:
                 dagger_flag = False
                 control_qubits = []
             elif operation in OriginIR_LineParser._declared_qram_names:
-                # QRAM call — same syntax as BARRIER (variable qubit list)
-                operation, q = OriginIR_LineParser.handle_qram_call(line, operation)
-                dagger_flag = False
-                control_qubits = []
+                # QRAM call — same qubit-list syntax as BARRIER, plus inline
+                # dagger / controlled_by(...) extended-syntax suffixes.
+                operation, q, dagger_flag, control_qubits = OriginIR_LineParser.handle_qram_call(line, operation)
             else:
                 # print("something wrong")
                 raise NotImplementedError(f"A invalid line: {line}.")

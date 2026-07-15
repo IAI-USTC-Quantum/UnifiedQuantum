@@ -234,6 +234,16 @@ class Circuit:
         self._auto_params: dict[tuple[str, int], object] = {}
         # QRAM declarations: name -> (addr_size, data_size)
         self.qram_declarations: dict[str, tuple[int, int]] = {}
+        # Classical memory declarations: name -> initial value.
+        self.classical_memory: dict[str, int] = {}
+        # Structured dynamic program (MEASURE/RESET/QIF/QWHILE/...). ``None``
+        # for ordinary flat circuits — see ``_ensure_dynamic``.
+        self.dynamic_program: list | None = None
+        # Stack of body lists currently open for appends (top = insertion point).
+        self._dynamic_body_stack: list[list] = []
+        # Stack of ("if", IfNode, "then"|"else") / ("while", WhileNode, None)
+        # tracking open QIF/QWHILE blocks for qelse()/endqif()/endqwhile().
+        self._dynamic_block_stack: list[tuple] = []
 
         # Handle qregs parameter
         if qregs is not None:
@@ -322,7 +332,13 @@ class Circuit:
             raise TypeError(f"Unsupported qubit type: {type(qubit)}")
 
     def copy(self) -> Circuit:
-        """Return a deep copy of this circuit."""
+        """Return a deep copy of this circuit.
+
+        QRAM declarations, classical memory, and any structured dynamic
+        program (mid-circuit MEASURE/RESET/QIF/QWHILE) are preserved. The
+        dynamic program body is recursively cloned so mutating either
+        circuit's control-flow blocks after copying cannot affect the other.
+        """
         new_circuit = Circuit()
         new_circuit.used_qubit_list = self.used_qubit_list.copy()
         new_circuit.max_qubit = self.max_qubit
@@ -337,16 +353,74 @@ class Circuit:
         new_circuit.param_map = dict(self.param_map)
         new_circuit._param_dict = self._param_dict  # shared reference
         new_circuit._auto_params = dict(self._auto_params)
+        new_circuit.qram_declarations = dict(self.qram_declarations)
+        new_circuit.classical_memory = dict(self.classical_memory)
+        if self.dynamic_program is not None:
+            from .dynamic_program import clone_program
+
+            new_top, list_map, node_map = clone_program(self.dynamic_program)
+            new_circuit.dynamic_program = new_top
+            new_circuit._dynamic_body_stack = [list_map[id(lst)] for lst in self._dynamic_body_stack]
+            new_circuit._dynamic_block_stack = [
+                (kind, node_map[id(node)], branch) for (kind, node, branch) in self._dynamic_block_stack
+            ]
+        else:
+            new_circuit.dynamic_program = None
+            new_circuit._dynamic_body_stack = []
+            new_circuit._dynamic_block_stack = []
         return new_circuit
 
+    def check_dynamic_program_closed(self) -> None:
+        """Raise if any ``QIF``/``QWHILE`` block is still open (missing a
+        matching ``endqif()``/``endqwhile()``).
+
+        Serializing or executing a circuit with unclosed blocks would only
+        reflect however much of the branch/loop body has been built so far,
+        silently hiding the incomplete construction — so both
+        :meth:`_make_originir_circuit` and dynamic-program execution call
+        this first.
+
+        Raises:
+            ValueError: If ``self._dynamic_block_stack`` is non-empty.
+        """
+        if self._dynamic_block_stack:
+            kinds = [kind for kind, _node, _branch in self._dynamic_block_stack]
+            raise ValueError(
+                f"Circuit has {len(kinds)} unclosed dynamic-program block(s) "
+                f"({', '.join(kinds)}, innermost last). Call the matching "
+                "endqif()/endqwhile() (or qelse() then endqif()) before "
+                "serializing or executing this circuit."
+            )
+
     def _make_originir_circuit(self) -> str:
+        if self.dynamic_program is not None:
+            self.check_dynamic_program_closed()
         qram_header = ""
         for name, (addr_size, data_size) in self.qram_declarations.items():
             qram_header += f"QRAMDECL {name} {addr_size},{data_size}\n"
-        header = qram_header + make_header_originir(self.qubit_num, self.cbit_num)
-        circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
+        mem_header = ""
+        for name, init in self.classical_memory.items():
+            mem_header += f"CDECL {name}, {init}\n"
+        header = qram_header + mem_header + make_header_originir(self.qubit_num, self.cbit_num)
+        if self.dynamic_program is not None:
+            from .dynamic_program import serialize_program
+
+            circuit_str = "\n".join(serialize_program(self.dynamic_program))
+        else:
+            circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
         measure = make_measure_originir(self.measure_list)
         return header + circuit_str + "\n" + measure
+
+    def _reject_dynamic_export(self, target_format: str) -> None:
+        if self.dynamic_program is not None or self.classical_memory:
+            raise CircuitTranslationError(
+                "Circuit contains a dynamic program (mid-circuit MEASURE/RESET/"
+                "classical assignment/QIF/QWHILE or declared classical memory) "
+                f"which cannot be converted to {target_format}. Dynamic programs "
+                "are an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format=target_format,
+            )
 
     def _make_qasm_circuit(self) -> str:
         if self.qram_declarations:
@@ -356,6 +430,7 @@ class Circuit:
                 source_format="originir-ext",
                 target_format="qasm2",
             )
+        self._reject_dynamic_export("qasm2")
         from .translate_qasm2_oir import collect_qasm2_custom_gates
 
         custom_gates = collect_qasm2_custom_gates(self.opcode_list)
@@ -373,6 +448,7 @@ class Circuit:
                 source_format="originir-ext",
                 target_format="originir",
             )
+        self._reject_dynamic_export("originir")
         from uniqc.compile.decompose import decompose_for_originir
 
         decomposed = decompose_for_originir(self)
@@ -416,7 +492,12 @@ class Circuit:
 
     @classmethod
     def from_originir(cls, originir_str: str) -> Circuit:
-        """Create a Circuit from an OriginIR string.
+        """Create a Circuit from an OriginIR(-ext) string.
+
+        Text using dynamic-program keywords (``CDECL``/``CMEASURE``/
+        ``RESET``/``CASSIGN``/``QIF``/``QWHILE``) is parsed via the
+        structured dynamic-program parser; ordinary flat circuits (including
+        QRAM/CONTROL/DAGGER) go through the original flat parser unchanged.
 
         Args:
             originir_str: OriginIR formatted circuit string.
@@ -424,6 +505,13 @@ class Circuit:
         Returns:
             A new Circuit instance.
         """
+        from .dynamic_program import contains_dynamic_keywords
+
+        if contains_dynamic_keywords(originir_str):
+            from .dynamic_program import parse_originir_ext_dynamic
+
+            return parse_originir_ext_dynamic(originir_str)
+
         from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
 
         parser = OriginIR_BaseParser()
@@ -527,6 +615,61 @@ class Circuit:
             return type(params)(resolved)  # preserve list/tuple type
         return params
 
+    def _validate_qram_qubits(
+        self,
+        name: str,
+        resolved_qubits: QubitSpec,
+        merged_controls: QubitSpec | None,
+    ) -> None:
+        """Validate a QRAM call's qubit lists before it is added to the circuit.
+
+        Rejects (with a precise ``ValueError``):
+        - duplicate qubits within the address sub-list;
+        - duplicate qubits within the data sub-list;
+        - address/data overlap;
+        - control qubits overlapping address/data qubits;
+        - duplicate control qubits.
+
+        Mirrors the C++-level ``check_qram_qubit_validity`` so misuse is
+        caught at circuit-construction time, before simulation.
+        """
+        addr_size, data_size = self.qram_declarations[name]
+        qubits = resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits]
+        addr_qubits = qubits[:addr_size]
+        data_qubits = qubits[addr_size : addr_size + data_size]
+
+        seen_addr: set[int] = set()
+        for q in addr_qubits:
+            if q in seen_addr:
+                raise ValueError(f"QRAM '{name}' address qubit {q} is duplicated in the address qubit list.")
+            seen_addr.add(q)
+
+        seen_data: set[int] = set()
+        for q in data_qubits:
+            if q in seen_data:
+                raise ValueError(f"QRAM '{name}' data qubit {q} is duplicated in the data qubit list.")
+            seen_data.add(q)
+            if q in seen_addr:
+                raise ValueError(
+                    f"QRAM '{name}' data qubit {q} overlaps with an address qubit. "
+                    "Address and data qubits must be disjoint."
+                )
+
+        if not merged_controls:
+            return
+        controls = merged_controls if isinstance(merged_controls, list) else [merged_controls]
+        target_qubits = seen_addr | seen_data
+        seen_controls: set[int] = set()
+        for q in controls:
+            if q in target_qubits:
+                raise ValueError(
+                    f"QRAM '{name}' control qubit {q} overlaps with its own address/data "
+                    "qubits. Control qubits must be disjoint from the QRAM's address/data qubits."
+                )
+            if q in seen_controls:
+                raise ValueError(f"QRAM '{name}' control qubit {q} is duplicated in the control qubit list.")
+            seen_controls.add(q)
+
     def add_gate(
         self,
         operation: str,
@@ -562,14 +705,22 @@ class Circuit:
         # Resolve qubit references to integers
         resolved_qubits = self._resolve_qubit(qubits)
         resolved_controls = self._resolve_qubit(control_qubits) if control_qubits is not None else None
+        is_qram_call = operation in self.qram_declarations
 
-        if operation in {"BARRIER", "I"} or operation in self.qram_declarations:
+        if operation in {"BARRIER", "I"}:
             # These gates have no controlled / dagger semantics; store as-is.
             merged_controls: QubitSpec = resolved_controls
             merged_dagger = dagger
         else:
             # Merge explicit control_qubits with any active context controls.
-            base: list[int] = list(resolved_controls) if resolved_controls is not None else []
+            # QRAM calls participate in the same control() context merging as
+            # ordinary gates (controlled QRAM is a first-class feature).
+            if resolved_controls is None:
+                base: list[int] = []
+            elif isinstance(resolved_controls, list):
+                base = list(resolved_controls)
+            else:
+                base = [resolved_controls]
             if self._active_controls:
                 overlap = set(base) & set(self._active_controls)
                 if overlap:
@@ -581,6 +732,10 @@ class Circuit:
             merged_controls = base if base else None  # type: ignore[assignment]
             # XOR active-dagger with the explicit dagger flag.
             merged_dagger = dagger ^ self._active_dagger
+
+        if is_qram_call:
+            self._validate_qram_qubits(operation, resolved_qubits, merged_controls)
+
         # Resolve string param names via _param_dict, then detect tensors.
         opcode_params = self._resolve_param_strings(params)
         _has_torch = "torch" in __import__("sys").modules
@@ -611,6 +766,10 @@ class Circuit:
         opcode: OpCode = (operation, resolved_qubits, cbits, opcode_params, merged_dagger, merged_controls)  # type: ignore[assignment]
         self.opcode_list.append(opcode)
         self.record_qubit(resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits])
+        if self.dynamic_program is not None:
+            from .dynamic_program import GateNode
+
+            self._dynamic_body_stack[-1].append(GateNode(opcode))
 
     def add_circuit(self, other: Circuit) -> None:
         """Add all gates from another circuit into this circuit."""
@@ -1147,12 +1306,25 @@ class Circuit:
             raise ValueError(f"QRAM '{name}' is already declared in this circuit.")
         self.qram_declarations[name] = (addr_size, data_size)
 
-    def qram_call(self, name: str, *qubits: QubitInput) -> None:
+    def qram_call(
+        self,
+        name: str,
+        *qubits: QubitInput,
+        control_qubits: QubitInput = None,
+    ) -> None:
         """Add a QRAM call to the circuit.
+
+        QRAM XOR-loads are self-inverse; when *control_qubits* is given, the
+        load is applied only when every control qubit is ``|1>`` (identity
+        otherwise). Control qubits must be disjoint from the QRAM's own
+        address/data qubits.
 
         Args:
             name: Name of a previously declared QRAM.
             *qubits: Qubit list (addr bits followed by data bits).
+            control_qubits: Optional control qubit(s) — can be int, Qubit,
+                QRegSlice, or a list thereof. Merged with any enclosing
+                ``control()`` context block, same as ordinary gates.
         """
         if name not in self.qram_declarations:
             raise ValueError(f"QRAM '{name}' has not been declared. Call qram_declare() first.")
@@ -1164,7 +1336,192 @@ class Circuit:
                 f"QRAM '{name}' expects {total} qubits ({addr_size} addr + {data_size} data), "
                 f"got {len(resolved)}."
             )
-        self.add_gate(name, list(qubits))
+        self.add_gate(name, list(qubits), control_qubits=control_qubits)
+
+    # ─────────────────── Structured dynamic program ───────────────────
+    #
+    # A circuit starts as an ordinary flat opcode_list. The first call to
+    # declare_memory()/cmeasure()/reset_qubit()/cassign()/qif()/qwhile()
+    # switches it into "dynamic mode": Circuit.dynamic_program becomes a
+    # list of structured nodes (GateNode/CMeasureNode/ResetNode/AssignNode/
+    # IfNode/WhileNode), and add_gate() mirrors every subsequent opcode into
+    # the currently open block. opcode_list keeps receiving every gate ever
+    # added (in call order, ignoring branch/loop structure) — it remains a
+    # valid input for legacy flat-only code paths, but only dynamic_program
+    # is the authoritative execution order once dynamic mode is active.
+
+    def declare_memory(self, name: str, init: int = 0) -> None:
+        """Declare a named classical-memory register with an initial value.
+
+        Args:
+            name: Unique identifier for this classical memory register.
+            init: Initial integer value (default 0).
+
+        Raises:
+            ValueError: If *name* is already declared.
+        """
+        if name in self.classical_memory:
+            raise ValueError(f"Classical memory '{name}' is already declared.")
+        self.classical_memory[name] = init
+
+    def _ensure_dynamic(self) -> list:
+        """Switch to dynamic-program mode (if not already) and return the
+        currently open body list to append new nodes to."""
+        if self.dynamic_program is None:
+            from .dynamic_program import GateNode
+
+            self.dynamic_program = [GateNode(op) for op in self.opcode_list]
+            self._dynamic_body_stack = [self.dynamic_program]
+        return self._dynamic_body_stack[-1]
+
+    def cmeasure(self, qubit: QubitInput, mem: str) -> None:
+        """Mid-circuit measurement of *qubit* into classical memory *mem*.
+
+        Unlike :meth:`measure`, this does not add to the terminal
+        measurement list — the qubit remains live and available for further
+        gates, and the sampled outcome is written into classical memory for
+        use in later ``QIF``/``QWHILE`` conditions or assignments.
+
+        Args:
+            qubit: The qubit to measure — can be int, Qubit, or QRegSlice.
+            mem: Name of a previously declared classical memory register.
+
+        Raises:
+            ValueError: If *mem* is not declared, or *qubit* resolves to more
+                than one qubit.
+        """
+        from .dynamic_program import CMeasureNode
+
+        resolved = self._resolve_qubit(qubit)
+        if isinstance(resolved, list):
+            raise ValueError("cmeasure() takes exactly one qubit.")
+        if mem not in self.classical_memory:
+            raise ValueError(f"Classical memory '{mem}' is not declared. Call declare_memory() first.")
+        body = self._ensure_dynamic()
+        body.append(CMeasureNode(resolved, mem))
+        self.record_qubit(resolved)
+
+    def reset_qubit(self, qubit: QubitInput) -> None:
+        """Mid-circuit reset of *qubit* to ``|0>``.
+
+        Args:
+            qubit: The qubit to reset — can be int, Qubit, or QRegSlice.
+
+        Raises:
+            ValueError: If *qubit* resolves to more than one qubit.
+        """
+        from .dynamic_program import ResetNode
+
+        resolved = self._resolve_qubit(qubit)
+        if isinstance(resolved, list):
+            raise ValueError("reset_qubit() takes exactly one qubit.")
+        body = self._ensure_dynamic()
+        body.append(ResetNode(resolved))
+        self.record_qubit(resolved)
+
+    def cassign(self, mem: str, expr) -> None:
+        """Classical assignment: ``mem = expr``.
+
+        Args:
+            mem: Name of a previously declared classical memory register.
+            expr: A classical expression string (see
+                :func:`uniqc.circuit_builder.dynamic_program.parse_expr`) or
+                an already-parsed ``Expr`` instance.
+
+        Raises:
+            ValueError: If *mem* is not declared.
+        """
+        from .dynamic_program import AssignNode, Expr, parse_expr
+
+        if mem not in self.classical_memory:
+            raise ValueError(f"Classical memory '{mem}' is not declared. Call declare_memory() first.")
+        expr_node = expr if isinstance(expr, Expr) else parse_expr(expr)
+        body = self._ensure_dynamic()
+        body.append(AssignNode(mem, expr_node))
+
+    def qif(self, cond) -> None:
+        """Open a ``QIF cond ... [ELSE ...] ENDQIF`` block.
+
+        Args:
+            cond: A classical condition expression string or ``Expr``
+                instance. Nonzero evaluates as true.
+        """
+        from .dynamic_program import Expr, IfNode, parse_expr
+
+        cond_node = cond if isinstance(cond, Expr) else parse_expr(cond)
+        body = self._ensure_dynamic()
+        node = IfNode(cond_node, [], None)
+        body.append(node)
+        self._dynamic_block_stack.append(("if", node, "then"))
+        self._dynamic_body_stack.append(node.then_body)
+
+    def qelse(self) -> None:
+        """Open the ``ELSE`` branch of the innermost open ``QIF`` block.
+
+        Raises:
+            ValueError: If there is no open ``QIF`` block awaiting ``ELSE``.
+        """
+        if (
+            not self._dynamic_block_stack
+            or self._dynamic_block_stack[-1][0] != "if"
+            or self._dynamic_block_stack[-1][2] != "then"
+        ):
+            raise ValueError("qelse() called without a matching open qif() block.")
+        _, node, _ = self._dynamic_block_stack.pop()
+        node.else_body = []
+        self._dynamic_block_stack.append(("if", node, "else"))
+        self._dynamic_body_stack.pop()
+        self._dynamic_body_stack.append(node.else_body)
+
+    def endqif(self) -> None:
+        """Close the innermost open ``QIF`` block.
+
+        Raises:
+            ValueError: If there is no open ``QIF`` block.
+        """
+        if not self._dynamic_block_stack or self._dynamic_block_stack[-1][0] != "if":
+            raise ValueError("endqif() called without a matching open qif() block.")
+        self._dynamic_block_stack.pop()
+        self._dynamic_body_stack.pop()
+
+    def qwhile(self, cond, max_iterations: int = None) -> None:
+        """Open a ``QWHILE cond ... ENDQWHILE`` block.
+
+        Args:
+            cond: A classical condition expression string or ``Expr``
+                instance. Nonzero evaluates as true; re-evaluated before
+                every iteration.
+            max_iterations: Loop watchdog — execution raises
+                ``LoopWatchdogError`` if the loop body would run more than
+                this many times. Must be a positive integer. Defaults to
+                :data:`uniqc.circuit_builder.dynamic_program.DEFAULT_MAX_WHILE_ITERATIONS`.
+
+        Raises:
+            ValueError: If *max_iterations* is not a positive integer.
+        """
+        from .dynamic_program import DEFAULT_MAX_WHILE_ITERATIONS, Expr, WhileNode, parse_expr
+
+        if max_iterations is None:
+            max_iterations = DEFAULT_MAX_WHILE_ITERATIONS
+        if not isinstance(max_iterations, int) or isinstance(max_iterations, bool) or max_iterations < 1:
+            raise ValueError(f"qwhile() max_iterations must be a positive integer, got {max_iterations!r}.")
+        cond_node = cond if isinstance(cond, Expr) else parse_expr(cond)
+        body = self._ensure_dynamic()
+        node = WhileNode(cond_node, [], max_iterations)
+        body.append(node)
+        self._dynamic_block_stack.append(("while", node, None))
+        self._dynamic_body_stack.append(node.body)
+
+    def endqwhile(self) -> None:
+        """Close the innermost open ``QWHILE`` block.
+
+        Raises:
+            ValueError: If there is no open ``QWHILE`` block.
+        """
+        if not self._dynamic_block_stack or self._dynamic_block_stack[-1][0] != "while":
+            raise ValueError("endqwhile() called without a matching open qwhile() block.")
+        self._dynamic_block_stack.pop()
+        self._dynamic_body_stack.pop()
 
     # ─────────────────── Measurement ───────────────────
 
@@ -1190,6 +1547,11 @@ class Circuit:
             raise ValueError("measure() cannot be called inside a control() context block.")
         if self._active_dagger:
             raise ValueError("measure() cannot be called inside a dagger() context block.")
+        if self._dynamic_block_stack:
+            raise ValueError(
+                "measure() cannot be called inside an open QIF/QWHILE block. "
+                "Use cmeasure() for mid-circuit measurement into classical memory."
+            )
         # Resolve all qubits to integers
         resolved_qubits = []
         for q in qubits:

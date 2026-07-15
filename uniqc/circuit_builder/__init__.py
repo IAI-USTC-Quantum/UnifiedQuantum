@@ -1,3 +1,17 @@
+from .dynamic_program import (
+    AssignNode,
+    BinExpr,
+    CMeasureNode,
+    ConstExpr,
+    Expr,
+    GateNode,
+    IfNode,
+    MemExpr,
+    ResetNode,
+    UnaryExpr,
+    WhileNode,
+    parse_expr,
+)
 from .matrix import NotMatrixableError, get_matrix
 from .named_circuit import NamedCircuit, circuit_def
 from .normalize import (

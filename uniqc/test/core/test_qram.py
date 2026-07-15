@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
-from uniqc.circuit_builder import Circuit, QRAM
+from uniqc.circuit_builder import QRAM, Circuit
 from uniqc.circuit_builder.qcircuit import Circuit
 from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
 from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 from uniqc.simulator import Simulator
-
 
 # ─── QRAM class unit tests ────────────────────────────────────────────
 
@@ -379,3 +379,244 @@ class TestQRAMRuntime:
         assert ram.read(0) == 42
         assert ram.read(5) == 63
         assert ram.read(1) == 0  # uninitialized
+
+
+# ─── Controlled QRAM tests ────────────────────────────────────────────
+
+
+class TestControlledQRAM:
+    """Test controlled QRAM: disjoint controls, self-inverse, superposition."""
+
+    def test_control_disjoint_validation_raises(self):
+        """Control qubits overlapping addr/data must be rejected."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        with pytest.raises(ValueError, match="overlap"):
+            c.qram_call("r", 0, 1, 2, control_qubits=1)
+
+    def test_qram_call_accepts_control_qubits(self):
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+        op = c.opcode_list[-1]
+        assert op[0] == "r"
+        assert op[5] == [3]
+
+    def test_control_merges_with_control_context(self):
+        """qram_call() participates in the with-control() context, like ordinary gates."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        with c.control(5):
+            c.qram_call("r", 0, 1, 2)
+        op = c.opcode_list[-1]
+        assert op[5] == [5]
+
+    def test_control_identity_when_control_zero(self):
+        """Controlled QRAM is the identity when the control qubit is |0>."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.x(0)  # addr = 1 (nonzero address)
+        # control qubit 3 left at |0>
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+
+        sim = Simulator(least_qubit_remapping=False)
+        sim.simulate_preprocess(c)
+        sim.qram_objects["r"].write(1, 3)  # nonzero data value at addr=1
+        sv = np.array(sim.simulate_statevector(c))
+        idx = np.nonzero(np.abs(sv) > 1e-9)[0]
+        # addr bit (q0=1) unaffected; data untouched since control=0.
+        assert list(idx) == [1]
+        assert abs(abs(sv[1]) ** 2 - 1.0) < 1e-10
+
+    def test_control_xor_load_when_control_one_nonzero_target(self):
+        """Controlled QRAM XOR-loads onto an arbitrary nonzero data target when control=1."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.x(0)  # addr = 1
+        c.x(2)  # data starts as a nonzero target: binary 10 (=2)
+        c.x(3)  # control = 1
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+
+        sim = Simulator(least_qubit_remapping=False)
+        sim.simulate_preprocess(c)
+        sim.qram_objects["r"].write(1, 3)  # 3 = 0b11
+        sv = np.array(sim.simulate_statevector(c))
+        idx = np.nonzero(np.abs(sv) > 1e-9)[0]
+        # data XOR: 2 (0b10) ^ 3 (0b11) = 1 (0b01) -> q1=1,q2=0.
+        # q0=1(addr), q1=1, q2=0, q3=1(control) -> index = 1+2+8 = 11
+        assert list(idx) == [11]
+
+    def test_control_superposition_addr_and_control(self):
+        """Controlled QRAM on a superposed address, with the control also set,
+        applies the XOR-load coherently across every basis branch."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.h(0)  # superposed address
+        c.x(3)  # control = 1 (applies to every branch)
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+
+        sim = Simulator(least_qubit_remapping=False)
+        sim.simulate_preprocess(c)
+        sim.qram_objects["r"].write(0, 0)
+        sim.qram_objects["r"].write(1, 3)
+        sv = np.array(sim.simulate_statevector(c))
+        idx = np.nonzero(np.abs(sv) > 1e-9)[0]
+        # addr=0 branch: data unaffected (0 XOR 0) -> q0=0,q3=1 -> index 8
+        # addr=1 branch: data 0 XOR 3=3(0b11) -> q1=1,q2=1 -> q0=1,q1=1,q2=1,q3=1 -> index 15
+        assert sorted(idx) == [8, 15]
+        for i in idx:
+            assert abs(abs(sv[i]) ** 2 - 0.5) < 1e-10
+
+    def test_control_self_inverse_double_apply_restores_state(self):
+        """Applying controlled QRAM twice (same controls) is the identity,
+        even with a superposed address and a nonzero, non-basis data target."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.h(0)  # superposed address
+        c.x(2)  # nonzero starting data target
+        c.x(3)  # control = 1
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+
+        sim = Simulator(least_qubit_remapping=False)
+        sim.simulate_preprocess(c)
+        sim.qram_objects["r"].write(0, 1)
+        sim.qram_objects["r"].write(1, 3)
+        sv = np.array(sim.simulate_statevector(c))
+        # After two applications, state must equal H(q0) X(q2) X(q3) applied alone
+        # (i.e. q2=1 (=0b10 -> index contribution 4), q3=1 (=8), q0 in superposition).
+        idx = np.nonzero(np.abs(sv) > 1e-9)[0]
+        assert sorted(idx) == [12, 13]
+        for i in idx:
+            assert abs(abs(sv[i]) ** 2 - 0.5) < 1e-10
+
+    def test_control_originir_roundtrip(self):
+        """Controlled QRAM must round-trip through OriginIR-ext text exactly."""
+        c = Circuit()
+        c.qram_declare("r", 1, 2)
+        c.h(0)
+        c.x(3)
+        c.qram_call("r", 0, 1, 2, control_qubits=3)
+        c.measure(1)
+        text = c.originir
+        assert "controlled_by (q[3])" in text
+
+        c2 = Circuit.from_originir(text)
+        assert c2.originir == text
+        op = c2.opcode_list[-1]
+        assert op[0] == "r"
+        assert op[5] == [3]
+
+    def test_copy_preserves_qram_declarations(self):
+        """Circuit.copy() must preserve qram_declarations (previous gap)."""
+        c = Circuit()
+        c.qram_declare("r", 2, 3)
+        c.h(0)
+        c.qram_call("r", 0, 1, 2, 3, 4)
+
+        c2 = c.copy()
+        assert c2.qram_declarations == c.qram_declarations
+        assert c2.qram_declarations is not c.qram_declarations
+        # Mutating the copy's declarations must not affect the original.
+        c2.qram_declarations["extra"] = (1, 1)
+        assert "extra" not in c.qram_declarations
+
+
+# ─── QRAM qubit-list validation: duplicates and overlaps ──────────────
+
+
+class TestQRAMQubitListValidation:
+    """Reject duplicate addr/data qubits, addr/data overlap, and duplicate
+    control qubits — both at the Python Circuit layer and directly at the
+    C++ simulator layer (uniqc_cpp)."""
+
+    # --- Python (Circuit.qram_call) ---
+
+    def test_duplicate_addr_qubit_rejected(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        with pytest.raises(ValueError, match="duplicated in the address"):
+            c.qram_call("r", 0, 0, 2, 3)
+
+    def test_duplicate_data_qubit_rejected(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        with pytest.raises(ValueError, match="duplicated in the data"):
+            c.qram_call("r", 0, 1, 2, 2)
+
+    def test_addr_data_overlap_rejected(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        with pytest.raises(ValueError, match="overlaps with an address qubit"):
+            c.qram_call("r", 0, 1, 1, 3)
+
+    def test_duplicate_control_qubit_rejected(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        with pytest.raises(ValueError, match="duplicated in the control"):
+            c.qram_call("r", 0, 1, 2, 3, control_qubits=[4, 4])
+
+    def test_control_overlap_still_rejected(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        with pytest.raises(ValueError, match="overlap"):
+            c.qram_call("r", 0, 1, 2, 3, control_qubits=1)
+
+    def test_valid_addr_data_control_all_disjoint_accepted(self):
+        c = Circuit()
+        c.qram_declare("r", 2, 2)
+        c.qram_call("r", 0, 1, 2, 3, control_qubits=[4, 5])
+        assert c.opcode_list[-1] == ("r", [0, 1, 2, 3], None, None, False, [4, 5])
+
+    # --- Direct C++ (uniqc_cpp) ---
+
+    def test_cpp_duplicate_addr_qubit_rejected(self):
+        import uniqc_cpp
+
+        sim = uniqc_cpp.StatevectorSimulator()
+        sim.init_n_qubit(6)
+        with pytest.raises(ValueError, match="duplicated in the address"):
+            sim.qram([0, 0, 1], [2, 3], [0] * 8)
+
+    def test_cpp_duplicate_data_qubit_rejected(self):
+        import uniqc_cpp
+
+        sim = uniqc_cpp.StatevectorSimulator()
+        sim.init_n_qubit(6)
+        with pytest.raises(ValueError, match="duplicated in the data"):
+            sim.qram([0, 1], [2, 2, 3], [0] * 8)
+
+    def test_cpp_addr_data_overlap_rejected(self):
+        import uniqc_cpp
+
+        sim = uniqc_cpp.StatevectorSimulator()
+        sim.init_n_qubit(6)
+        with pytest.raises(ValueError, match="overlaps with an address qubit"):
+            sim.qram([0, 1], [1, 3], [0] * 4)
+
+    def test_cpp_duplicate_control_qubit_rejected(self):
+        import uniqc_cpp
+
+        sim = uniqc_cpp.StatevectorSimulator()
+        sim.init_n_qubit(6)
+        with pytest.raises(ValueError, match="duplicated in the control"):
+            sim.qram([0, 1], [2, 3], [0] * 4, [4, 4])
+
+    def test_cpp_control_overlap_rejected(self):
+        import uniqc_cpp
+
+        sim = uniqc_cpp.StatevectorSimulator()
+        sim.init_n_qubit(6)
+        with pytest.raises(ValueError, match="overlaps with an address/data qubit"):
+            sim.qram([0, 1], [2, 3], [0] * 4, [1])
+
+    def test_cpp_valid_call_succeeds_on_both_backends(self):
+        import uniqc_cpp
+
+        sv = uniqc_cpp.StatevectorSimulator()
+        sv.init_n_qubit(6)
+        sv.qram([0, 1], [2, 3], [0] * 4, [4, 5])
+
+        dm = uniqc_cpp.DensityOperatorSimulator()
+        dm.init_n_qubit(6)
+        dm.qram([0, 1], [2, 3], [0] * 4, [4, 5])

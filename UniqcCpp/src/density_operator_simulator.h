@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <complex>
 #include <iostream>
@@ -61,10 +62,21 @@ namespace uniqc {
         void kraus2q(size_t qn, size_t qn2, const Kraus2Q& kraus_ops);
         void amplitude_damping(size_t qn, double gamma);
 
-        /* QRAM: |addr⟩|data⟩ → |addr⟩|data ⊕ data_array[addr]⟩ */
+        /* QRAM: |addr⟩|data⟩ → |addr⟩|data ⊕ data_array[addr]⟩
+         * See StatevectorSimulator::qram for control-qubit semantics. */
         void qram(const std::vector<size_t>& addr_qubits,
                   const std::vector<size_t>& data_qubits,
-                  const std::vector<size_t>& data_array);
+                  const std::vector<size_t>& data_array,
+                  const std::vector<size_t>& control_qubits = {});
+
+        /* Mid-circuit measurement: samples qubit qn using the global RNG,
+         * projects and renormalizes the density matrix, returns the
+         * sampled outcome (0 or 1). */
+        size_t measure_qubit(size_t qn);
+
+        /* Mid-circuit reset: measures qn and flips it back to |0> if the
+         * sampled outcome was 1. */
+        void reset_qubit(size_t qn);
 
         dtype get_prob_map(const std::map<size_t, int>& measure_qubits);
         dtype get_prob(size_t qn, int state);

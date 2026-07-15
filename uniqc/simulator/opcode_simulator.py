@@ -275,7 +275,7 @@ class OpcodeSimulator:
                 addr_size, data_size, data_array = self.qram_registry[operation]
                 addr_qubits = qubit[:addr_size]
                 data_qubits = qubit[addr_size:]
-                self.simulator.qram(addr_qubits, data_qubits, data_array)
+                self.simulator.qram(addr_qubits, data_qubits, data_array, control_qubits_set)
             # else: truly unknown meta-operation — silently skip.
         else:
             raise RuntimeError(

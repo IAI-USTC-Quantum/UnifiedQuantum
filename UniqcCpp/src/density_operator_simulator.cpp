@@ -818,14 +818,22 @@ namespace uniqc
     void DensityOperatorSimulator::qram(
         const std::vector<size_t>& addr_qubits,
         const std::vector<size_t>& data_qubits,
-        const std::vector<size_t>& data_array)
+        const std::vector<size_t>& data_array,
+        const std::vector<size_t>& control_qubits)
     {
         for (auto qn : addr_qubits)
             CHECK_QUBIT_RANGE(qn)
         for (auto qn : data_qubits)
             CHECK_QUBIT_RANGE(qn)
+        for (auto qn : control_qubits)
+            CHECK_QUBIT_RANGE(qn)
 
-        // Compute permutation: perm[i] = i XOR data_mask(addr(i))
+        check_qram_qubit_validity(addr_qubits, data_qubits, control_qubits);
+
+        size_t controller_mask = make_controller_mask(control_qubits);
+
+        // Compute permutation: perm[i] = i XOR data_mask(addr(i)) when all
+        // control bits of i are set; otherwise perm[i] = i (identity).
         size_t dim = pow2(total_qubit);
         size_t addr_size = addr_qubits.size();
         size_t data_size = data_qubits.size();
@@ -833,6 +841,12 @@ namespace uniqc
         std::vector<size_t> perm(dim);
         for (size_t i = 0; i < dim; ++i)
         {
+            if ((i & controller_mask) != controller_mask)
+            {
+                perm[i] = i;
+                continue;
+            }
+
             size_t addr = 0;
             for (size_t b = 0; b < addr_size; ++b)
                 if ((i >> addr_qubits[b]) & 1) addr |= (1ull << b);
@@ -862,9 +876,45 @@ namespace uniqc
                 state[i * dim + j] = new_state[i * dim + perm[j]];
     }
 
+    size_t DensityOperatorSimulator::measure_qubit(size_t qn)
+    {
+        CHECK_QUBIT_RANGE(qn)
+
+        double p0 = get_prob(qn, 0);
+        // Clamp against floating-point round-off before sampling/normalizing.
+        p0 = std::min(1.0, std::max(0.0, p0));
+        double r = uniqc::rand();
+        size_t outcome = (r < p0) ? 0 : 1;
+        double prob = (outcome == 0) ? p0 : (1.0 - p0);
+
+        size_t dim = pow2(total_qubit);
+        for (size_t i = 0; i < dim; ++i)
+        {
+            size_t bi = (i >> qn) & 1ull;
+            for (size_t j = 0; j < dim; ++j)
+            {
+                size_t bj = (j >> qn) & 1ull;
+                if (bi != outcome || bj != outcome)
+                    state[i * dim + j] = 0;
+                else if (prob > 1e-14)
+                    state[i * dim + j] /= prob;
+            }
+        }
+        return outcome;
+    }
+
+    void DensityOperatorSimulator::reset_qubit(size_t qn)
+    {
+        size_t outcome = measure_qubit(qn);
+        if (outcome == 1)
+            x(qn);
+    }
+
     dtype DensityOperatorSimulator::get_prob_map(const std::map<size_t, int>& measure_qubits)
     {
         size_t N = pow2(total_qubit);
+        size_t mask_qubit = 0;
+        size_t mask_state = 0;
         for (auto&& [qn, qstate] : measure_qubits)
         {
             if (qn >= total_qubit)
@@ -877,18 +927,17 @@ namespace uniqc
                 auto errstr = fmt::format("State must be 0 or 1. (input = {} at qn = {})", qstate, qn);
                 ThrowInvalidArgument(errstr);
             }
+            mask_qubit |= (1ull << qn);
+            if (qstate == 1)
+                mask_state |= (1ull << qn);
         }
 
         double prob = 0;
-        for (size_t i = 0; i < pow2(total_qubit); ++i)
+        for (size_t i = 0; i < N; ++i)
         {
-            for (auto&& [qid, qstate] : measure_qubits)
-            {
-                if ((i >> qid) != qstate)
-                    break;
-            }
             /* use the diagonal term to calculate the prob */
-            prob += std::abs(val(state, i, i, N));
+            if ((i & mask_qubit) == mask_state)
+                prob += std::abs(val(state, i, i, N));
         }
         return prob;
     }
@@ -908,9 +957,9 @@ namespace uniqc
         }
 
         double prob = 0;
-        for (size_t i = 0; i < pow2(total_qubit); ++i)
+        for (size_t i = 0; i < N; ++i)
         {
-            if ((i >> qn) == qstate)
+            if (static_cast<int>((i >> qn) & 1ull) == qstate)
                 prob += std::abs(val(state, i, i, N));
         }
         return prob;

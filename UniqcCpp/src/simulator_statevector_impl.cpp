@@ -713,11 +713,12 @@ namespace statevector_simulator_impl {
             double prob = 0;
             for (size_t i = 0; i < pow2(total_qubit); ++i)
             {
-                for (auto&& [qid, qstate] : measure_map)
-                {
-                    if ((i & mask_qubit) == mask_state)
-                        prob += abs_sqr(state[i]);
-                }
+                // Each basis state i contributes its amplitude-squared at
+                // most once — the previous nested loop re-added abs_sqr(state[i])
+                // once per entry in measure_map, inflating joint probabilities
+                // by a factor of len(measure_map) whenever it matched.
+                if ((i & mask_qubit) == mask_state)
+                    prob += abs_sqr(state[i]);
             }
             return prob;
         }
@@ -737,7 +738,8 @@ namespace statevector_simulator_impl {
             const std::vector<size_t>& addr_qubits,
             const std::vector<size_t>& data_qubits,
             const std::vector<size_t>& data_array,
-            size_t total_qubit)
+            size_t total_qubit,
+            size_t controller_mask)
         {
             size_t dim = pow2(total_qubit);
             size_t addr_size = addr_qubits.size();
@@ -748,6 +750,14 @@ namespace statevector_simulator_impl {
             for (size_t i = 0; i < dim; ++i)
             {
                 if (visited[i]) continue;
+
+                // Controls disjoint from addr/data qubits: i and its XOR
+                // partner j always agree on control-bit values, so gating
+                // on i alone is well-defined and keeps the map self-inverse.
+                if ((i & controller_mask) != controller_mask) {
+                    visited[i] = true;
+                    continue;
+                }
 
                 // Extract address from basis state i
                 size_t addr = 0;

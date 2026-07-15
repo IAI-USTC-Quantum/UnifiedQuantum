@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "errors.h"
 #include "simulator_impl.h"
 #include "rng.h"
@@ -54,10 +56,26 @@ namespace uniqc {
         void kraus1q(size_t qn, const Kraus1Q& kraus_ops);
         void amplitude_damping(size_t qn, double gamma);
 
-        /* QRAM: |addr⟩|data⟩ → |addr⟩|data ⊕ data_array[addr]⟩ */
+        /* QRAM: |addr⟩|data⟩ → |addr⟩|data ⊕ data_array[addr]⟩
+         *
+         * When control_qubits is non-empty, the XOR-load is applied only to
+         * amplitudes where every control qubit is |1⟩ (identity elsewhere).
+         * control_qubits must be disjoint from addr_qubits/data_qubits; this
+         * is enforced by the caller (Python Circuit layer) and re-checked
+         * here. QRAM remains self-inverse under any fixed control setting. */
         void qram(const std::vector<size_t>& addr_qubits,
                   const std::vector<size_t>& data_qubits,
-                  const std::vector<size_t>& data_array);
+                  const std::vector<size_t>& data_array,
+                  const std::vector<size_t>& control_qubits = {});
+
+        /* Mid-circuit measurement: samples qubit qn using the global RNG
+         * (seedable via uniqc::seed), collapses and renormalizes the state
+         * in place, and returns the sampled outcome (0 or 1). */
+        size_t measure_qubit(size_t qn);
+
+        /* Mid-circuit reset: measures qn and flips it back to |0> if the
+         * sampled outcome was 1. */
+        void reset_qubit(size_t qn);
 
         /* measurement protocol */
         dtype get_prob(size_t qn, int state);

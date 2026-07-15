@@ -123,6 +123,12 @@ class BaseSimulator:
                     self._add_used_qubit(int(q))
             else:
                 self._add_used_qubit(int(qubit))
+            # Control qubits (e.g. controlled QRAM) may not otherwise appear
+            # as a plain gate target — register them too, so qubit_mapping
+            # covers every qubit referenced anywhere in the opcode.
+            if control_qubits_set:
+                for q in control_qubits_set:
+                    self._add_used_qubit(int(q))
 
         # extract from measure
         measure_qubits = self.parser.measure_qubits
@@ -179,7 +185,15 @@ class BaseSimulator:
                 else:
                     mapped_qubit = self.qubit_mapping[qubit]
 
-            processed_program_body.append((operation, mapped_qubit, cbit, parameter, dagger_flag, control_qubits_set))
+            mapped_control_qubits_set = control_qubits_set
+            if control_qubits_set:
+                mapped_control_qubits_set = type(control_qubits_set)(
+                    self.qubit_mapping[q] for q in control_qubits_set
+                )
+
+            processed_program_body.append(
+                (operation, mapped_qubit, cbit, parameter, dagger_flag, mapped_control_qubits_set)
+            )
 
         return processed_program_body
 

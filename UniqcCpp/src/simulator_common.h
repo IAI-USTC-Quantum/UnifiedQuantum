@@ -45,6 +45,15 @@ namespace uniqc {
     size_t get_state_with_qubit(size_t i, const std::map<size_t, size_t>& measure_map);
     size_t make_controller_mask(const std::vector<size_t>& global_controller);
 
+    /* Validates a QRAM call's qubit lists: no duplicates within addr_qubits,
+     * no duplicates within data_qubits, no addr/data overlap, control qubits
+     * disjoint from addr/data, and no duplicate control qubits. Throws
+     * InvalidArgument on any violation. */
+    void check_qram_qubit_validity(
+        const std::vector<size_t>& addr_qubits,
+        const std::vector<size_t>& data_qubits,
+        const std::vector<size_t>& control_qubits);
+
     // ============================================================
     // Inline 2x2 statevector (matrix × vector) operation
     // |ψ'⟩ = U |ψ⟩, where ψ = (a0, a1), U = [[u00,u01],[u10,u11]]

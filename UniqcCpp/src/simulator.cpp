@@ -771,14 +771,52 @@ namespace uniqc {
     void StatevectorSimulator::qram(
         const std::vector<size_t>& addr_qubits,
         const std::vector<size_t>& data_qubits,
-        const std::vector<size_t>& data_array)
+        const std::vector<size_t>& data_array,
+        const std::vector<size_t>& control_qubits)
     {
         for (auto qn : addr_qubits)
             CHECK_QUBIT_RANGE(qn)
         for (auto qn : data_qubits)
             CHECK_QUBIT_RANGE(qn)
+        for (auto qn : control_qubits)
+            CHECK_QUBIT_RANGE(qn)
 
-        qram_permutation_impl(state, addr_qubits, data_qubits, data_array, total_qubit);
+        check_qram_qubit_validity(addr_qubits, data_qubits, control_qubits);
+
+        size_t controller_mask = make_controller_mask(control_qubits);
+        qram_permutation_impl(state, addr_qubits, data_qubits, data_array, total_qubit, controller_mask);
+    }
+
+    size_t StatevectorSimulator::measure_qubit(size_t qn)
+    {
+        CHECK_QUBIT_RANGE(qn)
+
+        double p0 = get_prob_unsafe_impl(state, qn, 0, total_qubit);
+        // Clamp against floating-point round-off before sampling/normalizing —
+        // p0 is a sum of |amplitude|^2 terms and can drift marginally outside
+        // [0, 1] (e.g. 1.0000000000000002 or -1e-17).
+        p0 = std::min(1.0, std::max(0.0, p0));
+        double r = uniqc::rand();
+        size_t outcome = (r < p0) ? 0 : 1;
+        double prob = (outcome == 0) ? p0 : (1.0 - p0);
+        double norm = std::sqrt(prob);
+
+        for (size_t i = 0; i < state.size(); ++i)
+        {
+            size_t bit = (i >> qn) & 1ull;
+            if (bit != outcome)
+                state[i] = 0;
+            else if (norm > 1e-14)
+                state[i] /= norm;
+        }
+        return outcome;
+    }
+
+    void StatevectorSimulator::reset_qubit(size_t qn)
+    {
+        size_t outcome = measure_qubit(qn);
+        if (outcome == 1)
+            x(qn);
     }
 
 
