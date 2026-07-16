@@ -52,6 +52,7 @@ __all__ = [
     "CLASSICAL_INSTRUCTIONS",
     "serialize_program",
     "parse_program_body",
+    "parse_originir_ext_dynamic",
     "clone_program",
     "contains_dynamic_keywords",
     "DEFAULT_MAX_WHILE_ITERATIONS",
@@ -634,3 +635,67 @@ def parse_program_body(lines: list[str], start: int = 0) -> tuple[list, int]:
         i += 1
 
     return body, i
+
+
+# ---------------------------------------------------------------------------
+# Top-level OriginIR-ext dynamic-program parser (header + body → Circuit)
+# ---------------------------------------------------------------------------
+
+
+def _replay_body(circuit, nodes: list) -> None:
+    """Replay parsed program *nodes* through the ``Circuit`` builder API so
+    every normal invariant (record_qubit, block stacks, opcode_list mirroring)
+    stays consistent — the same way flat OriginIR parsing replays opcodes
+    through ``add_gate``."""
+    for node in nodes:
+        if isinstance(node, GateOp):
+            operation, qubits, cbit, parameter, dagger_flag, control_qubits = node.opcode
+            circuit.add_gate(operation, qubits, cbit, parameter, dagger_flag, control_qubits)
+        elif isinstance(node, MeasureOp):
+            circuit.measure_to(node.qubit, node.cbit)
+        elif isinstance(node, ResetOp):
+            circuit.reset(node.qubit)
+        elif isinstance(node, ClassicalOp):
+            circuit._add_classical(node.op, node.dest, node.srcs)
+        elif isinstance(node, IfBlock):
+            circuit.qif(node.cond)
+            _replay_body(circuit, node.then_body)
+            if node.else_body is not None:
+                circuit.qelse()
+                _replay_body(circuit, node.else_body)
+            circuit.endqif()
+        elif isinstance(node, WhileBlock):
+            circuit.qwhile(node.cond, node.max_iterations)
+            _replay_body(circuit, node.body)
+            circuit.endqwhile()
+        else:
+            raise TypeError(f"Unknown program node: {node!r}")
+
+
+def parse_originir_ext_dynamic(originir_str: str):
+    """Parse dynamic OriginIR-ext text into a :class:`Circuit`.
+
+    The ``QRAMDECL``/``QINIT``/``CREG`` header is parsed via
+    :class:`~uniqc.compile.originir.originir_base_parser.OriginIR_BaseParser`;
+    the body (gates, ``MEASURE``/``RESET``, classical instructions, and
+    ``QIF``/``QWHILE`` blocks) is parsed via :func:`parse_program_body` and
+    replayed through the ``Circuit`` builder API.
+
+    Returns:
+        A new ``Circuit`` with its ``dynamic_program`` populated.
+    """
+    from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+
+    from .qcircuit import Circuit
+
+    lines = originir_str.splitlines()
+    header_parser = OriginIR_BaseParser()
+    body_start = header_parser._extract_header(lines)
+    program, _ = parse_program_body(lines, body_start)
+
+    circuit = Circuit(header_parser.n_qubit)
+    circuit.creg(header_parser.n_cbit)
+    for name, (addr_size, data_size) in header_parser.qram_declarations.items():
+        circuit.qram_declare(name, addr_size, data_size)
+    _replay_body(circuit, program)
+    return circuit

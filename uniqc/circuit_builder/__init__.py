@@ -1,16 +1,18 @@
-from .dynamic_program import (
-    AssignNode,
-    BinExpr,
-    CMeasureNode,
-    ConstExpr,
-    Expr,
-    GateNode,
-    IfNode,
-    MemExpr,
-    ResetNode,
-    UnaryExpr,
-    WhileNode,
-    parse_expr,
+from .classical_program import (
+    BinCond,
+    BitRef,
+    ClassicalOp,
+    Cond,
+    ConstBit,
+    GateOp,
+    IfBlock,
+    MeasureOp,
+    NotCond,
+    Operand,
+    ResetOp,
+    WhileBlock,
+    parse_cond,
+    parse_operand,
 )
 from .matrix import NotMatrixableError, get_matrix
 from .named_circuit import NamedCircuit, circuit_def

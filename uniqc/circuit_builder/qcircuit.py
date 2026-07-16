@@ -234,10 +234,10 @@ class Circuit:
         self._auto_params: dict[tuple[str, int], object] = {}
         # QRAM declarations: name -> (addr_size, data_size)
         self.qram_declarations: dict[str, tuple[int, int]] = {}
-        # Classical memory declarations: name -> initial value.
-        self.classical_memory: dict[str, int] = {}
-        # Structured dynamic program (MEASURE/RESET/QIF/QWHILE/...). ``None``
-        # for ordinary flat circuits — see ``_ensure_dynamic``.
+        # Structured classical/control-flow program (GateOp/MeasureOp/ResetOp/
+        # ClassicalOp/IfBlock/WhileBlock). ``None`` for ordinary flat circuits;
+        # set on the first creg/measure_to/reset/classical/qif/qwhile call —
+        # see ``_ensure_dynamic``.
         self.dynamic_program: list | None = None
         # Stack of body lists currently open for appends (top = insertion point).
         self._dynamic_body_stack: list[list] = []
@@ -354,9 +354,8 @@ class Circuit:
         new_circuit._param_dict = self._param_dict  # shared reference
         new_circuit._auto_params = dict(self._auto_params)
         new_circuit.qram_declarations = dict(self.qram_declarations)
-        new_circuit.classical_memory = dict(self.classical_memory)
         if self.dynamic_program is not None:
-            from .dynamic_program import clone_program
+            from .classical_program import clone_program
 
             new_top, list_map, node_map = clone_program(self.dynamic_program)
             new_circuit.dynamic_program = new_top
@@ -398,26 +397,25 @@ class Circuit:
         qram_header = ""
         for name, (addr_size, data_size) in self.qram_declarations.items():
             qram_header += f"QRAMDECL {name} {addr_size},{data_size}\n"
-        mem_header = ""
-        for name, init in self.classical_memory.items():
-            mem_header += f"CDECL {name}, {init}\n"
-        header = qram_header + mem_header + make_header_originir(self.qubit_num, self.cbit_num)
+        header = qram_header + make_header_originir(self.qubit_num, self.cbit_num)
         if self.dynamic_program is not None:
-            from .dynamic_program import serialize_program
+            from .classical_program import serialize_program
 
+            # Measurements live inside the program body as ``MEASURE q, c``
+            # statements — there is no separate terminal measurement section.
             circuit_str = "\n".join(serialize_program(self.dynamic_program))
-        else:
-            circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
+            return header + circuit_str + "\n"
+        circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
         measure = make_measure_originir(self.measure_list)
         return header + circuit_str + "\n" + measure
 
     def _reject_dynamic_export(self, target_format: str) -> None:
-        if self.dynamic_program is not None or self.classical_memory:
+        if self.dynamic_program is not None:
             raise CircuitTranslationError(
-                "Circuit contains a dynamic program (mid-circuit MEASURE/RESET/"
-                "classical assignment/QIF/QWHILE or declared classical memory) "
-                f"which cannot be converted to {target_format}. Dynamic programs "
-                "are an OriginIR-ext-only feature.",
+                "Circuit contains a dynamic program (mid-circuit MEASURE/RESET, "
+                "classical AND/OR/XOR/MOV/NOT instructions, or QIF/QWHILE control "
+                f"flow) which cannot be converted to {target_format}. Dynamic "
+                "programs are an OriginIR-ext-only feature.",
                 source_format="originir-ext",
                 target_format=target_format,
             )
@@ -453,9 +451,7 @@ class Circuit:
 
         decomposed = decompose_for_originir(self)
         header = make_header_originir(decomposed.qubit_num, decomposed.cbit_num)
-        circuit_str = "\n".join(
-            [opcode_to_line_originir_official(op) for op in decomposed.opcode_list]
-        )
+        circuit_str = "\n".join([opcode_to_line_originir_official(op) for op in decomposed.opcode_list])
         measure = make_measure_originir(decomposed.measure_list)
         return header + circuit_str + "\n" + measure
 
@@ -494,9 +490,10 @@ class Circuit:
     def from_originir(cls, originir_str: str) -> Circuit:
         """Create a Circuit from an OriginIR(-ext) string.
 
-        Text using dynamic-program keywords (``CDECL``/``CMEASURE``/
-        ``RESET``/``CASSIGN``/``QIF``/``QWHILE``) is parsed via the
-        structured dynamic-program parser; ordinary flat circuits (including
+        Text using the classical / control-flow extension (mid-circuit
+        ``MEASURE``/``RESET``, ``AND``/``OR``/``XOR``/``MOV``/``NOT``
+        instructions, or ``QIF``/``QWHILE`` blocks) is parsed via the
+        structured program parser; ordinary flat circuits (including
         QRAM/CONTROL/DAGGER) go through the original flat parser unchanged.
 
         Args:
@@ -505,10 +502,10 @@ class Circuit:
         Returns:
             A new Circuit instance.
         """
-        from .dynamic_program import contains_dynamic_keywords
+        from .classical_program import contains_dynamic_keywords
 
         if contains_dynamic_keywords(originir_str):
-            from .dynamic_program import parse_originir_ext_dynamic
+            from .classical_program import parse_originir_ext_dynamic
 
             return parse_originir_ext_dynamic(originir_str)
 
@@ -741,6 +738,7 @@ class Circuit:
         _has_torch = "torch" in __import__("sys").modules
         if _has_torch and opcode_params is not None:
             import torch as _torch
+
             if isinstance(opcode_params, _torch.Tensor):
                 opcode_idx = len(self.opcode_list)
                 self.param_map[opcode_idx] = opcode_params
@@ -750,15 +748,19 @@ class Circuit:
                 self.param_map[opcode_idx] = _torch.stack(
                     [p if isinstance(p, _torch.Tensor) else _torch.tensor(float(p)) for p in opcode_params]
                 )
-                opcode_params = [float(p.detach().cpu().item()) if isinstance(p, _torch.Tensor) else float(p) for p in opcode_params]
+                opcode_params = [
+                    float(p.detach().cpu().item()) if isinstance(p, _torch.Tensor) else float(p) for p in opcode_params
+                ]
 
         # has_param: auto-create nn.Parameter and register in param_map.
         if has_param:
             opcode_idx = len(self.opcode_list)
             if opcode_params is None:
                 opcode_params = self._auto_init_param(
-                    operation, opcode_idx,
-                    trainable=trainable, init_params=init_params,
+                    operation,
+                    opcode_idx,
+                    trainable=trainable,
+                    init_params=init_params,
                 )
             elif not _has_torch:
                 raise ImportError("has_param requires PyTorch. Install with: pip install unified-quantum[pytorch]")
@@ -767,9 +769,9 @@ class Circuit:
         self.opcode_list.append(opcode)
         self.record_qubit(resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits])
         if self.dynamic_program is not None:
-            from .dynamic_program import GateNode
+            from .classical_program import GateOp
 
-            self._dynamic_body_stack[-1].append(GateNode(opcode))
+            self._dynamic_body_stack[-1].append(GateOp(opcode))
 
     def add_circuit(self, other: Circuit) -> None:
         """Add all gates from another circuit into this circuit."""
@@ -791,9 +793,7 @@ class Circuit:
             IndexError: If *opcode_idx* is out of range.
         """
         if opcode_idx < 0 or opcode_idx >= len(self.opcode_list):
-            raise IndexError(
-                f"opcode_idx {opcode_idx} out of range [0, {len(self.opcode_list)})"
-            )
+            raise IndexError(f"opcode_idx {opcode_idx} out of range [0, {len(self.opcode_list)})")
         self.param_map[opcode_idx] = tensor
 
     def set_param_last(self, tensor) -> int:
@@ -849,10 +849,16 @@ class Circuit:
 
     # Number of rotation angles per parametric gate.
     _PARAM_COUNTS: dict[str, int] = {
-        "RX": 1, "RY": 1, "RZ": 1, "U1": 1,
-        "RPhi": 2, "U2": 2,
+        "RX": 1,
+        "RY": 1,
+        "RZ": 1,
+        "U1": 1,
+        "RPhi": 2,
+        "U2": 2,
         "U3": 3,
-        "XX": 1, "YY": 1, "ZZ": 1,
+        "XX": 1,
+        "YY": 1,
+        "ZZ": 1,
     }
 
     def _auto_init_param(
@@ -871,6 +877,7 @@ class Circuit:
         """
         import math as _math
         import torch as _torch
+
         n = self._PARAM_COUNTS.get(gate_name, 1)
         if init_params is not None:
             if isinstance(init_params, (list, tuple)):
@@ -1049,8 +1056,15 @@ class Circuit:
 
     # ─────────────────── Single-qubit parametric gates ───────────────────
 
-    def rx(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
-           trainable: bool = True, init_params: object = None) -> None:
+    def rx(
+        self,
+        qn: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply RX rotation gate.
 
         Args:
@@ -1060,27 +1074,45 @@ class Circuit:
             trainable: Whether the parameter is trainable (only with *has_param*).
             init_params: Custom initial value.  Default: ``Uniform(-π, π)``.
         """
-        self.add_gate("RX", qn, params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("RX", qn, params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def ry(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
-           trainable: bool = True, init_params: object = None) -> None:
+    def ry(
+        self,
+        qn: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply RY rotation gate."""
-        self.add_gate("RY", qn, params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("RY", qn, params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def rz(self, qn: QubitInput, theta: float = None, *, has_param: bool = False,
-           trainable: bool = True, init_params: object = None) -> None:
+    def rz(
+        self,
+        qn: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply RZ rotation gate."""
-        self.add_gate("RZ", qn, params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("RZ", qn, params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def rphi(self, qn: QubitInput, theta: float = None, phi: float = None, *,
-             has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def rphi(
+        self,
+        qn: QubitInput,
+        theta: float = None,
+        phi: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply RPhi rotation gate."""
         params = [theta, phi] if not has_param else None
-        self.add_gate("RPhi", qn, params=params, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("RPhi", qn, params=params, has_param=has_param, trainable=trainable, init_params=init_params)
 
     def p(self, qn: QubitInput, lam: float) -> None:
         """Apply phase gate P(λ), equivalent to U1.
@@ -1216,43 +1248,85 @@ class Circuit:
 
     # ─────────────────── Parametric gates ───────────────────
 
-    def u1(self, qn: QubitInput, lam: float = None, *, has_param: bool = False,
-           trainable: bool = True, init_params: object = None) -> None:
+    def u1(
+        self,
+        qn: QubitInput,
+        lam: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply U1 single-parameter unitary gate."""
-        self.add_gate("U1", qn, params=lam, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("U1", qn, params=lam, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def u2(self, qn: QubitInput, phi: float = None, lam: float = None, *,
-           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def u2(
+        self,
+        qn: QubitInput,
+        phi: float = None,
+        lam: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply U2 two-parameter unitary gate."""
         params = [phi, lam] if not has_param else None
-        self.add_gate("U2", qn, params=params, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("U2", qn, params=params, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def u3(self, qn: QubitInput, theta: float = None, phi: float = None, lam: float = None, *,
-           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def u3(
+        self,
+        qn: QubitInput,
+        theta: float = None,
+        phi: float = None,
+        lam: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply U3 three-parameter unitary gate."""
         params = [theta, phi, lam] if not has_param else None
-        self.add_gate("U3", qn, params=params, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("U3", qn, params=params, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def xx(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
-           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def xx(
+        self,
+        q1: QubitInput,
+        q2: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply XX Ising interaction gate."""
-        self.add_gate("XX", [q1, q2], params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("XX", [q1, q2], params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def yy(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
-           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def yy(
+        self,
+        q1: QubitInput,
+        q2: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply YY Ising interaction gate."""
-        self.add_gate("YY", [q1, q2], params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("YY", [q1, q2], params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
-    def zz(self, q1: QubitInput, q2: QubitInput, theta: float = None, *,
-           has_param: bool = False, trainable: bool = True, init_params: object = None) -> None:
+    def zz(
+        self,
+        q1: QubitInput,
+        q2: QubitInput,
+        theta: float = None,
+        *,
+        has_param: bool = False,
+        trainable: bool = True,
+        init_params: object = None,
+    ) -> None:
         """Apply ZZ Ising interaction gate."""
-        self.add_gate("ZZ", [q1, q2], params=theta, has_param=has_param,
-                       trainable=trainable, init_params=init_params)
+        self.add_gate("ZZ", [q1, q2], params=theta, has_param=has_param, trainable=trainable, init_params=init_params)
 
     def xy(self, q1: QubitInput, q2: QubitInput, theta: float) -> None:
         """Apply XY Ising interaction gate.
@@ -1333,133 +1407,164 @@ class Circuit:
         resolved = self._resolve_qubit(list(qubits))
         if isinstance(resolved, list) and len(resolved) != total:
             raise ValueError(
-                f"QRAM '{name}' expects {total} qubits ({addr_size} addr + {data_size} data), "
-                f"got {len(resolved)}."
+                f"QRAM '{name}' expects {total} qubits ({addr_size} addr + {data_size} data), got {len(resolved)}."
             )
         self.add_gate(name, list(qubits), control_qubits=control_qubits)
 
-    # ─────────────────── Structured dynamic program ───────────────────
+    # ─────────────────── Classical / control-flow program ───────────────────
     #
     # A circuit starts as an ordinary flat opcode_list. The first call to
-    # declare_memory()/cmeasure()/reset_qubit()/cassign()/qif()/qwhile()
-    # switches it into "dynamic mode": Circuit.dynamic_program becomes a
-    # list of structured nodes (GateNode/CMeasureNode/ResetNode/AssignNode/
-    # IfNode/WhileNode), and add_gate() mirrors every subsequent opcode into
-    # the currently open block. opcode_list keeps receiving every gate ever
-    # added (in call order, ignoring branch/loop structure) — it remains a
-    # valid input for legacy flat-only code paths, but only dynamic_program
-    # is the authoritative execution order once dynamic mode is active.
+    # creg()/measure_to()/reset()/c_and()/.../qif()/qwhile() switches it into
+    # "dynamic mode": Circuit.dynamic_program becomes a list of structured
+    # nodes (GateOp/MeasureOp/ResetOp/ClassicalOp/IfBlock/WhileBlock), and
+    # add_gate() mirrors every subsequent gate opcode into the currently open
+    # block. opcode_list keeps receiving every gate ever added (in call order,
+    # ignoring branch/loop structure); only dynamic_program is the
+    # authoritative execution order once dynamic mode is active.
 
-    def declare_memory(self, name: str, init: int = 0) -> None:
-        """Declare a named classical-memory register with an initial value.
+    def creg(self, size: int) -> None:
+        """Declare the classical-register (CREG) size for this circuit.
+
+        CREG bits ``c[0..size-1]`` are single bits written by ``MEASURE`` /
+        classical instructions and read by ``QIF`` / ``QWHILE`` conditions.
+        Sets a floor on the CREG size; it also auto-grows to fit the largest
+        classical bit referenced by ``measure_to()`` / classical instructions.
 
         Args:
-            name: Unique identifier for this classical memory register.
-            init: Initial integer value (default 0).
-
-        Raises:
-            ValueError: If *name* is already declared.
+            size: Number of classical bits (must be non-negative).
         """
-        if name in self.classical_memory:
-            raise ValueError(f"Classical memory '{name}' is already declared.")
-        self.classical_memory[name] = init
+        if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+            raise ValueError(f"creg() size must be a non-negative integer, got {size!r}.")
+        self.cbit_num = max(self.cbit_num, size)
 
     def _ensure_dynamic(self) -> list:
         """Switch to dynamic-program mode (if not already) and return the
         currently open body list to append new nodes to."""
         if self.dynamic_program is None:
-            from .dynamic_program import GateNode
+            from .classical_program import GateOp
 
-            self.dynamic_program = [GateNode(op) for op in self.opcode_list]
+            self.dynamic_program = [GateOp(op) for op in self.opcode_list]
             self._dynamic_body_stack = [self.dynamic_program]
         return self._dynamic_body_stack[-1]
 
-    def cmeasure(self, qubit: QubitInput, mem: str) -> None:
-        """Mid-circuit measurement of *qubit* into classical memory *mem*.
+    def _note_cbit(self, index: int) -> None:
+        """Grow ``cbit_num`` so the CREG includes bit *index*."""
+        if not isinstance(index, int) or isinstance(index, bool) or index < 0:
+            raise ValueError(f"CREG bit index must be a non-negative integer, got {index!r}.")
+        self.cbit_num = max(self.cbit_num, index + 1)
 
-        Unlike :meth:`measure`, this does not add to the terminal
-        measurement list — the qubit remains live and available for further
-        gates, and the sampled outcome is written into classical memory for
-        use in later ``QIF``/``QWHILE`` conditions or assignments.
+    def measure_to(self, qubit: QubitInput, cbit: int) -> None:
+        """Mid-circuit measurement of *qubit* into CREG bit *cbit*.
 
-        Args:
-            qubit: The qubit to measure — can be int, Qubit, or QRegSlice.
-            mem: Name of a previously declared classical memory register.
-
-        Raises:
-            ValueError: If *mem* is not declared, or *qubit* resolves to more
-                than one qubit.
-        """
-        from .dynamic_program import CMeasureNode
-
-        resolved = self._resolve_qubit(qubit)
-        if isinstance(resolved, list):
-            raise ValueError("cmeasure() takes exactly one qubit.")
-        if mem not in self.classical_memory:
-            raise ValueError(f"Classical memory '{mem}' is not declared. Call declare_memory() first.")
-        body = self._ensure_dynamic()
-        body.append(CMeasureNode(resolved, mem))
-        self.record_qubit(resolved)
-
-    def reset_qubit(self, qubit: QubitInput) -> None:
-        """Mid-circuit reset of *qubit* to ``|0>``.
+        The qubit's outcome is written to ``c[cbit]`` for use in later
+        ``QIF`` / ``QWHILE`` conditions or classical instructions. Unlike the
+        terminal :meth:`measure`, the qubit stays live for further gates and
+        this may be called inside ``QIF`` / ``QWHILE`` blocks.
 
         Args:
-            qubit: The qubit to reset — can be int, Qubit, or QRegSlice.
+            qubit: The qubit to measure — int, Qubit, or QRegSlice (one qubit).
+            cbit: Destination CREG bit index.
 
         Raises:
             ValueError: If *qubit* resolves to more than one qubit.
         """
-        from .dynamic_program import ResetNode
+        from .classical_program import MeasureOp
 
         resolved = self._resolve_qubit(qubit)
         if isinstance(resolved, list):
-            raise ValueError("reset_qubit() takes exactly one qubit.")
+            raise ValueError("measure_to() takes exactly one qubit.")
+        self._note_cbit(cbit)
         body = self._ensure_dynamic()
-        body.append(ResetNode(resolved))
+        body.append(MeasureOp(resolved, cbit))
         self.record_qubit(resolved)
 
-    def cassign(self, mem: str, expr) -> None:
-        """Classical assignment: ``mem = expr``.
+    def reset(self, qubit: QubitInput) -> None:
+        """Mid-circuit reset of *qubit* to ``|0>``.
 
         Args:
-            mem: Name of a previously declared classical memory register.
-            expr: A classical expression string (see
-                :func:`uniqc.circuit_builder.dynamic_program.parse_expr`) or
-                an already-parsed ``Expr`` instance.
+            qubit: The qubit to reset — int, Qubit, or QRegSlice (one qubit).
 
         Raises:
-            ValueError: If *mem* is not declared.
+            ValueError: If *qubit* resolves to more than one qubit.
         """
-        from .dynamic_program import AssignNode, Expr, parse_expr
+        from .classical_program import ResetOp
 
-        if mem not in self.classical_memory:
-            raise ValueError(f"Classical memory '{mem}' is not declared. Call declare_memory() first.")
-        expr_node = expr if isinstance(expr, Expr) else parse_expr(expr)
+        resolved = self._resolve_qubit(qubit)
+        if isinstance(resolved, list):
+            raise ValueError("reset() takes exactly one qubit.")
         body = self._ensure_dynamic()
-        body.append(AssignNode(mem, expr_node))
+        body.append(ResetOp(resolved))
+        self.record_qubit(resolved)
+
+    def _coerce_operand(self, x):
+        """Coerce *x* into an :class:`~uniqc.circuit_builder.classical_program.Operand`:
+        an int is a CREG bit index, a str is OriginIR operand syntax
+        (``c[k]`` / ``0`` / ``1``), or an existing ``Operand`` is passed through."""
+        from .classical_program import Operand, parse_operand
+
+        if isinstance(x, Operand):
+            return x
+        if isinstance(x, bool):
+            raise TypeError("Classical operand must be an int CREG index, a 'c[k]'/'0'/'1' string, or an Operand.")
+        if isinstance(x, int):
+            return Operand(is_imm=False, value=x)
+        if isinstance(x, str):
+            return parse_operand(x)
+        raise TypeError(f"Invalid classical-instruction operand: {x!r}.")
+
+    def _add_classical(self, op: str, dest: int, srcs: tuple) -> None:
+        from .classical_program import ClassicalOp
+
+        self._note_cbit(dest)
+        operands = tuple(self._coerce_operand(s) for s in srcs)
+        for operand in operands:
+            if not operand.is_imm:
+                self._note_cbit(operand.value)
+        body = self._ensure_dynamic()
+        body.append(ClassicalOp(op, dest, operands))
+
+    def c_and(self, dest: int, a, b) -> None:
+        """Classical instruction ``c[dest] = a & b`` (operands: CREG bit or 0/1)."""
+        self._add_classical("AND", dest, (a, b))
+
+    def c_or(self, dest: int, a, b) -> None:
+        """Classical instruction ``c[dest] = a | b`` (operands: CREG bit or 0/1)."""
+        self._add_classical("OR", dest, (a, b))
+
+    def c_xor(self, dest: int, a, b) -> None:
+        """Classical instruction ``c[dest] = a ^ b`` (operands: CREG bit or 0/1)."""
+        self._add_classical("XOR", dest, (a, b))
+
+    def c_not(self, dest: int, a) -> None:
+        """Classical instruction ``c[dest] = ~a`` (operand: CREG bit or 0/1)."""
+        self._add_classical("NOT", dest, (a,))
+
+    def c_mov(self, dest: int, a) -> None:
+        """Classical instruction ``c[dest] = a`` (operand: CREG bit or 0/1)."""
+        self._add_classical("MOV", dest, (a,))
 
     def qif(self, cond) -> None:
-        """Open a ``QIF cond ... [ELSE ...] ENDQIF`` block.
+        """Open a ``QIF <cond> ... [QELSE ...] ENDQIF`` block.
 
         Args:
-            cond: A classical condition expression string or ``Expr``
-                instance. Nonzero evaluates as true.
+            cond: A condition string (see
+                :func:`uniqc.circuit_builder.classical_program.parse_cond`) or
+                a ``Cond`` instance. Nonzero evaluates as true.
         """
-        from .dynamic_program import Expr, IfNode, parse_expr
+        from .classical_program import IfBlock, parse_cond
 
-        cond_node = cond if isinstance(cond, Expr) else parse_expr(cond)
+        cond_node = parse_cond(cond)
         body = self._ensure_dynamic()
-        node = IfNode(cond_node, [], None)
+        node = IfBlock(cond_node, [], None)
         body.append(node)
         self._dynamic_block_stack.append(("if", node, "then"))
         self._dynamic_body_stack.append(node.then_body)
 
     def qelse(self) -> None:
-        """Open the ``ELSE`` branch of the innermost open ``QIF`` block.
+        """Open the ``QELSE`` branch of the innermost open ``QIF`` block.
 
         Raises:
-            ValueError: If there is no open ``QIF`` block awaiting ``ELSE``.
+            ValueError: If there is no open ``QIF`` block awaiting ``QELSE``.
         """
         if (
             not self._dynamic_block_stack
@@ -1485,29 +1590,29 @@ class Circuit:
         self._dynamic_body_stack.pop()
 
     def qwhile(self, cond, max_iterations: int = None) -> None:
-        """Open a ``QWHILE cond ... ENDQWHILE`` block.
+        """Open a ``QWHILE <cond> ... ENDQWHILE`` block.
 
         Args:
-            cond: A classical condition expression string or ``Expr``
-                instance. Nonzero evaluates as true; re-evaluated before
-                every iteration.
-            max_iterations: Loop watchdog — execution raises
-                ``LoopWatchdogError`` if the loop body would run more than
-                this many times. Must be a positive integer. Defaults to
-                :data:`uniqc.circuit_builder.dynamic_program.DEFAULT_MAX_WHILE_ITERATIONS`.
+            cond: A condition string or ``Cond`` instance. Nonzero evaluates as
+                true; re-evaluated before every iteration.
+            max_iterations: Optional override of the internal iteration
+                watchdog (defaults to
+                :data:`uniqc.circuit_builder.classical_program.DEFAULT_MAX_WHILE_ITERATIONS`).
+                This is a simulator safety cap, not part of the OriginIR-ext
+                surface syntax.
 
         Raises:
             ValueError: If *max_iterations* is not a positive integer.
         """
-        from .dynamic_program import DEFAULT_MAX_WHILE_ITERATIONS, Expr, WhileNode, parse_expr
+        from .classical_program import DEFAULT_MAX_WHILE_ITERATIONS, WhileBlock, parse_cond
 
         if max_iterations is None:
             max_iterations = DEFAULT_MAX_WHILE_ITERATIONS
         if not isinstance(max_iterations, int) or isinstance(max_iterations, bool) or max_iterations < 1:
             raise ValueError(f"qwhile() max_iterations must be a positive integer, got {max_iterations!r}.")
-        cond_node = cond if isinstance(cond, Expr) else parse_expr(cond)
+        cond_node = parse_cond(cond)
         body = self._ensure_dynamic()
-        node = WhileNode(cond_node, [], max_iterations)
+        node = WhileBlock(cond_node, [], max_iterations)
         body.append(node)
         self._dynamic_block_stack.append(("while", node, None))
         self._dynamic_body_stack.append(node.body)
@@ -1550,7 +1655,7 @@ class Circuit:
         if self._dynamic_block_stack:
             raise ValueError(
                 "measure() cannot be called inside an open QIF/QWHILE block. "
-                "Use cmeasure() for mid-circuit measurement into classical memory."
+                "Use measure_to(qubit, cbit) for mid-circuit measurement into the CREG."
             )
         # Resolve all qubits to integers
         resolved_qubits = []
