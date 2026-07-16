@@ -68,6 +68,8 @@ class OriginIR_ext_Simulator(BaseSimulator):
         super().__init__(backend_type, available_qubits, available_topology, **extra_kwargs)
         self.seed = seed
         self.max_while_iterations = max_while_iterations
+        # CREG size of the most recently resolved program (for result widths).
+        self.n_cbit = 0
 
     # ------------------------------------------------------------------
     # Input normalization
@@ -96,6 +98,8 @@ class OriginIR_ext_Simulator(BaseSimulator):
             nodes = nodes + [MeasureOp(q, i) for i, q in enumerate(circuit.measure_list)]
             cbit_num = max(circuit.cbit_num, len(circuit.measure_list))
 
+        self.qubit_num = circuit.qubit_num
+        self.n_cbit = cbit_num
         return nodes, circuit.qubit_num, cbit_num, dict(circuit.qram_declarations)
 
     def _register_dynamic_qrams(self, qram_declarations: dict, qram_data: dict | None = None) -> None:

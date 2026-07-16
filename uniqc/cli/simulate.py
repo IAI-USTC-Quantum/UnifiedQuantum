@@ -95,6 +95,20 @@ def _run_simulation(content: str, backend: str, shots: int) -> dict[str, float]:
     # Normalise CLI backend names to Python API names
     backend_type = "densitymatrix" if backend == "density" else backend
 
+    # Dynamic OriginIR-ext programs (mid-circuit MEASURE + classical control
+    # flow) are stochastic: route them to the CREG-aware simulator and report
+    # per-shot sampled probabilities keyed by the CREG bitstring.
+    from uniqc.circuit_builder.classical_program import contains_dynamic_keywords
+
+    if contains_dynamic_keywords(content):
+        from uniqc.simulator import OriginIR_ext_Simulator
+
+        dyn_sim = OriginIR_ext_Simulator(backend_type=backend_type)
+        counts = dyn_sim.simulate_shots(content, shots=shots)
+        n_bits = max(int(dyn_sim.n_cbit or 1), 1)
+        total = sum(counts.values()) or 1
+        return {format(int(state), f"0{n_bits}b"): count / total for state, count in counts.items()}
+
     sim = Simulator(backend_type=backend_type)
     sim.simulate_preprocess(content)
 

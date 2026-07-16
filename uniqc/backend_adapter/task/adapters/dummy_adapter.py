@@ -555,7 +555,16 @@ class DummyAdapter(QuantumAdapter):
                         if abs(a - b) != 1:
                             raise ValueError(f"MPS dummy backend rejects long-range 2q gate {operation} on ({a},{b})")
             else:
-                sim.simulate_preprocess(originir)
+                from uniqc.circuit_builder.classical_program import contains_dynamic_keywords
+
+                if contains_dynamic_keywords(originir):
+                    # Dynamic OriginIR-ext: validate by building the structured
+                    # program (the flat simulate_preprocess cannot parse QIF/QWHILE).
+                    from uniqc.circuit_builder.qcircuit import Circuit
+
+                    Circuit.from_originir(originir)
+                else:
+                    sim.simulate_preprocess(originir)
         except Exception as exc:  # noqa: BLE001
             return _dry_run_failed(
                 str(exc),
@@ -618,6 +627,15 @@ class DummyAdapter(QuantumAdapter):
             sim = self._build_simulator()
             return sim.simulate_pmeasure(originir)
 
+        from uniqc.circuit_builder.classical_program import contains_dynamic_keywords
+
+        if contains_dynamic_keywords(originir):
+            raise NotImplementedError(
+                "simulate_pmeasure() is not available for dynamic OriginIR-ext "
+                "programs (mid-circuit MEASURE + classical control flow make the "
+                "outcome stochastic). Use submit()/_simulate() for per-shot counts."
+            )
+
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
         readout_error = self._get_readout_error(originir)
@@ -655,6 +673,11 @@ class DummyAdapter(QuantumAdapter):
         """
         if self.simulator_kind == "mps":
             return self._simulate_mps(originir, shots)
+
+        from uniqc.circuit_builder.classical_program import contains_dynamic_keywords
+
+        if contains_dynamic_keywords(originir):
+            return self._simulate_dynamic(originir, shots)
 
         Simulator = self._get_simulator_cls()
         error_loader = self._get_error_loader()
@@ -694,6 +717,33 @@ class DummyAdapter(QuantumAdapter):
         return UnifiedResult.from_probabilities(
             probabilities=prob_dict,
             shots=shots,
+            platform="dummy",
+            task_id=self._generate_task_id(originir),
+        )
+
+    def _simulate_dynamic(self, originir: str, shots: int) -> UnifiedResult:
+        """Run a dynamic OriginIR-ext program (mid-circuit MEASURE + classical
+        control flow) via per-shot sampling on the CREG-aware simulator.
+
+        Exact-probability paths are ill-defined for these circuits, so counts
+        come from re-running the whole program *shots* times and tallying the
+        final CREG bitstrings (``c[0]`` = rightmost/LSB).
+        """
+        from uniqc.simulator import OriginIR_ext_Simulator
+
+        sim = OriginIR_ext_Simulator(
+            backend_type="statevector",
+            available_qubits=self.available_qubits,
+            available_topology=self.available_topology,
+        )
+        counts = sim.simulate_shots(originir, shots=shots)
+        n_bits = max(1, sim.n_cbit)
+        count_dict: dict[str, int] = {}
+        for value, count in counts.items():
+            bin_key = bin(int(value))[2:].zfill(n_bits)
+            count_dict[bin_key] = int(count)
+        return UnifiedResult.from_counts(
+            counts=count_dict,
             platform="dummy",
             task_id=self._generate_task_id(originir),
         )
