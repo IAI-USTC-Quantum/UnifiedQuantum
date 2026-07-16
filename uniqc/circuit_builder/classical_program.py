@@ -41,6 +41,7 @@ __all__ = [
     "BinCond",
     "parse_cond",
     "Operand",
+    "imm",
     "parse_operand",
     "GateOp",
     "MeasureOp",
@@ -350,6 +351,16 @@ class Operand:
 
 
 _OPERAND_RE = re.compile(r"^(?:c\s*\[\s*(\d+)\s*\]|([01]))$")
+
+
+def imm(value: int) -> Operand:
+    """Construct an immediate ``0``/``1`` source operand for a classical
+    instruction (e.g. ``circuit.c_xor(2, 0, imm(1))`` for ``c[2] = c[0] ^ 1``).
+
+    This disambiguates immediates from CREG bit indices, since a bare ``int``
+    passed to the ``Circuit.c_*`` builders denotes a CREG bit index ``c[int]``.
+    """
+    return Operand(is_imm=True, value=value)
 
 
 def parse_operand(text: str) -> Operand:

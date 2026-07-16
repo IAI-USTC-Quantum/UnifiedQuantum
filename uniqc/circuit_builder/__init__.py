@@ -11,6 +11,7 @@ from .classical_program import (
     Operand,
     ResetOp,
     WhileBlock,
+    imm,
     parse_cond,
     parse_operand,
 )
