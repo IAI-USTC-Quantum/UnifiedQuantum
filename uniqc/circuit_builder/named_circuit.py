@@ -247,36 +247,53 @@ class NamedCircuit:
         return self(c, qreg_mapping=qreg_mapping, param_values=param_values)
 
     def to_originir_def(self) -> str:
-        """Export as OriginIR DEF block.
+        """Export as an OriginIR-ext ``DEF`` block.
 
-        Note: This is a placeholder. Full DEF export requires
-        symbolic parameter support in OriginIR format.
+        The header reuses the named-register declaration syntax
+        (``DEF name(a[2], b[1]) (theta1, theta2)``): one ``reg[size]`` entry per
+        named quantum register, followed by an optional parenthesised list of
+        scalar parameter names. Body lines reference the formal registers
+        (``a[0]``, ``b[0]``, …) and the scalar parameter names, so the emitted
+        block round-trips through :class:`OriginIR_BaseParser`.
         """
-        lines = []
-        # Header: DEF name(qreg_list) (param_list)
-        qreg_str = ", ".join(f"q[{i}]" for i in range(self.num_qubits))
-        if self._params:
-            param_str = ", ".join(self._params)
-            lines.append(f"DEF {self._name}({qreg_str}) ({param_str})")
-        else:
-            lines.append(f"DEF {self._name}({qreg_str})")
+        import re
 
-        # Build body circuit - use qreg_mapping with integer indices
+        # Header: DEF name(reg1[size1], reg2[size2], ...) [(param1, param2, ...)]
+        reg_sig = ", ".join(f"{name}[{size}]" for name, size in self._qregs.items())
+        header = f"DEF {self._name}({reg_sig})"
+        if self._params:
+            header += " (" + ", ".join(self._params) + ")"
+        lines = [header]
+
         if self._builder:
-            qreg_mapping = {}
+            # Lay registers out contiguously (matching the parser) and record a
+            # physical-index -> formal register reference map for the body.
+            qreg_mapping: dict[str, list[int]] = {}
+            phys_to_ref: dict[int, str] = {}
             offset = 0
             for name, size in self._qregs.items():
-                qreg_mapping[name] = list(range(offset, offset + size))
+                indices = list(range(offset, offset + size))
+                qreg_mapping[name] = indices
+                for local, phys in enumerate(indices):
+                    phys_to_ref[phys] = f"{name}[{local}]"
                 offset += size
 
+            # Bind each scalar parameter to its own name so the body emits
+            # symbolic parameter references (e.g. ``RX q[0], (theta)``).
+            param_values: dict[str, object] | None = {p: p for p in self._params} if self._params else None
+
             c = Circuit(qregs=self._qregs)
-            self(c, qreg_mapping=qreg_mapping)
+            self(c, qreg_mapping=qreg_mapping, param_values=param_values)
+
+            def _to_ref(m: re.Match) -> str:
+                phys = int(m.group(1))
+                return phys_to_ref.get(phys, m.group(0))
 
             for line in c.originir.split("\n"):
-                if line.startswith("QINIT") or line.startswith("CREG") or line.startswith("MEASURE"):
+                stripped = line.strip()
+                if not stripped or stripped.startswith(("QINIT", "CREG", "MEASURE")):
                     continue
-                if line.strip():
-                    lines.append(line)
+                lines.append("  " + re.sub(r"q *\[ *(\d+) *\]", _to_ref, stripped))
 
         lines.append("ENDDEF")
         return "\n".join(lines)

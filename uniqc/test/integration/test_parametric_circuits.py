@@ -127,16 +127,29 @@ def test_def_roundtrip():
     # Export to DEF
     def_str = bell.to_originir_def()
 
-    # Parse DEF header
+    # Parse DEF header — new grammar declares named formal registers.
     from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
 
     for line in def_str.split("\n"):
         if line.startswith("DEF "):
-            op, qubits, params, name = OriginIR_LineParser.handle_def(line)
+            op, formal_qregs, params, name = OriginIR_LineParser.handle_def(line)
+            assert op == "DEF"
             assert name == "bell"
-            assert qubits == [0, 1]
+            assert formal_qregs == [("q", 2)]
             assert params == []
             break
+
+    # Full round-trip: define + call, then parse and flatten.
+    from uniqc.compile.originir.originir_base_parser import OriginIR_BaseParser
+
+    program = f"QINIT 4\nCREG 0\n{def_str}\nbell(q[0], q[1])\nbell(q[2], q[3])\n"
+    parser = OriginIR_BaseParser()
+    parser.parse(program)
+    flat = parser.to_extended_originir()
+    assert "H q[0]" in flat
+    assert "CNOT q[0], q[1]" in flat
+    assert "H q[2]" in flat
+    assert "CNOT q[2], q[3]" in flat
 
     return True
 

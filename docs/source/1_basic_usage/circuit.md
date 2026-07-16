@@ -334,9 +334,9 @@ rot_x(c, qreg_mapping={"q": [data[2]]}, param_values={"theta": 0.5})
 # 导出子程序定义
 def_block = bell_pair.to_originir_def()
 print(def_block)
-# DEF bell_pair(q[0], q[1])
+# DEF bell_pair(q[2])
 #   H q[0]
-#   CNOT q[0] q[1]
+#   CNOT q[0], q[1]
 # ENDDEF
 ```
 

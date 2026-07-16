@@ -287,42 +287,58 @@ class OriginIR_LineParser:
     regexp_barrier_str = r"^BARRIER" + f"(({blank}{qid}{blank}{comma})*{blank}{qid}{blank})" + "$"
     regexp_control_str = r"^(CONTROL|ENDCONTROL)" + f"(({blank}{qid}{blank}{comma})*{blank}{qid}{blank})" + "$"
 
-    # DEF block patterns: DEF name(q[0], q[1], ...) (param1, param2, ...)
-    # Parameter names can be alphanumeric
-    param_name = r"[A-Za-z_][A-Za-z0-9_]*"
-    qid_list = f"({blank}{qid}{blank}{comma})*{blank}{qid}{blank}"
-    param_list = f"({blank}{param_name}{blank}{comma})*{blank}{param_name}{blank}"
+    # DEF block header (OriginIR-ext) — reuses the named-register declaration
+    # syntax for the qubit signature:
+    #   DEF name(q[2], anc[1]) (theta1, theta2)
+    # The first parenthesised group is a comma-separated list of ``name[size]``
+    # register declarations; the optional trailing group is a comma-separated
+    # list of scalar parameter names.
+    reg_ident = r"[A-Za-z_][A-Za-z0-9_]*"
     regexp_def_str = (
         "^DEF"
         + blank
-        + r"([A-Za-z_][A-Za-z0-9_]*)"
-        + blank  # circuit name
+        + rf"({reg_ident})"  # 1: circuit name
+        + blank
         + r"\("
         + blank
-        + qid_list
+        + r"([^()]*?)"  # 2: register-declaration list
         + blank
         + r"\)"
         + "(?:"
         + blank
         + r"\("
         + blank
-        + param_list
+        + r"([^()]*?)"  # 3: scalar parameter-name list
         + blank
         + r"\)"
         + ")?"
+        + blank
         + "$"
     )
     regexp_enddef_str = "^ENDDEF$"
 
-    # QRAMDECL name addr_size,data_size
-    regexp_qramdecl_str = (
-        r"^QRAMDECL"
+    # DEF subroutine call: name(<qubit args>) [(<scalar param args>)]
+    #   bell(q[0], q[1])   |   rx_gate(q[3]) (1.57)   |   bell(a)
+    regexp_defcall_str = (
+        "^"
+        + rf"({reg_ident})"  # 1: subroutine name
         + blank
-        + r"([A-Za-z_][A-Za-z0-9_]*)"
+        + r"\("
+        + r"([^()]*)"  # 2: qubit args
+        + r"\)"
+        + "(?:"
         + blank
-        + r"(\d+)\s*,\s*(\d+)"
+        + r"\("
+        + r"([^()]*)"  # 3: scalar param args
+        + r"\)"
+        + ")?"
         + blank
         + "$"
+    )
+
+    # QRAMDECL name addr_size,data_size
+    regexp_qramdecl_str = (
+        r"^QRAMDECL" + blank + r"([A-Za-z_][A-Za-z0-9_]*)" + blank + r"(\d+)\s*,\s*(\d+)" + blank + "$"
     )
 
     regexp_1q = re.compile(regexp_1q_str)
@@ -340,6 +356,7 @@ class OriginIR_LineParser:
     regexp_control = re.compile(regexp_control_str)
     regexp_def = re.compile(regexp_def_str)
     regexp_enddef = re.compile(regexp_enddef_str)
+    regexp_defcall = re.compile(regexp_defcall_str)
     regexp_qramdecl = re.compile(regexp_qramdecl_str)
     regexp_qid = re.compile(qid)
 
@@ -638,36 +655,60 @@ class OriginIR_LineParser:
     def handle_def(line):
         """Parse a DEF block header line.
 
-        Format: DEF name(q[0], q[1], ...) (param1, param2, ...)
+        Format: ``DEF name(reg[size], ...) (param1, param2, ...)``.
+
+        The qubit signature reuses the named-register declaration syntax: a
+        comma-separated list of ``name[size]`` register declarations. The
+        optional trailing parenthesised group is a comma-separated list of
+        **scalar** parameter names.
 
         Returns:
-            tuple: (operation="DEF", qubits_list, params_list, name)
+            tuple: ``(operation="DEF", formal_qregs, params, name)`` where
+                ``formal_qregs`` is a list of ``(reg_name, size)`` tuples (in
+                declaration order) and ``params`` is a list of scalar
+                parameter-name strings.
         """
-        matches = OriginIR_LineParser.regexp_def.match(line)
+        matches = OriginIR_LineParser.regexp_def.match(line.strip())
         if not matches:
             raise ValueError(f"Invalid DEF line: {line}")
 
         name = matches.group(1)
 
-        # Extract qubit indices from the first parentheses group
-        qubits = []
-        # Find all q[N] patterns
-        qid_matches = OriginIR_LineParser.regexp_qid.findall(line)
-        qubits = [int(q) for q in qid_matches]
+        # First parenthesised group: named-register declarations name[size].
+        reg_group = matches.group(2) or ""
+        formal_qregs = [
+            (reg_name, int(size))
+            for reg_name, size in re.findall(r"([A-Za-z_][A-Za-z0-9_]*) *\[ *(\d+) *\]", reg_group)
+        ]
+        if not formal_qregs:
+            raise ValueError(f"DEF header must declare at least one register (e.g. 'q[2]'): {line}")
 
-        # Extract parameter names from second parentheses (if present)
-        params = []
-        # Look for the second parentheses group containing parameter names
-        import re as re_module
+        # Second parenthesised group (optional): scalar parameter names.
+        param_group = matches.group(3)
+        params: list[str] = []
+        if param_group is not None:
+            params = [p.strip() for p in param_group.split(",") if p.strip()]
 
-        param_pattern = r"\(\s*([A-Za-z_][A-Za-z0-9_\s,]*)\s*\)\s*$"
-        param_match = re_module.search(param_pattern, line)
-        if param_match:
-            param_str = param_match.group(1)
-            # Split by comma and strip
-            params = [p.strip() for p in param_str.split(",") if p.strip()]
+        return ("DEF", formal_qregs, params, name)
 
-        return ("DEF", qubits, params, name)
+    @staticmethod
+    def handle_def_call(line):
+        """Parse a DEF subroutine call line.
+
+        Format: ``name(<qubit args>) [(<scalar param args>)]`` where the qubit
+        args are a comma-separated list of qubit references (``reg[idx]`` or a
+        whole register name ``reg``) and the optional trailing group is a
+        comma-separated list of scalar parameter values.
+
+        Returns:
+            tuple: ``(name, qubit_args_str, param_args_str_or_None)`` — the two
+                argument groups are returned verbatim for the base parser to
+                resolve against the active register maps.
+        """
+        matches = OriginIR_LineParser.regexp_defcall.match(line.strip())
+        if not matches:
+            raise ValueError(f"Invalid DEF call line: {line}")
+        return matches.group(1), matches.group(2), matches.group(3)
 
     @staticmethod
     def handle_qramdecl(line):
@@ -705,14 +746,12 @@ class OriginIR_LineParser:
         # `controlled_by(...)` clause before scanning for qubit indices —
         # otherwise q[..] references inside the controlled_by(...) clause
         # would be mistaken for address/data qubits.
-        remainder = line[len(qram_name):]
+        remainder = line[len(qram_name) :]
         before_control, sep, control_clause = remainder.partition("controlled_by")
         dagger_flag = bool(re.search(r"\bdagger\b", before_control))
         before_control = re.sub(r"\bdagger\b", "", before_control)
         qubit_indices = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(before_control)]
-        control_qubits = (
-            [int(q) for q in OriginIR_LineParser.regexp_qid.findall(control_clause)] if sep else []
-        )
+        control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(control_clause)] if sep else []
         return qram_name, qubit_indices, dagger_flag, control_qubits
 
     @staticmethod
@@ -825,8 +864,13 @@ class OriginIR_LineParser:
             elif operation == "DAGGER" or operation == "ENDDAGGER":
                 operation = OriginIR_LineParser.handle_dagger(line)
             elif operation == "DEF":
-                # DEF block header - return special operation
-                operation, q, parameter = OriginIR_LineParser.handle_def(line)
+                # Structural DEF header. The full block (body + ENDDEF) and any
+                # subroutine calls are expanded by OriginIR_BaseParser; here we
+                # only return the header in the standard 6-tuple shape so
+                # line-level consumers can recognise (and skip) it.
+                _, formal_qregs, params, _name = OriginIR_LineParser.handle_def(line)
+                q = formal_qregs
+                parameter = params
                 dagger_flag = False
                 control_qubits = []
             elif operation == "ENDDEF":

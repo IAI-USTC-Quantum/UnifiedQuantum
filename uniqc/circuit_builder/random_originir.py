@@ -12,6 +12,7 @@ Key exports:
 """
 
 import random
+import re
 
 from .opcode import opcode_to_line_originir
 from .originir_spec import angular_gates, available_originir_error_channels, available_originir_gates
@@ -22,6 +23,26 @@ __all__ = [
     "build_full_measurements",
     "random_originir",
 ]
+
+
+def _build_phys_to_ref(named_qregs):
+    """Map each physical qubit index to a ``regname[local]`` reference string."""
+    phys_to_ref: dict[int, str] = {}
+    offset = 0
+    for name, size in named_qregs:
+        for local in range(size):
+            phys_to_ref[offset + local] = f"{name}[{local}]"
+        offset += size
+    return phys_to_ref, offset
+
+
+def _rewrite_qrefs(line: str, phys_to_ref: dict[int, str]) -> str:
+    """Rewrite physical ``q[i]`` references in *line* to named-register refs."""
+    return re.sub(
+        r"q *\[ *(\d+) *\]",
+        lambda m: phys_to_ref.get(int(m.group(1)), m.group(0)),
+        line,
+    )
 
 
 def build_originir_gate(gate, qubits, params, dagger_flag=False, control_qubit_set=None):
@@ -124,6 +145,7 @@ def random_originir(
     channel_set=None,
     allow_control=False,
     allow_dagger=False,
+    named_qregs=None,
 ):
     """
     Generate a random OriginIR program with a given number of qubits and gates.
@@ -132,6 +154,17 @@ def random_originir(
         n_qubits (int): The number of qubits in the program.
         n_gates (int): The number of gates in the program.
         instruction_set (dict): A dictionary of available gates and their properties.
+        channel_set (dict | None): Optional error channels to include.
+        allow_control (bool): Whether to emit random ``controlled_by`` clauses.
+        allow_dagger (bool): Whether to emit random inline ``dagger`` suffixes.
+        named_qregs (list[tuple[str, int]] | None): Optional named-register
+            layout as ``(name, size)`` pairs. When provided, the program is
+            emitted with named ``QINIT name[size]`` declarations and
+            register-qualified qubit references (``name[local]``) instead of the
+            default bare-integer ``QINIT n`` header with physical ``q[i]``
+            operands. The register sizes must sum to *n_qubits*. This exercises
+            the named-register grammar and round-trips to the same circuit as
+            the bare-integer form.
 
     Returns:
         str: A string of OriginIR code.
@@ -184,6 +217,17 @@ def random_originir(
             raise ValueError(f"Instruction {gate_name} not available in OriginIR")
 
     program.extend(build_full_measurements(n_qubits))
+
+    if named_qregs is not None:
+        phys_to_ref, total = _build_phys_to_ref(named_qregs)
+        if total != n_qubits:
+            raise ValueError(f"named_qregs sizes sum to {total}, expected {n_qubits}.")
+        # Replace the bare-integer QINIT header with named declarations and
+        # rewrite every physical qubit reference to its named-register form.
+        header = [f"QINIT {name}[{size}]" for name, size in named_qregs]
+        header.append(program[1])  # CREG line unchanged
+        body = [_rewrite_qrefs(line, phys_to_ref) for line in program[2:]]
+        program = header + body
 
     originir = "\n".join(program)
 

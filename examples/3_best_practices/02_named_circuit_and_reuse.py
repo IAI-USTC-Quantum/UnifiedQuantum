@@ -13,16 +13,13 @@ import math
 import matplotlib.pyplot as plt
 
 from uniqc import Circuit, circuit_def
+from uniqc.compile.originir import OriginIR_BaseParser
 from uniqc.simulator import Simulator
 
 
 def probability_dict(values):
     n = int(round(math.log2(len(values)))) if values else 0
-    return {
-        format(i, f"0{n}b"): float(p)
-        for i, p in enumerate(values)
-        if abs(float(p)) > 1e-12
-    }
+    return {format(i, f"0{n}b"): float(p) for i, p in enumerate(values) if abs(float(p)) > 1e-12}
 
 
 def plot_probs(probs, title):
@@ -69,6 +66,24 @@ def main() -> None:
     print("DEF export:")
     print(bell_pair.to_originir_def())
     print("operations:", len(circuit.opcode_list))
+
+    # OriginIR-ext 文本层面的 named register + DEF 子程序。
+    # 两个命名寄存器 data/anc 会被扫平到同一物理索引空间；DEF 调用就地展开。
+    program = (
+        "QINIT data[2]\n"
+        "QINIT anc[2]\n"
+        "CREG 0\n"
+        "DEF bell(x[2])\n"
+        "  H x[0]\n"
+        "  CNOT x[0], x[1]\n"
+        "ENDDEF\n"
+        "bell(data)\n"
+        "bell(anc)\n"
+    )
+    parser = OriginIR_BaseParser()
+    parser.parse(program)
+    print("named-register DEF program flattens to:")
+    print(parser.to_extended_originir().strip())
 
     probs = probability_dict(Simulator().simulate_pmeasure(circuit.originir))
     print("non-zero states:", probs)

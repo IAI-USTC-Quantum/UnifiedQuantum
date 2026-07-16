@@ -15,11 +15,18 @@
 
 ```text
 DEF export:
-DEF bell_pair(q[0], q[1])
-H q[0]
-CNOT q[0], q[1]
+DEF bell_pair(q[2])
+  H q[0]
+  CNOT q[0], q[1]
 ENDDEF
 operations: 9
+named-register DEF program flattens to:
+QINIT 4
+CREG 0
+H q[0]
+CNOT q[0], q[1]
+H q[2]
+CNOT q[2], q[3]
 non-zero states: {'0000': 0.24999999999999978, '0111': 0.2499999999999998, '1011': 0.24999999999999986, '1100': 0.24999999999999983}
 ```
 
