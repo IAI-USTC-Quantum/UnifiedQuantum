@@ -8,6 +8,25 @@ OriginIR-ext extends the official OriginIR (accepted by OriginQ cloud) with:
   error channels for noise simulation
 - **Extended syntax**: inline ``dagger`` suffix, inline ``controlled_by(q[...])``
   clause (as an alternative to DAGGER/CONTROL blocks)
+- **Classical / control-flow extension** (local-simulation only — see
+  :class:`uniqc.simulator.OriginIR_ext_Simulator`):
+
+  * a runtime classical-register (CREG) of single bits ``c[0..n-1]`` (declared
+    by ``CREG n``), written by measurement and classical instructions and read
+    by conditions;
+  * ``MEASURE q[i], c[j]`` as a mid-circuit measurement writing CREG bit ``j``
+    (valid both mid-circuit and terminally);
+  * ``RESET q[i]`` mid-circuit qubit reset;
+  * classical bit instructions ``AND``/``OR``/``XOR`` (``op c[d], A, B``) and
+    ``MOV``/``NOT`` (``op c[d], A``), RISC three-operand / destination-first,
+    where ``A``/``B`` are CREG bits ``c[k]`` or ``0``/``1`` immediates;
+  * classical control flow ``QIF <cond> ... [QELSE ...] ENDQIF`` and
+    ``QWHILE <cond> ... ENDQWHILE``, where ``<cond>`` is boolean logic over CREG
+    bits using ``not``/``~``, ``and``/``&``, ``xor``/``^``, ``or``/``|`` (lowercase
+    keywords and symbols interchangeable) and parentheses.
+
+  These constructs are an OriginIR-ext-only feature and cannot be exported to
+  OpenQASM or submitted to cloud backends.
 
 OriginIR-ext is the **default local programming language** in UnifiedQuantum.
 When submitting to OriginQ cloud, circuits are automatically converted to
