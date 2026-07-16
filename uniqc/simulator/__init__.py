@@ -71,6 +71,8 @@ from .mps_simulator import MPSConfig as MPSConfig
 from .mps_simulator import MPSSimulator as MPSSimulator
 from .opcode_simulator import OpcodeSimulator as OpcodeSimulator
 from .opcode_simulator import backend_alias as backend_alias
+from .originir_ext_simulator import LoopWatchdogError as LoopWatchdogError
+from .originir_ext_simulator import OriginIR_ext_Simulator as OriginIR_ext_Simulator
 from .simulator import NoisySimulator as NoisySimulator
 from .simulator import Simulator as Simulator
 
@@ -91,6 +93,8 @@ __all__ = [
     "OpcodeSimulator",
     "MPSSimulator",
     "MPSConfig",
+    "OriginIR_ext_Simulator",
+    "LoopWatchdogError",
     "TorchQuantumSimulator",
     "TORCHQUANTUM_AVAILABLE",
     "backend_alias",
