@@ -106,11 +106,60 @@ class OpcodeSimulator:
 
         self.simulator = self.SimulatorType()
         self.qram_registry: dict[str, tuple[int, int, list[int]]] = {}
+        # Runtime classical-register (CREG) store: one bit per address, updated
+        # by MEASURE / classical instructions and read by QIF/QWHILE conditions.
+        self.creg: list[int] = []
 
     def _clear(self):
         """Reset the simulator by creating a fresh simulator instance."""
         self.simulator = self.SimulatorType()
         self.qram_registry = {}
+        self.creg = []
+
+    # ─────────────────── Classical register (CREG) ───────────────────
+
+    def init_creg(self, n_cbit: int) -> None:
+        """(Re)initialize the CREG store to *n_cbit* zeroed single-bit cells."""
+        self.creg = [0] * int(n_cbit)
+
+    def get_cbit(self, index: int) -> int:
+        """Return CREG bit *index* (0/1)."""
+        if index < 0 or index >= len(self.creg):
+            raise IndexError(f"CREG bit c[{index}] is out of range (CREG size {len(self.creg)}).")
+        return self.creg[index]
+
+    def set_cbit(self, index: int, value: int) -> None:
+        """Write *value* (coerced to 0/1) into CREG bit *index*."""
+        if index < 0 or index >= len(self.creg):
+            raise IndexError(f"CREG bit c[{index}] is out of range (CREG size {len(self.creg)}).")
+        self.creg[index] = 1 if value else 0
+
+    def creg_value(self) -> int:
+        """Return the whole CREG as an integer with ``c[0]`` as the LSB."""
+        value = 0
+        for i, bit in enumerate(self.creg):
+            if bit:
+                value |= 1 << i
+        return value
+
+    def simulate_measure(self, qubit: int, cbit: int) -> int:
+        """Measure *qubit* (collapsing the state) and store the outcome in
+        CREG bit *cbit*. Returns the measured outcome (0/1)."""
+        outcome = int(self.simulator.measure_qubit(qubit))
+        self.set_cbit(cbit, outcome)
+        return outcome
+
+    def simulate_reset(self, qubit: int) -> None:
+        """Reset *qubit* to ``|0>``."""
+        self.simulator.reset_qubit(qubit)
+
+    def simulate_classical(self, node) -> int:
+        """Execute a ``ClassicalOp``-like node against the CREG store: read its
+        source operands, compute the result, and write it to the destination
+        bit. Returns the written value (0/1)."""
+        value = node.execute(self.creg)
+        self.set_cbit(node.dest, value)
+        return value
 
     def register_qram(self, name: str, addr_size: int, data_size: int, data_array: list[int]) -> None:
         """Register a QRAM data array for simulation.
