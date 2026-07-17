@@ -184,6 +184,27 @@ my_ram q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7],q[8]
         assert "QRAMDECL my_ram 3,6" in output
         assert "my_ram q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8]" in output
 
+    def test_duplicate_qramdecl_in_header_rejected(self):
+        text = "QRAMDECL r 1,2\nQRAMDECL r 2,1\nQINIT 3\nCREG 0\nr q[0],q[1],q[2]\n"
+        with pytest.raises(ValueError, match="declared more than once"):
+            Circuit.from_originir(text)
+
+    def test_duplicate_qramdecl_in_body_rejected(self):
+        text = "QRAMDECL r 1,2\nQINIT 3\nCREG 0\nX q[0]\nQRAMDECL r 2,1\nr q[0],q[1],q[2]\n"
+        with pytest.raises(ValueError, match="declared more than once"):
+            Circuit.from_originir(text)
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            "r q[0],q[1] trailing-garbage",
+            "r q[0],q[1] controlled_by ()",
+        ],
+    )
+    def test_malformed_qram_call_rejected(self, call):
+        with pytest.raises(ValueError, match="Invalid QRAM call"):
+            Circuit.from_originir(f"QRAMDECL r 1,1\nQINIT 3\nCREG 0\n{call}\n")
+
 
 # ─── Circuit class QRAM tests ─────────────────────────────────────────
 

@@ -775,16 +775,23 @@ class OriginIR_LineParser:
         Returns:
             tuple: (qram_name, qubit_indices, dagger_flag, control_qubits)
         """
-        # Strip the leading operation name, then split off any
-        # `controlled_by(...)` clause before scanning for qubit indices —
-        # otherwise q[..] references inside the controlled_by(...) clause
-        # would be mistaken for address/data qubits.
-        remainder = line[len(qram_name) :]
-        before_control, sep, control_clause = remainder.partition("controlled_by")
-        dagger_flag = bool(re.search(r"\bdagger\b", before_control))
-        before_control = re.sub(r"\bdagger\b", "", before_control)
-        qubit_indices = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(before_control)]
-        control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(control_clause)] if sep else []
+        # Strict full-match so a malformed line raises instead of silently
+        # mis-parsing. Reuses the compiled qid pattern so the accepted q[k]
+        # syntax stays identical to the rest of the parser.
+        qid = OriginIR_LineParser.regexp_qid.pattern
+        matches = re.fullmatch(
+            rf"\s*{re.escape(qram_name)}\s+"
+            rf"(?P<targets>{qid}(?:\s*,\s*{qid})*)"
+            rf"\s*(?P<dagger>dagger)?"
+            rf"(?:\s+controlled_by\s*\(\s*(?P<controls>{qid}(?:\s*,\s*{qid})*)\s*\))?\s*",
+            line,
+        )
+        if not matches:
+            raise ValueError(f"Invalid QRAM call line: {line}")
+        qubit_indices = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group("targets"))]
+        dagger_flag = matches.group("dagger") is not None
+        controls = matches.group("controls")
+        control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(controls)] if controls else []
         return qram_name, qubit_indices, dagger_flag, control_qubits
 
     @staticmethod

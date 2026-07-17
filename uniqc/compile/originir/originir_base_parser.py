@@ -161,6 +161,8 @@ class OriginIR_BaseParser:
             token = raw.split()[0]
             if token == "QRAMDECL":
                 _op, name, addr_size, data_size = OriginIR_LineParser.handle_qramdecl(raw)
+                if name in self.qram_declarations:
+                    raise ValueError(f"QRAM '{name}' is declared more than once.")
                 self.qram_declarations[name] = (addr_size, data_size)
                 OriginIR_LineParser._declared_qram_names.add(name)
                 idx += 1
@@ -439,6 +441,8 @@ class OriginIR_BaseParser:
         # QRAMDECL encountered in the body — register it and continue.
         if operation == "QRAMDECL":
             name, addr_size, data_size = qubits
+            if name in self.qram_declarations:
+                raise ValueError(f"Parse error at line {lineno}: QRAM '{name}' is declared more than once.")
             self.qram_declarations[name] = (addr_size, data_size)
             OriginIR_LineParser._declared_qram_names.add(name)
             return
