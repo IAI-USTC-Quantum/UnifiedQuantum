@@ -67,7 +67,13 @@ def transpile_qasm(
         if optimization_level not in [0, 1, 2, 3]:
             raise ValueError("Invalid optimization_level. Must be 0, 1, 2, or 3.")
 
-        coupling_map = CouplingMap(topology)
+        # qiskit 2.x rejects self-coupled edges (e.g. the single-qubit virtual
+        # backend's (0, 0)) that older versions tolerated, and a topology that
+        # reduces to only self-loops yields a 0-qubit coupling map that rejects
+        # every circuit. Self-loops carry no routing constraint, so drop them;
+        # with nothing left, transpile without a coupling map.
+        edges = [(int(u), int(v)) for u, v in (topology or []) if int(u) != int(v)]
+        coupling_map = CouplingMap(edges) if edges else None
 
         circuits = []
         for i, qasm_str in enumerate(qasm_strings):
