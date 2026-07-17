@@ -195,7 +195,7 @@ def random_originir(
             if allow_control:
                 remaining_qubits = set(range(n_qubits)) - set(qubits_to_act)
                 # control_qubits = random.sample(remaining_qubits, random.randint(0, len(remaining_qubits)))
-                control_qubits = random.sample(remaining_qubits, random.randint(0, 1))
+                control_qubits = random.sample(sorted(remaining_qubits), random.randint(0, 1))
             else:
                 control_qubits = None
 
