@@ -28,7 +28,12 @@ class OriginIR_LineParser:
     comma = r","
     lbracket = r"\("
     rbracket = r"\)"
-    parameter = r"([-+]?\d+(\.\d*)?([eE][-+]?\d+)?)"
+    # A parameter slot is either a numeric literal or (OriginIR-ext) a symbolic
+    # expression token containing neither commas nor parentheses (e.g. ``theta``,
+    # ``alpha[2]``, ``2*theta + phi/3``).  Kept at exactly three capture groups
+    # so the fixed group indices in the ``handle_*`` methods stay valid: group 1
+    # is the whole token, groups 2-3 are the numeric sub-parts (unused).
+    parameter = r"((?:[-+]?\d+(\.\d*)?([eE][-+]?\d+)?)|(?:[^,()]+?))"
 
     # extended originir syntax
     dagger_flag = blank + "(dagger *)?"
@@ -364,6 +369,34 @@ class OriginIR_LineParser:
         pass
 
     @staticmethod
+    def _parse_param(token):
+        """Parse a single parameter token into a float or a sympy expression.
+
+        Numeric literals become ``float``; otherwise the token is treated as an
+        OriginIR-ext symbolic expression: array references ``name[idx]`` are
+        rewritten to element symbols ``name_idx`` and the result is parsed with
+        sympy.  Every identifier is forced to a plain ``Symbol`` (via a locals
+        map) so parameter names never collide with sympy builtins such as
+        ``I``, ``E``, ``pi`` or ``gamma``.
+        """
+        if token is None:
+            return None
+        s = token.strip()
+        try:
+            return float(s)
+        except ValueError:
+            pass
+        import sympy as _sp
+
+        expr_str = re.sub(r"([A-Za-z_][A-Za-z0-9_]*) *\[ *(\d+) *\]", r"\1_\2", s)
+        idents = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", expr_str))
+        local_dict = {name: _sp.Symbol(name) for name in idents}
+        try:
+            return _sp.sympify(expr_str, locals=local_dict)
+        except (_sp.SympifyError, SyntaxError, TypeError) as exc:
+            raise ValueError(f"Cannot parse parameter expression: {token!r}") from exc
+
+    @staticmethod
     def handle_1q(line):
         """Parse a 1-qubit gate line.
 
@@ -429,7 +462,7 @@ class OriginIR_LineParser:
         matches = OriginIR_LineParser.regexp_1q1p.match(line)
         operation = matches.group(1)
         q = int(matches.group(2))
-        parameter = float(matches.group(3))
+        parameter = OriginIR_LineParser._parse_param(matches.group(3))
         dagger_flag = True if matches.group(6) is not None else False
         control_qubits = []
         if matches.group(7) is not None:
@@ -447,8 +480,8 @@ class OriginIR_LineParser:
         matches = OriginIR_LineParser.regexp_1q2p.match(line)
         operation = matches.group(1)
         q = int(matches.group(2))
-        parameter1 = float(matches.group(3))
-        parameter2 = float(matches.group(6))
+        parameter1 = OriginIR_LineParser._parse_param(matches.group(3))
+        parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
         dagger_flag = True if matches.group(9) is not None else False
         control_qubits = []
         if matches.group(10) is not None:
@@ -466,9 +499,9 @@ class OriginIR_LineParser:
         matches = OriginIR_LineParser.regexp_1q3p.match(line)
         operation = matches.group(1)
         q = int(matches.group(2))
-        parameter1 = float(matches.group(3))
-        parameter2 = float(matches.group(6))
-        parameter3 = float(matches.group(9))
+        parameter1 = OriginIR_LineParser._parse_param(matches.group(3))
+        parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
+        parameter3 = OriginIR_LineParser._parse_param(matches.group(9))
         dagger_flag = True if matches.group(12) is not None else False
         control_qubits = []
         if matches.group(13) is not None:
@@ -486,10 +519,10 @@ class OriginIR_LineParser:
         matches = OriginIR_LineParser.regexp_1q4p.match(line)
         operation = matches.group(1)
         q = int(matches.group(2))
-        parameter1 = float(matches.group(3))
-        parameter2 = float(matches.group(6))
-        parameter3 = float(matches.group(9))
-        parameter4 = float(matches.group(12))
+        parameter1 = OriginIR_LineParser._parse_param(matches.group(3))
+        parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
+        parameter3 = OriginIR_LineParser._parse_param(matches.group(9))
+        parameter4 = OriginIR_LineParser._parse_param(matches.group(12))
         dagger_flag = True if matches.group(15) is not None else False
         control_qubits = []
         if matches.group(16) is not None:
@@ -508,7 +541,7 @@ class OriginIR_LineParser:
         operation = matches.group(1)
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
-        parameter1 = float(matches.group(4))
+        parameter1 = OriginIR_LineParser._parse_param(matches.group(4))
         dagger_flag = True if matches.group(7) is not None else False
         control_qubits = []
         if matches.group(8) is not None:
@@ -527,9 +560,9 @@ class OriginIR_LineParser:
         operation = matches.group(1)
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
-        parameter1 = float(matches.group(4))
-        parameter2 = float(matches.group(7))
-        parameter3 = float(matches.group(10))
+        parameter1 = OriginIR_LineParser._parse_param(matches.group(4))
+        parameter2 = OriginIR_LineParser._parse_param(matches.group(7))
+        parameter3 = OriginIR_LineParser._parse_param(matches.group(10))
         dagger_flag = True if matches.group(13) is not None else False
         control_qubits = []
         if matches.group(14) is not None:
@@ -550,7 +583,7 @@ class OriginIR_LineParser:
         q2 = int(matches.group(3))
         parameters = []
         for i in range(15):
-            parameters.append(float(matches.group(4 + i * 3)))
+            parameters.append(OriginIR_LineParser._parse_param(matches.group(4 + i * 3)))
 
         dagger_flag = True if matches.group(49) is not None else False
         control_qubits = []

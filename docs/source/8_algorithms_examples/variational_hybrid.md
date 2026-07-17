@@ -35,6 +35,9 @@
 ```{include} ../_generated/examples/2_advanced/algorithms__parameters_demo.md
 ```
 
+```{include} ../_generated/examples/2_advanced/algorithms__parametric_originir_roundtrip.md
+```
+
 ## 量子‑经典混合模型
 
 ```{include} ../_generated/examples/2_advanced/algorithms__hybrid_model.md

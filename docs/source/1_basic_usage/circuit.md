@@ -289,6 +289,79 @@ alphas.bind([0.1, 0.2, 0.3, 0.4])
 c.rx(0, alphas[0])
 ```
 
+### 序列化为 OriginIR-ext（PARAM）{#guide-circuit-param-originir}
+
+符号参数会作为 OriginIR-ext 的本地扩展序列化到 `circuit.originir`：头部用
+`PARAM` 声明参数，门的角度槽内联参数名或表达式。这是官方 OriginIR 的严格超集
+中的 **本地专属** 特性（与 `CREG`/`QIF` 等一样），提交云端前必须先绑定为具体数值。
+
+```python
+from uniqc import Circuit, Parameter, Parameters
+
+theta = Parameter("theta")
+phi = Parameter("phi")
+w = Parameters("w", size=2)
+
+c = Circuit(2)
+c.rx(0, theta)                 # 标量参数
+c.ry(1, theta * 2 + phi / 3)   # 符号表达式
+c.rz(0, w[0])                  # 参数数组元素
+c.measure(0, 1)
+
+print(c.originir)
+# QINIT 2
+# CREG 2
+# PARAM phi
+# PARAM theta
+# PARAM w[2]
+# RX q[0], (theta)
+# RY q[1], (phi/3 + 2*theta)
+# RZ q[0], (w[0])
+# MEASURE q[0], c[0]
+# MEASURE q[1], c[1]
+```
+
+- 标量参数声明为 `PARAM <name>`，数组声明为 `PARAM <name>[<size>]`（元素符号
+  `w_0`、`w_1` 渲染为 `w[0]`、`w[1]`）。
+- 内联表达式支持完整的 sympy 算术（经 sympy 往返），但 **不能包含逗号或括号**
+  （即不支持嵌套分组或函数调用）；如需更复杂的角度，请拆分为独立的命名参数。
+
+#### 往返解析
+
+`Circuit.from_originir`（及别名 `from_originir_ext`）能解析回符号电路，保留参数名
+与数组结构，因此 `from_originir(c.originir).originir == c.originir`：
+
+```python
+c2 = Circuit.from_originir(c.originir)
+assert c2.originir == c.originir
+assert c2.free_parameters == ["phi", "theta", "w_0", "w_1"]
+```
+
+#### 绑定数值：assign_parameters
+
+用 `Circuit.assign_parameters`（别名 `bind_parameters`）把符号参数绑定为具体数值。
+默认返回一个新电路（不修改原电路），支持 **部分绑定**——未提供的参数仍保持符号：
+
+```python
+# 键可以是参数名字符串、Parameter、sympy Symbol，或整个 Parameters 数组
+bound = c.assign_parameters({
+    "theta": 0.5,
+    phi: 1.0,
+    w: [0.3, 0.7],   # Parameters 数组配一个数值序列
+})
+print(bound.is_parametric)   # False
+print(bound.free_parameters) # []
+
+# 部分绑定：只绑定 theta，其余仍为符号
+partial = c.assign_parameters({"theta": 0.5})
+print(partial.free_parameters)  # ['phi', 'w_0', 'w_1']
+```
+
+未绑定的符号电路可以序列化为 OriginIR-ext 文本，但 **不能** 直接本地模拟、导出
+OpenQASM / 官方 OriginIR，或提交云端——这些操作会抛出明确的错误提示你先调用
+`assign_parameters(...)`。绑定后即可像普通具体电路一样使用（见
+[PyTorch 集成](pytorch.md#guide-pytorch) 中「手动定义 Parameters」一节）。
+
 ## Named Circuit（可复用子程序） {#guide-circuit-named-circuit}
 
 `@circuit_def` 装饰器用于定义可复用的量子子程序，类似 QASM3 的 gate 定义。

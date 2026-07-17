@@ -1,0 +1,20 @@
+{
+  "example": "examples/2_advanced/algorithms/parametric_originir_roundtrip.py",
+  "chapter": "2_advanced",
+  "name": "algorithms__parametric_originir_roundtrip",
+  "title": "OriginIR-ext 符号参数往返",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "============================================================\n1) Build an unbound symbolic circuit\n============================================================\n  is_parametric  : True\n  free_parameters: ['phi', 'theta', 'w_0', 'w_1']\n\n============================================================\n2) Serialize to OriginIR-ext (PARAM header + inline exprs)\n============================================================\nQINIT 2\nCREG 2\nPARAM phi\nPARAM theta\nPARAM w[2]\nRX q[0], (theta)\nRY q[1], (phi/3 + 2*theta)\nRZ q[0], (w[0])\nRY q[1], (w[1])\nCNOT q[0], q[1]\nMEASURE q[0], c[0]\nMEASURE q[1], c[1]\n\n============================================================\n3) Round-trip: from_originir(...).originir == originir\n============================================================\n  round-trip identical: True\n  free_parameters     : ['phi', 'theta', 'w_0', 'w_1']\n\n============================================================\n4) Bind values with assign_parameters, then simulate\n============================================================\n  bound is_parametric: False\n  bound OriginIR:\n    QINIT 2\n    CREG 2\n    RX q[0], (0.7853981633974483)\n    RY q[1], (2.0943951023931953)\n    RZ q[0], (0.3)\n    RY q[1], (0.7)\n    CNOT q[0], q[1]\n    MEASURE q[0], c[0]\n    MEASURE q[1], c[1]\n\n  statevector norm: 1.0000000000\n\n  Binding via a bound Parameters object also works:\n    remaining free after array bind: ['phi', 'theta']\n",
+  "stderr": "",
+  "warnings": [
+    "DeprecationWarning: uniqc.backend_adapter.task.adapters.quafu_adapter is deprecated. The Quafu platform SDK (pyquafu) is no longer maintained and the [quafu] extra has been removed; install pyquafu manually if needed (`pip install pyquafu`, requires numpy<2) It will be removed in uniqc 0.1.0. (quafu_adapter.py:25)"
+  ],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 2.65
+}

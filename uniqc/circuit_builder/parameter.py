@@ -64,6 +64,13 @@ class Parameter:
         self._name = name
         self._symbol = sp.Symbol(name)
         self._bound_value: float | None = None
+        # Optional array-membership metadata, set by :class:`Parameters` so that
+        # OriginIR-ext serialization can render an element symbol ``alpha_2`` as
+        # the array reference ``alpha[2]`` and emit a ``PARAM alpha[4]`` header.
+        # ``None`` for a standalone (scalar) parameter.
+        self._array_name: str | None = None
+        self._array_index: int | None = None
+        self._array_size: int | None = None
 
     @property
     def name(self) -> str:
@@ -80,6 +87,14 @@ class Parameter:
             value: The numeric value to bind
         """
         self._bound_value = float(value)
+
+    def unbind(self) -> None:
+        """Clear the bound value, returning the parameter to the symbolic state.
+
+        After ``unbind()`` the parameter is no longer :pyattr:`is_bound`, so
+        :meth:`evaluate` will again consult a supplied ``values`` dictionary.
+        """
+        self._bound_value = None
 
     def evaluate(self, values: dict[str, float] | None = None) -> float:
         """Evaluate the parameter.
@@ -180,6 +195,13 @@ class Parameters:
             raise ValueError(f"Parameters size must be non-negative, got {size}")
         self._name = name
         self._params: list[Parameter] = [Parameter(f"{name}_{i}") for i in range(size)]
+        # Tag every element with array-membership metadata so a circuit built
+        # from these parameters can reconstruct ``PARAM {name}[{size}]`` and
+        # render element symbols as ``{name}[i]`` in OriginIR-ext.
+        for i, p in enumerate(self._params):
+            p._array_name = name
+            p._array_index = i
+            p._array_size = size
 
     @property
     def name(self) -> str:
@@ -217,6 +239,11 @@ class Parameters:
             raise ValueError(f"Values length {len(values)} doesn't match Parameters size {len(self._params)}")
         for param, value in zip(self._params, values, strict=True):
             param.bind(value)
+
+    def unbind(self) -> None:
+        """Clear bound values from all parameters in the array."""
+        for param in self._params:
+            param.unbind()
 
     def evaluate(self, values: list[float] | None = None) -> list[float]:
         """Evaluate all parameters.

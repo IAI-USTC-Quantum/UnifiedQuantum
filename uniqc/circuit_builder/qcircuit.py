@@ -232,6 +232,12 @@ class Circuit:
         self._param_dict: dict[str, object] | None = param_dict
         # Auto-created nn.Parameters keyed by ("GATE_NAME", opcode_idx).
         self._auto_params: dict[tuple[str, int], object] = {}
+        # Symbolic-parameter array registry: base name -> declared size.  Used
+        # to serialize/parse the OriginIR-ext ``PARAM name[size]`` header and to
+        # render element symbols ``name_i`` as ``name[i]``.  Populated when a
+        # :class:`~uniqc.circuit_builder.parameter.Parameter`/``Parameters``
+        # element is passed to a gate, and rebuilt from ``PARAM`` on parse.
+        self._param_arrays: dict[str, int] = {}
         # QRAM declarations: name -> (addr_size, data_size)
         self.qram_declarations: dict[str, tuple[int, int]] = {}
         # Structured classical/control-flow program (GateOp/MeasureOp/ResetOp/
@@ -353,6 +359,7 @@ class Circuit:
         new_circuit.param_map = dict(self.param_map)
         new_circuit._param_dict = self._param_dict  # shared reference
         new_circuit._auto_params = dict(self._auto_params)
+        new_circuit._param_arrays = dict(self._param_arrays)
         new_circuit.qram_declarations = dict(self.qram_declarations)
         if self.dynamic_program is not None:
             from .classical_program import clone_program
@@ -397,7 +404,7 @@ class Circuit:
         qram_header = ""
         for name, (addr_size, data_size) in self.qram_declarations.items():
             qram_header += f"QRAMDECL {name} {addr_size},{data_size}\n"
-        header = qram_header + make_header_originir(self.qubit_num, self.cbit_num)
+        header = qram_header + make_header_originir(self.qubit_num, self.cbit_num) + self._symbolic_param_header()
         if self.dynamic_program is not None:
             from .classical_program import serialize_program
 
@@ -405,9 +412,62 @@ class Circuit:
             # statements — there is no separate terminal measurement section.
             circuit_str = "\n".join(serialize_program(self.dynamic_program))
             return header + circuit_str + "\n"
-        circuit_str = "\n".join([opcode_to_line_originir(op) for op in self.opcode_list])
+        display_subs = self._display_subs()
+        opcodes = self.opcode_list
+        if display_subs:
+            opcodes = [
+                (op[0], op[1], op[2], self._render_param_display(op[3], display_subs), op[4], op[5]) for op in opcodes
+            ]
+        circuit_str = "\n".join([opcode_to_line_originir(op) for op in opcodes])
         measure = make_measure_originir(self.measure_list)
         return header + circuit_str + "\n" + measure
+
+    def _symbolic_param_header(self) -> str:
+        """Build the OriginIR-ext ``PARAM`` header for unbound symbolic params.
+
+        Emits ``PARAM name[size]`` for declared arrays whose elements are in
+        use and ``PARAM name`` for scalar symbols, sorted by name for a stable
+        round-trip.  Returns an empty string when the circuit is not parametric.
+        """
+        syms = {str(s) for s in self._collect_free_symbols()}
+        if not syms:
+            return ""
+        decls: list[tuple[str, str]] = []
+        consumed: set[str] = set()
+        for base, size in self._param_arrays.items():
+            members = {f"{base}_{i}" for i in range(size)}
+            if syms & members:
+                decls.append((base, f"PARAM {base}[{size}]"))
+                consumed |= members
+        for name in syms - consumed:
+            decls.append((name, f"PARAM {name}"))
+        decls.sort(key=lambda t: t[0])
+        return "".join(text + "\n" for _, text in decls)
+
+    def _display_subs(self) -> dict:
+        """Map array-element symbols ``name_i`` to bracket symbols ``name[i]``
+        for OriginIR-ext rendering."""
+        import sympy as _sp
+
+        syms = {str(s) for s in self._collect_free_symbols()}
+        subs: dict = {}
+        for base, size in self._param_arrays.items():
+            if any(f"{base}_{i}" in syms for i in range(size)):
+                for i in range(size):
+                    subs[_sp.Symbol(f"{base}_{i}")] = _sp.Symbol(f"{base}[{i}]")
+        return subs
+
+    @staticmethod
+    def _render_param_display(param, display_subs: dict):
+        """Apply *display_subs* to a single opcode parameter for serialization."""
+        import sympy as _sp
+
+        def one(p):
+            return p.subs(display_subs) if isinstance(p, _sp.Expr) else p
+
+        if isinstance(param, (list, tuple)):
+            return type(param)(one(p) for p in param)
+        return one(param)
 
     def _reject_dynamic_export(self, target_format: str) -> None:
         if self.dynamic_program is not None:
@@ -416,6 +476,18 @@ class Circuit:
                 "classical AND/OR/XOR/MOV/NOT instructions, or QIF/QWHILE control "
                 f"flow) which cannot be converted to {target_format}. Dynamic "
                 "programs are an OriginIR-ext-only feature.",
+                source_format="originir-ext",
+                target_format=target_format,
+            )
+
+    def _reject_parametric_export(self, target_format: str) -> None:
+        if self.is_parametric:
+            names = ", ".join(self.free_parameters)
+            raise CircuitTranslationError(
+                f"Circuit has unbound symbolic parameters ({names}) which cannot be "
+                f"converted to {target_format}. Symbolic OriginIR-ext parameters are "
+                "a local-only feature; bind them to concrete values first with "
+                "circuit.assign_parameters({...}).",
                 source_format="originir-ext",
                 target_format=target_format,
             )
@@ -429,6 +501,7 @@ class Circuit:
                 target_format="qasm2",
             )
         self._reject_dynamic_export("qasm2")
+        self._reject_parametric_export("qasm2")
         from .translate_qasm2_oir import collect_qasm2_custom_gates
 
         custom_gates = collect_qasm2_custom_gates(self.opcode_list)
@@ -447,6 +520,7 @@ class Circuit:
                 target_format="originir",
             )
         self._reject_dynamic_export("originir")
+        self._reject_parametric_export("originir")
         from uniqc.compile.decompose import decompose_for_originir
 
         decomposed = decompose_for_originir(self)
@@ -735,6 +809,8 @@ class Circuit:
 
         # Resolve string param names via _param_dict, then detect tensors.
         opcode_params = self._resolve_param_strings(params)
+        # Convert symbolic Parameter objects to sympy symbols (records arrays).
+        opcode_params = self._normalize_symbolic_params(opcode_params)
         _has_torch = "torch" in __import__("sys").modules
         if _has_torch and opcode_params is not None:
             import torch as _torch
@@ -912,6 +988,168 @@ class Circuit:
         """
         gate_upper = gate_name.upper()
         return [p for (g, _), p in self._auto_params.items() if g == gate_upper]
+
+    # ------------------------------------------------------------------
+    # Symbolic parameter support (OriginIR-ext PARAM round-trip)
+    # ------------------------------------------------------------------
+
+    def _normalize_symbolic_params(self, params: ParamSpec) -> ParamSpec:
+        """Convert symbolic :class:`Parameter` objects to sympy symbols.
+
+        A bare ``Parameter`` becomes its ``sympy.Symbol`` (so the opcode holds a
+        uniform sympy object that serializes cleanly); sympy expressions and
+        numeric values pass through unchanged.  Array membership (from
+        ``Parameters``) is recorded in :pyattr:`_param_arrays` so serialization
+        can emit ``PARAM name[size]`` and render ``name_i`` as ``name[i]``.
+        """
+        from .parameter import Parameter as _Parameter
+
+        def convert(p):
+            if isinstance(p, _Parameter):
+                if p._array_name is not None and p._array_size is not None:
+                    self._param_arrays[p._array_name] = max(self._param_arrays.get(p._array_name, 0), p._array_size)
+                return p.symbol
+            return p
+
+        if params is None:
+            return None
+        if isinstance(params, (list, tuple)):
+            return type(params)(convert(p) for p in params)
+        return convert(params)
+
+    def _iter_param_items(self):
+        """Yield every individual parameter value across all opcodes."""
+        for op in self.opcode_list:
+            param = op[3]
+            if isinstance(param, (list, tuple)):
+                yield from param
+            else:
+                yield param
+
+    def _collect_free_symbols(self) -> set:
+        """Set of free sympy symbols across all opcode parameters."""
+        import sympy as _sp
+
+        syms: set = set()
+        for item in self._iter_param_items():
+            if isinstance(item, _sp.Expr):
+                syms |= item.free_symbols
+        return syms
+
+    @property
+    def free_parameters(self) -> list[str]:
+        """Sorted names of the unbound symbolic parameters in this circuit."""
+        return sorted(str(s) for s in self._collect_free_symbols())
+
+    @property
+    def is_parametric(self) -> bool:
+        """``True`` if the circuit still contains unbound symbolic parameters.
+
+        Such circuits serialize to OriginIR-ext (with a ``PARAM`` header) but
+        cannot be simulated, exported to QASM/official OriginIR, or submitted to
+        cloud backends until bound via :meth:`assign_parameters`.
+        """
+        return bool(self._collect_free_symbols())
+
+    def _build_subs_map(self, values) -> dict:
+        """Build a ``{sympy.Symbol: float}`` substitution map from *values*."""
+        import sympy as _sp
+
+        from .parameter import Parameter as _Parameter
+        from .parameter import Parameters as _Parameters
+
+        subs: dict = {}
+
+        def add(key, val) -> None:
+            if isinstance(key, _Parameter):
+                subs[key.symbol] = float(val)
+            elif isinstance(key, _sp.Symbol):
+                subs[key] = float(val)
+            elif isinstance(key, str):
+                subs[_sp.Symbol(key)] = float(val)
+            else:
+                raise TypeError(f"Unsupported parameter key type: {type(key).__name__}")
+
+        if isinstance(values, _Parameters):
+            for p in values:
+                subs[p.symbol] = float(p.evaluate())
+        elif isinstance(values, dict):
+            for k, v in values.items():
+                if isinstance(k, _Parameters):
+                    seq = list(v)
+                    if len(seq) != len(k):
+                        raise ValueError(f"Parameters '{k.name}' expects {len(k)} values, got {len(seq)}.")
+                    for i, vv in enumerate(seq):
+                        subs[k[i].symbol] = float(vv)
+                else:
+                    add(k, v)
+        else:
+            raise TypeError(
+                "assign_parameters expects a dict mapping parameter->value or a bound Parameters object, "
+                f"got {type(values).__name__}."
+            )
+        return subs
+
+    def _substitute_opcode_params(self, subs: dict) -> None:
+        """Substitute symbols in every opcode parameter, collapsing fully-bound
+        expressions to plain floats."""
+        import sympy as _sp
+
+        def sub_one(item):
+            if isinstance(item, _sp.Expr):
+                result = item.subs(subs)
+                if not result.free_symbols:
+                    return float(result)
+                return result
+            return item
+
+        def sub_param(param):
+            if isinstance(param, (list, tuple)):
+                return type(param)(sub_one(p) for p in param)
+            return sub_one(param)
+
+        new_ops = []
+        for op in self.opcode_list:
+            operation, qubits, cbit, param, dagger, controls = op
+            new_ops.append((operation, qubits, cbit, sub_param(param), dagger, controls))
+        self.opcode_list = new_ops
+
+    def _prune_param_arrays(self) -> None:
+        """Drop array registrations whose element symbols are all bound."""
+        live = {str(s) for s in self._collect_free_symbols()}
+        for base in list(self._param_arrays):
+            size = self._param_arrays[base]
+            if not any(f"{base}_{i}" in live for i in range(size)):
+                del self._param_arrays[base]
+
+    def assign_parameters(self, values, *, inplace: bool = False) -> Circuit:
+        """Bind numeric values to symbolic parameters.
+
+        Args:
+            values: Either a ``dict`` mapping parameter -> value, or a bound
+                ``Parameters`` object.  Dict keys may be name strings
+                (``"theta"``, ``"alpha_2"``), :class:`Parameter` objects, sympy
+                ``Symbol`` objects, or a :class:`Parameters` array (paired with a
+                sequence of values).
+            inplace: If ``True`` mutate this circuit and return it; otherwise
+                (default) return a new bound circuit, leaving *self* unchanged.
+
+        Partial binding is allowed — parameters absent from *values* remain
+        symbolic.  Fully-substituted parameters collapse to plain floats, so a
+        fully-bound circuit can be simulated or submitted like any concrete
+        circuit.
+
+        Returns:
+            The bound circuit (new instance unless *inplace*).
+        """
+        subs = self._build_subs_map(values)
+        target = self if inplace else self.copy()
+        target._substitute_opcode_params(subs)
+        target._prune_param_arrays()
+        return target
+
+    #: Alias matching common quantum-SDK naming.
+    bind_parameters = assign_parameters
 
     @property
     def param_dict(self) -> dict[str, object] | None:

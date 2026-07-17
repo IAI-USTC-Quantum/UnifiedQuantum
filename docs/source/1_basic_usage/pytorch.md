@@ -2,13 +2,19 @@
 
 ## 什么时候进入本页
 
-当你希望将量子电路集成到 PyTorch 模型中进行混合量子-经典训练时，阅读本页。
+当你有一个 **参数化量子电路** 需要优化——无论是用 PyTorch 做端到端可微训练、用
+经典优化器扫描参数，还是把量子层嵌入混合神经网络——阅读本页。
 
 ## 本页解决的问题
 
-- 如何在 PyTorch 模型中使用参数化量子电路
-- 如何通过 parameter-shift 规则计算梯度
-- 如何构建量子-经典混合神经网络
+本页按 **从简单到复杂** 的顺序组织：
+
+1. [快速优化参数化电路](#guide-pytorch-has-param)：用 `has_param` 最佳实践，几行代码
+   完成一次可微的变分优化（推荐入门方式）。
+2. [手动定义 Parameters](#guide-pytorch-manual-params)：用符号 `Parameter`/`Parameters`
+   显式管理命名参数、绑定数值，并序列化 / 往返 OriginIR-ext。
+3. [PyTorch 集成](#guide-pytorch-torch)：把量子电路嵌入 `nn.Module`、parameter-shift
+   梯度、批量执行等进阶用法。
 
 ## 前置条件
 
@@ -16,7 +22,6 @@
 
 - 熟悉 PyTorch 基础用法（`nn.Module`、自动微分、优化器）
 - 了解 [参数化电路](circuit.md#guide-circuit-parametric) 的概念
-- 了解 [Named Circuit](circuit.md#guide-circuit-named-circuit) 的用法
 
 ## 安装
 
@@ -26,263 +31,30 @@ PyTorch 集成是可选功能，需要单独安装：
 pip install unified-quantum[pytorch]
 ```
 
-这会安装 `torch>=2.0` 作为依赖。
+这会安装 `torch>=2.0` 作为依赖。本页第 2 节（符号参数）不依赖 PyTorch。
 
-## QuantumLayer
+## 1. 快速优化参数化电路（has_param） {#guide-pytorch-has-param}
 
-`QuantumLayer` 是一个 PyTorch `nn.Module`，用于将参数化量子电路封装为可训练层。
+> **推荐方式**：无需 TorchQuantum 依赖，梯度通过纯 PyTorch 态矢量模拟自动传播。
 
-### 基本用法
-
-```python
-import torch
-from uniqc.torch_adapter import QuantumLayer
-from uniqc import Circuit, Parameter
-from uniqc.simulator import Simulator
-
-# 构建参数化电路（参数名会自动从 circuit._parameters 中读取）
-theta = Parameter("theta")
-template = Circuit()
-template.rx(0, theta)
-template.measure(0)
-
-# 定义期望值函数
-def expectation(circuit):
-    sim = Simulator()
-    result = sim.simulate(circuit.originir, shots=1000)
-    # 计算 <Z> 期望值
-    return result.get_expectation([0])
-
-# 创建 QuantumLayer（参数名自动从 circuit._parameters 提取，无需再传 param_names）
-layer = QuantumLayer(
-    circuit=template,
-    expectation_fn=expectation,
-)
-```
-
-> 参数名会自动从 `circuit._parameters` 中读取，因此不再需要显式传入 `param_names`。
-
-### 在模型中使用
-
-```python
-import torch.nn as nn
-
-model = nn.Sequential(
-    nn.Linear(10, 4),
-    nn.ReLU(),
-    layer,  # QuantumLayer
-    nn.Linear(1, 1)
-)
-```
-
-### 训练
-
-```python
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-
-for epoch in range(100):
-    optimizer.zero_grad()
-    
-    # 前向传播
-    output = model(torch.randn(1, 10))
-    
-    # 计算损失
-    loss = output.sum()
-    
-    # 反向传播（自动计算量子梯度）
-    loss.backward()
-    
-    # 更新参数
-    optimizer.step()
-    
-    print(f"Epoch {epoch}: loss = {loss.item():.4f}")
-```
-
-## Parameter-Shift 梯度
-
-QuantumLayer 使用 parameter-shift 规则计算量子参数的梯度：
-
-$$\frac{\partial f(\theta)}{\partial \theta} = \frac{f(\theta + s) - f(\theta - s)}{2s}$$
-
-其中 $s$ 是 shift 参数（默认 $\pi/2$）。
-
-### 自定义 shift 值
-
-```python
-layer = QuantumLayer(
-    circuit=template,
-    expectation_fn=expectation,
-    shift=0.25  # 自定义 shift 值
-)
-```
-
-## 多参数电路
-
-对于有多个参数的电路：
-
-```python
-theta = Parameter("theta")
-phi = Parameter("phi")
-
-multi_template = Circuit()
-multi_template.rx(0, theta)
-multi_template.ry(1, phi)
-multi_template.cnot(0, 1)
-multi_template.measure(0, 1)
-
-layer = QuantumLayer(
-    circuit=multi_template,
-    expectation_fn=expectation,
-    n_outputs=1,
-)
-```
-
-## 完整示例：VQE
-
-以下是一个简单的 VQE（变分量子本征求解器）示例：
+给旋转门传入 `has_param=True`，UnifiedQuantum 会自动为它创建一个可训练的
+`nn.Parameter`。配合后端无关的 `expectation()` 函数，几行代码即可完成一次变分优化：
 
 ```python
 import torch
-import torch.nn as nn
-from uniqc.torch_adapter import QuantumLayer
-from uniqc import Circuit, Parameter
-from uniqc.simulator import Simulator
-import numpy as np
+from uniqc import Circuit
+from uniqc.torch_adapter import expectation
 
-# 定义哈密顿量 H = Z0 + Z1 + X0X1
-def hamiltonian_expectation(circuit):
-    sim = Simulator()
-    result = sim.simulate(circuit.originir, shots=1000)
-    
-    # 计算 <Z0 + Z1 + X0X1>
-    # 这里简化为只计算 Z0 + Z1
-    exp_z0 = result.get_expectation([0])
-    exp_z1 = result.get_expectation([1])
-    
-    return exp_z0 + exp_z1
-
-# 定义 ansatz
-theta = Parameter("theta")
-ansatz_circuit = Circuit()
-
-# 初始化
-ansatz_circuit.h(0)
-ansatz_circuit.h(1)
-
-# 变分层
-ansatz_circuit.cnot(0, 1)
-ansatz_circuit.rz(1, theta)
-
-ansatz_circuit.measure(0, 1)
-
-# 创建量子层
-vqe_layer = QuantumLayer(
-    circuit=ansatz_circuit,
-    expectation_fn=hamiltonian_expectation,
-)
-
-# 优化（QuantumLayer 自己持有可训练参数 self.params）
-optimizer = torch.optim.Adam(vqe_layer.parameters(), lr=0.1)
-
-for epoch in range(50):
-    optimizer.zero_grad()
-    
-    # 前向传播
-    energy = vqe_layer()
-    
-    # 反向传播
-    energy.backward()
-    
-    # 更新参数
-    optimizer.step()
-    
-    print(f"Epoch {epoch}: Energy = {energy.item():.4f}")
-```
-
-## 批量执行
-
-当需要并行执行多个电路时，可以使用 `batch_execute` 工具：
-
-```python
-from uniqc.torch_adapter import batch_execute, batch_execute_with_params
-from uniqc.simulator import Simulator
-
-# 定义执行函数
-def simulate(circuit):
-    sim = Simulator()
-    return sim.simulate(circuit.originir, shots=1000)
-
-# 批量执行多个电路
-results = batch_execute(
-    circuits=[c1, c2, c3],
-    executor=simulate,
-    n_workers=4
-)
-
-# 对同一模板绑定不同参数后批量执行
-param_sets = [{'theta': 0.1}, {'theta': 0.2}, {'theta': 0.3}]
-results = batch_execute_with_params(
-    circuit_template=parametric_circuit,
-    param_values=param_sets,
-    executor=simulate,
-    n_workers=4
-)
-```
-
-批量执行使用 `ThreadPoolExecutor` 实现并行，适用于：
-- 梯度计算（每个参数需要 2 次电路执行）
-- 超参数搜索
-- 集成电路评估
-
-## 性能优化建议
-
-1. **减少 shots 数量**：调试时使用较少的 shots，最终训练时再增加。
-
-2. **批量执行**：使用 `batch_execute` 并行化电路评估，充分利用多核 CPU。
-
-3. **缓存中间结果**：对于不变的哈密顿量项，可以预计算并缓存结果。
-
-4. **参数 shift 值**：
-   - 默认 $\pi/2$ 适用于大多数旋转门
-   - 对于特定门（如 RX、RY），可以根据门特性调整
-   - 值过小会放大采样噪声，过大会降低梯度精度
-
-5. **GPU 注意事项**：
-   - `QuantumLayer` 的参数存储在 GPU 上（如果可用）
-   - 量子电路模拟在 CPU 上执行
-   - 数据传输开销可能影响性能，建议批量处理
-
-## 注意事项
-
-1. **期望值函数**：`expectation_fn` 必须返回一个标量值，用于计算梯度。
-
-2. **模拟器开销**：每次梯度计算需要执行 $2n$ 次电路模拟（$n$ 为参数数量），对于复杂电路可能较慢。
-
-3. **数值稳定性**：shift 值的选择会影响梯度计算的精度，通常 0.1 到 0.5 之间效果较好。
-
-4. **GPU 支持**：QuantumLayer 的参数在 GPU 上，但量子计算本身在 CPU 上执行。
-
-## 原生训练（推荐）
-
-> 无需 TorchQuantum 依赖，使用原生 PyTorch 态矢量模拟。
-
-### 快速上手：has_param
-
-```python
-import torch
-from uniqc.circuit_builder.qcircuit import Circuit
-from uniqc.torch_adapter.expectation import expectation
-
-# 构建电路 — has_param=True 自动创建 nn.Parameter
+# 构建电路 —— has_param=True 自动创建可训练参数
 c = Circuit(2)
-c.ry(0, has_param=True)      # 自动创建可训练参数
+c.ry(0, has_param=True)
 c.ry(1, has_param=True)
 c.cnot(0, 1)
 
-# 定义哈密顿量
+# 定义哈密顿量 H = Z0Z1 - 0.5 Z0 - 0.5 Z1
 hamiltonian = [("ZZ", 1.0), ("ZI", -0.5), ("IZ", -0.5)]
 
-# 训练
+# 训练：c.params 是所有自动创建的 nn.Parameter，可直接交给优化器
 opt = torch.optim.Adam(c.params, lr=0.05)
 for step in range(100):
     opt.zero_grad()
@@ -293,7 +65,7 @@ for step in range(100):
 
 ### 参数风格
 
-UnifiedQuantum 支持三种参数传递方式，与 TorchQuantum API 对齐：
+UnifiedQuantum 支持三种向门传参的方式，与 TorchQuantum API 对齐。
 
 **风格 1：has_param（最简洁）**
 
@@ -304,7 +76,6 @@ c.ry(1, has_param=True, trainable=False)         # 冻结参数
 c.rz(0, has_param=True, init_params=0.5)         # 自定义初始值
 c.u3(0, has_param=True, init_params=[0.1, 0.2, 0.3])  # 多参数门
 
-# 访问参数
 c.params                    # 所有 nn.Parameter（可直接传给优化器）
 c.get_params_by_gate("RY")  # 按门类型筛选
 ```
@@ -343,22 +114,14 @@ energy = expectation(c, [("ZZ", 1.0), ("ZI", -0.5)])
 energy = expectation(c, [("Z", 1.0)], backend="torchquantum")
 ```
 
-**与旧版 QuantumLayer 的区别：**
+它通过 PyTorch autograd 一次前向即可反向传播，无需 parameter-shift 的多次电路求值。
 
-| 特性 | QuantumLayer（旧） | expectation()（新） |
-|------|-------------------|-------------------|
-| 梯度方法 | Parameter-shift（2N 次模拟） | PyTorch autograd（1 次模拟） |
-| TorchQuantum 依赖 | 无 | 无 |
-| Hamiltonian 支持 | 单一项 | 多项累加 |
-| 后端切换 | 不支持 | 支持（virtual / torchquantum） |
-| 参数管理 | 手动定义 Parameter | has_param 自动创建 |
-
-### 完整 VQE 示例
+### 完整示例：VQE
 
 ```python
 import torch
-from uniqc.circuit_builder.qcircuit import Circuit
-from uniqc.torch_adapter.expectation import expectation
+from uniqc import Circuit
+from uniqc.torch_adapter import expectation
 
 # HEA ansatz
 n_qubits, depth = 2, 2
@@ -373,7 +136,6 @@ for _ in range(depth):
 # H₂ 哈密顿量
 hamiltonian = [("ZZ", 0.5), ("ZI", 0.5), ("IZ", 0.5), ("XX", -0.25)]
 
-# 训练
 opt = torch.optim.Adam(c.params, lr=0.05)
 for step in range(200):
     opt.zero_grad()
@@ -384,18 +146,212 @@ for step in range(200):
         print(f"Step {step}: E = {energy.item():.4f}")
 ```
 
+> 完整可运行示例见 `examples/3_best_practices/11_native_torch_training.py`。
+
+## 2. 手动定义 Parameters（符号参数） {#guide-pytorch-manual-params}
+
+当你需要 **显式命名的参数**——例如用经典优化器（`scipy.optimize`）扫描、复用同一
+模板绑定不同数值，或把参数化电路 **序列化 / 共享** 为 OriginIR-ext 文本——使用符号
+`Parameter` / `Parameters`。它们基于 sympy，与上一节的 `has_param`（自动、面向
+autograd）互补。
+
+### 创建、运算与绑定
+
+```python
+from uniqc import Circuit, Parameter, Parameters
+
+theta = Parameter("theta")
+phi = Parameter("phi")
+
+# 算术运算自动生成 sympy 符号表达式
+expr = theta * 2 + phi / 3
+
+# 绑定 / 求值 / 解绑
+theta.bind(1.0)
+theta.evaluate()               # 1.0（绑定值优先）
+theta.unbind()                 # 恢复为符号状态
+theta.evaluate({"theta": 2.0}) # 2.0（未绑定时查字典）
+
+# 参数数组：alpha_0 ... alpha_3
+alphas = Parameters("alpha", size=4)
+alphas.bind([0.1, 0.2, 0.3, 0.4])
+```
+
+### 构建电路并绑定数值
+
+把符号参数传给门即可构建 **未绑定** 的参数化电路，随后用
+`Circuit.assign_parameters`（别名 `bind_parameters`）绑定为具体数值。默认返回
+新电路（不修改原电路），并支持部分绑定：
+
+```python
+c = Circuit(2)
+c.rx(0, theta)
+c.ry(1, theta * 2 + phi / 3)   # 符号表达式
+c.rz(0, alphas[0])
+c.measure(0, 1)
+
+print(c.free_parameters)       # ['alpha_0', 'phi', 'theta']
+
+bound = c.assign_parameters({"theta": 0.5, phi: 1.0, alphas: [0.1, 0.2, 0.3, 0.4]})
+print(bound.is_parametric)     # False —— 可直接模拟 / 提交
+```
+
+### 序列化与 OriginIR-ext 往返
+
+符号电路会序列化为带 `PARAM` 头的 OriginIR-ext，并能无损往返解析
+（`from_originir(c.originir).originir == c.originir`）：
+
+```python
+print(c.originir)
+# QINIT 2
+# CREG 2
+# PARAM alpha[4]
+# PARAM phi
+# PARAM theta
+# RX q[0], (theta)
+# RY q[1], (phi/3 + 2*theta)
+# RZ q[0], (alpha[0])
+# MEASURE q[0], c[0]
+# MEASURE q[1], c[1]
+
+c2 = Circuit.from_originir(c.originir)   # 保留参数名与数组结构
+```
+
+细节（`PARAM` 语法、表达式限制、必须先绑定才能模拟 / 提交云端）见
+[参数化电路 · 序列化为 OriginIR-ext](circuit.md#guide-circuit-param-originir)。
+
+> **has_param 还是符号 Parameters？** `has_param` 面向 PyTorch autograd、参数匿名、
+> 最适合训练；符号 `Parameters` 面向命名与序列化，可配任意（经典）优化器，并能
+> 往返 OriginIR-ext。两者互不排斥，可按需选用。
+
+## 3. PyTorch 集成（nn.Module 与进阶用法） {#guide-pytorch-torch}
+
+### 推荐：用 expectation() 嵌入 nn.Module
+
+把 `expectation()` 包进一个自定义 `nn.Module`，即可将量子层接入任意经典网络，
+梯度自动通过 autograd 传播：
+
+```python
+import torch
+import torch.nn as nn
+from uniqc import Circuit
+from uniqc.torch_adapter import expectation
+
+class QuantumHead(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.c = Circuit(2)
+        self.c.ry(0, has_param=True)
+        self.c.ry(1, has_param=True)
+        self.c.cnot(0, 1)
+        # 注册可训练量子参数，让 .parameters() 能发现它们
+        self.q_params = nn.ParameterList(self.c.params)
+        self.h = [("ZZ", 1.0)]
+
+    def forward(self, x):
+        return expectation(self.c, self.h).reshape(1)
+
+model = nn.Sequential(nn.Linear(4, 4), nn.ReLU(), QuantumHead())
+```
+
+### QuantumLayer（旧版 / parameter-shift）
+
+> `QuantumLayer` 是较早的封装，使用 parameter-shift 规则（每个参数 2 次电路求值）。
+> 新代码建议优先使用上面的 `expectation()` 方案；此处保留用于兼容与硬件后端场景。
+
+```python
+import torch
+from uniqc.torch_adapter import QuantumLayer
+from uniqc import Circuit, Parameter
+from uniqc.simulator import Simulator
+
+theta = Parameter("theta")
+template = Circuit()
+template.rx(0, theta)
+template.measure(0)
+
+def expectation_fn(circuit):
+    result = Simulator().simulate(circuit.originir, shots=1000)
+    return result.get_expectation([0])
+
+# 参数名自动从 circuit._parameters 提取，无需再传 param_names
+layer = QuantumLayer(circuit=template, expectation_fn=expectation_fn)
+
+optimizer = torch.optim.Adam(layer.parameters(), lr=0.1)
+for epoch in range(50):
+    optimizer.zero_grad()
+    energy = layer()
+    energy.backward()
+    optimizer.step()
+```
+
+`QuantumLayer` 与 `expectation()` 的对比：
+
+| 特性 | QuantumLayer（旧） | expectation()（新） |
+|------|-------------------|-------------------|
+| 梯度方法 | Parameter-shift（2N 次模拟） | PyTorch autograd（1 次模拟） |
+| TorchQuantum 依赖 | 无 | 无 |
+| Hamiltonian 支持 | 单一项 | 多项累加 |
+| 后端切换 | 不支持 | 支持（virtual / torchquantum） |
+| 参数管理 | 手动定义 Parameter | has_param 自动创建 |
+
+#### Parameter-Shift 梯度
+
+`QuantumLayer` 使用 parameter-shift 规则：
+
+$$\frac{\partial f(\theta)}{\partial \theta} = \frac{f(\theta + s) - f(\theta - s)}{2s}$$
+
+其中 $s$ 是 shift 参数（默认 $\pi/2$），可通过 `QuantumLayer(..., shift=0.25)` 自定义。
+
+### 批量执行
+
+需要并行评估多个电路时（梯度计算、超参数搜索、集成评估），使用 `batch_execute`：
+
+```python
+from uniqc.torch_adapter import batch_execute, batch_execute_with_params
+from uniqc.simulator import Simulator
+
+def simulate(circuit):
+    return Simulator().simulate(circuit.originir, shots=1000)
+
+# 批量执行多个电路
+results = batch_execute(circuits=[c1, c2, c3], executor=simulate, n_workers=4)
+
+# 对同一模板绑定不同参数后批量执行
+param_sets = [{"theta": 0.1}, {"theta": 0.2}, {"theta": 0.3}]
+results = batch_execute_with_params(
+    circuit_template=parametric_circuit,
+    param_values=param_sets,
+    executor=simulate,
+    n_workers=4,
+)
+```
+
+批量执行基于 `ThreadPoolExecutor`，充分利用多核 CPU。
+
+### 性能与注意事项
+
+1. **优先 `expectation()`**：autograd 单次前向即可反传，比 parameter-shift 的 2N 次
+   电路求值快得多。
+2. **调试时减少 shots**：最终训练时再增大。
+3. **批量执行**：用 `batch_execute` 并行化电路评估。
+4. **shift 值（parameter-shift）**：默认 $\pi/2$ 适用于大多数旋转门；过小会放大采样
+   噪声，过大会降低梯度精度。
+5. **GPU**：量子参数可存于 GPU，但态矢量模拟在 CPU 执行，注意数据传输开销。
+
 ## 相关 API
 
 - {mod}`uniqc.torch_adapter` — PyTorch 集成模块
-- {func}`uniqc.torch_adapter.expectation` — 后端无关的可微期望值
-- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装（旧版）
-- {func}`uniqc.torch_adapter.parameter_shift_gradient` — Parameter-shift 梯度计算
+- {func}`uniqc.torch_adapter.expectation` — 后端无关的可微期望值（推荐）
+- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装（旧版，parameter-shift）
 - {func}`uniqc.torch_adapter.batch_execute` — 并行电路执行
 - {func}`uniqc.torch_adapter.batch_execute_with_params` — 参数化批量执行
-- {func}`uniqc.torch_adapter.compute_all_gradients` — 计算所有参数梯度
+- {class}`uniqc.circuit_builder.Parameter` — 符号参数
+- {class}`uniqc.circuit_builder.Parameters` — 符号参数数组
 
 ## 下一步
 
-- 了解 [参数化电路](circuit.md#guide-circuit-parametric) 的更多用法
+- 了解 [参数化电路](circuit.md#guide-circuit-parametric) 与
+  [OriginIR-ext 参数序列化](circuit.md#guide-circuit-param-originir)
 - 学习 [Named Circuit](circuit.md#guide-circuit-named-circuit) 构建复杂电路
-- 探索 [算法示例](../algorithm/vqe.md) 中的 VQE 算法
+- 探索 [变分与混合算法示例](../8_algorithms_examples/variational_hybrid.md)

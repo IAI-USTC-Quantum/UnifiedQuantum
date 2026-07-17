@@ -22,6 +22,31 @@ from .error_model import ErrorLoader
 from .opcode_simulator import OpcodeSimulator
 
 
+def _reject_symbolic_program(program_body) -> None:
+    """Raise a clear error if any opcode still carries unbound symbolic params.
+
+    Symbolic (OriginIR-ext ``PARAM``) circuits must be bound to concrete values
+    via :meth:`uniqc.circuit_builder.Circuit.assign_parameters` before they can
+    be simulated.
+    """
+    import sympy as _sp
+
+    free: set = set()
+    for opcode in program_body:
+        parameter = opcode[3]
+        items = parameter if isinstance(parameter, (list, tuple)) else [parameter]
+        for p in items:
+            if isinstance(p, _sp.Expr):
+                free |= p.free_symbols
+    if free:
+        names = ", ".join(sorted(str(s) for s in free))
+        raise ValueError(
+            f"Cannot simulate a circuit with unbound symbolic parameters: {names}. "
+            "Bind them to concrete values first, e.g. "
+            "circuit.assign_parameters({'<name>': <value>, ...})."
+        )
+
+
 class BaseSimulator:
     """Abstract base class for quantum circuit simulators.
 
@@ -169,6 +194,8 @@ class BaseSimulator:
     def _process_program_body(self) -> list[OpcodeType]:
         processed_program_body = list()
         program_body = self.parser.program_body
+
+        _reject_symbolic_program(program_body)
 
         for i, opcode in enumerate(program_body):
             (operation, qubit, cbit, parameter, dagger_flag, control_qubits_set) = opcode

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T08:23:01Z",
+  "generated_at": "2026-07-17T03:18:48Z",
   "real_cloud": false,
   "results": [
     {
@@ -604,6 +604,17 @@
       "verdict": "pass",
       "skip_reason": null,
       "duration_seconds": 0.201,
+      "n_offending": 0,
+      "n_ignored": 0
+    },
+    {
+      "example": "examples/2_advanced/algorithms/parametric_originir_roundtrip.py",
+      "chapter": "2_advanced",
+      "name": "algorithms__parametric_originir_roundtrip",
+      "title": "OriginIR-ext 符号参数往返",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 2.65,
       "n_offending": 0,
       "n_ignored": 0
     }

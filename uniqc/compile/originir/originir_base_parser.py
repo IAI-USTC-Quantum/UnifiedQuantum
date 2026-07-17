@@ -90,6 +90,8 @@ class OriginIR_BaseParser:
         self.creg_map: dict[str, tuple[int, int]] = {}
         # DEF subroutine definitions.
         self.gate_definitions: dict[str, _DefInfo] = {}
+        # Symbolic-parameter arrays declared via ``PARAM name[size]``.
+        self._param_arrays: dict[str, int] = {}
         # Running totals used while laying registers into the flat index space.
         self._qtotal = 0
         self._ctotal = 0
@@ -177,6 +179,10 @@ class OriginIR_BaseParser:
                 seen_creg = True
                 idx += 1
                 continue
+            if token == "PARAM":
+                self._handle_param_decl(raw)
+                idx += 1
+                continue
             # First line that is not part of the header — the body starts here.
             break
 
@@ -188,6 +194,26 @@ class OriginIR_BaseParser:
         self.n_qubit = self._qtotal
         self.n_cbit = self._ctotal
         return idx
+
+    def _handle_param_decl(self, raw: str) -> None:
+        """Parse a ``PARAM name`` (scalar) or ``PARAM name[size]`` (array) line.
+
+        Array declarations are recorded so the resulting circuit re-serializes
+        with the same ``PARAM name[size]`` header and renders element symbols as
+        ``name[i]``.  Scalar declarations are validated but need no state — the
+        symbol is created when the parameter is referenced in a gate line.
+        """
+        arg = raw[len("PARAM") :].strip()
+        array_match = _REG_ITEM_FULL_RE.match(arg)
+        if array_match:
+            name, size = array_match.group(1), int(array_match.group(2))
+            if name in self._param_arrays and self._param_arrays[name] != size:
+                raise ValueError(f"Conflicting PARAM array declaration for '{name}'.")
+            self._param_arrays[name] = size
+            return
+        if _IDENT_FULL_RE.match(arg):
+            return
+        raise ValueError(f"Invalid PARAM declaration: {raw!r}")
 
     # ------------------------------------------------------------------
     # Reference resolution
@@ -226,6 +252,11 @@ class OriginIR_BaseParser:
                         f"Index {idx} is out of range for classical register '{name}' (size {size})."
                     )
                 return f"c[{base + idx}]"
+            # A declared symbolic-parameter array reference (``alpha[2]``): leave
+            # it verbatim so the parameter parser can turn it into symbol
+            # ``alpha_2`` — it is not a qubit/classical register.
+            if name in self._param_arrays:
+                return m.group(0)
             raise ValueError(f"Parse error at line {lineno}: {line}\nUnknown register '{name}'.")
 
         return _REG_ITEM_RE.sub(repl, line)
@@ -586,6 +617,9 @@ class OriginIR_BaseParser:
         # Transfer QRAM declarations
         for name, (addr_size, data_size) in self.qram_declarations.items():
             circuit.qram_declarations[name] = (addr_size, data_size)
+
+        # Transfer symbolic-parameter array declarations (PARAM name[size]).
+        circuit._param_arrays = dict(self._param_arrays)
 
         for opcode in self.program_body:
             operation, qubits, cbit, parameter, dagger_flag, control_qubits = opcode
