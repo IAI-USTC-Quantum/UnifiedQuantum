@@ -77,6 +77,7 @@ class DensityOperatorSimulator:
             ]
         ],
     ) -> None: ...
+    def measure_qubit(self, qn: typing.SupportsInt | typing.SupportsIndex) -> int: ...
     def pauli_error_1q(
         self,
         qn: typing.SupportsInt | typing.SupportsIndex,
@@ -112,7 +113,9 @@ class DensityOperatorSimulator:
         addr_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
         data_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
         data_array: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        control_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex] = [],
     ) -> None: ...
+    def reset_qubit(self, qn: typing.SupportsInt | typing.SupportsIndex) -> None: ...
     def rphi(
         self,
         qn: typing.SupportsInt | typing.SupportsIndex,
@@ -362,6 +365,7 @@ class StatevectorSimulator:
             ]
         ],
     ) -> None: ...
+    def measure_qubit(self, qn: typing.SupportsInt | typing.SupportsIndex) -> int: ...
     @typing.overload
     def measure_single_shot(self, qubit: typing.SupportsInt | typing.SupportsIndex) -> int: ...
     @typing.overload
@@ -405,7 +409,9 @@ class StatevectorSimulator:
         addr_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
         data_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
         data_array: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        control_qubits: collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex] = [],
     ) -> None: ...
+    def reset_qubit(self, qn: typing.SupportsInt | typing.SupportsIndex) -> None: ...
     def rphi(
         self,
         qn: typing.SupportsInt | typing.SupportsIndex,
