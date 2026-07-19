@@ -37,6 +37,7 @@ circuit_analysis
 
 mps_simulator
 noise_simulation
+virtual_backends
 dynamic_circuits
 ```
 

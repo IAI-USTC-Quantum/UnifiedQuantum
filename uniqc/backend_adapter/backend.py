@@ -680,6 +680,8 @@ class DummyBackend(QuantumBackend):
                     "chip_characterization": spec.chip_characterization,
                     "available_qubits": spec.available_qubits,
                     "available_topology": spec.available_topology,
+                    "error_loader": spec.error_loader,
+                    "readout_error": spec.readout_error,
                 }
             )
             if "noise_model" in cfg:
@@ -724,6 +726,8 @@ class DummyBackend(QuantumBackend):
             noise_model=self._resolved_config.get("noise_model"),
             available_qubits=self._resolved_config.get("available_qubits"),
             available_topology=self._resolved_config.get("available_topology"),
+            error_loader=self._resolved_config.get("error_loader"),
+            readout_error=self._resolved_config.get("readout_error"),
         )
 
     def is_available(self) -> bool:

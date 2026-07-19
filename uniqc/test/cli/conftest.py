@@ -17,6 +17,7 @@ import pytest
 # keeps the original behaviour (real env / real sys.argv).
 _AUTO_STUB_MODULES = {
     "test_backend_cli",
+    "test_backend_virtual_cli",
     "test_calibrate_cli",
     "test_chip_service_and_cache",
     "test_doctor_cli",

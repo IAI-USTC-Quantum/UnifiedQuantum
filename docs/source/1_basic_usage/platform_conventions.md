@@ -126,7 +126,7 @@ normalizer mock）上回归保护：
 2. **Basis gate set**：根据后端确定基础门集合 — `originq`、`quark` 默认按 `cz + sx + rz` 校验；`ibm` 按 `BackendInfo.extra["basis_gates"]` 校验。
 3. **Topology**：双比特门必须落在 backend 拓扑的边上。`CZ`、`ISWAP`、`SWAP`、`XX`、`YY`、`ZZ`、`XY` 视为无向；`CNOT`/`CX`、`ECR` 视为有向。
 4. **Qubit count**：电路中用到的 qubit 索引必须 `< backend.num_qubits`。
-5. **Topology TTL**：后端拓扑使用 `~/.uniqc/cache/backends.sqlite` 的缓存，TTL 24h；过期但仍可用的拓扑会以 warning 方式提示。
+5. **Topology TTL**：后端拓扑使用 `~/.uniqc/backend/backends.json` 的缓存，TTL 24h；过期但仍可用的拓扑会以 warning 方式提示。
 
 校验**通过** 时，`submit_task()` 会在 `metadata` 中附加：
 

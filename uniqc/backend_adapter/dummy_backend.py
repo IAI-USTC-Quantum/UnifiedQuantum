@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import warnings
 from typing import Any
 
 from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
@@ -28,6 +29,8 @@ class DummyBackendSpec:
     noise_source: str = "none"
     simulator_kind: str = "default"
     simulator_kwargs: dict[str, Any] | None = None
+    error_loader: Any | None = None
+    readout_error: dict[int, list[float]] | None = None
 
 
 def _normalise_available_qubits(value: Any) -> list[int] | None:
@@ -148,6 +151,27 @@ def _fetch_chip_characterization(platform: Platform, name: str) -> Any | None:
     return None
 
 
+def _resolve_virtual_machine_spec(name: str) -> DummyBackendSpec:
+    """Build a spec from a user-defined virtual machine YAML config."""
+    from uniqc.backend_adapter.virtual_machine import (
+        build_error_loader,
+        build_readout_error,
+        load_virtual_machine,
+    )
+
+    config = load_virtual_machine(name)
+    return DummyBackendSpec(
+        identifier=f"dummy:virtual:{config.name}",
+        name=f"virtual:{config.name}",
+        description=config.description or f"User-defined noisy virtual machine '{config.name}'",
+        available_qubits=list(config.qubits),
+        available_topology=[[u, v] for u, v in config.topology] or None,
+        noise_source="virtual_config",
+        error_loader=build_error_loader(config),
+        readout_error=build_readout_error(config) or None,
+    )
+
+
 def resolve_dummy_backend(
     identifier: str = "dummy:local:simulator",
     *,
@@ -161,6 +185,8 @@ def resolve_dummy_backend(
       - ``dummy:local:virtual-line-N``: noiseless N-qubit line topology.
       - ``dummy:local:virtual-grid-RxC``: noiseless R by C grid topology.
       - ``dummy:local:mps-linear-N``: MPS simulator on N-qubit linear chain.
+      - ``dummy:virtual:<name>``: user-defined noisy virtual machine from
+        ``~/.uniqc/backend/virtual/<name>.yaml``.
       - ``dummy:<platform>:<backend>``: noisy simulator using cached/fetched
         chip characterization for a real backend.
 
@@ -227,13 +253,16 @@ def resolve_dummy_backend(
                 available_qubits=list(range(n)),
                 available_topology=virtual_grid_topology(rows, cols),
             )
+        elif suffix.startswith("virtual:"):
+            spec = _resolve_virtual_machine_spec(suffix[len("virtual:") :].strip())
         else:
             parts = suffix.split(":", 1)
             if len(parts) != 2:
                 raise ValueError(
                     "Dummy backend must be 'dummy:local:simulator', "
                     "'dummy:local:virtual-line-N', 'dummy:local:virtual-grid-RxC', "
-                    "'dummy:local:mps-linear-N', or 'dummy:<platform>:<backend>'."
+                    "'dummy:local:mps-linear-N', 'dummy:virtual:<name>', "
+                    "or 'dummy:<platform>:<backend>'."
                 )
             try:
                 source_platform = Platform(parts[0])
@@ -284,10 +313,18 @@ def _apply_dummy_overrides(spec: DummyBackendSpec, **overrides: Any) -> DummyBac
     )
     chip_characterization = spec.chip_characterization if chip_override is None else chip_override
     noise_source = spec.noise_source
+    error_loader = spec.error_loader
+    readout_error = spec.readout_error
     if chip_characterization is not None:
         noise_source = "chip_characterization"
+        # Chip-backed noise supersedes any prebuilt virtual-machine noise.
+        error_loader = None
+        readout_error = None
     elif overrides.get("noise_model") is not None:
         noise_source = "noise_model"
+        # An explicit noise_model override supersedes virtual-machine noise.
+        error_loader = None
+        readout_error = None
 
     return dataclasses.replace(
         spec,
@@ -295,6 +332,8 @@ def _apply_dummy_overrides(spec: DummyBackendSpec, **overrides: Any) -> DummyBac
         available_topology=available_topology,
         chip_characterization=chip_characterization,
         noise_source=noise_source,
+        error_loader=error_loader,
+        readout_error=readout_error,
     )
 
 
@@ -308,6 +347,8 @@ def dummy_adapter_kwargs(identifier: str, **overrides: Any) -> dict[str, Any]:
         "available_topology": spec.available_topology,
         "simulator_kind": spec.simulator_kind,
         "simulator_kwargs": spec.simulator_kwargs,
+        "error_loader": spec.error_loader,
+        "readout_error": spec.readout_error,
     }
 
 
@@ -333,6 +374,8 @@ def _info_from_spec(spec: DummyBackendSpec) -> BackendInfo:
         kind_label = "mps-line"
     elif spec.source_platform:
         kind_label = "hardware-noisy"
+    elif spec.noise_source == "virtual_config":
+        kind_label = "virtual-noisy"
     elif topology:
         kind_label = "virtual"
     else:
@@ -371,6 +414,9 @@ def list_dummy_backend_infos() -> list[BackendInfo]:
     Chip-backed identifiers such as ``dummy:originq:WK_C180`` are intentionally
     not listed here. They are rule-based submission targets documented for
     users, not standalone backend cards in the management UI.
+
+    User-defined virtual machines from ``~/.uniqc/backend/virtual/*.yaml`` are
+    listed alongside the built-in local fixtures.
     """
     specs = [
         resolve_dummy_backend("dummy:local:simulator", allow_fetch=False),
@@ -378,6 +424,14 @@ def list_dummy_backend_infos() -> list[BackendInfo]:
         resolve_dummy_backend("dummy:local:virtual-grid-2x2", allow_fetch=False),
         resolve_dummy_backend("dummy:local:mps-linear-3", allow_fetch=False),
     ]
+
+    from uniqc.backend_adapter.virtual_machine import scan_virtual_machines
+
+    for entry in scan_virtual_machines():
+        if entry.config is None:
+            warnings.warn(f"Skipping invalid virtual machine {entry.path}: {entry.error}", stacklevel=2)
+            continue
+        specs.append(_resolve_virtual_machine_spec(entry.name))
 
     seen: set[str] = set()
     infos: list[BackendInfo] = []

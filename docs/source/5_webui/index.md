@@ -33,7 +33,9 @@ gunicorn / 第三方 reverse-proxy 部署。
 |------|------|
 | ``~/.uniqc/config.yaml`` | 平台 token、proxy、profile、gateway host/port |
 | ``~/.uniqc/tasks.db`` | 本地任务历史（SQLite，由 ``TaskStore`` 管理） |
-| ``~/.uniqc/backend-cache/`` | 后端发现 / chip characterization 缓存 |
+| ``~/.uniqc/backend/backends.json`` | 后端发现缓存 |
+| ``~/.uniqc/backend/chips/`` | chip characterization 缓存 |
+| ``~/.uniqc/backend/virtual/`` | 用户自定义含噪量子虚拟机（YAML） |
 | ``~/.uniqc/calibration_cache/`` | XEB / readout 校准结果（带 ISO-8601 时间戳） |
 | ``~/.uniqc/logs/`` | gateway / cli 运行日志（如果启用） |
 

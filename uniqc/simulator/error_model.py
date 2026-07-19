@@ -14,6 +14,7 @@ Key exports:
     - PauliError1Q: Single-qubit Pauli error model.
     - PauliError2Q: Two-qubit Pauli error model.
     - Kraus1Q: Single-qubit Kraus operator error model.
+    - ThermalRelaxation: T1/T2 thermal relaxation error model.
     - ErrorLoader: Base error loader interface.
     - ErrorLoader_GenericError: Generic error loader.
     - ErrorLoader_GateTypeError: Gate-type specific error loader.
@@ -32,12 +33,14 @@ __all__ = [
     "PauliError1Q",
     "PauliError2Q",
     "Kraus1Q",
+    "ThermalRelaxation",
     "ErrorLoader",
     "ErrorLoader_GenericError",
     "ErrorLoader_GateTypeError",
     "ErrorLoader_GateSpecificError",
 ]
 
+import math
 from typing import Any
 
 # Opcode type: (gate_name, qubits, params, prob, None, None)
@@ -279,6 +282,100 @@ class Kraus1Q(ErrorModel):
         if isinstance(qubits, int):
             qubits = [qubits]
         return [("Kraus1Q", q, None, self.kraus_ops, None, None) for q in qubits]
+
+
+class ThermalRelaxation(ErrorModel):
+    """Thermal relaxation (T1/T2) error model for a gate of fixed duration.
+
+    Emits per-qubit amplitude-damping (T1) and phase-flip (pure dephasing,
+    T2) opcodes whose rates are derived from the gate duration ``t``:
+
+    - ``gamma = 1 - exp(-t / T1)`` (amplitude damping, only when T1 is set)
+    - ``p_phi = 0.5 * (1 - exp(-t * (1/T2 - 1/(2*T1))))`` when both T1 and T2
+      are set, or ``p_phi = 0.5 * (1 - exp(-t / T2))`` (pure dephasing) when
+      only T2 is set.
+
+    Args:
+        t1_ns: T1 time in nanoseconds. Either a single value applied to every
+            qubit, or a per-qubit mapping. ``None`` disables amplitude damping.
+        t2_ns: T2 time in nanoseconds, same shape as ``t1_ns``. ``None``
+            disables pure dephasing.
+        gate_time_ns: Duration of the gate in nanoseconds. Must be positive.
+
+    Raises:
+        ValueError: If both ``t1_ns`` and ``t2_ns`` are None, if any time is
+            non-positive, or if ``T2 > 2 * T1`` for a qubit (which would make
+            the dephasing probability negative).
+    """
+
+    def __init__(
+        self,
+        t1_ns: float | dict[int, float] | None,
+        t2_ns: float | dict[int, float] | None = None,
+        gate_time_ns: float = 0.0,
+    ) -> None:
+        if t1_ns is None and t2_ns is None:
+            raise ValueError("ThermalRelaxation requires at least one of t1_ns / t2_ns")
+        if gate_time_ns <= 0:
+            raise ValueError(f"ThermalRelaxation requires a positive gate_time_ns, got {gate_time_ns}")
+        for label, value in (("t1_ns", t1_ns), ("t2_ns", t2_ns)):
+            values = value.values() if isinstance(value, dict) else ([value] if value is not None else [])
+            for v in values:
+                if v <= 0:
+                    raise ValueError(f"ThermalRelaxation {label} must be positive, got {v}")
+        self.t1_ns = t1_ns
+        self.t2_ns = t2_ns
+        self.gate_time_ns = float(gate_time_ns)
+
+    @staticmethod
+    def _value_for(param: float | dict[int, float] | None, qubit: int) -> float | None:
+        if isinstance(param, dict):
+            return param.get(qubit)
+        return param
+
+    @staticmethod
+    def relaxation_rates(t1: float | None, t2: float | None, t: float) -> tuple[float | None, float | None]:
+        """Return ``(gamma, p_phi)`` for a qubit with the given T1/T2 and gate time ``t``."""
+        gamma: float | None = None
+        p_phi: float | None = None
+        if t1 is not None:
+            gamma = 1.0 - math.exp(-t / t1)
+        if t2 is not None:
+            if t1 is not None:
+                if t2 > 2.0 * t1:
+                    raise ValueError(f"ThermalRelaxation requires T2 <= 2*T1 (got T1={t1}, T2={t2})")
+                p_phi = 0.5 * (1.0 - math.exp(-t * (1.0 / t2 - 1.0 / (2.0 * t1))))
+            else:
+                p_phi = 0.5 * (1.0 - math.exp(-t / t2))
+        if gamma is not None:
+            gamma = min(1.0, max(0.0, gamma))
+        if p_phi is not None:
+            p_phi = min(1.0, max(0.0, p_phi))
+        return gamma, p_phi
+
+    def generate_error_opcode(self, qubits: int | list[int]) -> list[OpCode]:
+        """Generate thermal relaxation error opcodes for the given qubits.
+
+        Args:
+            qubits: Qubit or list of qubits to apply error to.
+
+        Returns:
+            List of error opcodes (AmplitudeDamping and/or PhaseFlip).
+        """
+        if isinstance(qubits, int):
+            qubits = [qubits]
+        opcodes: list[OpCode] = []
+        for q in qubits:
+            gamma, p_phi = self.relaxation_rates(
+                self._value_for(self.t1_ns, q),
+                self._value_for(self.t2_ns, q),
+                self.gate_time_ns,
+            )
+            if gamma is not None:
+                opcodes.append(("AmplitudeDamping", q, None, gamma, None, None))
+            if p_phi is not None and p_phi > 0.0:
+                opcodes.append(("PhaseFlip", q, None, p_phi, None, None))
+        return opcodes
 
 
 class ErrorLoader:

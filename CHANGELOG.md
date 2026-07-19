@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **User-defined noisy virtual machines** (``dummy:virtual:<name>``): write a
+  YAML config under ``~/.uniqc/backend/virtual/`` declaring qubits, coupling
+  topology, and a layered gate error model — uniform per-arity depolarizing,
+  per-gate-type and per-gate-instance overrides, T1/T2 thermal relaxation
+  (converted from gate durations into amplitude damping + dephasing), and
+  per-qubit readout error — then use it anywhere a backend identifier is
+  accepted (``submit_task(..., backend="dummy:virtual:<name>")``,
+  ``uniqc submit``, calibration workflows). Configured machines appear in
+  ``uniqc backend list`` / WebUI as ``virtual:<name>``.
+  - New module ``uniqc.backend_adapter.virtual_machine`` with strict
+    validation (unknown keys, probability ranges, topology consistency,
+    ``T2 <= 2*T1``, readout pair shape) and clear, file-path-qualified
+    error messages.
+  - New error model ``uniqc.simulator.ThermalRelaxation`` emitting
+    per-qubit ``AmplitudeDamping`` / ``PhaseFlip`` opcodes derived from
+    T1, T2, and the gate duration.
+  - New CLI group ``uniqc backend virtual init|list|show|validate`` to
+    scaffold, inspect, and validate configs.
+  - Docs: ``docs/source/2_advanced/virtual_backends.md``.
+- **Unified backend state directory** ``~/.uniqc/backend/``: the backend
+  discovery cache moved from ``~/.uniqc/cache/backends.json`` to
+  ``~/.uniqc/backend/backends.json``, and the chip characterization cache
+  from ``~/.uniqc/backend-cache/`` to ``~/.uniqc/backend/chips/``. Legacy
+  files are migrated automatically on first access.
+
 ## [0.0.15] - 2026-06-04
 
 This release focuses on **native PyTorch parameter integration**, an

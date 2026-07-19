@@ -38,7 +38,7 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     )
 
     target = parse_backend_target(backend)
-    if target.kind in ("local", "local_topology", "local_mps", "dummy_provider"):
+    if target.kind in ("local", "local_topology", "local_mps", "virtual", "dummy_provider"):
         from uniqc.backend_adapter.dummy_backend import dummy_adapter_kwargs
 
         return DummyAdapter(**dummy_adapter_kwargs(backend, **kwargs))

@@ -62,6 +62,9 @@ from .error_model import (
     PhaseFlip as PhaseFlip,
 )
 from .error_model import (
+    ThermalRelaxation as ThermalRelaxation,
+)
+from .error_model import (
     TwoQubitDepolarizing as TwoQubitDepolarizing,
 )
 from .get_backend import create_simulator as create_simulator
@@ -109,6 +112,7 @@ __all__ = [
     "PauliError1Q",
     "PauliError2Q",
     "Kraus1Q",
+    "ThermalRelaxation",
     "ErrorLoader",
     "ErrorLoader_GenericError",
     "ErrorLoader_GateTypeError",

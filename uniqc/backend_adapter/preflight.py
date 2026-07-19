@@ -24,6 +24,7 @@ Backend identifier grammar
 ``dummy:local:virtual-line-N``              line-topology local simulator
 ``dummy:local:virtual-grid-RxC``            grid-topology local simulator
 ``dummy:local:mps-linear-N[:k=v...]``       MPS local simulator
+``dummy:virtual:<name>``                    user-defined noisy virtual machine
 ``dummy:<provider>:<chip>``                 noisy local sim using provider chip data
 ``<provider>:<chip>``                       direct submission to the provider
 ``<provider>``                              provider with default chip
@@ -140,11 +141,13 @@ class BackendTarget:
       - ``"local"``: pure local simulator (no provider data)
       - ``"local_topology"``: local sim with synthetic virtual topology
       - ``"local_mps"``: local MPS simulator on a linear chain
+      - ``"virtual"``: user-defined noisy virtual machine (YAML config)
       - ``"dummy_provider"``: noisy local sim using provider chip data
       - ``"provider"``: direct submission to a real provider
 
     For ``dummy_provider`` and ``provider``, ``provider`` and
-    ``chip_name`` are populated.
+    ``chip_name`` are populated. For ``virtual``, ``virtual_name`` holds
+    the config name under ``~/.uniqc/backend/virtual/``.
     """
 
     raw: str
@@ -153,6 +156,7 @@ class BackendTarget:
     chip_name: str | None = None
     topology_spec: str | None = None
     mps_kwargs: dict[str, Any] | None = None
+    virtual_name: str | None = None
 
     @property
     def needs_provider_sdk(self) -> bool:
@@ -238,6 +242,15 @@ def parse_backend_target(name: str) -> BackendTarget:
         suffix = raw.split(":", 1)[1]
         canonical = f"dummy:local:{_canonical_topology_suffix(suffix)}"
         raise ValueError(f"Backend identifier {raw!r} is not allowed. Use the canonical {canonical!r} form instead.")
+
+    # dummy:virtual:<name> — user-defined noisy virtual machine from
+    # ``~/.uniqc/backend/virtual/<name>.yaml``. Runs fully locally; the
+    # config is validated in ensure_backend_ready / at adapter creation.
+    if raw.startswith("dummy:virtual:"):
+        virtual_name = raw[len("dummy:virtual:") :].strip()
+        if not virtual_name:
+            raise ValueError(f"Malformed dummy backend identifier: {raw!r}. Expected 'dummy:virtual:<name>'.")
+        return BackendTarget(raw=raw, kind="virtual", virtual_name=virtual_name)
 
     # dummy:<provider>:<chip>
     if raw.startswith("dummy:"):
@@ -499,6 +512,15 @@ def ensure_backend_ready(
     # Pure local simulator path.
     if target.kind in ("local", "local_topology", "local_mps"):
         _require_local_simulator()
+        return None
+
+    # User-defined noisy virtual machine — runs fully locally; validate the
+    # YAML config now so misconfiguration fails fast with a clear message.
+    if target.kind == "virtual":
+        _require_local_simulator()
+        from uniqc.backend_adapter.virtual_machine import load_virtual_machine
+
+        load_virtual_machine(target.virtual_name or "")
         return None
 
     if target.provider is None:

@@ -95,7 +95,9 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
   symbols are lazily loaded via module `__getattr__`; keep optional deps out of
   import-time paths.
 - **All user state lives under `~/.uniqc/`** (`config.yaml`, `cache/`,
-  `backend-cache/`, `calibration_cache/`). Configure tokens with
+  `backend/` (backend discovery cache `backends.json`, chip cache `chips/`,
+  user-defined noisy virtual machines `virtual/*.yaml` used as
+  `dummy:virtual:<name>`), `calibration_cache/`). Configure tokens with
   `uniqc config set <platform>.token <TOKEN>`.
 - **Ruff ignores** `E501`, `N801`, `N803`, `N806` on purpose (physics-notation
   variable names like `U`, `H`, `K`, `E`; CapWords loader classes).

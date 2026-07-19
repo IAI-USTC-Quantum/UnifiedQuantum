@@ -88,6 +88,8 @@ class DummyAdapter(QuantumAdapter):
         backend_id: str = "dummy",
         simulator_kind: str = "default",
         simulator_kwargs: dict[str, Any] | None = None,
+        error_loader: Any | None = None,
+        readout_error: dict[int, list[float]] | None = None,
     ) -> None:
         """Initialize the DummyAdapter.
 
@@ -116,6 +118,13 @@ class DummyAdapter(QuantumAdapter):
             simulator_kwargs: Extra keyword arguments forwarded to the simulator
                 constructor (e.g. ``{"chi_max": 64, "svd_cutoff": 1e-12}`` for
                 the MPS backend).
+            error_loader: Optional prebuilt error loader (e.g. from a
+                user-defined virtual machine config under
+                ``~/.uniqc/backend/virtual/``). Takes precedence over
+                ``chip_characterization`` and ``noise_model``.
+            readout_error: Optional prebuilt per-qubit readout error mapping
+                ``{qubit: [p01, p10]}``. Takes precedence over readout derived
+                from ``chip_characterization`` or ``noise_model``.
 
         Raises:
             MissingDependencyError: If the C++ simulator extension (`uniqc_cpp`)
@@ -134,11 +143,11 @@ class DummyAdapter(QuantumAdapter):
                 f"DummyAdapter: unsupported simulator_kind={self.simulator_kind!r}. Use 'default' or 'mps'."
             )
 
-        if self.simulator_kind == "mps" and (noise_model or chip_characterization):
+        if self.simulator_kind == "mps" and (noise_model or chip_characterization or error_loader or readout_error):
             raise ValueError(
                 "DummyAdapter(simulator_kind='mps') is noiseless; do not combine "
-                "with noise_model or chip_characterization. Use the default "
-                "simulator (and a virtual-line / chip-backed dummy) for noisy MPS-shaped runs."
+                "with noise_model, chip_characterization, error_loader or readout_error. "
+                "Use the default simulator (and a virtual-line / chip-backed dummy) for noisy MPS-shaped runs."
             )
 
         if self.simulator_kind == "default" and not check_simulation("cpp"):
@@ -160,6 +169,8 @@ class DummyAdapter(QuantumAdapter):
         self.available_topology = available_topology or []
         self._cache: dict[str, dict[str, Any]] = {}
         self._simulator_cls: type | None = None
+        self._explicit_error_loader: Any | None = error_loader
+        self._explicit_readout_error: dict[int, list[float]] | None = readout_error
         self._error_loader: Any | None = None
 
     def _get_simulator_cls(self) -> type:
@@ -193,12 +204,15 @@ class DummyAdapter(QuantumAdapter):
         """Build error loader from chip characterization or explicit noise model.
 
         This is called lazily on first simulation to avoid importing heavy
-        dependencies at construction time.
+        dependencies at construction time. A prebuilt ``error_loader`` (e.g.
+        from a virtual machine config) takes precedence.
         """
         if self._error_loader is not None:
             return self._error_loader
 
-        if self.chip_characterization is not None:
+        if self._explicit_error_loader is not None:
+            self._error_loader = self._explicit_error_loader
+        elif self.chip_characterization is not None:
             self._error_loader = self._build_error_loader_from_chip(self.chip_characterization)
         elif self.noise_model is not None:
             self._error_loader = self._build_error_loader_from_model(self.noise_model)
@@ -209,6 +223,9 @@ class DummyAdapter(QuantumAdapter):
 
     def _get_readout_error(self, originir: str | None = None) -> dict[int, list[float]]:
         """Return readout error rates from chip data or explicit noise model."""
+        if self._explicit_readout_error is not None:
+            return {int(q): list(rates) for q, rates in self._explicit_readout_error.items()}
+
         if self.chip_characterization is not None:
             readout_error: dict[int, list[float]] = {}
             for sq_data in self.chip_characterization.single_qubit_data:

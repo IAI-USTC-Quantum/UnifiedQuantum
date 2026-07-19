@@ -202,3 +202,10 @@ print(prob)
 ## 已知限制
 
 - 噪声模拟目前仅支持单比特和双比特门。
+
+## 更进一步：声明式含噪虚拟机
+
+手写 `ErrorLoader` 适合程序化构造噪声；如果只想用一份配置文件描述整台含噪机器
+（拓扑、分层 gate error model、T1/T2 热弛豫、逐比特读出错误），可以在
+`~/.uniqc/backend/virtual/` 下写 YAML，然后以 `dummy:virtual:<name>` 作为 backend
+使用，无需手写 Python 噪声代码。详见 [自定义含噪量子虚拟机](virtual_backends.md)。

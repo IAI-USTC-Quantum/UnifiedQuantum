@@ -35,7 +35,7 @@ uniqc doctor
 
 ### 5. 后端缓存
 
-检查 `~/.uniqc/cache/backends.json`：
+检查 `~/.uniqc/backend/backends.json`：
 - 显示每个平台的缓存后端数量
 - 报告缓存年龄和是否过期（TTL 24 小时）
 

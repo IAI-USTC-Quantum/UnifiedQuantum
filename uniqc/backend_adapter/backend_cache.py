@@ -2,7 +2,7 @@
 
 Cache file layout
 ----------------
-``~/.uniqc/cache/backends.json``
+``~/.uniqc/backend/backends.json``
     Top-level dict with one key per platform::
 
         {
@@ -14,6 +14,9 @@ Cache file layout
           "ibm": { ... }
         }
 
+The cache used to live at ``~/.uniqc/cache/backends.json``; on first access the
+legacy file is moved to the new location automatically.
+
 Cache TTL
 ---------
 Each platform entry is considered stale after 24 hours.  The ``update()``
@@ -23,6 +26,7 @@ function bypasses this check when called explicitly (``uniqc backend update``).
 from __future__ import annotations
 
 import json
+import shutil
 import time
 import warnings
 from pathlib import Path
@@ -30,9 +34,35 @@ from typing import Any
 
 from uniqc.backend_adapter.backend_info import BackendInfo, Platform
 
-DEFAULT_CACHE_DIR = Path.home() / ".uniqc" / "cache"
+DEFAULT_CACHE_DIR = Path.home() / ".uniqc" / "backend"
+LEGACY_CACHE_DIR = Path.home() / ".uniqc" / "cache"
 CACHE_FILE = "backends.json"
 TTL_SECONDS = 24 * 60 * 60  # 24 hours
+
+# Snapshot of the built-in default. Tests redirect ``DEFAULT_CACHE_DIR`` via
+# monkeypatching; the legacy migration compares against this snapshot so it
+# never moves real user state into a test's temporary directory.
+_BUILTIN_CACHE_DIR = DEFAULT_CACHE_DIR
+_migration_attempted = False
+
+
+def _migrate_legacy_cache() -> None:
+    """Move the legacy ``~/.uniqc/cache/backends.json`` file once per process."""
+    global _migration_attempted
+    if _migration_attempted:
+        return
+    _migration_attempted = True
+    if DEFAULT_CACHE_DIR != _BUILTIN_CACHE_DIR:
+        return
+    legacy = LEGACY_CACHE_DIR / CACHE_FILE
+    target = DEFAULT_CACHE_DIR / CACHE_FILE
+    if target.exists() or not legacy.exists():
+        return
+    try:
+        DEFAULT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(legacy), str(target))
+    except OSError as exc:
+        warnings.warn(f"Failed to migrate legacy backend cache ({legacy}): {exc}", stacklevel=2)
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +72,8 @@ TTL_SECONDS = 24 * 60 * 60  # 24 hours
 
 def _read_cache(cache_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     """Return the parsed cache file, or an empty dict if absent/invalid."""
+    if cache_dir is None:
+        _migrate_legacy_cache()
     path = (cache_dir or DEFAULT_CACHE_DIR) / CACHE_FILE
     if not path.exists():
         return {}
@@ -55,6 +87,8 @@ def _read_cache(cache_dir: Path | None = None) -> dict[str, dict[str, Any]]:
 
 def _write_cache(data: dict[str, dict[str, Any]], cache_dir: Path | None = None) -> None:
     """Atomically write the cache file."""
+    if cache_dir is None:
+        _migrate_legacy_cache()
     cache_dir = cache_dir or DEFAULT_CACHE_DIR
     cache_dir.mkdir(parents=True, exist_ok=True)
     path = cache_dir / CACHE_FILE

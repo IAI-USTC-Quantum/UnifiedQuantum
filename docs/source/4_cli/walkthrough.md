@@ -19,8 +19,9 @@
 | ``uniqc submit ... --dry-run`` | 离线校验（不真的提交） | [`uniqc submit`](submit.md) |
 | ``uniqc result <task_id>`` | 查询 / 取回单个任务结果 | [`uniqc result`](result.md) |
 | ``uniqc task list / show / ...`` | 本地任务历史（SQLite at ``~/.uniqc/tasks.db``） | [`uniqc task`](task.md) |
-| ``uniqc backend list / show / update`` | 后端发现与缓存（``~/.uniqc/backend-cache/``） | [`uniqc backend`](backend.md) |
+| ``uniqc backend list / show / update`` | 后端发现与缓存（``~/.uniqc/backend/backends.json``） | [`uniqc backend`](backend.md) |
 | ``uniqc backend chip-display <id>`` | 全屏可视化芯片标定（T1/T2、保真度、拓扑） | [`uniqc backend`](backend.md) |
+| ``uniqc backend virtual init / list / show / validate`` | 自定义含噪量子虚拟机（``~/.uniqc/backend/virtual/``） | [`uniqc backend`](backend.md) · [含噪虚拟机](../2_advanced/virtual_backends.md) |
 | ``uniqc config init / set / get / validate`` | 配置文件管理（``~/.uniqc/config.yaml``） | [`uniqc config`](config.md) |
 | ``uniqc calibrate xeb / readout / pattern`` | 芯片标定 → 写入 ``~/.uniqc/calibration_cache/`` | [`uniqc calibrate`](calibrate.md) |
 | ``uniqc circuit ...`` | 电路文件转换 / 检查 | [`uniqc circuit`](circuit.md) |

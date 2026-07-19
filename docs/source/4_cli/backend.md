@@ -4,7 +4,7 @@
 
 ## 概述
 
-`uniqc backend` 默认行为等同于 `uniqc backend list`，直接输出后端列表。支持 4 个子命令：
+`uniqc backend` 默认行为等同于 `uniqc backend list`，直接输出后端列表。支持 5 个子命令：
 
 | 子命令 | 说明 |
 |--------|------|
@@ -12,10 +12,11 @@
 | `update` | 强制从云端 API 刷新后端列表缓存 |
 | `show` | 显示单个后端的详细信息 |
 | `chip-display` | 显示芯片逐量子比特标定数据 |
+| `virtual` | 管理自定义含噪量子虚拟机（`init` / `list` / `show` / `validate`） |
 
 所有子命令支持 `--ai-hints` / `--ai-hint` 标志（也可通过环境变量 `UNIQC_AI_HINTS=1` 或 `uniqc config always-ai-hint on` 启用），用于显示 AI 工作流提示。`workflow` 是文档中的工作流说明页，不是 `uniqc workflow` 子命令；需要下一步建议时优先使用 AI hints。
 
-Dummy backend 的可枚举列表只包含通用本地 backend 和虚拟拓扑 fixture，例如 `dummy`、`dummy:local:virtual-line-3`、`dummy:local:virtual-grid-2x2`。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
+Dummy backend 的可枚举列表包含通用本地 backend、虚拟拓扑 fixture（例如 `dummy:local:virtual-line-3`、`dummy:local:virtual-grid-2x2`），以及 `~/.uniqc/backend/virtual/` 下用户定义的含噪虚拟机（显示为 `virtual:<name>`）。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
 
 ## 列出后端 (`uniqc backend list`)
 
@@ -163,6 +164,32 @@ uniqc backend chip-display originq/WK_C180 -u
 | Fidelity | 该量子比特对的双量子比特门保真度 |
 
 > 标定数据可用于量子比特选择（RegionSelector）和噪声感知编译（`compile()`），详见[编译选项与区域选择](../guide/compiler_options_region.md)。
+
+## 自定义含噪虚拟机 (`uniqc backend virtual`)
+
+管理 `~/.uniqc/backend/virtual/` 下用户手写的含噪量子虚拟机 YAML 配置
+（拓扑、gate error model、T1/T2 热弛豫、逐比特读出错误）。配置好的虚拟机以
+`dummy:virtual:<name>` 作为 backend 标识符使用。
+
+```bash
+# 生成带完整注释的模板（已存在需 --force 覆盖）
+uniqc backend virtual init my-machine
+
+# 列出全部虚拟机（含非法文件及原因）
+uniqc backend virtual list
+
+# 查看解析后的配置与派生噪声参数
+uniqc backend virtual show my-machine
+
+# 校验配置文件（退出码反映合法性）
+uniqc backend virtual validate my-machine
+
+# 使用
+uniqc submit circuit.qasm --backend dummy:virtual:my-machine --shots 1000
+```
+
+完整的 YAML schema、噪声模型语义和热弛豫公式见
+[自定义含噪量子虚拟机](../2_advanced/virtual_backends.md)。
 
 ## 完整工作流
 

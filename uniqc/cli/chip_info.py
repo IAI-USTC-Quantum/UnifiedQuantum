@@ -2,7 +2,7 @@
 
 Unified per-qubit, per-pair, and global chip data for all quantum cloud
 platforms. Each :class:`ChipCharacterization` is cached as a single JSON file
-under ``~/.uniqc/backend-cache/``.
+under ``~/.uniqc/backend/chips/``.
 """
 
 from __future__ import annotations
@@ -128,7 +128,7 @@ class ChipCharacterization:
     """Complete characterization data for one quantum chip / backend.
 
     One object per physical device. Stored as a single JSON file under
-    ``~/.uniqc/backend-cache/{platform}-{chip_name}.json``.
+    ``~/.uniqc/backend/chips/{platform}-{chip_name}.json``.
     """
 
     platform: Platform

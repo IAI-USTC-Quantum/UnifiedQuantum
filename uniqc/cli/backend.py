@@ -10,6 +10,7 @@ import typer
 from uniqc.backend_adapter.backend_cache import cache_info, invalidate_all
 from uniqc.backend_adapter.backend_info import BackendInfo, Platform
 from uniqc.backend_adapter.backend_registry import fetch_all_backends, fetch_platform_backends, find_backend
+from uniqc.cli import backend_virtual
 from uniqc.cli.output import (
     AI_HINTS_OPTION,
     ai_hints_enabled,
@@ -26,10 +27,12 @@ app = typer.Typer(
     help=(f"List, update, and inspect quantum cloud backends\n  {build_ref_str('backend-list')}"),
 )
 
+app.add_typer(backend_virtual.app, name="virtual")
+
 
 # Detect whether a subcommand was given by checking if the first
 # positional arg in sys.argv matches a known subcommand name.
-_SUB_COMMANDS = frozenset({"list", "update", "show", "chip-display"})
+_SUB_COMMANDS = frozenset({"list", "update", "show", "chip-display", "virtual"})
 
 
 def _subcommand_given() -> bool:
