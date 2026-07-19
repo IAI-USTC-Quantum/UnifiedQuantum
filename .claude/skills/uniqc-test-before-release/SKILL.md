@@ -24,6 +24,7 @@ Use [references/report-template.md](references/report-template.md) for the repor
 2. Check the worktree:
    - `git status -sb`
    - Do not mix unrelated local changes into the release report. Report them as environment risk if they affect execution.
+   - Scan the repository root for stale release artifacts: `RELEASE_REPORT_*.md` and `RELEASE_EXECUTION_PLAN_*.md` whose version does **not** match the release under validation (e.g. `RELEASE_REPORT_0.0.15.md` while validating `0.0.16`). Stale artifacts are a **blocking issue** — they must be removed (or the removal PR merged) before tagging. Only the current release's report and plan may sit in the root at tag time.
 3. Build the test environment:
    - `uv sync --extra all --group dev --group docs --upgrade`
    - `cd frontend && npm ci`
@@ -215,6 +216,7 @@ Use `DO NOT RELEASE` when any of these are true:
 - Default tests fail for maintained dependencies.
 - Real-platform discovery or dry-run fails without a documented external cause.
 - Documentation claims a workflow works, but execution proves it does not.
+- Stale release artifacts from earlier releases (`RELEASE_REPORT_<older-version>.md`, `RELEASE_EXECUTION_PLAN_<older-version>.md`) remain in the repository root; only the current release's artifacts may be present.
 
 Use `RELEASE WITH KNOWN GAPS` only when the gaps are external, explicitly documented, and not on the recommended path.
 
