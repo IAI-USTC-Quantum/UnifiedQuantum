@@ -1,6 +1,6 @@
 # `uniqc gateway` — Web UI 网关
 
-`uniqc gateway` 子命令用于在后台启动一个本地 Web UI 服务，提供基于浏览器的任务、后端、配置查看入口。它读取 `~/.uniqc/uniqc.yml` 中的 `gateway` 段（如 `host`、`port`），并把进程信息写入 `~/.uniqc/gateway.pid`，方便后续 `stop`/`status` 操作。
+`uniqc gateway` 子命令用于在后台启动一个本地 Web UI 服务，提供基于浏览器的任务、后端、配置查看入口。它读取 `~/.uniqc/config.yaml` 中的 `gateway` 段（如 `host`、`port`），并把进程信息写入 `~/.uniqc/cache/gateway.pid`（日志为 `~/.uniqc/cache/gateway.log`），方便后续 `stop`/`status` 操作。
 
 ## 子命令
 
@@ -50,7 +50,7 @@ uniqc gateway restart
 
 ## 与配置项的关系
 
-`uniqc.yml` 中可配置：
+`~/.uniqc/config.yaml` 的 `gateway` 段中可配置：
 
 ```yaml
 gateway:

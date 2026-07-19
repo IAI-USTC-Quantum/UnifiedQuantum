@@ -30,29 +30,29 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.15..HEAD`
-- 提交数：16
-- 变更文件数：74
+- 提交数：18
+- 变更文件数：324
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `feat` | 8 |
-| `docs` | 3 |
-| `fix` | 3 |
+| `docs` | 4 |
+| `fix` | 4 |
 | `other` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 16 个文件
+- `docs`: 210 个文件
+- `example-exec-logs`: 59 个文件
 - `uniqc/test`: 13 个文件
 - `UniqcCpp`: 9 个文件
 - `uniqc/circuit_builder`: 7 个文件
 - `uniqc/backend_adapter`: 6 个文件
 - `uniqc/cli`: 5 个文件
 - `uniqc/simulator`: 5 个文件
-- `example-exec-logs`: 3 个文件
 - `examples`: 3 个文件
 - `uniqc/compile`: 3 个文件
 - `.github`: 1 个文件
@@ -78,6 +78,8 @@
 - `d7001b7` fix(circuit-builder): sort set before random.sample (Python 3.11+)
 - `fea3d8b` feat(backends): user-defined noisy virtual machines + unified backend state dir
 - `5d3bf3a` docs(changelog): section dated entries under [0.0.16]
+- `5c0d0b3` docs: refresh generated artifacts and note quark mirror alternatives
+- `b17988b` fix(test): normalize whitespace in backend-virtual CLI assertion
 
 ## v0.0.15
 

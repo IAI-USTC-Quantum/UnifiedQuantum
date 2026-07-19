@@ -5,36 +5,26 @@
 ## 先看什么
 
 如果你在跟随当前开发版，先看 ``Unreleased``；如果你是从较早的正式版本直接升级，
-**先看 ``v0.0.14``**——这一版大幅扩展了变分算法工具包，并新增了跨平台提交选项。
+**先看 ``v0.0.16``**——这一版新增**用户自定义含噪虚拟机**（``dummy:virtual:<name>``），
+并把后端发现缓存与芯片缓存统一收拢到 ``~/.uniqc/backend/``。
 
-升级到 ``v0.0.14`` 时最值得先确认的是：
+升级到 ``v0.0.16`` 时最值得先确认的是：
 
-- 你是否还在用 ``uniqc submit --platform <p> [--backend <b>]`` 这种写法。``--platform``
-  在 ``v0.0.13`` 已经从 ``submit`` 移除，只能用 ``uniqc submit ... --backend
-  <provider>:<chip>``（例如 ``--backend originq:WK_C180``、``--backend ibm:ibm_fez``、
-  ``--backend dummy:local:simulator``、``--backend dummy:originq:WK_C180``）。
-  ``--backend`` 不写时默认为 ``dummy:local:simulator``。``backend list/update`` /
-  ``task list`` / ``result`` 这些子命令仍然接受 ``--platform``。
-- 你是否在 Python 层面 ``from uniqc.simulator import OriginIR_Simulator`` 或
-  ``QASM_Simulator``。这两个类在 ``v0.0.13`` 已经被合并为统一的 ``Simulator`` /
-  ``NoisySimulator``（通过 ``uniqc.simulator.create_simulator(...)`` /
-  ``get_simulator(...)`` 工厂获取）；输入直接走 ``AnyQuantumCircuit`` 自动归一化，
-  原来的 ``program_type=`` 参数目前仍作为已弃用别名保留（被忽略，仅为一版过渡的
-  向后兼容），新代码请省略该参数。
-- 你是否在用 ``unified-quantum[qiskit]`` 或 ``unified-quantum[quafu]`` 这两个 extras
-  装包。``v0.0.13`` 起 ``qiskit`` 已经是核心依赖（``pip install unified-quantum``
-  即可），而 ``quafu`` 已归档，需要的人请独立 ``pip install pyquafu`` 并接受
-  ``numpy<2`` 约束。
-- 你是否在用 ``uniqc calibrate`` 进行芯片标定实验（``xeb`` / ``readout`` / ``pattern``
-  三个子命令；``v0.0.13`` 新增了 parallel-CZ XEB 模块和严格的预飞行检查）
-- 你是否在用显式 dummy backend id，而非已废弃的 ``submit_task(dummy=True)``。推荐写法是
-  ``backend="dummy:local:simulator"``、``backend="dummy:local:virtual-line-3"``、
-  ``backend="dummy:local:virtual-grid-2x2"``、``backend="dummy:originq:WK_C180"``。
-- 你是否理解 ``dummy:<platform>:<backend>`` 是规则型写法，不会作为独立 backend 展示；
-  提交时会先按真实 backend compile/transpile，再在本地 dummy 上做含噪执行。
-- 你是否在 Python API 中手动拼接 OriginIR 并提交——``uniqc submit --dry-run`` 可以先做一次离线校验
-- 装包 / 配置出问题时，先跑一遍 ``uv run uniqc doctor``——``v0.0.13`` 新增了这个环境
-  自检命令。
+- 你是否有脚本直接读写旧的缓存路径。后端发现缓存从 ``~/.uniqc/cache/backends.json``
+  迁到 ``~/.uniqc/backend/backends.json``，芯片缓存从 ``~/.uniqc/backend-cache/``
+  迁到 ``~/.uniqc/backend/chips/``。首次访问会**自动迁移**，正常使用无感；但如果
+  你在脚本里硬编码了旧路径，请改读新路径。
+- 你是否需要"自定义拓扑 + 自定义噪声模型"的本地含噪测试。新写法：
+  ``uniqc backend virtual init <name>`` 在 ``~/.uniqc/backend/virtual/<name>.yaml``
+  生成配置模板，编辑后用 ``uniqc backend virtual validate <name>`` 校验，之后任何
+  接受 backend id 的地方都能写 ``dummy:virtual:<name>``（例如
+  ``uniqc submit ... --backend dummy:virtual:<name>``）。配置好的机器在
+  ``uniqc backend list`` 和 WebUI 中显示为 ``virtual:<name>``。
+- 沿用 ``v0.0.13``–``v0.0.15`` 的升级检查仍然适用：``uniqc submit`` 只用
+  ``--backend <provider>:<chip>``（无 ``--platform``，缺省 ``dummy:local:simulator``）；
+  ``pip install unified-quantum[all]`` 不含 ``[quark]``，也不再有 ``[quafu]`` extra；
+  ``qiskit`` 已是核心依赖；所有在 ``0.0.x`` 触发 ``DeprecationWarning`` 的公共 API
+  将在 ``0.1.0`` 移除；环境自检用 ``uv run uniqc doctor``。
 
 ## 弃用政策（0.1.0 兼容性悬崖）
 
@@ -62,6 +52,41 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.0.16`
+
+这是一个功能增强版本，核心主题是**用户自定义含噪虚拟机**与**统一后端状态目录**。
+
+本版主要变更：
+- **用户自定义含噪虚拟机**（``dummy:virtual:<name>``）：在 ``~/.uniqc/backend/virtual/``
+  下用 YAML 声明比特数、耦合拓扑和分层错误模型——统一 depolarizing、按门类型 /
+  按门实例覆盖、T1/T2 热弛豫（由门时长换算为振幅阻尼 + 退相位）、逐比特读出错误——
+  之后任何接受 backend id 的位置都可使用（``submit_task(...,
+  backend="dummy:virtual:<name>")``、``uniqc submit``、标定工作流）。新模块
+  ``uniqc.backend_adapter.virtual_machine`` 提供严格校验（未知键、概率范围、拓扑
+  一致性、``T2 <= 2*T1``、读出对形状），报错信息带文件路径；新错误模型
+  ``uniqc.simulator.ThermalRelaxation``；新 CLI 组 ``uniqc backend virtual
+  init|list|show|validate``。详见 [含噪虚拟机](../2_advanced/virtual_backends.md)。
+- **统一后端状态目录** ``~/.uniqc/backend/``：后端发现缓存（``backends.json``）与
+  芯片表征缓存（``chips/``）统一收拢，旧路径（``~/.uniqc/cache/backends.json``、
+  ``~/.uniqc/backend-cache/``）在首次访问时自动迁移。
+
+如果你正在从 ``v0.0.15`` 迁移，主要变更对用户透明：
+- 现有 ``dummy`` / ``dummy:local:*`` / ``dummy:<platform>:<backend>`` 写法不变；
+- 缓存自动迁移，无需手工移动文件；无新增弃用。
+
+已知缺口（不阻塞发布）：
+- 发布验证环境中 IBM token 被 IBM Quantum 拒绝（外部凭证问题）、Quark 未配置 token；
+  本轮未提交真实量子任务（未获配额授权），以平台发现 + dry-run 覆盖；
+- 开发者路径 ``uv sync`` 因 ``[quark]`` extra 的 ``quarkcircuit`` 标记在 uv 通用
+  解析器下不可解（``v0.0.15`` 起已存在的既有问题）；用户安装路径
+  ``uv pip install`` / ``pip install`` 不受影响。
+
+**发布验证结果**：见仓库根目录 ``RELEASE_REPORT_0.0.16.md`` —— 结论
+**RELEASE WITH KNOWN GAPS**。默认测试套件 2044 passed / 0 failed；文档示例全量执行
+49 pass / 5 skip / 0 fail；CLI 与文档一致；含噪虚拟机特性经 CLI / Python API / WebUI /
+含噪模拟全链路验证；Gateway 前端构建与 API 健康检查通过；OriginQ 实时发现正常
+（7 backends + WK_C180 标定数据）。
 
 ### `v0.0.15`
 

@@ -224,7 +224,7 @@ pip install unified-quantum[pytorch]
 ### 安装所有可选依赖
 
 `[all]` 安装跨平台兼容的可选功能依赖（`[simulation]` + `[visualization]` +
-`[pytorch]` + `[originq]` + `[quafu]` 等）。
+`[pytorch]` + `[originq]` 等；Quafu 已弃用，不再提供 `[quafu]` extra）。
 
 > **v0.0.15 Breaking Change**：`[all]` **不再包含** `[quark]`。之前 `[all]`
 > 因为 `quarkcircuit` 在 `win32` 和 Python 3.14 上缺少 wheel，导致跨平台

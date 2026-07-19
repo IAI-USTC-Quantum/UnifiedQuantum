@@ -87,9 +87,9 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 10h ago
+    originq: 7 backends, updated 22h ago
     quafu: 16 backends, updated 81d ago (stale)
-    ibm: 3 backends, updated 44d ago (stale)
+    ibm: 3 backends, updated 45d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -102,7 +102,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_102b001315eb49c1b6dc48faebec74fd",
+  "task_id": "uqt_84895996473e41d4974d3540e1a0e865",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -117,7 +117,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_102b001315eb49c1b6dc48faebec74fd",
+  "task_id": "uqt_84895996473e41d4974d3540e1a0e865",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -128,11 +128,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_102b001315eb… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T01:50:… │
-│ uqt_95d84f55e4de… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T01:50:… │
-│ uqt_4e920a2fb4eb… │ dummy:local:simu… │ success │ 128   │ 2026-07-19T01:50:… │
-│ uqt_0f659d9885d4… │ dummy:local:simu… │ success │ 2000  │ 2026-07-19T01:50:… │
-│ uqt_a9b9b0f14c21… │ dummy:local:mps-… │ success │ 400   │ 2026-07-19T01:50:… │
+│ uqt_84895996473e… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T13:26:… │
+│ uqt_96b8d9358eda… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T13:26:… │
+│ uqt_4077dfe56da9… │ dummy:local:simu… │ success │ 128   │ 2026-07-19T13:26:… │
+│ uqt_0943cfbb6135… │ dummy:local:simu… │ success │ 2000  │ 2026-07-19T13:26:… │
+│ uqt_24f6fb436447… │ dummy:local:mps-… │ success │ 400   │ 2026-07-19T13:26:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 
