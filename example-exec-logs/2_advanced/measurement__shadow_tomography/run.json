@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "Classical Shadow Tomography Demo\n==================================================\n  Shots per basis: 1000\n  Shadow snapshots: 100\n\nCircuit: Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2\n\nPerforming 100 shadow measurements...\n  Collected 100 shadow snapshots\n\n  ⟨Z₀⟩ estimate: 0.9900 (exact: 0.0)\n  ⟨Z₀Z₁⟩ estimate: 0.9900 (exact: 1.0)\n  ⟨X₀⟩ estimate: 1.0200 (exact: 1/√2 ≈ 0.707)\n\n  Exact ⟨Z₀⟩ = 0.0000\n  Exact ⟨Z₀Z₁⟩ = 1.0000\n\n✓ Shadow estimation complete with 100 snapshots\n",
+  "stdout": "Classical Shadow Tomography Demo\n==================================================\n  Shots per basis: 1000\n  Shadow snapshots: 100\n\nCircuit: Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2\n\nPerforming 100 shadow measurements...\n  Collected 100 shadow snapshots\n\n  ⟨Z₀⟩ estimate: 1.0200 (exact: 0.0)\n  ⟨Z₀Z₁⟩ estimate: 1.0800 (exact: 1.0)\n  ⟨X₀⟩ estimate: 0.9900 (exact: 1/√2 ≈ 0.707)\n\n  Exact ⟨Z₀⟩ = 0.0000\n  Exact ⟨Z₀Z₁⟩ = 1.0000\n\n✓ Shadow estimation complete with 100 snapshots\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.163
+  "duration_seconds": 0.157
 }
