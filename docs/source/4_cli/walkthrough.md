@@ -18,7 +18,7 @@
 | ``uniqc submit <file> -b <provider:chip> [-s <shots>] [--wait]`` | 提交线路；``-b dummy:local:simulator`` 用本地 dummy；真平台需配 token | [`uniqc submit`](submit.md) |
 | ``uniqc submit ... --dry-run`` | 离线校验（不真的提交） | [`uniqc submit`](submit.md) |
 | ``uniqc result <task_id>`` | 查询 / 取回单个任务结果 | [`uniqc result`](result.md) |
-| ``uniqc task list / show / ...`` | 本地任务历史（SQLite at ``~/.uniqc/tasks.db``） | [`uniqc task`](task.md) |
+| ``uniqc task list / show / ...`` | 本地任务历史（SQLite at ``~/.uniqc/cache/tasks.sqlite``） | [`uniqc task`](task.md) |
 | ``uniqc backend list / show / update`` | 后端发现与缓存（``~/.uniqc/backend/backends.json``） | [`uniqc backend`](backend.md) |
 | ``uniqc backend chip-display <id>`` | 全屏可视化芯片标定（T1/T2、保真度、拓扑） | [`uniqc backend`](backend.md) |
 | ``uniqc backend virtual init / list / show / validate`` | 自定义含噪量子虚拟机（``~/.uniqc/backend/virtual/``） | [`uniqc backend`](backend.md) · [含噪虚拟机](../2_advanced/virtual_backends.md) |
