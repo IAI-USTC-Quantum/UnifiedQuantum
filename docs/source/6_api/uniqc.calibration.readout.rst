@@ -14,5 +14,5 @@ Module contents
 
 .. automodule:: uniqc.calibration.readout
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

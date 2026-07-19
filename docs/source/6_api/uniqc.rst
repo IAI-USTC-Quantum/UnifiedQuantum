@@ -33,5 +33,5 @@ Module contents
 
 .. automodule:: uniqc
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

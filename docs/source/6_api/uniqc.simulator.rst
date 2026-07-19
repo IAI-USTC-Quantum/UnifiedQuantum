@@ -12,6 +12,7 @@ Submodules
    uniqc.simulator.get_backend
    uniqc.simulator.mps_simulator
    uniqc.simulator.opcode_simulator
+   uniqc.simulator.originir_ext_simulator
    uniqc.simulator.qutip_sim_impl
    uniqc.simulator.simulator
    uniqc.simulator.torchquantum_simulator
@@ -21,5 +22,5 @@ Module contents
 
 .. automodule:: uniqc.simulator
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

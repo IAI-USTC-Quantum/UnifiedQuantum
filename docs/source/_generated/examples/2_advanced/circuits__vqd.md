@@ -34,7 +34,7 @@ Exact eigenvalues: [-2.  0.  0.  2.]
 VQE ground state energy: -2.000000  (exact: -2.000000)
 
 --- Step 2: VQD (first excited state) ---
-VQD first excited state energy: -0.000000  (exact: 0.000000)
+VQD first excited state energy: 0.000000  (exact: 0.000000)
 Overlap with ground state: 0.000000
 
 ✓ Run complete.

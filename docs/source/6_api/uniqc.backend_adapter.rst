@@ -27,11 +27,12 @@ Submodules
    uniqc.backend_adapter.preflight
    uniqc.backend_adapter.region_selector
    uniqc.backend_adapter.task_manager
+   uniqc.backend_adapter.virtual_machine
 
 Module contents
 ---------------
 
 .. automodule:: uniqc.backend_adapter
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

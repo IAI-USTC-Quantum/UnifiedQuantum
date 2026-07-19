@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.0.15` | `2026-06-04` | Release v0.0.15 |
 | `v0.0.14.post1` | `2026-06-03` | Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode |
 | `v0.0.14` | `2026-05-18` | Release v0.0.14 |
 | `v0.0.13` | `2026-05-14` | Merge pull request #99 from IAI-USTC-Quantum/release/v0.0.13 |
@@ -28,35 +29,92 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.14.post1..HEAD`
-- 提交数：17
-- 变更文件数：174
+- 对比区间：`v0.0.15..HEAD`
+- 提交数：16
+- 变更文件数：74
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `feat` | 10 |
+| `feat` | 8 |
+| `docs` | 3 |
+| `fix` | 3 |
+| `other` | 1 |
+| `test` | 1 |
+
+### 变更区域
+
+- `docs`: 16 个文件
+- `uniqc/test`: 13 个文件
+- `UniqcCpp`: 9 个文件
+- `uniqc/circuit_builder`: 7 个文件
+- `uniqc/backend_adapter`: 6 个文件
+- `uniqc/cli`: 5 个文件
+- `uniqc/simulator`: 5 个文件
+- `example-exec-logs`: 3 个文件
+- `examples`: 3 个文件
+- `uniqc/compile`: 3 个文件
+- `.github`: 1 个文件
+- `CHANGELOG.md`: 1 个文件
+- `RELEASE_REPORT_0.0.16.md`: 1 个文件
+- `uniqc/algorithms`: 1 个文件
+
+### 提交列表
+
+- `e2c3b9f` feat(uniqc): execute dynamic OriginIR-ext programs
+- `571c898` update OriginIR-ext. Refactor DEF section definition
+- `2a836f3` feat(circuit): add CREG-based classical/control-flow program tree
+- `4a6c7fd` feat(simulator): add CREG store + classical/measure/reset ops to OpcodeSimulator
+- `53bfb13` feat(circuit): replace named-memory subsystem with CREG-addressed dynamic API
+- `338d3d9` feat(simulator): add OriginIR_ext_Simulator for dynamic programs
+- `65a96d1` feat: route dynamic OriginIR-ext circuits to OriginIR_ext_Simulator
+- `97a1849` test(circuit): comprehensive dynamic OriginIR-ext tests + imm() helper
+- `e115875` docs(originir-ext): document classical/control-flow extension + example
+- `79723e9` docs(2_advanced): add dynamic-circuits design + usage guide
+- `5d5ba3b` feat(originir-ext): symbolic Parameter/Parameters round-trip
+- `6b1c396` fix(originir): reject duplicate QRAMDECL and malformed QRAM call lines
+- `d415aaf` fix(compile): drop self-loop topology edges for qiskit 2.x coupling map
+- `d7001b7` fix(circuit-builder): sort set before random.sample (Python 3.11+)
+- `fea3d8b` feat(backends): user-defined noisy virtual machines + unified backend state dir
+- `5d3bf3a` docs(changelog): section dated entries under [0.0.16]
+
+## v0.0.15
+
+- 发布日期：`2026-06-04`
+- 发布标题：Release v0.0.15
+- 补充说明：The CHANGELOG for 0.0.15 advertised Circuit.has_param as a public, TorchQuantum-aligned query, but the implemented method was named Circuit.has_tensor_params(). Add a no-argument has_param property that delegates to has_tensor_params() so both names are valid and the TorchQuantum-style spelling matches the docs.
+- 对比区间：`v0.0.14.post1..v0.0.15`
+- 提交数：23
+- 变更文件数：178
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `feat` | 12 |
+| `docs` | 5 |
 | `merge` | 3 |
-| `docs` | 2 |
+| `chore` | 1 |
 | `ci` | 1 |
 | `fix` | 1 |
 
 ### 变更区域
 
-- `docs`: 62 个文件
+- `docs`: 63 个文件
 - `example-exec-logs`: 54 个文件
 - `uniqc/compile`: 8 个文件
 - `uniqc/test`: 8 个文件
 - `UniqcCpp`: 7 个文件
 - `uniqc/circuit_builder`: 7 个文件
 - `uniqc/algorithms`: 5 个文件
-- `uniqc/backend_adapter`: 4 个文件
-- `uniqc/simulator`: 4 个文件
+- `uniqc/backend_adapter`: 5 个文件
+- `uniqc/simulator`: 5 个文件
 - `.github`: 2 个文件
 - `examples`: 2 个文件
 - `uniqc/torch_adapter`: 2 个文件
 - `.claude`: 1 个文件
+- `.gitignore`: 1 个文件
 - `CHANGELOG.md`: 1 个文件
 - `README.md`: 1 个文件
 - `README_en.md`: 1 个文件
@@ -85,6 +143,12 @@
 - `17bd640` feat(qram): add ext-spec registration, docs, visualization, and conversion guards
 - `32c6029` ci: skip torchquantum install + tests on Python 3.14
 - `4c29e29` docs(0.0.15): fix CHANGELOG and release notes to cite real OriginIR-ext API
+- `68c705d` docs(result): replace stale uniqc.analyzer reference with uniqc.expectation
+- `820605e` docs(changelog): correct expectation() API path in 0.0.15 entry
+- `8169e81` chore(git): ignore .claude/ agent worktree directory
+- `4f32a14` feat(simulator): regenerate pybind11 stubs for qram instruction
+- `9f35ec9` docs(0.0.15): regenerate example execution logs and add qram API page
+- `f568609` feat(circuit): add Circuit.has_param property alias for has_tensor_params
 
 ## v0.0.14.post1
 

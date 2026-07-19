@@ -1,0 +1,18 @@
+{
+  "example": "examples/2_advanced/08_mid_circuit_measurement.py",
+  "chapter": "2_advanced",
+  "name": "08_mid_circuit_measurement",
+  "title": "08 — Mid-circuit measurement 与经典控制流（CREG / QIF / QWHILE）",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "== 反馈电路的 OriginIR-ext 文本 ==\nQINIT 2\nCREG 2\nH q[0]\nMEASURE q[0], c[0]\nQIF c[0]\nX q[1]\nENDQIF\nMEASURE q[1], c[1]\n\n\n== 直接用 OriginIR_ext_Simulator 采样（per-shot）==\n  counts (c1c0): {'00': 985, '11': 1015}\n  只出现 '00'/'11' -> True\n\n== 通过统一任务接口在 dummy backend 上运行 ==\n  result: {'11': 997, '00': 1003}\n\n== 经典 bit 指令：c2 = c0 XOR c1 ==\n  final CREG value: 5 -> bits c2c1c0 = 101\n\n== QWHILE：抛硬币直到出现 1 ==\n  counts: {1: 500} (恒为 {1: 500}，循环保证结束时 c0=1)\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.847
+}

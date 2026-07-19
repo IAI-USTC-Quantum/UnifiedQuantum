@@ -18,5 +18,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms.workflows
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

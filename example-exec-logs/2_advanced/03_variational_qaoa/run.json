@@ -7,12 +7,12 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "gamma=0.20 beta=0.20 <ZZ>=+0.2500\ngamma=0.20 beta=0.40 <ZZ>=+0.3594\ngamma=0.20 beta=0.60 <ZZ>=+0.2578\ngamma=0.40 beta=0.20 <ZZ>=+0.4531\ngamma=0.40 beta=0.40 <ZZ>=+0.6953\ngamma=0.40 beta=0.60 <ZZ>=+0.4883\ngamma=0.60 beta=0.20 <ZZ>=+0.6875\ngamma=0.60 beta=0.40 <ZZ>=+0.9609\ngamma=0.60 beta=0.60 <ZZ>=+0.6250\nbest: (0.2, 0.2, 0.25)\n",
+  "stdout": "gamma=0.20 beta=0.20 <ZZ>=+0.1680\ngamma=0.20 beta=0.40 <ZZ>=+0.3867\ngamma=0.20 beta=0.60 <ZZ>=+0.2227\ngamma=0.40 beta=0.20 <ZZ>=+0.6016\ngamma=0.40 beta=0.40 <ZZ>=+0.6953\ngamma=0.40 beta=0.60 <ZZ>=+0.4727\ngamma=0.60 beta=0.20 <ZZ>=+0.6914\ngamma=0.60 beta=0.40 <ZZ>=+0.9336\ngamma=0.60 beta=0.60 <ZZ>=+0.6445\nbest: (0.2, 0.2, 0.16796875)\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.005
+  "duration_seconds": 0.01
 }

@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   uniqc.circuit_builder.classical_program
    uniqc.circuit_builder.matrix
    uniqc.circuit_builder.named_circuit
    uniqc.circuit_builder.normalize
@@ -27,5 +28,5 @@ Module contents
 
 .. automodule:: uniqc.circuit_builder
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

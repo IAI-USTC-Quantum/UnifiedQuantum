@@ -13,9 +13,13 @@
 > ```
 >
 > **已知问题**：清华镜像可能缺少 `quarkcircuit` 等包（返回 HTTP 404）。如果
-> `uv sync --extra quark` 报依赖解析失败，请临时切换到 PyPI 官方源：
+> `uv sync --extra quark`（或任何触发 universal 解析的 `uv sync`）报依赖解析失败，
+> 请切换到包含该包的源。首选 PyPI 官方源；若直连 PyPI 不通（国内常见），改用
+> **阿里云**或**腾讯云**镜像——二者均完整同步 `quarkcircuit` 与 `quarkstudio`：
 > ```bash
-> UV_INDEX_URL=https://pypi.org/simple/ uv sync --extra quark
+> UV_INDEX_URL=https://pypi.org/simple/ uv sync --extra quark                    # 首选：PyPI 官方源
+> UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uv sync --extra quark      # 国内备选：阿里云
+> UV_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple/ uv sync --extra quark  # 国内备选：腾讯云
 > ```
 
 ### 从 PyPI 安装
