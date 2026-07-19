@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from typer.testing import CliRunner
 
 from uniqc.backend_adapter import virtual_machine as vm
@@ -52,7 +54,10 @@ def test_validate_reports_invalid_config(tmp_path, monkeypatch):
 
     result = runner.invoke(app, ["backend", "virtual", "validate", "broken"])
     assert result.exit_code == 1
-    assert "undeclared qubit 9" in result.output
+    # rich wraps the error line at console width; on Windows the long temp
+    # path pushes "undeclared qubit 9" across a line break, so normalise
+    # whitespace before the substring check.
+    assert "undeclared qubit 9" in re.sub(r"\s+", " ", result.output)
 
     result = runner.invoke(app, ["backend", "virtual", "list"])
     assert result.exit_code == 0, result.output
