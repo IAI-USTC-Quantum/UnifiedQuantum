@@ -78,7 +78,6 @@ all = [
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
     "torch",
-    "dill",
 ]
 
 [tool.setuptools]

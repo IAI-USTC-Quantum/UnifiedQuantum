@@ -23,6 +23,9 @@ on:
   # 允许手动触发
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build_wheels:
     name: ${{ matrix.os }}
