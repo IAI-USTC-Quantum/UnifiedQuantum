@@ -1,7 +1,9 @@
+import hashlib
 import pickle
 from pathlib import Path
 
 import numpy as np
+import pytest
 import qiskit
 import qiskit.qasm2 as qasm
 from qiskit import transpile
@@ -11,15 +13,35 @@ from uniqc.compile.qasm import NotSupportedGateError, OpenQASM2_BaseParser
 from uniqc.simulator import Simulator
 from uniqc.test._utils import NotMatchError, uniq_test
 
+QASMBENCH_SHA256 = "b3b44b9fd207921eeeae54c1cdfcad04a546e368765b045a40bc0ff542feefed"
+
 
 def _load_QASMBench(path):
+    """Load a pickle accepted only as trusted, immutable repository test data."""
     path = Path(path)
     filename = path / "QASMBench.pkl"
 
     with open(filename, "rb") as fp:
-        dataset = pickle.load(fp)
+        payload = fp.read()
 
-    return dataset
+    digest = hashlib.sha256(payload).hexdigest()
+    if digest != QASMBENCH_SHA256:
+        raise ValueError(f"QASMBench.pkl SHA-256 mismatch: expected {QASMBENCH_SHA256}, got {digest}")
+
+    return pickle.loads(payload)
+
+
+def test_qasmbench_digest_mismatch_does_not_unpickle(tmp_path, monkeypatch):
+    fixture = tmp_path / "QASMBench.pkl"
+    fixture.write_bytes(b"benign digest mismatch")
+
+    def fail_if_called(_payload):
+        pytest.fail("pickle.loads must not be called when the fixture digest mismatches")
+
+    monkeypatch.setattr(pickle, "loads", fail_if_called)
+
+    with pytest.raises(ValueError, match="QASMBench.pkl SHA-256 mismatch"):
+        _load_QASMBench(tmp_path)
 
 
 def _transpile_circuit(qc):
