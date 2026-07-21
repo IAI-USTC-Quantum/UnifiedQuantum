@@ -16,6 +16,11 @@ from uniqc.gateway.ws import broadcaster
 
 GITHUB_URL = "https://github.com/IAI-USTC-Quantum/UnifiedQuantum"
 DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
+VITE_DEV_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://[::1]:5173",
+]
 
 
 def _uniqc_version() -> str:
@@ -45,7 +50,7 @@ def create_app() -> FastAPI:
     # CORS — allow local dev
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=VITE_DEV_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

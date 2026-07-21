@@ -43,9 +43,7 @@ _CORE_DEPS = ["numpy", "typer", "rich", "scipy", "yaml"]
 
 
 def _mask_key(key: str) -> str:
-    if len(key) <= 6:
-        return "****"
-    return key[:6] + "****"
+    return "****"
 
 
 def _import_version(pkg: str) -> str:
@@ -237,7 +235,9 @@ def _check_platform_connectivity() -> None:
     from uniqc.cli.chip_service import fetch_chip_characterization
     from uniqc.config import SUPPORTED_PLATFORMS, has_platform_credentials
 
-    configured_platforms = [p for p in SUPPORTED_PLATFORMS if has_platform_credentials(p)]
+    configured_platforms = [
+        p for p in SUPPORTED_PLATFORMS if p != Platform.QUAFU.value and has_platform_credentials(p)
+    ]
 
     if not configured_platforms:
         console.print("[yellow]⚠[/yellow] No platform credentials configured — skipping connectivity check")

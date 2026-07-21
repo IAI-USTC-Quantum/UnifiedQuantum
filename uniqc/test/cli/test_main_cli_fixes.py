@@ -259,6 +259,66 @@ def test_config_set_preserves_existing_platform_fields(tmp_path: Path, monkeypat
     ibm = get_platform_config("ibm", config_path=config_file)
     assert ibm["token"] == "new-token"
     assert ibm["proxy"]["https"] == "http://proxy:8080"
+    assert "new-token" not in result.stdout
+    assert "new-toke" not in result.stdout
+    assert "[REDACTED]" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("platform", "field"),
+    [("originq", "token"), ("quark", "QUARK_API_KEY")],
+)
+def test_config_get_fully_redacts_credentials(tmp_path: Path, monkeypatch, platform: str, field: str):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
+    credential = "credential-substring-should-never-print"
+
+    from uniqc.config import save_config
+
+    save_config({"default": {platform: {field: credential}}}, config_path=config_file)
+    result = runner.invoke(app, ["config", "get", platform])
+
+    assert result.exit_code == 0, result.stdout
+    assert credential not in result.stdout
+    assert "credential" not in result.stdout
+    assert "[REDACTED]" in result.stdout
+
+
+def test_config_set_fully_redacts_quark_api_key(tmp_path: Path, monkeypatch):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
+    credential = "credential-substring-should-never-print"
+
+    result = runner.invoke(app, ["config", "set", "quark.QUARK_API_KEY", credential])
+
+    assert result.exit_code == 0, result.stdout
+    assert credential not in result.stdout
+    assert "credential" not in result.stdout
+    assert "[REDACTED]" in result.stdout
+
+
+def test_config_list_never_prints_credential_values(tmp_path: Path, monkeypatch):
+    config_file = tmp_path / "config.yaml"
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", config_file)
+    credential = "credential-substring-should-never-print"
+
+    from uniqc.config import save_config
+
+    save_config(
+        {
+            "default": {
+                "originq": {"token": credential},
+                "quark": {"QUARK_API_KEY": credential},
+            }
+        },
+        config_path=config_file,
+    )
+
+    for output_format in ("table", "json"):
+        result = runner.invoke(app, ["config", "list", "--format", output_format])
+        assert result.exit_code == 0, result.stdout
+        assert credential not in result.stdout
+        assert "credential" not in result.stdout
 
 
 def test_config_set_supports_nested_ibm_proxy(tmp_path: Path, monkeypatch):

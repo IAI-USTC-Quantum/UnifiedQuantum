@@ -67,8 +67,9 @@ default:
     out = capsys.readouterr().out
     assert "valid" in out.lower() or "Configuration" in out
     assert "configured" in out
-    # Token must be masked
+    # Token must be fully masked, including its prefix.
     assert "aabbccddeeff112233" not in out
+    assert "aabbcc" not in out
 
 
 def test_doctor_check_task_db_missing(tmp_path, monkeypatch, capsys):
@@ -183,7 +184,7 @@ def test_doctor_check_platform_connectivity_handles_fetch_failure(monkeypatch, c
 
 def test_doctor_mask_key():
     assert doctor_cli._mask_key("short") == "****"
-    assert doctor_cli._mask_key("abcdef1234567890") == "abcdef****"
+    assert doctor_cli._mask_key("abcdef1234567890") == "****"
 
 
 def test_doctor_import_version():

@@ -190,6 +190,57 @@ def test_restart_invokes_start(fake_popen, monkeypatch):
     assert fake_popen["called"] is True
 
 
+@pytest.mark.parametrize("host", ["localhost", "LOCALHOST.", "127.0.0.1", "127.12.34.56", "::1", "[::1]"])
+def test_loopback_hosts_are_accepted(host):
+    from uniqc.gateway.config import validate_loopback_host
+
+    assert validate_loopback_host(host)
+
+
+@pytest.mark.parametrize("host", ["0.0.0.0", "::", "192.168.1.10", "example.com"])
+def test_non_loopback_hosts_are_rejected(host):
+    from uniqc.gateway.config import validate_loopback_host
+
+    with pytest.raises(ValueError, match="loopback"):
+        validate_loopback_host(host)
+
+
+def test_start_rejects_cli_non_loopback_host_before_spawn(fake_popen):
+    result = runner.invoke(gateway_app, ["start", "--host", "0.0.0.0"])
+
+    assert result.exit_code == 1
+    assert "not allowed" in result.output
+    assert "loopback" in result.output
+    assert fake_popen["called"] is False
+
+
+def test_start_loopback_override_recovers_invalid_saved_host(fake_popen):
+    from uniqc.config import save_config
+
+    save_config({"gateway": {"host": "0.0.0.0", "port": 19997}})
+    result = runner.invoke(gateway_app, ["start", "--host", "127.0.0.1"])
+
+    assert result.exit_code == 0, result.output
+    assert fake_popen["called"] is True
+    assert "127.0.0.1" in result.output
+
+
+def test_start_rejects_persisted_non_loopback_host_before_spawn(fake_popen):
+    from uniqc.config import save_config
+
+    save_config({"gateway": {"host": "192.168.1.10", "port": 18765}})
+    result = runner.invoke(gateway_app, ["start"])
+
+    assert result.exit_code == 1
+    assert "not allowed" in result.output
+    assert "loopback" in result.output
+    assert fake_popen["called"] is False
+
+
+def test_ipv6_gateway_url_uses_brackets():
+    assert gateway_cli._gateway_url("::1", 18765) == "http://[::1]:18765"
+
+
 # ---------------------------------------------------------------------------
 # Gateway server module
 # ---------------------------------------------------------------------------
@@ -224,6 +275,38 @@ def test_create_app_returns_fastapi(monkeypatch):
     assert "/api/version" in routes
 
 
+@pytest.mark.parametrize(
+    "origin",
+    ["http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173"],
+)
+def test_cors_allows_explicit_vite_dev_origins(fastapi_client, origin):
+    response = fastapi_client.options(
+        "/api/health",
+        headers={"Origin": origin, "Access-Control-Request-Method": "GET"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_cors_rejects_non_local_origin(fastapi_client):
+    response = fastapi_client.options(
+        "/api/health",
+        headers={"Origin": "https://example.com", "Access-Control-Request-Method": "GET"},
+    )
+
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_same_origin_requests_work_without_cors_origin(fastapi_client):
+    response = fastapi_client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert "access-control-allow-origin" not in response.headers
+
+
 def test_frontend_dist_dir_returns_path():
     from uniqc.gateway.server import _frontend_dist_dir
 
@@ -239,6 +322,6 @@ def test_gateway_config_load_save_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / "config.yaml")
     from uniqc.gateway.config import load_gateway_config, save_gateway_config
 
-    save_gateway_config(host="0.0.0.0", port=22222)
+    save_gateway_config(host="::1", port=22222)
     cfg = load_gateway_config()
-    assert cfg == {"host": "0.0.0.0", "port": 22222}
+    assert cfg == {"host": "::1", "port": 22222}

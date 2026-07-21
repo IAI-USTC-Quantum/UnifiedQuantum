@@ -19,7 +19,7 @@ def test_gateway_config_override_preserves_explicit_port(tmp_path, monkeypatch):
     from uniqc import config
     from uniqc.gateway.config import load_gateway_config, save_gateway_config
 
-    save_gateway_config(port=19000, host="0.0.0.0")
+    save_gateway_config(port=19000, host="localhost")
 
-    assert load_gateway_config() == {"host": "0.0.0.0", "port": 19000}
-    assert config.load_config()["gateway"] == {"host": "0.0.0.0", "port": 19000}
+    assert load_gateway_config() == {"host": "localhost", "port": 19000}
+    assert config.load_config()["gateway"] == {"host": "localhost", "port": 19000}

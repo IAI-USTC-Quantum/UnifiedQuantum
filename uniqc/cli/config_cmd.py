@@ -20,6 +20,35 @@ app = typer.Typer(
     help=(f"Manage API key and configuration\n  {build_ref_str('config')}"),
 )
 
+REDACTED = "[REDACTED]"
+
+
+def _is_credential_key(key: str) -> bool:
+    return key.lower() in {"token", "quark_api_key"}
+
+
+def _redact_credentials(value: object) -> object:
+    if isinstance(value, dict):
+        return {
+            key: REDACTED if _is_credential_key(str(key)) and nested_value else _redact_credentials(nested_value)
+            for key, nested_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_credentials(item) for item in value]
+    return value
+
+
+def _display_config_value(key: str, value: object) -> str:
+    if _is_credential_key(key) and value:
+        return REDACTED
+    if isinstance(value, list):
+        redacted = _redact_credentials(value)
+        return ", ".join(map(str, redacted)) if value else "(empty)"
+    if isinstance(value, dict):
+        redacted = _redact_credentials(value)
+        return str(redacted) if redacted else "(empty)"
+    return str(value) if value else "(not set)"
+
 
 @app.command()
 def init(
@@ -89,7 +118,8 @@ def set(
         target = current
     target[fields[-1]] = value
     save_config(config)
-    print_success(f"Set {key} = {value[:8]}...")
+    display = REDACTED if _is_credential_key(fields[-1]) else value
+    print_success(f"Set {key} = {display}")
 
 
 @app.command()
@@ -113,15 +143,7 @@ def get(
 
     rows = []
     for key, value in config.items():
-        if key == "token" and value:
-            display = f"{value[:8]}..." if len(value) > 8 else value
-        elif isinstance(value, list):
-            display = ", ".join(map(str, value)) if value else "(empty)"
-        elif isinstance(value, dict):
-            display = str(value) if value else "(empty)"
-        else:
-            display = str(value) if value else "(not set)"
-        rows.append([key, display])
+        rows.append([key, _display_config_value(key, value)])
 
     print_table(f"{platform.upper()} Configuration", ["Field", "Value"], rows)
 
@@ -250,7 +272,6 @@ def profile(
             raise typer.Exit(1)
         config[name] = {
             "originq": {"token": ""},
-            "quafu": {"token": ""},
             "quark": {"QUARK_API_KEY": ""},
             "ibm": {"token": "", "proxy": {"http": "", "https": ""}},
         }

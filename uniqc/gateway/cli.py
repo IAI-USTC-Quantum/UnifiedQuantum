@@ -93,6 +93,21 @@ def _resolve_uvicorn_cmd(host: str, port: int) -> list[str]:
     return base_cmd
 
 
+def _resolve_settings(host: str | None, port: int | None) -> tuple[str, int]:
+    try:
+        cfg = load_gateway_config(host_override=host)
+        resolved_host = cfg["host"]
+    except ValueError as exc:
+        console.print(f"[red]Error: {exc}[/red]")
+        raise typer.Exit(1) from exc
+    return resolved_host, port if port is not None else cfg["port"]
+
+
+def _gateway_url(host: str, port: int) -> str:
+    display_host = f"[{host}]" if ":" in host else host
+    return f"http://{display_host}:{port}"
+
+
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
@@ -104,24 +119,24 @@ def start(
     host: str | None = typer.Option(None, "--host", help="Host to bind to (overrides config.yaml)"),
 ) -> None:
     """Start the gateway web UI server in the background."""
-    cfg = load_gateway_config()
-    host = host or cfg["host"]
-    port = port or cfg["port"]
+    requested_host = host
+    requested_port = port
+    host, port = _resolve_settings(host, port)
 
     # Persist if changed
-    if host != cfg["host"] or port != cfg["port"]:
+    if requested_host is not None or requested_port is not None:
         save_gateway_config(host=host, port=port)
 
     # Check if already running
     pid = _read_pid()
     if pid is not None and _is_alive(pid):
-        console.print(f"[yellow]Gateway is already running (PID {pid}) at http://{host}:{port}[/yellow]")
+        console.print(f"[yellow]Gateway is already running (PID {pid}) at {_gateway_url(host, port)}[/yellow]")
         raise typer.Exit(0)
 
     _clear_pid()
 
     # Write config banner
-    console.print(f"[cyan]Starting uniqc gateway[/cyan] at http://{host}:{port}")
+    console.print(f"[cyan]Starting uniqc gateway[/cyan] at {_gateway_url(host, port)}")
     console.print("[dim]Press Ctrl+C to stop the server, or use: uniqc gateway stop[/dim]")
 
     cmd = _resolve_uvicorn_cmd(host, port)
@@ -145,7 +160,7 @@ def start(
 
     console.print(f"[green]Gateway started (PID {proc.pid})[/green]")
     console.print(f"[dim]Log: {log_file}[/dim]")
-    console.print(f"[bold]Open:[/bold] http://{host}:{port}")
+    console.print(f"[bold]Open:[/bold] {_gateway_url(host, port)}")
 
 
 @app.command()
@@ -172,6 +187,8 @@ def restart(
     host: str | None = typer.Option(None, "--host"),
 ) -> None:
     """Stop and restart the gateway server."""
+    host, port = _resolve_settings(host, port)
+
     # Find current settings before stopping
     pid = _read_pid()
     if pid is not None and _is_alive(pid):
@@ -179,11 +196,6 @@ def restart(
         with suppress(OSError):
             os.kill(pid, signal.SIGTERM)
         console.print(f"[dim]Stopped previous instance (PID {pid}).[/dim]")
-
-    # Re-use previously saved host/port
-    cfg = load_gateway_config()
-    host = host or cfg["host"]
-    port = port or cfg["port"]
 
     # Temporarily override config so start() uses these values
     save_gateway_config(host=host, port=port)
@@ -200,7 +212,7 @@ def status() -> None:
 
     if pid is not None and _is_alive(pid):
         console.print(f"[green]Gateway is running[/green] (PID {pid})")
-        console.print(f"  URL:   http://{host}:{port}")
+        console.print(f"  URL:   {_gateway_url(host, port)}")
         console.print(f"  Config port: {port}  host: {host}")
     else:
         if pid is not None:
