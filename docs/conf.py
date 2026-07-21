@@ -11,8 +11,10 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 import pathlib
+import subprocess
+import sys
+
 parent_path = pathlib.Path(__file__).resolve().parent.parent
 
 # Only the project root is needed; uniqc/ lives directly under it.
@@ -21,8 +23,6 @@ sys.path.insert(0, os.path.abspath(parent_path))
 # Read version from setuptools_scm or git tags
 # For stable releases: set DOCS_STABLE_VERSION env var to force clean version
 
-import subprocess
-import os
 
 def generate_release_notes():
     """Generate git-backed release notes used by the docs site."""
@@ -70,8 +70,9 @@ def get_version_from_setuptools_scm(strip_dev=False):
             match = re.match(r'^(\d+\.\d+\.\d+)', version)
             return match.group(1) if match else version
         return version
-    except Exception:
+    except (ImportError, LookupError, OSError, ValueError):
         return None
+
 
 def get_version_from_git_tag():
     """Get clean version from nearest git tag (e.g., v0.3.0 -> 0.3.0)."""
@@ -83,27 +84,20 @@ def get_version_from_git_tag():
         )
         tag = result.stdout.strip()
         return tag[1:] if tag.startswith('v') else tag
-    except Exception:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         return None
+
 
 def get_version_from_metadata():
     """Get version from installed package metadata."""
     try:
-        from importlib.metadata import version as get_version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError
+        from importlib.metadata import version as get_version
+
         return get_version('unified-quantum')
-    except (PackageNotFoundError, Exception):
+    except PackageNotFoundError:
         return None
 
-def get_version_from_file():
-    """Get version from _version.py file."""
-    try:
-        _version_file = parent_path / 'uniqc' / '_version.py'
-        if _version_file.exists():
-            exec(_version_file.read_text())
-            return __version__
-    except Exception:
-        pass
-    return None
 
 # If DOCS_STABLE_VERSION=1, use clean version from git tag (for releases)
 # Otherwise, use setuptools_scm which shows dev versions for main branch
@@ -116,7 +110,6 @@ if is_stable:
         get_version_from_git_tag() or
         get_version_from_setuptools_scm(strip_dev=True) or
         get_version_from_metadata() or
-        get_version_from_file() or
         '0.0.0+unknown'
     )
 else:
@@ -125,7 +118,6 @@ else:
         get_version_from_setuptools_scm(strip_dev=False) or
         get_version_from_git_tag() or
         get_version_from_metadata() or
-        get_version_from_file() or
         '0.0.0+unknown'
     )
 

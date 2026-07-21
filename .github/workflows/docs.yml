@@ -12,6 +12,7 @@ on:
       - 'scripts/build_docs.py'
       - 'scripts/check_doc_logs.py'
       - 'scripts/generate_release_notes.py'
+      - 'pyproject.toml'
       - '.github/workflows/docs.yml'
     tags:
       - 'v*'
@@ -26,6 +27,7 @@ on:
       - 'scripts/build_docs.py'
       - 'scripts/check_doc_logs.py'
       - 'scripts/generate_release_notes.py'
+      - 'pyproject.toml'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -50,6 +52,9 @@ jobs:
           submodules: true
           fetch-depth: 0  # Need full history for setuptools_scm
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
+
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
@@ -59,24 +64,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc
-          python -m pip install --upgrade pip
-          pip install -r docs/requirements.txt
-
-      - name: Install package
-        run: |
-          pip install -e .
+          uv venv
+          uv pip install --group docs .
 
       # The full pre-doc-execution pipeline is run *locally* by maintainers
       # (see CONTRIBUTING.md). CI only re-validates the cached run logs and
       # then runs sphinx without re-executing examples.
       - name: Verify example-exec-logs/
         run: |
-          python scripts/check_doc_logs.py
+          uv run --no-sync python scripts/check_doc_logs.py
 
       - name: Build docs
         run: |
           cd docs
-          make html-fast
+          uv run --no-sync make html-fast
 
       - name: Assemble site
         run: |
