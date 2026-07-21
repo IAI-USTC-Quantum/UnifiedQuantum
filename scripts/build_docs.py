@@ -123,6 +123,7 @@ REQUIREMENT_REGISTRY: dict[str, tuple[str, Any]] = {
     "qutip": ("qutip installed", lambda: _have_module("qutip")),
     "matplotlib": ("matplotlib installed", lambda: _have_module("matplotlib")),
     "pandas": ("pandas installed", lambda: _have_module("pandas")),
+    "sklearn": ("scikit-learn installed", lambda: _have_module("sklearn")),
     "cpp": ("uniqc_cpp C++ extension installed", lambda: _have_module("uniqc_cpp")),
     # SDK + credentials (provider end-to-end):
     "originq": (

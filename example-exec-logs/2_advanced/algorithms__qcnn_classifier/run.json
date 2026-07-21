@@ -3,18 +3,18 @@
   "chapter": "2_advanced",
   "name": "algorithms__qcnn_classifier",
   "title": "QCNN Quantum State Classifier using TorchQuantum backend.",
-  "verdict": "skip",
-  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
+  "verdict": "pass",
+  "skip_reason": null,
   "require": [
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": null,
-  "stderr": null,
-  "warnings": null,
-  "figure_files": null,
-  "offending_lines": null,
-  "ignored_lines": null,
+  "stdout": "============================================================\nQCNN State Classifier — TorchQuantum Backend\n============================================================\n\nTask: Classify GHZ vs |0...0> states\nQubits: 4\nModel: QCNN\n\nParameters: 9\n\n  Epoch  10 | Loss: 0.2731 | Acc: 0.5000\n  Epoch  20 | Loss: 0.2550 | Acc: 0.5000\n  Epoch  30 | Loss: 0.2543 | Acc: 0.1000\n  Epoch  40 | Loss: 0.2542 | Acc: 0.1000\n  Epoch  50 | Loss: 0.2541 | Acc: 0.1000\n\nTraining complete.\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
   "exception": null,
-  "duration_seconds": null
+  "duration_seconds": 3.085
 }

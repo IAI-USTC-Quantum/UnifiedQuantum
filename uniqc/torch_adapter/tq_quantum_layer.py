@@ -99,7 +99,5 @@ else:
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "PyTorch and TorchQuantum are required. "
-                "Install with: pip install unified-quantum[pytorch] && "
-                'pip install "torchquantum @ '
-                'git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"'
+                "Install with: pip install unified-quantum[pytorch] torchquantum-ng"
             )

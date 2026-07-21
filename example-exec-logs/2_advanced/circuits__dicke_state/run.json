@@ -9,7 +9,7 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": "Dicke State |D(4,2)⟩ Preparation\nExpected: 6 basis states, each with probability 0.166667\n\nMeasured probability distribution (shots=8192):\n  State          Measured   Weight     Theory\n  ------------ ---------- -------- ----------\n  |0011⟩    0.166138      2✓    0.166667\n  |0101⟩    0.164917      2✓    0.166667\n  |0110⟩    0.167847      2✓    0.166667\n  |1001⟩    0.167480      2✓    0.166667\n  |1010⟩    0.172607      2✓    0.166667\n  |1100⟩    0.161011      2✓    0.166667\n\nTotal weight on Hamming-weight-2 subspace: 1.000000 (expected: 1.0)\n",
+  "stdout": "Dicke State |D(4,2)⟩ Preparation\nExpected: 6 basis states, each with probability 0.166667\n\nMeasured probability distribution (shots=8192):\n  State          Measured   Weight     Theory\n  ------------ ---------- -------- ----------\n  |0011⟩    0.164185      2✓    0.166667\n  |0101⟩    0.160156      2✓    0.166667\n  |0110⟩    0.174072      2✓    0.166667\n  |1001⟩    0.167358      2✓    0.166667\n  |1010⟩    0.164551      2✓    0.166667\n  |1100⟩    0.169678      2✓    0.166667\n\nTotal weight on Hamming-weight-2 subspace: 1.000000 (expected: 1.0)\n",
   "stderr": "",
   "warnings": [
     "DeprecationWarning: dicke_state_circuit(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `the fragment form `dicke_state_circuit(n_qubits, ...) -> Circuit` with `circuit.add_circuit(fragment)`` instead. (dicke_state.py:119)"
@@ -18,5 +18,5 @@
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.015
+  "duration_seconds": 0.007
 }

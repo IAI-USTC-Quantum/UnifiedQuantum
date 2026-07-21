@@ -4,9 +4,10 @@
   "name": "algorithms__qnn_classifier",
   "title": "QNN Binary Classifier using TorchQuantum backend.",
   "verdict": "skip",
-  "skip_reason": "missing requirements: torchquantum (torch + torchquantum installed)",
+  "skip_reason": "missing requirements: sklearn (scikit-learn installed)",
   "require": [
-    "torchquantum"
+    "torchquantum",
+    "sklearn"
   ],
   "ignored_warning_patterns": [],
   "stdout": null,

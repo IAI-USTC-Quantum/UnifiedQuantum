@@ -21,7 +21,7 @@
 ```text
 command: python -m uniqc.cli submit bell.originir --backend dummy -s 64 --wait --format json
 {
-  "task_id": "uqt_357ad9d0b8f94873af4c03a580797eae",
+  "task_id": "uqt_81bb138a7a424d6aabbe084eebca5945",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -36,7 +36,7 @@ command: python -m uniqc.cli submit bell.originir --backend dummy -s 64 --wait -
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_357ad9d0b8f94873af4c03a580797eae",
+  "task_id": "uqt_81bb138a7a424d6aabbe084eebca5945",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null

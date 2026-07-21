@@ -31,8 +31,8 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.16..HEAD`
-- 提交数：6
-- 变更文件数：44
+- 提交数：7
+- 变更文件数：261
 
 ### 提交类型统计
 
@@ -41,22 +41,27 @@
 | `build` | 1 |
 | `chore` | 1 |
 | `ci` | 1 |
+| `docs` | 1 |
 | `refactor` | 1 |
 | `security` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
+- `docs`: 180 个文件
+- `example-exec-logs`: 28 个文件
 - `uniqc/test`: 11 个文件
+- `examples`: 9 个文件
 - `uniqc/backend_adapter`: 8 个文件
 - `.github`: 5 个文件
 - `uniqc/cli`: 3 个文件
 - `uniqc/gateway`: 3 个文件
 - `UniqcCpp`: 2 个文件
-- `docs`: 2 个文件
 - `uniqc/algorithms`: 2 个文件
+- `CHANGELOG.md`: 1 个文件
+- `README.md`: 1 个文件
+- `README_en.md`: 1 个文件
 - `RELEASE_EXECUTION_PLAN_0.0.16.md`: 1 个文件
-- `RELEASE_REPORT_0.0.16.md`: 1 个文件
 - `pyproject.toml`: 1 个文件
 - `scripts`: 1 个文件
 - `setup.py`: 1 个文件
@@ -72,6 +77,7 @@
 - `a403b47` build: fix docs dependencies and native smoke test
 - `540ebf2` security: restrict gateway and redact credentials
 - `440162c` refactor: lazy-load deprecated quafu support
+- `a9b2336` docs: repair release notes and user workflows
 
 ## v0.0.16
 

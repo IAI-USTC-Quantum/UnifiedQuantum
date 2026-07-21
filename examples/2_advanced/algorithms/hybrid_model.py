@@ -3,7 +3,7 @@
 Demonstrates a hybrid architecture: Classical encoder → Quantum circuit
 → Classical decoder, for 2D binary classification.
 
-[doc-require: torchquantum]
+[doc-require: torchquantum, sklearn]
 """
 
 try:
@@ -16,7 +16,7 @@ try:
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch] scikit-learn")
-    print('Then install TorchQuantum manually: pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"')
+    print("Then install TorchQuantum: pip install torchquantum-ng")
     raise SystemExit(1)
 
 

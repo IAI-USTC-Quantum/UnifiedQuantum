@@ -84,12 +84,13 @@
 │ dummy      │ dummy:local:virtual-line-3   │        3 │ available    │ sim    │
 │ dummy      │ dummy:local:virtual-grid-2x2 │        4 │ available    │ sim    │
 │ dummy      │ dummy:local:mps-linear-3     │        3 │ available    │ sim    │
+│ dummy      │ virtual:release-check-r2     │        4 │ available    │ sim    │
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 22h ago
-    quafu: 16 backends, updated 81d ago (stale)
-    ibm: 3 backends, updated 45d ago (stale)
+    originq: 7 backends, updated 2d ago (stale)
+    quafu: 16 backends, updated 83d ago (stale)
+    ibm: 3 backends, updated 46d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -102,7 +103,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_84895996473e41d4974d3540e1a0e865",
+  "task_id": "uqt_900b4fb887e44eeb9a30f7213e1460c5",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -117,7 +118,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_84895996473e41d4974d3540e1a0e865",
+  "task_id": "uqt_900b4fb887e44eeb9a30f7213e1460c5",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -128,11 +129,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_84895996473e… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T13:26:… │
-│ uqt_96b8d9358eda… │ dummy:local:simu… │ success │ 64    │ 2026-07-19T13:26:… │
-│ uqt_4077dfe56da9… │ dummy:local:simu… │ success │ 128   │ 2026-07-19T13:26:… │
-│ uqt_0943cfbb6135… │ dummy:local:simu… │ success │ 2000  │ 2026-07-19T13:26:… │
-│ uqt_24f6fb436447… │ dummy:local:mps-… │ success │ 400   │ 2026-07-19T13:26:… │
+│ uqt_900b4fb887e4… │ dummy:local:simu… │ success │ 64    │ 2026-07-21T07:17:… │
+│ uqt_81bb138a7a42… │ dummy:local:simu… │ success │ 64    │ 2026-07-21T07:16:… │
+│ uqt_7be47e92ae6e… │ dummy:local:simu… │ success │ 128   │ 2026-07-21T07:16:… │
+│ uqt_2b81cddb689e… │ dummy:local:simu… │ success │ 2000  │ 2026-07-21T07:16:… │
+│ uqt_57269521d11c… │ dummy:local:mps-… │ success │ 400   │ 2026-07-21T07:16:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

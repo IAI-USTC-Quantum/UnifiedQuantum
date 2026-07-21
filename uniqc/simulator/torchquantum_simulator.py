@@ -90,9 +90,7 @@ def _require_torchquantum() -> None:
         return
     raise ImportError(
         "TorchQuantum backend requires PyTorch and a manual TorchQuantum install. "
-        "Install with: pip install unified-quantum[pytorch] && "
-        'pip install "torchquantum @ '
-        'git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"'
+        "Install with: pip install unified-quantum[pytorch] torchquantum-ng"
     )
 
 

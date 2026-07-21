@@ -28,9 +28,9 @@ MEASURE q[0], c[0]
 MEASURE q[1], c[1]
 
 == Local simulator counts ==
-{3: 506, 0: 518}
+{0: 507, 3: 517}
 == dummy:local:simulator counts ==
-UnifiedResult(counts={'00': 512, '11': 512}, probabilities={'00': 0.5, '11': 0.5}, shots=1024, platform='dummy', task_id='uqt_ffcb3d22755f41da89540a4b5eca8145', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+UnifiedResult(counts={'00': 512, '11': 512}, probabilities={'00': 0.5, '11': 0.5}, shots=1024, platform='dummy', task_id='uqt_e56715b2698b4ba787cd95c8514f046e', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 
 Real-chip submission template (uncomment after `uniqc config set originq.token ...`):
     submit_task(circuit, backend='originq:WK_C180', shots=1000)

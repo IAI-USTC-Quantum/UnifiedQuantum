@@ -32,11 +32,11 @@ References:
 
  Results (top 5 most probable states):
    |011⟩   25.4%
-   |110⟩   25.1%
-   |101⟩   25.0% ← TARGET
-   |000⟩   24.4%
+   |000⟩   25.2%
+   |110⟩   24.9%
+   |101⟩   24.6% ← TARGET
 
- Target probability: 25.0%
+ Target probability: 24.6%
  Expected (ideal): ~95.0% (after optimal iterations)
 
   ✓ Run complete.

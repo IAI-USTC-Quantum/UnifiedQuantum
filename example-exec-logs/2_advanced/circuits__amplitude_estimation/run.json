@@ -9,12 +9,12 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": " Quantum Amplitude Estimation\n Search qubits: 2, Eval qubits: 3\n Marked state: |00⟩\n\n Estimated probability: 0.853553\n True probability:      0.250000\n Error:                 0.603553\n\n Measurement counts (eval register):\n   |000⟩: 4\n   |001⟩: 345\n   |010⟩: 128\n   |011⟩: 556\n   |100⟩: 427\n   |101⟩: 538\n   |110⟩: 1221\n   |111⟩: 877\n",
+  "stdout": " Quantum Amplitude Estimation\n Search qubits: 2, Eval qubits: 3\n Marked state: |00⟩\n\n Estimated probability: 0.853553\n True probability:      0.250000\n Error:                 0.603553\n\n Measurement counts (eval register):\n   |000⟩: 12\n   |001⟩: 309\n   |010⟩: 137\n   |011⟩: 557\n   |100⟩: 418\n   |101⟩: 566\n   |110⟩: 1240\n   |111⟩: 857\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.014
+  "duration_seconds": 0.007
 }
