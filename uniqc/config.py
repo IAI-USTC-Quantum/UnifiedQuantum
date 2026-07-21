@@ -14,8 +14,6 @@ Example configuration structure::
     default:
       originq:
         token: xxx
-      quafu:
-        token: xxx
       quark:
         QUARK_API_KEY: xxx
       ibm:
@@ -51,9 +49,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "available_qubits": [],
             "available_topology": [],
             "task_group_size": 200,
-        },
-        "quafu": {
-            "token": "",
         },
         "quark": {
             "QUARK_API_KEY": "",

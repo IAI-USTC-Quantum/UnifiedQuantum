@@ -27,7 +27,6 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     from uniqc.backend_adapter.task.adapters import (
         DummyAdapter,
         OriginQAdapter,
-        QuafuAdapter,
     )
 
     if backend == "dummy" or backend.startswith("dummy:"):
@@ -39,6 +38,8 @@ def _get_adapter(backend: str, **kwargs) -> Any:
         chip = backend.split(":", 1)[1] if ":" in backend else backend
         return OriginQAdapter(backend_name=chip, **kwargs)
     elif backend.startswith("quafu"):
+        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+
         return QuafuAdapter(**kwargs)
     else:
         return DummyAdapter(**kwargs)

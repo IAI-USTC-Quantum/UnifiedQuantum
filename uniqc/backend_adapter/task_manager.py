@@ -70,6 +70,7 @@ __all__ = [
 ]
 
 import time
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -81,7 +82,6 @@ from uniqc.backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
-    QuafuCircuitAdapter,
     QuarkCircuitAdapter,
 )
 from uniqc.backend_adapter.task.adapters.base import (
@@ -126,9 +126,9 @@ from uniqc.exceptions import (
 # Circuit Adapter Mapping
 # -----------------------------------------------------------------------------
 
-ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
+ADAPTER_MAP: dict[str, type[CircuitAdapter] | None] = {
     "originq": OriginQCircuitAdapter,
-    "quafu": QuafuCircuitAdapter,
+    "quafu": None,
     "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
 }
@@ -171,7 +171,12 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
         raise BackendNotFoundError(
             f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}.{hint}"
         )
-    return ADAPTER_MAP[platform_key]()
+    adapter_class = ADAPTER_MAP[platform_key]
+    if adapter_class is None:
+        from uniqc.backend_adapter.circuit_adapter import QuafuCircuitAdapter
+
+        adapter_class = QuafuCircuitAdapter
+    return adapter_class()
 
 
 # Per-platform kwarg key used to identify the target chip / backend on the
@@ -656,30 +661,66 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     try:
         from uniqc.backend_adapter.backend_cache import get_cached_backends, is_stale
         from uniqc.backend_adapter.backend_info import Platform, parse_backend_id
-
+    except ImportError as exc:
+        warnings.warn(
+            f"Backend validation cache helpers are unavailable for {backend!r}: {exc}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        return None
+    if ":" not in backend and backend != Platform.DUMMY.value:
+        # Bare 'platform' form — try to combine with a chip kwarg so we
+        # can still resolve the BackendInfo for legacy callers.
+        platform_key = backend
+        try:
+            platform = Platform(platform_key)
+        except ValueError as exc:
+            warnings.warn(
+                f"Cannot resolve backend information for validation from {backend!r}: {exc}",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return None
+        chip = _chip_from_kwargs(platform_key, kwargs)
+        if not chip:
+            warnings.warn(
+                f"Cannot resolve backend information for validation from bare platform {backend!r}: "
+                "no backend/chip name was supplied.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return None
+        name = chip
+    else:
         try:
             platform, name = parse_backend_id(backend)
-        except ValueError:
-            # Bare 'platform' form — try to combine with a chip kwarg so we
-            # can still resolve the BackendInfo for legacy callers.
-            platform_key = backend.split(":", 1)[0]
-            try:
-                platform = Platform(platform_key)
-            except ValueError:
-                return None
-            chip = _chip_from_kwargs(platform_key, kwargs)
-            if not chip:
-                return None
-            name = chip
-    except Exception:
-        return None
+        except ValueError as exc:
+            warnings.warn(
+                f"Cannot resolve backend information for validation from {backend!r}: {exc}",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return None
     if platform == Platform.DUMMY:
         return None
     try:
         cached = get_cached_backends(platform)
-    except Exception:
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        warnings.warn(
+            f"Failed to read cached backend information for {backend!r}: {exc}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
         return None
-    fresh = not is_stale(platform.value)
+    try:
+        fresh = not is_stale(platform.value)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        warnings.warn(
+            f"Failed to determine cache freshness for {backend!r}; treating cached data as stale: {exc}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        fresh = False
     name_ci = name.casefold()
     for entry in cached:
         if entry.name == name or entry.name.casefold() == name_ci:

@@ -34,7 +34,6 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     from uniqc.backend_adapter.task.adapters import (
         DummyAdapter,
         OriginQAdapter,
-        QuafuAdapter,
     )
 
     target = parse_backend_target(backend)
@@ -45,6 +44,8 @@ def _get_adapter(backend: str, **kwargs) -> Any:
     if target.provider == "originq":
         return OriginQAdapter(backend_name=target.chip_name or "")
     if target.provider == "quafu":
+        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+
         return QuafuAdapter(**kwargs)
     raise ValueError(
         f"Backend identifier {backend!r} (kind={target.kind!r}, "

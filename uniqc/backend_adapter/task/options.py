@@ -135,6 +135,9 @@ class QuafuOptions(BackendOptions):
     group_name: str | None = None
     wait: bool = False
 
+    def __post_init__(self, _platform: Platform) -> None:
+        from uniqc.backend_adapter.task.adapters import quafu_adapter  # noqa: F401
+
     def to_kwargs(self) -> dict[str, Any]:
         kwargs: dict[str, Any] = {
             "chip_id": self.chip_id,

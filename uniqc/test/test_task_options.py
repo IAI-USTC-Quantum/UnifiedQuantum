@@ -368,6 +368,7 @@ class TestUnifiedOptions:
         u = UnifiedOptions(error_mitigation=False, auto_mapping=False)
         with warnings.catch_warnings():
             warnings.simplefilter("error")
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
             u.to_platform_options("quafu")
             u.to_platform_options("ibm")
             u.to_platform_options("quark")

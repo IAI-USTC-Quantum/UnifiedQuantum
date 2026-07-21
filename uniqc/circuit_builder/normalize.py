@@ -18,6 +18,8 @@ __all__ = [
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Union
 
+from uniqc.exceptions import CircuitError
+
 if TYPE_CHECKING:
     from .qcircuit import Circuit
 
@@ -25,6 +27,8 @@ if TYPE_CHECKING:
 #: A :class:`~uniqc.circuit_builder.Circuit` object, an OriginIR string,
 #: or an OpenQASM 2.0 string.
 AnyQuantumCircuit = Union["Circuit", str]
+
+_PARSER_ERRORS = (CircuitError, ValueError, RuntimeError, NotImplementedError, AttributeError)
 
 
 @dataclass
@@ -63,6 +67,11 @@ def _parse_qasm(text: str):
     return parser.to_circuit()
 
 
+def _parser_diagnostic(format_name: str, exc: BaseException) -> str:
+    detail = str(exc).strip() or type(exc).__name__
+    return f"{format_name}: {detail}"
+
+
 def normalize_circuit_input(circuit) -> NormalizedCircuit:
     """Auto-detect input type and convert to :class:`uniqc.Circuit`.
 
@@ -93,37 +102,56 @@ def normalize_circuit_input(circuit) -> NormalizedCircuit:
         if stripped.upper().startswith(("OPENQASM", "QREG", "CREG", "MEASURE")):
             try:
                 return NormalizedCircuit(circuit=_parse_qasm(circuit), type="qasm", original_input=circuit)
-            except Exception:
-                pass
+            except _PARSER_ERRORS as exc:
+                raise ValueError(f"Failed to parse circuit input as OpenQASM 2.0: {exc}") from exc
+        if stripped.upper().startswith(("QINIT", "CBIT", "DEF", "QRAMDECL")):
+            try:
+                return NormalizedCircuit(circuit=_parse_originir(circuit), type="originir", original_input=circuit)
+            except _PARSER_ERRORS as exc:
+                raise ValueError(f"Failed to parse circuit input as OriginIR: {exc}") from exc
+
+        diagnostics: list[str] = []
         try:
             return NormalizedCircuit(circuit=_parse_originir(circuit), type="originir", original_input=circuit)
-        except Exception:
-            pass
-        # Last-ditch QASM attempt
-        return NormalizedCircuit(circuit=_parse_qasm(circuit), type="qasm", original_input=circuit)
+        except _PARSER_ERRORS as exc:
+            diagnostics.append(_parser_diagnostic("OriginIR", exc))
+        try:
+            return NormalizedCircuit(circuit=_parse_qasm(circuit), type="qasm", original_input=circuit)
+        except _PARSER_ERRORS as exc:
+            diagnostics.append(_parser_diagnostic("OpenQASM 2.0", exc))
+        raise ValueError(
+            "Cannot determine circuit string format; both parsers rejected the input. " + " | ".join(diagnostics)
+        )
 
     # qiskit.QuantumCircuit
     try:
+        from qiskit import QuantumCircuit as QiskitQuantumCircuit
+        from qiskit.exceptions import QiskitError
+    except ImportError:
+        QiskitQuantumCircuit = None
+        QiskitError = CircuitError
+    if QiskitQuantumCircuit is not None and isinstance(circuit, QiskitQuantumCircuit):
         import qiskit.qasm2
 
-        qasm_str = qiskit.qasm2.dumps(circuit)
-        return NormalizedCircuit(circuit=_parse_qasm(qasm_str), type="qiskit", original_input=circuit)
-    except Exception:
-        pass
+        try:
+            qasm_str = qiskit.qasm2.dumps(circuit)
+            parsed = _parse_qasm(qasm_str)
+        except (*_PARSER_ERRORS, QiskitError) as exc:
+            raise ValueError(f"Failed to normalize qiskit.QuantumCircuit via OpenQASM 2.0: {exc}") from exc
+        return NormalizedCircuit(circuit=parsed, type="qiskit", original_input=circuit)
 
     # pyqpanda3.QProg
     try:
         import pyqpanda3
-
-        if isinstance(circuit, pyqpanda3.QProg):
+    except ImportError:
+        pyqpanda3 = None
+    if pyqpanda3 is not None and isinstance(circuit, pyqpanda3.QProg):
+        try:
             originir_str = pyqpanda3.convert_qprog_to_originir(circuit)
-            return NormalizedCircuit(
-                circuit=_parse_originir(originir_str),
-                type="originir",
-                original_input=circuit,
-            )
-    except Exception:
-        pass
+            parsed = _parse_originir(originir_str)
+        except _PARSER_ERRORS as exc:
+            raise ValueError(f"Failed to normalize pyqpanda3.QProg via OriginIR: {exc}") from exc
+        return NormalizedCircuit(circuit=parsed, type="originir", original_input=circuit)
 
     raise TypeError(
         f"Cannot normalize input of type {type(circuit).__name__}. "

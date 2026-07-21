@@ -212,6 +212,8 @@ class QuafuCircuitAdapter(CircuitAdapter[Any]):
     ]
 
     def __init__(self) -> None:
+        from uniqc.backend_adapter.task.adapters import quafu_adapter  # noqa: F401
+
         self._quafu: Any = None
         self._QuantumCircuit: Any = None
 

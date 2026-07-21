@@ -425,7 +425,7 @@ class TestDefaultConfig:
         """Test that DEFAULT_CONFIG has expected structure."""
         assert "default" in DEFAULT_CONFIG
         assert "originq" in DEFAULT_CONFIG["default"]
-        assert "quafu" in DEFAULT_CONFIG["default"]
+        assert "quafu" not in DEFAULT_CONFIG["default"]
         assert "quark" in DEFAULT_CONFIG["default"]
         assert "ibm" in DEFAULT_CONFIG["default"]
 
@@ -437,11 +437,6 @@ class TestDefaultConfig:
         assert "available_topology" in originq
         assert "task_group_size" in originq
         assert originq["task_group_size"] == 200
-
-    def test_quafu_default_fields(self) -> None:
-        """Test Quafu default configuration fields."""
-        quafu = DEFAULT_CONFIG["default"]["quafu"]
-        assert "token" in quafu
 
     def test_quark_default_fields(self) -> None:
         """Test QuarkStudio default configuration fields."""

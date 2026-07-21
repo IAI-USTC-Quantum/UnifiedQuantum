@@ -15,6 +15,8 @@ Note:
 
 from __future__ import annotations
 
+from importlib import import_module
+
 __all__ = [
     "QuantumAdapter",
     "DryRunResult",
@@ -40,7 +42,6 @@ from uniqc.backend_adapter.task.adapters.base import (
 from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
-from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
 from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
 # DummyAdapter requires simulation dependencies
@@ -49,3 +50,11 @@ try:
     from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
 except ImportError:
     DummyAdapter = None  # type: ignore[misc,assignment]
+
+
+def __getattr__(name: str):
+    if name == "QuafuAdapter":
+        value = import_module("uniqc.backend_adapter.task.adapters.quafu_adapter").QuafuAdapter
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

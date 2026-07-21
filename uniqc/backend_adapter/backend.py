@@ -49,7 +49,6 @@ from uniqc.backend_adapter.task.adapters import (
     DummyAdapter,
     OriginQAdapter,
     QiskitAdapter,
-    QuafuAdapter,
     QuantumAdapter,
     QuarkAdapter,
 )
@@ -399,17 +398,24 @@ class QuafuBackend(QuantumBackend):
     """
 
     platform = "quafu"
-    _adapter_class = QuafuAdapter
+    _adapter_class = QuantumAdapter
 
     # Valid chip IDs for Quafu
     VALID_CHIP_IDS = frozenset({"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"})
 
-    def _create_adapter(self) -> QuafuAdapter:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        from uniqc.backend_adapter.task.adapters import quafu_adapter  # noqa: F401
+
+        super().__init__(*args, **kwargs)
+
+    def _create_adapter(self) -> QuantumAdapter:
         """Create a Quafu adapter.
 
         Returns:
             A configured QuafuAdapter instance.
         """
+        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+
         return QuafuAdapter()
 
     def validate_chip_id(self, chip_id: str) -> bool:

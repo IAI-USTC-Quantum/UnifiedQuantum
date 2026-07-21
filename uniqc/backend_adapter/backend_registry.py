@@ -471,6 +471,8 @@ def fetch_all_backends_with_status(
     results: dict[Platform, list[BackendInfo]] = {}
     failures: dict[Platform, str] = {}
     for platform in Platform:
+        if platform == Platform.QUAFU:
+            continue
         try:
             backends, _ = fetch_platform_backends(platform, force_refresh=force_refresh)
             if backends:

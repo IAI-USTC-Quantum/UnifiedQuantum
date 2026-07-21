@@ -10,6 +10,9 @@ QiskitRuntimeService reference:
 
 from __future__ import annotations
 
+import warnings
+from collections.abc import Mapping
+from inspect import Parameter, signature
 from typing import Any
 
 from uniqc.backend_adapter.task.adapters.base import (
@@ -18,6 +21,11 @@ from uniqc.backend_adapter.task.adapters.base import (
 
 _SINGLE_QUBIT_GATE_PRIORITY = ("sx", "x", "id")
 _TWO_QUBIT_GATE_PRIORITY = ("cz", "ecr", "cx")
+_IBM_DATA_ERRORS = (AttributeError, KeyError, TypeError, ValueError, RuntimeError, IndexError)
+
+
+def _warn_calibration(context: str, exc: BaseException) -> None:
+    warnings.warn(f"Skipping malformed IBM calibration data ({context}): {exc}", RuntimeWarning, stacklevel=3)
 
 
 def _avg(values: list[float]) -> float | None:
@@ -32,7 +40,8 @@ def _call_or_value(value: Any) -> Any:
 def _backend_configuration(backend: Any) -> Any | None:
     try:
         return _call_or_value(getattr(backend, "configuration", None))
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("backend configuration", exc)
         return None
 
 
@@ -43,7 +52,8 @@ def _backend_name(backend: Any) -> str:
 def _backend_is_simulator(backend: Any) -> bool:
     try:
         return bool(_call_or_value(getattr(backend, "simulator", False)))
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("simulator flag", exc)
         return False
 
 
@@ -52,7 +62,8 @@ def _as_qubit_tuple(qargs: Any) -> tuple[int, ...]:
         return (int(qargs),)
     try:
         return tuple(int(q) for q in qargs)
-    except TypeError:
+    except (TypeError, ValueError) as exc:
+        _warn_calibration(f"target qubit arguments {qargs!r}", exc)
         return ()
 
 
@@ -63,9 +74,13 @@ def _iter_target_instruction_props(target: Any, gate_names: tuple[str, ...], ari
     for gate_name in gate_names:
         try:
             ops = target[gate_name]
-        except Exception:
+        except KeyError:
             continue
-        if not hasattr(ops, "items"):
+        except (TypeError, AttributeError) as exc:
+            _warn_calibration(f"target operation {gate_name!r}", exc)
+            continue
+        if not isinstance(ops, Mapping):
+            _warn_calibration(f"target operation {gate_name!r}", TypeError(f"expected mapping, got {type(ops).__name__}"))
             continue
         for qargs, props in ops.items():
             qubits = _as_qubit_tuple(qargs)
@@ -76,7 +91,10 @@ def _iter_target_instruction_props(target: Any, gate_names: tuple[str, ...], ari
 def _target_error(target: Any, gate_names: tuple[str, ...], qubits: tuple[int, ...]) -> tuple[str, float | None]:
     for gate_name, qargs, props in _iter_target_instruction_props(target, gate_names, len(qubits)):
         if qargs == qubits and getattr(props, "error", None) is not None:
-            return gate_name, float(props.error)
+            try:
+                return gate_name, float(props.error)
+            except (TypeError, ValueError) as exc:
+                _warn_calibration(f"target {gate_name}{qubits} error", exc)
     return "", None
 
 
@@ -88,10 +106,14 @@ def _properties_gate_error(
     for gate_name in gate_names:
         try:
             error = properties.gate_error(gate_name, qubits)
-        except Exception:
+        except _IBM_DATA_ERRORS as exc:
+            _warn_calibration(f"properties {gate_name}{qubits} error", exc)
             continue
         if error is not None:
-            return gate_name, float(error)
+            try:
+                return gate_name, float(error)
+            except (TypeError, ValueError) as exc:
+                _warn_calibration(f"properties {gate_name}{qubits} error value", exc)
     return "", None
 
 
@@ -101,19 +123,25 @@ def _normalize_coupling_map(raw: Any) -> list[tuple[int, int]]:
     try:
         if hasattr(raw, "get_edges"):
             raw = raw.get_edges()
-    except Exception:
-        pass
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("coupling-map edges", exc)
+        return []
     edges: list[tuple[int, int]] = []
     try:
         iterator = iter(raw)
-    except TypeError:
+    except TypeError as exc:
+        _warn_calibration("coupling map", exc)
         return []
     for edge in iterator:
         try:
             u, v = edge
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"coupling-map edge {edge!r}", exc)
             continue
-        edges.append((int(u), int(v)))
+        try:
+            edges.append((int(u), int(v)))
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"coupling-map edge {edge!r}", exc)
     return edges
 
 
@@ -128,8 +156,8 @@ def _backend_coupling_map(backend: Any, cfg: Any | None = None) -> list[tuple[in
         edges = _normalize_coupling_map(coupling_map)
         if edges:
             return edges
-    except Exception:
-        pass
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("target coupling map", exc)
     return []
 
 
@@ -138,12 +166,25 @@ def _get_backend_properties(backend: Any, *, refresh: bool = False) -> Any | Non
         properties = getattr(backend, "properties", None)
         if callable(properties):
             try:
-                return properties(refresh=refresh)
-            except TypeError:
-                return properties()
+                parameters = signature(properties).parameters.values()
+            except (TypeError, ValueError):
+                parameters = ()
+            accepts_refresh = any(
+                parameter.name == "refresh" or parameter.kind == Parameter.VAR_KEYWORD for parameter in parameters
+            )
+            return properties(refresh=refresh) if accepts_refresh else properties()
         return properties
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("backend properties", exc)
         return None
+
+
+def _backend_num_qubits(backend: Any) -> int:
+    try:
+        return int(getattr(backend, "num_qubits", 0) or 0)
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("backend qubit count", exc)
+        return 0
 
 
 def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
@@ -159,7 +200,8 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
     """
     try:
         target = b.target
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("backend target", exc)
         return {
             "avg_1q_fidelity": None,
             "avg_2q_fidelity": None,
@@ -185,10 +227,14 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
     for _gate_name, qpair, props in _iter_target_instruction_props(target, _SINGLE_QUBIT_GATE_PRIORITY, 1):
         if qpair[0] in seen_qubits or getattr(props, "error", None) is None:
             continue
-        sq_errors.append(float(props.error))
+        try:
+            sq_errors.append(float(props.error))
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"target single-qubit error for {qpair}", exc)
+            continue
         seen_qubits.add(qpair[0])
     if not sq_errors:
-        for q in range(getattr(b, "num_qubits", 0) or 0):
+        for q in range(_backend_num_qubits(b)):
             _gate, error = _properties_gate_error(properties, _SINGLE_QUBIT_GATE_PRIORITY, (q,))
             if error is not None:
                 sq_errors.append(error)
@@ -200,7 +246,11 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
         key = tuple(sorted(qpair))
         if key in seen_edges or getattr(props, "error", None) is None:
             continue
-        tq_errors.append(float(props.error))
+        try:
+            tq_errors.append(float(props.error))
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"target two-qubit error for {qpair}", exc)
+            continue
         seen_edges.add(key)
     if not tq_errors:
         for edge in _backend_coupling_map(b):
@@ -210,33 +260,26 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
 
     # Coherence and readout: qubit_properties gives T1/T2 (seconds)
     t1s, t2s, ro_errors = [], [], []
-    num_qubits = b.num_qubits
-    try:
-        for q in range(num_qubits):
-            try:
-                qp = b.qubit_properties(q)
-                if qp.t1 is not None:
-                    t1s.append(qp.t1 * 1e6)  # seconds → μs
-                if qp.t2 is not None:
-                    t2s.append(qp.t2 * 1e6)
-            except Exception:
-                pass
-    except Exception:
-        pass
+    num_qubits = _backend_num_qubits(b)
+    for q in range(num_qubits):
+        try:
+            qp = b.qubit_properties(q)
+            if qp.t1 is not None:
+                t1s.append(float(qp.t1) * 1e6)  # seconds → μs
+            if qp.t2 is not None:
+                t2s.append(float(qp.t2) * 1e6)
+        except _IBM_DATA_ERRORS as exc:
+            _warn_calibration(f"qubit {q} coherence", exc)
 
     # Readout error from properties if qubit_properties didn't have it
-    try:
-        props = properties
-        if props:
-            for q in range(num_qubits):
-                try:
-                    re = props.readout_error(q)
-                    if re is not None:
-                        ro_errors.append(re)
-                except Exception:
-                    pass
-    except Exception:
-        pass
+    if properties:
+        for q in range(num_qubits):
+            try:
+                readout_error = properties.readout_error(q)
+                if readout_error is not None:
+                    ro_errors.append(float(readout_error))
+            except _IBM_DATA_ERRORS as exc:
+                _warn_calibration(f"qubit {q} readout error", exc)
 
     return {
         "avg_1q_fidelity": _avg([1 - e for e in sq_errors]) if sq_errors else None,
@@ -348,11 +391,12 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
     name = backend_name or _backend_name(backend)
     try:
         target = backend.target
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("backend target", exc)
         target = None
     properties = _get_backend_properties(backend, refresh=True)
     cfg = _backend_configuration(backend)
-    num_qubits = int(getattr(backend, "num_qubits", 0) or 0)
+    num_qubits = _backend_num_qubits(backend)
 
     # Per-qubit data
     single_qubit_data: list[SingleQubitData] = []
@@ -378,8 +422,8 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
                 t1 = qp.t1 * 1e6  # seconds → μs
             if qp.t2 is not None:
                 t2 = qp.t2 * 1e6
-        except Exception:
-            pass
+        except _IBM_DATA_ERRORS as exc:
+            _warn_calibration(f"qubit {q} coherence", exc)
 
         # Readout error: prefer Target measure instruction, then BackendProperties.
         _gate, readout_error = _target_error(target, ("measure",), (q,))
@@ -400,8 +444,8 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
                     ro_fid_1 = 1.0 - float(p01)
                 if avg_ro is None and ro_fid_0 is not None and ro_fid_1 is not None:
                     avg_ro = (ro_fid_0 + ro_fid_1) / 2.0
-        except Exception:
-            pass
+        except _IBM_DATA_ERRORS as exc:
+            _warn_calibration(f"qubit {q} readout properties", exc)
 
         single_qubit_data.append(
             SingleQubitData(
@@ -423,7 +467,12 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
         u, v = qpair
         key = tuple(sorted((u, v)))
         existing = two_qubit_data.get(key)
-        gate_data = TwoQubitGateData(gate=gname, fidelity=1.0 - float(props.error))
+        try:
+            fidelity = 1.0 - float(props.error)
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"target {gname}{qpair} error", exc)
+            continue
+        gate_data = TwoQubitGateData(gate=gname, fidelity=fidelity)
         if existing is None:
             two_qubit_data[key] = TwoQubitData(qubit_u=u, qubit_v=v, gates=(gate_data,))
         else:
@@ -451,7 +500,8 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
             basis_gates = list(target.operation_names)
         dt_s: float | None = getattr(cfg, "dt", None)
         sq_gate_time: float | None = float(dt_s) * 1e9 if dt_s is not None else None
-    except Exception:
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("basis gates or timing", exc)
         basis_gates = []
         sq_gate_time = None
 
@@ -492,11 +542,14 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
             tq_gates.append(g_lower)
 
     # 2Q gate time: use the average target duration where available.
-    tq_durations = [
-        float(props.duration) * 1e9
-        for _gname, _qpair, props in _iter_target_instruction_props(target, _TWO_QUBIT_GATE_PRIORITY, 2)
-        if getattr(props, "duration", None) is not None
-    ]
+    tq_durations = []
+    for gname, qpair, props in _iter_target_instruction_props(target, _TWO_QUBIT_GATE_PRIORITY, 2):
+        if getattr(props, "duration", None) is None:
+            continue
+        try:
+            tq_durations.append(float(props.duration) * 1e9)
+        except (TypeError, ValueError) as exc:
+            _warn_calibration(f"target {gname}{qpair} duration", exc)
     tq_gate_time: float | None = _avg(tq_durations)
 
     # Calibration timestamp
@@ -504,8 +557,8 @@ def _chip_characterization_from_backend(backend: Any, *, backend_name: str | Non
     try:
         if properties is not None and getattr(properties, "last_update_date", None) is not None:
             calibrated_at = str(properties.last_update_date)
-    except Exception:
-        pass
+    except _IBM_DATA_ERRORS as exc:
+        _warn_calibration("calibration timestamp", exc)
     if calibrated_at is None:
         calibrated_at = datetime.now(timezone.utc).isoformat()
 

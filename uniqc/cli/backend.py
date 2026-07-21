@@ -289,7 +289,11 @@ def update(
         invalidate_all()
         print_info("Cache cleared.")
 
-    targets = [Platform(platform.lower())] if platform else list(Platform)
+    targets = (
+        [Platform(platform.lower())]
+        if platform
+        else [candidate for candidate in Platform if candidate != Platform.QUAFU]
+    )
     updated_platforms: list[str] = []
     warnings_list: list[str] = []
 

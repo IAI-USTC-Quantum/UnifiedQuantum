@@ -58,7 +58,6 @@ from .backend_adapter.backend import (
     DummyBackend,
     IBMBackend,
     OriginQBackend,
-    QuafuBackend,
     QuantumBackend,
     QuarkBackend,
     get_backend,
@@ -78,7 +77,6 @@ from .backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
-    QuafuCircuitAdapter,
     QuarkCircuitAdapter,
 )
 from .backend_adapter.network_utils import (
@@ -96,7 +94,6 @@ from .backend_adapter.task.options import (
     DummyOptions,
     IBMOptions,
     OriginQOptions,
-    QuafuOptions,
     QuarkOptions,
     UnifiedOptions,
 )
@@ -220,6 +217,9 @@ except ImportError:
 from . import algorithms, calibration, config, qem  # noqa: E402,F401
 
 _LAZY_EXPORTS = {
+    "QuafuBackend": ("uniqc.backend_adapter.backend", "QuafuBackend"),
+    "QuafuCircuitAdapter": ("uniqc.backend_adapter.circuit_adapter", "QuafuCircuitAdapter"),
+    "QuafuOptions": ("uniqc.backend_adapter.task.options", "QuafuOptions"),
     "expectation": ("uniqc.torch_adapter", "expectation"),
     "QuantumLayer": ("uniqc.torch_adapter", "QuantumLayer"),
     "TorchQuantumLayer": ("uniqc.torch_adapter", "TorchQuantumLayer"),
