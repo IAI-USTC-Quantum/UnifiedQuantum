@@ -17,5 +17,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms.core.measurement
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

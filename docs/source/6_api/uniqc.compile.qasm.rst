@@ -16,5 +16,5 @@ Module contents
 
 .. automodule:: uniqc.compile.qasm
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

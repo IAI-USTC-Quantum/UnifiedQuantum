@@ -18,5 +18,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms.core.state_preparation
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

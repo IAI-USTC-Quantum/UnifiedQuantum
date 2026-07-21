@@ -4,7 +4,7 @@
 [doc-output-include: stdout, source]
 
 展示真实后端路径的安全模板：先 ``dry_run_task``，再提交。该例子默认仅执行 dummy
-dry-run；真实 OriginQ / Quafu / IBM 提交单元应在维护者确认 token、账号额度和后端
+dry-run；真实 OriginQ / QuarkStudio / IBM 提交单元应在维护者确认 token、账号额度和后端
 可用后再打开（参考 ``[doc-require: originq]`` 等门控）。
 """
 
@@ -24,9 +24,9 @@ def main() -> None:
 
     cloud_templates = {
         "originq API": "submit_task(circuit, backend='originq:PQPUMESH8', shots=1000)",
-        "quafu API": "submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)",
+        "quark API": "submit_task(circuit, backend='quark:Baihua', shots=1000)",
         "ibm API": "submit_task(circuit, backend='ibm:ibm_fez', shots=1000)",
-        "CLI dry-run": "uniqc submit bell.originir --backend quafu:ScQ-P18 --dry-run",
+        "CLI dry-run": "uniqc submit bell.originir --backend originq:PQPUMESH8 --dry-run",
     }
     for name, snippet in cloud_templates.items():
         print(f"{name}: {snippet}")

@@ -20,5 +20,5 @@ Module contents
 
 .. automodule:: uniqc.backend_adapter.task.adapters
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

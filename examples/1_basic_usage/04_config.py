@@ -30,7 +30,7 @@ def main() -> None:
             "active_profile": "demo",
             "demo": {
                 "originq": {"token": "originq-token-redacted"},
-                "quafu": {"token": "quafu-token-redacted"},
+                "quark": {"QUARK_API_KEY": "quark-token-redacted"},
                 "ibm": {
                     "token": "ibm-token-redacted",
                     "proxy": {"http": "", "https": ""},
@@ -43,7 +43,7 @@ def main() -> None:
     loaded = load_config(config_path=config_path)
     errors = validate_config(config_path=config_path)
 
-    print("written to:", config_path)
+    print("written to: <temporary-directory>/config.yaml")
     print("active profile:", loaded["active_profile"])
     print("originq token (redacted):", loaded["demo"]["originq"]["token"])
     print("validation errors:", errors)

@@ -29,7 +29,7 @@ def main() -> None:
         "active_profile": "release-check",
         "release-check": {
             "originq": {"token": "originq-token-redacted"},
-            "quafu": {"token": "quafu-token-redacted"},
+            "quark": {"QUARK_API_KEY": "quark-token-redacted"},
             "ibm": {"token": "ibm-token-redacted", "proxy": {"http": "", "https": ""}},
         },
     }

@@ -24,7 +24,7 @@
 
 ```bash
 # Grover 搜索
-python examples/algorithms/grover.py --n-qubits 3 --marked-state 5
+python examples/2_advanced/algorithms/grover.py --n-qubits 3 --marked-state 5
 
 # VQE (H2 分子)
 python examples/algorithms/vqe.py --molecule H2 --maxiter 100
@@ -33,7 +33,7 @@ python examples/algorithms/vqe.py --molecule H2 --maxiter 100
 python examples/algorithms/qaoa.py -p 2 --maxiter 80
 
 # QPE
-python examples/algorithms/qpe.py --n-precision 4 --unitary t --shots 4096
+python examples/2_advanced/algorithms/qpe.py --n-precision 4 --unitary t --shots 4096
 
 # HEA 配置选项
 python examples/2_advanced/algorithms/hea_options.py --n-qubits 4 --depth 2

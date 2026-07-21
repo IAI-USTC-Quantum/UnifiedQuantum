@@ -20,8 +20,8 @@ Uses ``Simulator`` (unified simulator class from ``uniqc.simulator``).
 **Stdout**
 
 ```text
-counts: {0: 533, 7: 491}
-probabilities: {'000': 0.5205078125, '111': 0.4794921875}
+counts: {7: 532, 0: 492}
+probabilities: {'111': 0.51953125, '000': 0.48046875}
 ```
 
 **Figures**

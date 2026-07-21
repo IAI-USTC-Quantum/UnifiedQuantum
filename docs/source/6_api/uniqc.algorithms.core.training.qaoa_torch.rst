@@ -3,5 +3,5 @@ uniqc.algorithms.core.training.qaoa\_torch module
 
 .. automodule:: uniqc.algorithms.core.training.qaoa_torch
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

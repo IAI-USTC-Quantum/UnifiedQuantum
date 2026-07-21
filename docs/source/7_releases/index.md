@@ -38,6 +38,14 @@ deprecation_policy
 中通过 ``DeprecationWarning`` 标记的公共 API，将在 ``0.1.0`` 中移除或不再保证兼容性。
 跨越 ``0.0.x → 0.1.0`` 升级前，请清理所有 ``DeprecationWarning``。
 
+## 发布验证报告
+
+```{toctree}
+:maxdepth: 1
+
+reports/0.0.16
+```
+
 ## 发布前可验证路径检查
 
 在创建新的 ``v*`` tag 前，维护者必须完成一次人工可验证路径检查，确认用户主路径没有失效。
@@ -82,7 +90,7 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
   解析器下不可解（``v0.0.15`` 起已存在的既有问题）；用户安装路径
   ``uv pip install`` / ``pip install`` 不受影响。
 
-**发布验证结果**：见仓库根目录 ``RELEASE_REPORT_0.0.16.md`` —— 结论
+**发布验证结果**：见 [0.0.16 发布验证报告](reports/0.0.16.md) —— 结论
 **RELEASE WITH KNOWN GAPS**。默认测试套件 2044 passed / 0 failed；文档示例全量执行
 49 pass / 5 skip / 0 fail；CLI 与文档一致；含噪虚拟机特性经 CLI / Python API / WebUI /
 含噪模拟全链路验证；Gateway 前端构建与 API 健康检查通过；OriginQ 实时发现正常

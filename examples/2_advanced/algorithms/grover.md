@@ -79,10 +79,10 @@ End-to-end Grover search:
 
 ```bash
 # Basic run with 3 qubits, marked state = 5
-python examples/algorithms/grover.py --n-qubits 3 --marked-state 5
+python examples/2_advanced/algorithms/grover.py --n-qubits 3 --marked-state 5
 
 # Larger search space
-python examples/algorithms/grover.py --n-qubits 4 --marked-state 10 --shots 8192
+python examples/2_advanced/algorithms/grover.py --n-qubits 4 --marked-state 10 --shots 8192
 ```
 
 Expected output:

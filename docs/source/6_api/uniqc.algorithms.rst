@@ -15,5 +15,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

@@ -63,13 +63,13 @@ Inverse QFT circuit for the precision register:
 
 ```bash
 # Estimate the phase of the T gate (phase = π/8 ≈ 0.3927)
-python examples/algorithms/qpe.py --n-precision 4 --unitary t
+python examples/2_advanced/algorithms/qpe.py --n-precision 4 --unitary t
 
 # Estimate Z-gate phase (eigenvalue = -1, so phase = 0.5)
-python examples/algorithms/qpe.py --n-precision 4 --unitary z
+python examples/2_advanced/algorithms/qpe.py --n-precision 4 --unitary z
 
 # More precision qubits
-python examples/algorithms/qpe.py --n-precision 6 --unitary t --shots 8192
+python examples/2_advanced/algorithms/qpe.py --n-precision 6 --unitary t --shots 8192
 ```
 
 Expected output:

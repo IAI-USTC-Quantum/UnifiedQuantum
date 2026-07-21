@@ -26,5 +26,5 @@ Module contents
 
 .. automodule:: uniqc.gateway
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

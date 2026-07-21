@@ -51,7 +51,8 @@ def main() -> None:
         capture_output=True,
         check=True,
     )
-    print("command:", " ".join(cmd))
+    display_cmd = ["python", "-m", "uniqc.cli", "submit", "bell.originir", *cmd[5:]]
+    print("command:", " ".join(display_cmd))
     print(completed.stdout)
 
 

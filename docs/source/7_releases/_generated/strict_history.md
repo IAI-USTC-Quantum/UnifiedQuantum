@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.0.16` | `2026-07-19` | chore(release): remove stale 0.0.15 report; make root artifacts a release gate |
 | `v0.0.15` | `2026-06-04` | Release v0.0.15 |
 | `v0.0.14.post1` | `2026-06-03` | Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode |
 | `v0.0.14` | `2026-05-18` | Release v0.0.14 |
@@ -29,34 +30,87 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.15..HEAD`
-- 提交数：18
-- 变更文件数：324
+- 对比区间：`v0.0.16..HEAD`
+- 提交数：6
+- 变更文件数：44
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
+| `build` | 1 |
+| `chore` | 1 |
+| `ci` | 1 |
+| `refactor` | 1 |
+| `security` | 1 |
+| `test` | 1 |
+
+### 变更区域
+
+- `uniqc/test`: 11 个文件
+- `uniqc/backend_adapter`: 8 个文件
+- `.github`: 5 个文件
+- `uniqc/cli`: 3 个文件
+- `uniqc/gateway`: 3 个文件
+- `UniqcCpp`: 2 个文件
+- `docs`: 2 个文件
+- `uniqc/algorithms`: 2 个文件
+- `RELEASE_EXECUTION_PLAN_0.0.16.md`: 1 个文件
+- `RELEASE_REPORT_0.0.16.md`: 1 个文件
+- `pyproject.toml`: 1 个文件
+- `scripts`: 1 个文件
+- `setup.py`: 1 个文件
+- `uniqc/__init__.py`: 1 个文件
+- `uniqc/circuit_builder`: 1 个文件
+- `uniqc/config.py`: 1 个文件
+
+### 提交列表
+
+- `5555b2c` chore: remove 0.0.16 release report and execution plan
+- `77538e6` ci: harden release validation and dependencies
+- `906699c` test: verify benchmark fixture integrity
+- `a403b47` build: fix docs dependencies and native smoke test
+- `540ebf2` security: restrict gateway and redact credentials
+- `440162c` refactor: lazy-load deprecated quafu support
+
+## v0.0.16
+
+- 发布日期：`2026-07-19`
+- 发布标题：chore(release): remove stale 0.0.15 report; make root artifacts a release gate
+- 补充说明：- Remove RELEASE_REPORT_0.0.15.md from the repository root. Release reports are kept only for the release under validation; older ones remain reachable via git history and tags. (CHANGELOG [0.0.15]'s mention of the file is a historical record.) - uniqc-test-before-release SKILL.md: scanning the root for stale RELEASE_REPORT_*/RELEASE_EXECUTION_PLAN_* files is now a First-Steps worktree check, and leftover older-version artifacts are an explicit DO NOT RELEASE condition.
+- 对比区间：`v0.0.15..v0.0.16`
+- 提交数：25
+- 变更文件数：330
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `docs` | 8 |
 | `feat` | 8 |
-| `docs` | 4 |
-| `fix` | 4 |
+| `fix` | 5 |
+| `chore` | 1 |
+| `merge` | 1 |
 | `other` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 210 个文件
+- `docs`: 212 个文件
 - `example-exec-logs`: 59 个文件
 - `uniqc/test`: 13 个文件
 - `UniqcCpp`: 9 个文件
 - `uniqc/circuit_builder`: 7 个文件
 - `uniqc/backend_adapter`: 6 个文件
+- `uniqc/simulator`: 6 个文件
 - `uniqc/cli`: 5 个文件
-- `uniqc/simulator`: 5 个文件
 - `examples`: 3 个文件
 - `uniqc/compile`: 3 个文件
+- `.claude`: 1 个文件
 - `.github`: 1 个文件
 - `CHANGELOG.md`: 1 个文件
+- `RELEASE_EXECUTION_PLAN_0.0.16.md`: 1 个文件
+- `RELEASE_REPORT_0.0.15.md`: 1 个文件
 - `RELEASE_REPORT_0.0.16.md`: 1 个文件
 - `uniqc/algorithms`: 1 个文件
 
@@ -80,6 +134,13 @@
 - `5d3bf3a` docs(changelog): section dated entries under [0.0.16]
 - `5c0d0b3` docs: refresh generated artifacts and note quark mirror alternatives
 - `b17988b` fix(test): normalize whitespace in backend-virtual CLI assertion
+- `68de154` fix(simulator): regenerate uniqc_cpp stubs for measure/reset/qram bindings
+- `312c18e` docs: fix stale state paths and [all] extras list
+- `b18e843` docs: refresh generated artifacts
+- `522fc60` docs(release): 0.0.16 pre-release validation — verdict RELEASE WITH KNOWN GAPS
+- `1a53c96` docs(release): prepare v0.0.16 release
+- `e9c830a` Merge pull request #118 from IAI-USTC-Quantum/release/v0.0.16
+- `c09d2ab` chore(release): remove stale 0.0.15 report; make root artifacts a release gate
 
 ## v0.0.15
 

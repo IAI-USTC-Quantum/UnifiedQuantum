@@ -22,5 +22,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms.core.circuits
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

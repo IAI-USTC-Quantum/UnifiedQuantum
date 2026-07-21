@@ -18,5 +18,5 @@ Module contents
 
 .. automodule:: uniqc.torch_adapter
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/IAI-USTC-Quantum/UnifiedQuantum/v0.0.5/banner_uniqc.png" alt="UnifiedQuantum Banner" width="100%">
+  <img src="banner_uniqc.png" alt="UnifiedQuantum Banner" width="100%">
 </p>
 
 # UnifiedQuantum
@@ -14,7 +14,7 @@
 
 **UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
 
-UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, Quafu, and IBM Quantum under one consistent API.
+UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, QuarkStudio, and IBM Quantum under one consistent API.
 
 Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and quantum error mitigation (QEM) toolkit**:
 
@@ -71,12 +71,13 @@ uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 uniqc submit circuit.ir --backend dummy:local:simulator --shots 1000
 uniqc submit circuit.ir --backend dummy:local:virtual-line-3 --shots 1000
 uniqc submit circuit.ir --backend dummy:originq:WK_C180 --shots 1000
+uniqc submit circuit.ir --backend dummy:virtual:<name> --shots 1000
 
 # Query result
 uniqc result <task_id>
 ```
 
-`dummy` is an unconstrained noiseless local simulator; `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise.
+`dummy` is an unconstrained noiseless local simulator; `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise; `dummy:virtual:<name>` loads a user-defined topology and noise model from `~/.uniqc/backend/virtual/<name>.yaml`.
 
 ---
 
@@ -86,7 +87,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 - **AI-native**: Designed for AI workflows, seamlessly integrated into modern development and inference pipelines
 - **CLI-first**: Out-of-the-box command-line tool — one command to build, simulate, submit, and analyze
-- **Aggregation**: Unified interface across multiple quantum cloud platforms (OriginQ, Quafu, IBM Quantum)
+- **Aggregation**: Unified interface across multiple quantum cloud platforms (OriginQ, QuarkStudio, IBM Quantum)
 - **Consistency**: One API to rule them all — no per-platform learning curve
 - **Transparency**: Explicit circuit assembly, translation, and submission — no hidden magic
 - **Lightweight**: Pure Python, easy to install and integrate
@@ -101,7 +102,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ## Features
 
-- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, Quafu, IBM Quantum, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
+- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, QuarkStudio, IBM Quantum, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
 - **Format conversion**: `Circuit.from_qasm()` / `Circuit.from_originir()` for import; `circuit.to_qasm()` / `circuit.to_originir()` for export.
 - **Local simulation**: Built-in OriginIR Simulator and QASM Simulator, supporting statevector / density matrix backends, plus noisy variants.
 - **Algorithm components**: Built-in HEA, UCCSD, QAOA ansatz ready for VQE / QAOA research.
@@ -116,7 +117,8 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ### Supported Platforms
 
-- Windows / Linux / macOS
+- Windows / Linux: tested, with published binary wheels
+- macOS and other platforms: source builds are supported on a best-effort basis
 
 ### Requirements
 
@@ -148,7 +150,7 @@ uv run pytest uniqc/test
 uv run pytest uniqc/test --real-cloud-test
 ```
 
-Maintainer environments should not treat missing currently maintained optional backend packages or documentation packages such as qiskit, QuTiP, or Sphinx as normal skip conditions. `pyproject.toml` does not pin third-party dependency versions and `uv.lock` is not tracked on `main`; full development and CI should resolve the latest available dependencies and expose upstream compatibility issues early. Quafu/`pyquafu` is the exception: the platform SDK is deprecated, and `pyquafu` requires `numpy<2`, so it is no longer included in `[all]`.
+Maintainer environments should not treat missing currently maintained optional backend packages or documentation packages such as qiskit, QuTiP, or Sphinx as normal skip conditions. `pyproject.toml` does not pin third-party dependency versions and `uv.lock` is not tracked on `main`; full development and CI should resolve the latest available dependencies and expose upstream compatibility issues early.
 
 Real-cloud tests that only fetch backends, validate tokens, or query platform status/API run by default. Only tests that actually submit quantum circuits are skipped by default, and they run when `--real-cloud-test` is passed.
 
@@ -188,15 +190,15 @@ Core dependencies (including `scipy`) are included by default.
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | All optional deps | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
 
-> **Quafu archived**: the `[quafu]` extra has been removed. The Quafu platform SDK is deprecated; if you still need it, install `pyquafu` directly with `pip install pyquafu` and accept the environment downgrade to `numpy<2`. Future releases do not guarantee consistency or completeness of Quafu-related code.
+> **Deprecated Quafu compatibility**: explicit Quafu paths remain compatible throughout 0.0.x and emit a deprecation warning when used; they will be removed in 0.1.0. The `[quafu]` extra is gone, so install `pyquafu` manually if required (`numpy<2`).
 >
 > Qiskit is a core dependency (installed by default with `unified-quantum`); the `[qiskit]` extra has been removed.
 
-TorchQuantum backend is not in PyPI extras yet — install it manually:
+Install the published `torchquantum-ng` package for the TorchQuantum backend:
 
 ```bash
 uv pip install unified-quantum[pytorch]
-uv pip install "torchquantum @ git+https://github.com/Agony5757/torchquantum.git@fix/optional-qiskit-deps"
+uv pip install torchquantum-ng
 ```
 
 ---
@@ -210,11 +212,19 @@ uniqc --help
 # Local simulation
 uniqc simulate circuit.ir --shots 1000
 
-# Submit to cloud (originq / quafu / ibm / dummy)
+# Submit to cloud (originq / quark / ibm / dummy)
 uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # Query result
 uniqc result <task_id>
+
+# Circuit inspection/conversion, task management, and diagnostics
+uniqc circuit circuit.ir --info
+uniqc task list
+uniqc doctor
+
+# Start the Web UI gateway
+uniqc gateway start
 
 # Configure cloud platform token
 uniqc config init
@@ -262,8 +272,8 @@ uniqc backend update
 
 | Example | Description |
 |---------|-------------|
-| [Grover Search](examples/algorithms/grover.md) | Unstructured search with quadratic speedup |
-| [Quantum Phase Estimation](examples/algorithms/qpe.md) | Eigenvalue phase estimation |
+| [Grover Search](examples/2_advanced/algorithms/grover.md) | Unstructured search with quadratic speedup |
+| [Quantum Phase Estimation](examples/2_advanced/algorithms/qpe.md) | Eigenvalue phase estimation |
 
 ---
 

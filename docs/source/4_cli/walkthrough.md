@@ -26,7 +26,7 @@
 | ``uniqc calibrate xeb / readout / pattern`` | 芯片标定 → 写入 ``~/.uniqc/calibration_cache/`` | [`uniqc calibrate`](calibrate.md) |
 | ``uniqc circuit ...`` | 电路文件转换 / 检查 | [`uniqc circuit`](circuit.md) |
 | ``uniqc doctor`` | 一键环境诊断：依赖、配置、缓存、网络连通性 | [`uniqc doctor`](doctor.md) |
-| ``uniqc gateway --host ... --port ...`` | 启动 WebUI / FastAPI 网关 | [`uniqc gateway`](gateway.md) · [WebUI](../5_webui/index.md) |
+| ``uniqc gateway start --host ... --port ...`` | 启动 WebUI / FastAPI 网关 | [`uniqc gateway`](gateway.md) · [WebUI](../5_webui/index.md) |
 
 帮助文本里都附带了对应文档的 URL；加 ``--ai-hints`` 选项（或环境变量 ``UNIQC_AI_HINTS=1``）
 会输出额外的 AI 工作流提示。

@@ -18,5 +18,5 @@ Module contents
 
 .. automodule:: uniqc.algorithms.core.training
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

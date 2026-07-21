@@ -28,5 +28,5 @@ Module contents
 
 .. automodule:: uniqc.circuit_builder
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

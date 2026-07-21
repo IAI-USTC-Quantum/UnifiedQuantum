@@ -3,5 +3,5 @@ uniqc.algorithms.core.measurement.state\_tomography module
 
 .. automodule:: uniqc.algorithms.core.measurement.state_tomography
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

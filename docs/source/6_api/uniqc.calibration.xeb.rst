@@ -19,5 +19,5 @@ Module contents
 
 .. automodule:: uniqc.calibration.xeb
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

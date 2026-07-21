@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This release adds **user-defined noisy virtual machines** (``dummy:virtual:<name>``)
 and unifies all backend state under ``~/.uniqc/backend/``. Release-candidate
-validation is documented in ``RELEASE_REPORT_0.0.16.md``.
+validation is documented in ``docs/source/7_releases/reports/0.0.16.md``.
 
 ### Added
 

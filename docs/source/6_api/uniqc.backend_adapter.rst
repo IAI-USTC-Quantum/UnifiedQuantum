@@ -34,5 +34,5 @@ Module contents
 
 .. automodule:: uniqc.backend_adapter
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
