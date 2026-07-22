@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Release-candidate validation is documented in
+``docs/source/7_releases/reports/0.0.17.md``.
+
 ### Changed
 
 - **Documentation and CI validation** now block on offline local links, a

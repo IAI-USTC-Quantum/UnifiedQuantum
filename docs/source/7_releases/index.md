@@ -4,7 +4,8 @@
 
 ## 先看什么
 
-如果你在跟随当前开发版，先看 ``Unreleased``；如果你是从较早的正式版本直接升级，
+如果你在跟随当前开发版，先看 ``Unreleased`` 与 ``v0.0.17`` release candidate；
+如果你是从较早的正式版本直接升级，
 **先看 ``v0.0.16``**——这一版新增**用户自定义含噪虚拟机**（``dummy:virtual:<name>``），
 并把后端发现缓存与芯片缓存统一收拢到 ``~/.uniqc/backend/``。
 
@@ -43,6 +44,7 @@ deprecation_policy
 ```{toctree}
 :maxdepth: 1
 
+reports/0.0.17
 reports/0.0.16
 ```
 
@@ -60,6 +62,14 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.0.17`（Release Candidate）
+
+这是 v0.1.0 前的梳理性稳定版本：统一 gate semantics、补齐 task lifecycle
+持久化、修复 VQD/PyTorch/HEA 路径，并把 docs、Ruff、example freshness、Skill
+smoke 与双仓 contract parity 变成 blocking gate。
+
+完整验证结果见 [0.0.17 Release Candidate Validation](reports/0.0.17.md)。
 
 ### `v0.0.16`
 

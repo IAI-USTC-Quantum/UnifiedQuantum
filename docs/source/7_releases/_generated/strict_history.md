@@ -31,17 +31,17 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.16..HEAD`
-- 提交数：14
-- 变更文件数：438
+- 提交数：23
+- 变更文件数：468
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `fix` | 4 |
+| `fix` | 7 |
+| `ci` | 6 |
+| `docs` | 4 |
 | `build` | 2 |
-| `ci` | 2 |
-| `docs` | 2 |
 | `chore` | 1 |
 | `refactor` | 1 |
 | `security` | 1 |
@@ -49,22 +49,22 @@
 
 ### 变更区域
 
-- `docs`: 221 个文件
-- `example-exec-logs`: 63 个文件
-- `uniqc/test`: 39 个文件
-- `uniqc/algorithms`: 16 个文件
+- `docs`: 229 个文件
+- `example-exec-logs`: 67 个文件
+- `uniqc/test`: 40 个文件
+- `uniqc/algorithms`: 17 个文件
+- `uniqc/backend_adapter`: 17 个文件
 - `examples`: 15 个文件
-- `uniqc/backend_adapter`: 12 个文件
+- `uniqc/circuit_builder`: 10 个文件
+- `uniqc/compile`: 9 个文件
 - `UniqcCpp`: 8 个文件
-- `uniqc/circuit_builder`: 8 个文件
-- `scripts`: 7 个文件
-- `uniqc/compile`: 6 个文件
-- `uniqc/simulator`: 6 个文件
-- `.github`: 5 个文件
-- `uniqc/cli`: 4 个文件
+- `scripts`: 8 个文件
+- `uniqc/simulator`: 7 个文件
+- `.github`: 6 个文件
+- `uniqc/cli`: 5 个文件
+- `uniqc/calibration`: 4 个文件
 - `uniqc/gateway`: 4 个文件
 - `uniqc/torch_adapter`: 3 个文件
-- `uniqc/calibration`: 2 个文件
 - `uniqc/qem`: 2 个文件
 - `uniqc/utils`: 2 个文件
 - `CHANGELOG.md`: 1 个文件
@@ -99,6 +99,15 @@
 - `377b52a` fix: stop websocket reconnects after cleanup
 - `6434246` fix: persist task failures and query context
 - `976b029` ci: harden documentation quality gates
+- `e6c9075` fix: harden QASM and SQLite row handling
+- `be676fa` docs: make strict Sphinx builds warning-free
+- `dc3fb33` docs: refresh executable example artifacts
+- `47fa370` ci: enforce cross-repository contract parity
+- `157fa5c` fix: include controls and QuTiP in gate contracts
+- `ff3f328` ci: validate stabilization branches on push
+- `880f3f4` ci: install PyTorch extra for API docs
+- `465203d` ci: expose cross-platform pytest failures
+- `8b3f554` fix: tolerate legacy Windows CLI encodings
 
 ## v0.0.16
 
