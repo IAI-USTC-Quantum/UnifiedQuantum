@@ -129,19 +129,24 @@ jobs:
     # remain attributable even though [all] now installs torchquantum-ng.
 
     - name: Run non-torchquantum tests with deprecation monitoring
+      id: core-tests
+      continue-on-error: true
       shell: bash
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
       run: |
         pytest uniqc/test/ -v --tb=short -m "not cloud" \
+          --junitxml=pytest-core.xml \
           --ignore=uniqc/test/adapter/test_tq_algorithms.py \
           --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
           --ignore=uniqc/test/simulator/test_simulator_factory.py
 
     - name: Smoke-test the complete PyTorch extra
+      if: always()
       run: python scripts/smoke_pytorch_extra.py
 
     - name: Run torchquantum-touching tests in a separate process
+      if: always()
       shell: bash
       env:
         PYTHONWARNINGS: "default::DeprecationWarning,default::FutureWarning"
@@ -153,9 +158,13 @@ jobs:
           -v --tb=short -m "not cloud"
 
     - name: Fail on first-party warnings
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && steps.core-tests.outcome == 'success'
       run: |
         pytest uniqc/test/ -q -m "not cloud" -W error::Warning:uniqc \
           --ignore=uniqc/test/adapter/test_tq_algorithms.py \
           --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
           --ignore=uniqc/test/simulator/test_simulator_factory.py
+
+    - name: Report core test failures
+      if: steps.core-tests.outcome == 'failure'
+      run: python scripts/report_pytest_failures.py pytest-core.xml
