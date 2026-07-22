@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/wk180/xeb.py",
+  "source_sha256": "9269ae3a54c10245f6d9f74eed679da89ad1404ac231548ac3f57e43a8473544",
   "chapter": "2_advanced",
   "name": "wk180__xeb",
   "title": "WK180 chip-wide parallel-CZ XEB example for UnifiedQuantum.",

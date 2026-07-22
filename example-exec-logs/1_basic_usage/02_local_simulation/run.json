@@ -1,5 +1,6 @@
 {
   "example": "examples/1_basic_usage/02_local_simulation.py",
+  "source_sha256": "3b10f3eed8f2da888dcb08a163de2058f0489c7cf855cb86c10b6905d6df880a",
   "chapter": "1_basic_usage",
   "name": "02_local_simulation",
   "title": "02 — Local simulation paths",
@@ -7,7 +8,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{7: 1033, 0: 967}\n",
+  "stdout": "== probabilities ==\n  |000>: 0.5000\n  |111>: 0.5000\n== shots ==\n{7: 966, 0: 1034}\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

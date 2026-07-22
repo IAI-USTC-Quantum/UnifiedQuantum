@@ -31,43 +31,57 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.16..HEAD`
-- 提交数：7
-- 变更文件数：261
+- 提交数：14
+- 变更文件数：438
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `build` | 1 |
+| `fix` | 4 |
+| `build` | 2 |
+| `ci` | 2 |
+| `docs` | 2 |
 | `chore` | 1 |
-| `ci` | 1 |
-| `docs` | 1 |
 | `refactor` | 1 |
 | `security` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 180 个文件
-- `example-exec-logs`: 28 个文件
-- `uniqc/test`: 11 个文件
-- `examples`: 9 个文件
-- `uniqc/backend_adapter`: 8 个文件
+- `docs`: 221 个文件
+- `example-exec-logs`: 63 个文件
+- `uniqc/test`: 39 个文件
+- `uniqc/algorithms`: 16 个文件
+- `examples`: 15 个文件
+- `uniqc/backend_adapter`: 12 个文件
+- `UniqcCpp`: 8 个文件
+- `uniqc/circuit_builder`: 8 个文件
+- `scripts`: 7 个文件
+- `uniqc/compile`: 6 个文件
+- `uniqc/simulator`: 6 个文件
 - `.github`: 5 个文件
-- `uniqc/cli`: 3 个文件
-- `uniqc/gateway`: 3 个文件
-- `UniqcCpp`: 2 个文件
-- `uniqc/algorithms`: 2 个文件
+- `uniqc/cli`: 4 个文件
+- `uniqc/gateway`: 4 个文件
+- `uniqc/torch_adapter`: 3 个文件
+- `uniqc/calibration`: 2 个文件
+- `uniqc/qem`: 2 个文件
+- `uniqc/utils`: 2 个文件
 - `CHANGELOG.md`: 1 个文件
+- `CONTRIBUTING.md`: 1 个文件
 - `README.md`: 1 个文件
 - `README_en.md`: 1 个文件
 - `RELEASE_EXECUTION_PLAN_0.0.16.md`: 1 个文件
+- `RISK_REPORT_ROUND_2.md`: 1 个文件
+- `conftest.py`: 1 个文件
+- `frontend`: 1 个文件
 - `pyproject.toml`: 1 个文件
-- `scripts`: 1 个文件
+- `pytest.ini`: 1 个文件
 - `setup.py`: 1 个文件
 - `uniqc/__init__.py`: 1 个文件
-- `uniqc/circuit_builder`: 1 个文件
 - `uniqc/config.py`: 1 个文件
+- `uniqc/exceptions.py`: 1 个文件
+- `uniqc/visualization`: 1 个文件
 
 ### 提交列表
 
@@ -78,6 +92,13 @@
 - `540ebf2` security: restrict gateway and redact credentials
 - `440162c` refactor: lazy-load deprecated quafu support
 - `a9b2336` docs: repair release notes and user workflows
+- `8d7ef6d` fix: use torchquantum-ng across runtime guidance
+- `5d388c1` docs: add second-round risk disposition
+- `d1794d1` build: include torchquantum-ng in pytorch extra
+- `2f36fd8` fix: align quantum execution semantics
+- `377b52a` fix: stop websocket reconnects after cleanup
+- `6434246` fix: persist task failures and query context
+- `976b029` ci: harden documentation quality gates
 
 ## v0.0.16
 

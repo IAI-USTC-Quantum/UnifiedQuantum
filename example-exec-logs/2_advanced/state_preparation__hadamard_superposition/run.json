@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/state_preparation/hadamard_superposition.py",
+  "source_sha256": "470e9e900703e51050daac5ec7b2e89dc81e4771de2b2a16d525bf668d2bbc0f",
   "chapter": "2_advanced",
   "name": "state_preparation__hadamard_superposition",
   "title": "Hadamard superposition — state preparation example.",

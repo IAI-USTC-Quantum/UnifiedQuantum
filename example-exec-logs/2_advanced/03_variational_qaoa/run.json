@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/03_variational_qaoa.py",
+  "source_sha256": "2c93531f22db69dfddd338cdfe9045b5e9eea34da77608baf60bb453a397c995",
   "chapter": "2_advanced",
   "name": "03_variational_qaoa",
   "title": "03 — Variational quantum algorithm: a tiny QAOA loop",
@@ -7,7 +8,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "gamma=0.20 beta=0.20 <ZZ>=+0.2500\ngamma=0.20 beta=0.40 <ZZ>=+0.3906\ngamma=0.20 beta=0.60 <ZZ>=+0.3008\ngamma=0.40 beta=0.20 <ZZ>=+0.5625\ngamma=0.40 beta=0.40 <ZZ>=+0.7305\ngamma=0.40 beta=0.60 <ZZ>=+0.4492\ngamma=0.60 beta=0.20 <ZZ>=+0.6758\ngamma=0.60 beta=0.40 <ZZ>=+0.9297\ngamma=0.60 beta=0.60 <ZZ>=+0.6680\nbest: (0.2, 0.2, 0.25)\n",
+  "stdout": "gamma=0.20 beta=0.20 <ZZ>=+0.2344\ngamma=0.20 beta=0.40 <ZZ>=+0.4062\ngamma=0.20 beta=0.60 <ZZ>=+0.3008\ngamma=0.40 beta=0.20 <ZZ>=+0.4844\ngamma=0.40 beta=0.40 <ZZ>=+0.6719\ngamma=0.40 beta=0.60 <ZZ>=+0.4648\ngamma=0.60 beta=0.20 <ZZ>=+0.6328\ngamma=0.60 beta=0.40 <ZZ>=+0.9570\ngamma=0.60 beta=0.60 <ZZ>=+0.6641\nbest: (0.2, 0.2, 0.234375)\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

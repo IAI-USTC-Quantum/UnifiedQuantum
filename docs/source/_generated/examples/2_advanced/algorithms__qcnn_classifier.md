@@ -25,7 +25,7 @@ Model: QCNN
 
 Parameters: 9
 
-  Epoch  10 | Loss: 0.2731 | Acc: 0.5000
+  Epoch  10 | Loss: 0.2733 | Acc: 0.5000
   Epoch  20 | Loss: 0.2550 | Acc: 0.5000
   Epoch  30 | Loss: 0.2543 | Acc: 0.1000
   Epoch  40 | Loss: 0.2542 | Acc: 0.1000

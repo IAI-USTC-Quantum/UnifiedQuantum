@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/wk180/readout_em.py",
+  "source_sha256": "fa2464004979170f5699f1645fd5a59fac89e66b89cbbc89787df93d6b90116a",
   "chapter": "2_advanced",
   "name": "wk180__readout_em",
   "title": "WK180 readout EM example for UnifiedQuantum.",

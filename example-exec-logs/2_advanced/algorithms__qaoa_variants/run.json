@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/algorithms/qaoa_variants.py",
+  "source_sha256": "2d2f614d8b4e9eb834b8fc12eabb8798c8638c6dcb005f72a6ad7cccdde98e33",
   "chapter": "2_advanced",
   "name": "algorithms__qaoa_variants",
   "title": "QAOA Variants -- XY Mixer, Warm-Start, and MA-QAOA.",

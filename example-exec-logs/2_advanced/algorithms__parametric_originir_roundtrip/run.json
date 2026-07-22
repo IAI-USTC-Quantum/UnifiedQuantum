@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/algorithms/parametric_originir_roundtrip.py",
+  "source_sha256": "974f13af7da1e327f9e693ce85e55381d622eb139cdc19620716826db7c424e6",
   "chapter": "2_advanced",
   "name": "algorithms__parametric_originir_roundtrip",
   "title": "OriginIR-ext 符号参数往返",

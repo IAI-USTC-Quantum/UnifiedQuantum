@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/algorithms/hybrid_model.py",
+  "source_sha256": "5176d0a95b4fe9bfd859436cee0431d30032a4050d351a3888a05790077d7c3e",
   "chapter": "2_advanced",
   "name": "algorithms__hybrid_model",
   "title": "Hybrid Classical-Quantum Model using TorchQuantum backend.",

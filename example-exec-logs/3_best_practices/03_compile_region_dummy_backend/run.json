@@ -1,5 +1,6 @@
 {
   "example": "examples/3_best_practices/03_compile_region_dummy_backend.py",
+  "source_sha256": "8cc9c0a10b82d4e3369be3262f31c53b91f6386286fa9e7d821628c8d0d86065",
   "chapter": "3_best_practices",
   "name": "03_compile_region_dummy_backend",
   "title": "03 — 编译、拓扑与虚拟后端",
@@ -19,5 +20,5 @@
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.01
+  "duration_seconds": 0.025
 }

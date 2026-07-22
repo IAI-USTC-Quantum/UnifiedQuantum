@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/02_region_selector.py",
+  "source_sha256": "3f0b5c8f39a3829f167c07c6917995bd9b9372fac888ff1a95aa04188e5cab40",
   "chapter": "2_advanced",
   "name": "02_region_selector",
   "title": "02 — RegionSelector: pick a high-fidelity sub-region of a chip",

@@ -34,7 +34,7 @@ Circuit: Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2
 Performing 100 shadow measurements...
   Collected 100 shadow snapshots
 
-  ⟨Z₀⟩ estimate: 1.0200 (exact: 0.0)
+  ⟨Z₀⟩ estimate: 0.9900 (exact: 0.0)
   ⟨Z₀Z₁⟩ estimate: 0.9900 (exact: 1.0)
   ⟨X₀⟩ estimate: 0.9900 (exact: 1/√2 ≈ 0.707)
 

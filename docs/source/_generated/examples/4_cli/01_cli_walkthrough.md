@@ -88,9 +88,9 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 2d ago (stale)
-    quafu: 16 backends, updated 83d ago (stale)
-    ibm: 3 backends, updated 46d ago (stale)
+    originq: 7 backends, updated 3d ago (stale)
+    quafu: 16 backends, updated 84d ago (stale)
+    ibm: 3 backends, updated 48d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -103,7 +103,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_900b4fb887e44eeb9a30f7213e1460c5",
+  "task_id": "uqt_7e6609258c1c4751a8b8465abb09008f",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -118,7 +118,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_900b4fb887e44eeb9a30f7213e1460c5",
+  "task_id": "uqt_7e6609258c1c4751a8b8465abb09008f",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -129,11 +129,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_900b4fb887e4… │ dummy:local:simu… │ success │ 64    │ 2026-07-21T07:17:… │
-│ uqt_81bb138a7a42… │ dummy:local:simu… │ success │ 64    │ 2026-07-21T07:16:… │
-│ uqt_7be47e92ae6e… │ dummy:local:simu… │ success │ 128   │ 2026-07-21T07:16:… │
-│ uqt_2b81cddb689e… │ dummy:local:simu… │ success │ 2000  │ 2026-07-21T07:16:… │
-│ uqt_57269521d11c… │ dummy:local:mps-… │ success │ 400   │ 2026-07-21T07:16:… │
+│ uqt_7e6609258c1c… │ dummy:local:simu… │ success │ 64    │ 2026-07-22T14:26:… │
+│ uqt_c58cb2f1f3a4… │ dummy:local:simu… │ success │ 64    │ 2026-07-22T14:26:… │
+│ uqt_c52d5098e72e… │ dummy:local:simu… │ success │ 128   │ 2026-07-22T14:26:… │
+│ uqt_6665cbebf759… │ dummy:local:simu… │ success │ 2000  │ 2026-07-22T14:25:… │
+│ uqt_123038d717a5… │ dummy:local:mps-… │ success │ 400   │ 2026-07-22T14:25:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

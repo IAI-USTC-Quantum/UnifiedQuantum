@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/06_qem_m3.py",
+  "source_sha256": "4fa00feca6c737845b2782b7561ac0eadf0b1c51dbdf575efb624a4380d3f682",
   "chapter": "2_advanced",
   "name": "06_qem_m3",
   "title": "06 — Error mitigation: M3 / readout EM",

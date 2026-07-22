@@ -1,5 +1,6 @@
 {
   "example": "examples/1_basic_usage/04_config.py",
+  "source_sha256": "3578530344c6cc0292c09397352dbc7c8683c58b44407f75d58808d7004ff48a",
   "chapter": "1_basic_usage",
   "name": "04_config",
   "title": "04 — Configuration: ``uniqc config`` + ``~/.uniqc/config.yaml``",

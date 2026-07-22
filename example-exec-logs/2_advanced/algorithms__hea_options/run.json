@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/algorithms/hea_options.py",
+  "source_sha256": "0d922952cd8473de5fb96d79b154fd2a826242e5845230cf425a305a8c9f3acd",
   "chapter": "2_advanced",
   "name": "algorithms__hea_options",
   "title": "Hardware-Efficient Ansatz (HEA) -- Configuration Options.",

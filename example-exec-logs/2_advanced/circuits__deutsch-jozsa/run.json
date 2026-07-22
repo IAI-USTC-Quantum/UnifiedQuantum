@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/circuits/deutsch-jozsa.py",
+  "source_sha256": "a4c6d4e424dc1629b755f75a3216aaf6447c129d60d774974d12aefb5b6bb53b",
   "chapter": "2_advanced",
   "name": "circuits__deutsch-jozsa",
   "title": "Deutsch-Jozsa algorithm — complete example.",

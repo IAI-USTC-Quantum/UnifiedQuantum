@@ -1,5 +1,6 @@
 {
   "example": "examples/3_best_practices/06_cloud_backend_template.py",
+  "source_sha256": "c8143a5dc76c75adba19e70c564e99f158256bac29ab7f5ad75ec78ed87154af",
   "chapter": "3_best_practices",
   "name": "06_cloud_backend_template",
   "title": "06 — 云后端提交模板与 dry-run",

@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/measurement/state_tomography.py",
+  "source_sha256": "b4902566b53641bf85c2ab5802438f88922cc3a877deeed5783ab29596200505",
   "chapter": "2_advanced",
   "name": "measurement__state_tomography",
   "title": "Full quantum state tomography — measurement example.",

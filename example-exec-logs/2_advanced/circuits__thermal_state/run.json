@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/circuits/thermal_state.py",
+  "source_sha256": "6456fd729fedc8e0d4b4600fd76cf04c9fc32016762da694d90ff595471dc278",
   "chapter": "2_advanced",
   "name": "circuits__thermal_state",
   "title": "Thermal state preparation circuit — example.",
@@ -9,7 +10,7 @@
   "ignored_warning_patterns": [
     "DeprecationWarning"
   ],
-  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.692017   0.683325\n  |001⟩    0.090942   0.092478\n  |010⟩    0.089355   0.092478\n  |011⟩    0.014160   0.012516\n  |100⟩    0.084595   0.092478\n  |101⟩    0.012085   0.012516\n  |110⟩    0.014648   0.012516\n  |111⟩    0.002197   0.001694\n",
+  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.686279   0.683325\n  |001⟩    0.090454   0.092478\n  |010⟩    0.096436   0.092478\n  |011⟩    0.010742   0.012516\n  |100⟩    0.089233   0.092478\n  |101⟩    0.012329   0.012516\n  |110⟩    0.012939   0.012516\n  |111⟩    0.001587   0.001694\n",
   "stderr": "",
   "warnings": [
     "DeprecationWarning: thermal_state_circuit(circuit, ...) (in-place form) is deprecated. It will be removed in uniqc 0.1.0; use `the fragment form `thermal_state_circuit(n_qubits, ...) -> Circuit` with `circuit.add_circuit(fragment)`` instead. (thermal_state.py:62)"

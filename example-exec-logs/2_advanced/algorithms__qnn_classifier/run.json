@@ -1,5 +1,6 @@
 {
   "example": "examples/2_advanced/algorithms/qnn_classifier.py",
+  "source_sha256": "4bae0ed83956b92db56c1e79885f4651fab134596a1f1b567f5b9375676cd21d",
   "chapter": "2_advanced",
   "name": "algorithms__qnn_classifier",
   "title": "QNN Binary Classifier using TorchQuantum backend.",

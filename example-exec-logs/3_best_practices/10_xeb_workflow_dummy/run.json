@@ -1,5 +1,6 @@
 {
   "example": "examples/3_best_practices/10_xeb_workflow_dummy.py",
+  "source_sha256": "a1bcbddf427392b8a7e7d8816a8e1f567387711180f27c68cce2dff3013207e5",
   "chapter": "3_best_practices",
   "name": "10_xeb_workflow_dummy",
   "title": "10 — XEB workflow",
@@ -18,5 +19,5 @@
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 0.118
+  "duration_seconds": 0.125
 }
