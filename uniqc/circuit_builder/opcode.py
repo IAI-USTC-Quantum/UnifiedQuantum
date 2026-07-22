@@ -247,10 +247,7 @@ def opcode_to_line_qasm(opcode: OpcodeType, qubit_num: int | None = None) -> str
     ret += operation
 
     if parameter is not None:
-        if isinstance(parameter, list):
-            parameter_str = ", ".join([str(p) for p in parameter])
-        else:
-            parameter_str = str(parameter)
+        parameter_str = ", ".join([str(p) for p in parameter]) if isinstance(parameter, list) else str(parameter)
 
         ret += f"({parameter_str})"
 

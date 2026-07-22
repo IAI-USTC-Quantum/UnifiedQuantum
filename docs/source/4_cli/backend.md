@@ -163,7 +163,7 @@ uniqc backend chip-display originq/WK_C180 -u
 | Gate | 门类型（如 CNOT、CZ） |
 | Fidelity | 该量子比特对的双量子比特门保真度 |
 
-> 标定数据可用于量子比特选择（RegionSelector）和噪声感知编译（`compile()`），详见[编译选项与区域选择](../guide/compiler_options_region.md)。
+> 标定数据可用于量子比特选择（RegionSelector）和噪声感知编译（`compile()`），详见[编译选项与区域选择](../2_advanced/compiler_options_region.md)。
 
 ## 自定义含噪虚拟机 (`uniqc backend virtual`)
 

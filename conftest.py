@@ -11,12 +11,10 @@ Honours these markers (declared in ``pytest.ini``):
 * ``requires_torchquantum`` — skipped if torch or torchquantum is missing.
 * ``requires_cpp`` — skipped if uniqc_cpp is missing.
 
-In addition, this conftest auto-classifies tests that use the
-``dummy:<provider>:<chip>`` backend (because that path *requires* the
-real provider's SDK + an up-to-date chip cache, not just a local
-simulator). Tests using such a backend are auto-marked with the
-provider-specific ``requires_*`` marker so they share the gating
-logic with real-cloud tests.
+Tests that use a ``dummy:<provider>:<chip>`` backend must declare the
+appropriate provider ``requires_*`` marker themselves. That path requires the
+provider SDK and a current chip cache even though it does not submit a cloud
+job, and pytest cannot infer that dependency reliably from arbitrary test code.
 """
 
 from __future__ import annotations
@@ -75,7 +73,7 @@ def pytest_collection_modifyitems(
         "requires_qiskit": pytest.mark.skip(
             reason=(
                 "qiskit / qiskit_ibm_runtime not installed; install with "
-                "`pip install 'unified-quantum[ibm]'`"
+                "`pip install unified-quantum`"
             )
         ),
         "requires_quafu": pytest.mark.skip(

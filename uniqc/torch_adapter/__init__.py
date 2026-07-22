@@ -7,15 +7,15 @@ This module provides tools for integrating quantum circuits with PyTorch:
 - Batch execution utilities
 """
 
+import contextlib
+
 from .batch_executor import batch_execute, batch_execute_with_params
 from .expectation import expectation
 from .gradient import compute_all_gradients, parameter_shift_gradient
 from .quantum_layer import QuantumLayer
 
-try:
+with contextlib.suppress(ImportError):
     from .tq_quantum_layer import TorchQuantumLayer
-except ImportError:
-    pass
 
 __all__ = [
     "expectation",

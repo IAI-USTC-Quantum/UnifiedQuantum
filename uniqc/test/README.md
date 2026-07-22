@@ -1,174 +1,64 @@
-# 测试设计与规范
+# pytest 测试指南
 
-## 目录结构
+`uniqc/test/` 是 UnifiedQuantum 的 pytest 测试套件。测试文件使用
+`test_*.py`，pytest 同时收集 `test_*` 和 `run_test_*` 函数；测试类使用
+`Test*` 或 `RunTest*`。辅助函数不得使用这些前缀，以免被误收集。
 
-```
-uniqc/test/
-├── core/                # 核心解析测试
-├── circuit_builder/     # 电路构建测试
-├── algorithmics/        # 算法电路测试
-│   ├── circuits/        # 电路组件测试
-│   ├── measurement/     # 测量测试
-│   └── state_preparation/ # 态制备测试
-├── simulator/           # 模拟器测试
-├── cloud/               # 云平台测试
-│   └── platforms/       # 平台配置测试
-├── transpiler/          # 转译器测试
-├── adapter/             # 适配器测试
-├── analyzer/            # 分析器测试
-├── benchmark/           # 基准测试
-└── integration/         # 集成测试
-```
+不要以 `@uniq_test` 是否存在判断测试是否正式。该旧装饰器不是收集条件，也不
+代表当前套件的覆盖范围。
 
-## 核心原则
-
-**只有被 `@uniq_test` 装饰器修饰的函数才是需要执行的正式测试。**
-
-`@uniq_test` 会打印测试开始/结束信息，用于 CI 识别和人类阅读。
-
-## 命名规范
-
-### 正式测试函数
-- 命名格式：`run_test_<功能名>`
-- 必须被 `@uniq_test('<描述>')` 修饰
-- pytest 会自动收集所有 `run_test_*` 函数
-
-### 辅助函数（内部使用）
-- 命名格式：`<功能名>`（不带前缀）或 `_<功能名>`
-- 不带 `@uniq_test` 装饰器
-- 被正式测试函数内部调用，不直接暴露给 pytest
-
-## 测试执行入口
-
-```python
-# 通过 pytest 运行全部（推荐）
-pytest uniqc/test/ -v
-
-# 运行特定类别
-pytest uniqc/test/core/ -v
-pytest uniqc/test/simulator/ -v
-
-# 单独运行某个测试
-python -m pytest uniqc/test/core/test_originir_parser.py::run_test_originir_parser -v
-
-# 通过 run_test() 运行全部（旧方式，已废弃）
-from uniqc.test import run_test
-run_test()
-```
-
-## 当前测试项清单
-
-| 测试文件 | 正式测试函数 | 说明 |
-|---------|------------|------|
-| `core/test_general.py` | `run_test_general()` | 通测占位（当前为空） |
-| `core/test_originir_parser.py` | `run_test_originir_parser()` | OriginIR 解析器 |
-| `core/test_qasm_parser.py` | `run_test_qasm_parser()` | OpenQASM2 解析器 |
-| `cloud/test_demos.py` | `run_test_demos()` | OriginQ 远程任务示例 |
-| `cloud/test_result_adapter.py` | `run_test_result_adapter()` | 结果适配器 |
-| `simulator/test_simulator.py` | `run_test_simulator()` | 噪声模拟器 |
-| `simulator/test_random_QASM.py` | `run_test_random_qasm_*` | 随机 QASM 电路（4个测试） |
-| `simulator/test_random_OriginIR.py` | `run_test_random_originir_density_operator()` | 随机 OriginIR 电路 |
-| `simulator/test_random_QASM_measure.py` | `run_test_random_qasm_compare_shots()` | 随机电路 shot 对比 |
-| `benchmark/test_QASMBench.py` | `run_test_qasm()` | QASMBench 电路集 |
-
-**pytest 共收集 14 个正式测试函数。**
-
-## pytest 配置说明
-
-```ini
-[pytest]
-testpaths = uniqc/test
-python_files = test_*.py
-python_functions = run_test_*
-addopts = -v
-```
-
-- `python_functions = run_test_*` 确保只收集正式测试，不收集辅助函数
-- 辅助函数不应以 `run_test_` 或 `test_` 开头，避免被 pytest 误收集
-
-## CI 配置说明
-
-- **Build-and-test workflow**：使用 `pytest uniqc/test/ -v`
-- **Pytest Coverage workflow**：使用 `pytest uniqc/test/ --cov=uniqc -v`
-
-两个 workflow 现已统一使用 pytest。真实提交量子线路的测试由 `--real-cloud-test` 显式打开；未传该参数时只跳过这类会产生真实任务的测试。
-
-## 当前测试口径
-
-默认开发环境应通过 `uv sync --all-extras --group dev --group docs` 安装完整依赖。因此，除明确的 `cloud` 集成测试、Quafu/`pyquafu` 和当前已知的 `torchquantum` 缺失问题外，测试不应因为 `qiskit`、`qutip`、`pyqpanda3`、`torch` 或本地 simulator 缺失而被跳过。Quafu 是例外，因为 `pyquafu` 依赖 `numpy<2` 且平台 SDK 已 deprecated，不再包含在 `[all]` 中。
-
-推荐的本地/CI 默认口径：
+## 常用命令
 
 ```bash
+# 默认离线套件；所有 cloud 标记测试都会跳过
 uv run pytest uniqc/test
+
+# 单个测试
+uv run pytest uniqc/test/core/test_originir_parser.py::run_test_originir_parser -v
+
+# 一个目录或一个 marker 组
+uv run pytest uniqc/test/circuit_builder -v
+uv run pytest uniqc/test -m "requires_cpp" -v
+
+# 执行云测试（需要对应 SDK、凭证和网络）
+uv run pytest uniqc/test --real-cloud-test -m cloud -v
 ```
 
-当前默认口径下只允许以下 skip：
+`pytest.ini` 中的 `testpaths = uniqc/test` 是默认收集根；直接运行
+`pytest` 时也会使用它。使用 `--collect-only -q` 可在当前环境中查看实际收集
+结果，不要在文档中维护会随测试演进而过期的固定数量。
 
-- `torchquantum not installed`：known issue，覆盖 TorchQuantum 相关测试。
-- `@pytest.mark.real_cloud_execution`：会向真实云平台提交量子线路，默认跳过，传 `--real-cloud-test` 后执行。
-- `@pytest.mark.requires_quafu` 且未安装 `pyquafu`：Quafu 是 deprecated legacy 路径，不在 `[all]` 中。
+## 云测试与依赖 marker
 
-`@pytest.mark.cloud` 只用于真实云平台或真实网络依赖场景，包括：
+所有 `@pytest.mark.cloud` 和 `@pytest.mark.real_cloud_execution` 测试默认跳过。
+只有传入 `--real-cloud-test` 才会解除该总开关；对应 SDK 和凭证 marker 仍然会
+独立检查。因此 CI 和本地默认命令均不会访问云端或创建真实任务。
 
-- 需要真实 `~/.uniqc/config.yaml` token 的 OriginQ、Quark、IBM backend/status/connectivity。
-- 真实云平台 submit/query，其中会产生真实量子任务的测试必须额外标记 `@pytest.mark.real_cloud_execution`。
-- 真实 IBM endpoint 连通性检查。
-- 真实 proxy 行为检查，包括配置 proxy 可用性和不可达 proxy 的失败路径。
+| Marker | 作用 |
+| --- | --- |
+| `cloud` | 需要真实网络或云平台凭证；默认跳过。 |
+| `real_cloud_execution` | 会提交真实量子线路；默认跳过。 |
+| `requires_pyqpanda3` | 需要 OriginQ SDK。 |
+| `requires_qiskit` | 需要 Qiskit 与 IBM Runtime。 |
+| `requires_quafu` | 需要 legacy `pyquafu` SDK。 |
+| `requires_pytorch` | 需要 PyTorch。 |
+| `requires_torchquantum` | 需要 PyTorch 和 TorchQuantum。 |
+| `requires_cpp` | 需要编译后的 `uniqc_cpp` 扩展。 |
+| `requires_originq_credentials` | 需要 OriginQ token。 |
+| `requires_quafu_credentials` | 需要 Quafu token。 |
+| `requires_quark_credentials` | 需要 Quark token。 |
+| `requires_ibm_credentials` | 需要 IBM token。 |
 
-不允许只因为需要 API key 或读取后端列表就跳过测试。Core developer 环境必须配置可用 token，并让 backend discovery / status / connectivity 测试默认通过。
+使用 `dummy:<provider>:<chip>` 的测试不提交云任务，但仍依赖该 provider 的 SDK
+和 chip cache。此类测试必须**显式**添加相应的 `requires_*` marker（并在需要
+token 或网络时添加 `cloud`/凭证 marker）；`conftest.py` 不会猜测或自动补标记。
 
-不应标记为 `cloud` 的测试：
+## CI 与维护
 
-- 只验证 YAML token 读取、proxy 参数构造、错误返回结构的单元测试。
-- HTTP/socket 已完全 mock 的网络工具测试。
-- 只依赖默认 dev 依赖包的电路翻译、模拟、转译、矩阵和 adapter 单元行为。
-
-## Cloud Tests
-
-Tests marked with `@pytest.mark.cloud` require real cloud credentials and network access. Tests that actually submit quantum circuits are additionally marked with `@pytest.mark.real_cloud_execution`.
-
-### Running Cloud Tests Locally
-
-```bash
-# Set required credentials in ~/.uniqc/config.yaml
-uniqc config set originq.token "your-key"
-uniqc config set quafu.token "your-token"
-uniqc config set ibm.token "your-token"
-
-# Run cloud tests
-pytest uniqc/test/ -v -m cloud
-
-# Run the full suite including real circuit execution on cloud backends
-pytest uniqc/test/ -v --real-cloud-test
-
-# Run specific platform tests
-pytest uniqc/test/ -v -m "cloud and requires_pyqpanda3"
-
-# Run IBM real network/proxy checks only
-pytest uniqc/test/cloud/test_network_utils.py -v -m cloud
-```
-
-IBM proxy cloud tests read `ibm.proxy` from `~/.uniqc/config.yaml` when testing a configured proxy. The unreachable-proxy test uses a closed localhost port to verify failure handling through the real network stack without depending on an external proxy service.
-
-### CI Behavior
-
-Cloud tests are **skipped by default in CI** via `-m "not cloud"` to avoid:
-- Exposing credentials in CI logs
-- Incurring cloud platform costs
-- Network dependency failures
-
-## Dependency-Specific Tests
-
-Tests may be marked with dependency markers:
-
-| Marker | Description |
-|--------|-------------|
-| `@pytest.mark.requires_cpp` | Requires compiled C++ backend (uniqc_cpp) |
-| `@pytest.mark.requires_pytorch` | Requires PyTorch |
-| `@pytest.mark.requires_torchquantum` | Requires TorchQuantum |
-| `@pytest.mark.requires_qiskit` | Requires Qiskit |
-| `@pytest.mark.requires_quafu` | Requires Quafu/pyquafu |
-| `@pytest.mark.requires_pyqpanda3` | Requires pyqpanda3 |
-
-These tests will be skipped if the dependency is not installed.
+- `build_and_test.yml` 运行默认离线 pytest、专门的第一方警告 gate，以及
+  `ruff check .`。
+- `pytest_coverage.yml` 是 coverage artifact 与 Codecov 的唯一权威 workflow。
+- 新增测试应优先使用真实的 `test_*` 命名和精确 marker；完全 mock 的网络单元
+  测试不应标记为 `cloud`。
+- 提交前至少运行与改动相邻的测试；改动公共 Python 代码时运行
+  `uv run ruff check .`。

@@ -352,6 +352,6 @@ except MissingDependencyError as e:
 
 ## 下一步 {#guide-task-manager-next-steps}
 
-- 了解 [云平台适配器架构](../advanced/adapter_architecture.md)
+- 了解 [云平台适配器架构](../2_advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)
 - 参考 API 文档：{mod}`uniqc.backend_adapter.task_manager`

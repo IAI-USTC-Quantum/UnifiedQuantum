@@ -59,13 +59,13 @@ the full superset.
 
 from .originir_spec import (
     OFFICIAL_ORIGINIR_GATES,
-    available_originir_gates as _official_gates,
-)
-from .originir_spec import (
     available_originir_error_channels,
     available_originir_error_channels_without_kraus,
     generate_sub_error_channel_originir,
     generate_sub_gateset_originir,
+)
+from .originir_spec import (
+    available_originir_gates as _official_gates,
 )
 
 __all__ = [

@@ -170,7 +170,7 @@ def safe_eval_param(expr: str) -> float:
             ),
         ):
             continue
-        if isinstance(node, _ALLOWED_BINOPS) or isinstance(node, _ALLOWED_UNARYOPS):
+        if isinstance(node, (_ALLOWED_BINOPS, _ALLOWED_UNARYOPS)):
             continue
         raise ValueError(f"Unsafe QASM expression: disallowed syntax {type(node).__name__!s}")
 

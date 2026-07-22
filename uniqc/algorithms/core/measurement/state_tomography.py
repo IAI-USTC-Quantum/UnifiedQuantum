@@ -369,7 +369,7 @@ def state_tomography(
             if prob == 0:
                 continue
             sign = 1.0
-            for i, (p_i, b_i) in enumerate(zip(p, basis_for_p)):
+            for i, (p_i, b_i) in enumerate(zip(p, basis_for_p, strict=False)):
                 # LSB-first: bit i of outcome = measurement of qubit i
                 # (Simulator emits outcomes with c[j]=q[j], so bit j
                 # of the integer outcome is qubit j's measurement).

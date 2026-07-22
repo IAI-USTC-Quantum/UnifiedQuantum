@@ -66,10 +66,10 @@ def compare_counts(counts1, counts2):
     """
 
     counts_difference = {}
-    for k in counts1.keys():
+    for k in counts1:
         counts_difference[k] = counts1.get(k, 0) - counts2.get(k, 0)
 
-    for k in counts2.keys():
+    for k in counts2:
         if k not in counts_difference:
             counts_difference[k] = -counts2.get(k, 0)
 
@@ -103,7 +103,7 @@ def _run_test_random_qasm_compare_shots_impl(
 
     err_list = []
     passed_count = 0
-    for i in range(random_batchsize):
+    for _i in range(random_batchsize):
         qasm_code = random_qasm(n_qubits=n_qubit, n_gates=n_gates, instruction_set=instruction_set)
 
         err = compare_shots(qasm_code, backend_type=backend_type)

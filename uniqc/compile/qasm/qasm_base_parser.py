@@ -31,22 +31,22 @@ class OpenQASM2_BaseParser:
     """
 
     def __init__(self):
-        self.qregs = list()
-        self.cregs = list()
+        self.qregs = []
+        self.cregs = []
         self.n_qubit = None
         self.n_cbit = None
-        self.program_body = list()  # contain the opcodes
+        self.program_body = []  # contain the opcodes
         self.raw_qasm = None
         self.formatted_qasm = None
 
         # for qasm statement collection
-        self.collected_qregs_str = list()
-        self.collected_cregs_str = list()
-        self.collected_measurements_str = list()
-        self.program_body_str = list()  # contain strs of the program body
+        self.collected_qregs_str = []
+        self.collected_cregs_str = []
+        self.collected_measurements_str = []
+        self.program_body_str = []  # contain strs of the program body
 
         # for measurement mapping
-        self.measure_qubits: list[tuple[int, int]] = list()
+        self.measure_qubits: list[tuple[int, int]] = []
 
         # QRAM declarations (not supported in QASM, but needed for interface compatibility)
         self.qram_declarations: dict[str, tuple[int, int]] = {}
@@ -140,10 +140,10 @@ class OpenQASM2_BaseParser:
         if re.search(r"\bif\s*\(", raw):
             raise NotSupportedGateError("If statements are not supported yet.")
 
-        collected_qregs = list()
-        collected_cregs = list()
-        collected_measurements = list()
-        program_body = list()
+        collected_qregs = []
+        collected_cregs = []
+        collected_measurements = []
+        program_body = []
 
         # split all codes by semicolons (use the gate-def-stripped source)
         codes = raw.split(";")
@@ -268,8 +268,8 @@ class OpenQASM2_BaseParser:
         if len(call_args) != len(qubit_args):
             raise NotImplementedError(f"Gate '{name}' expects {len(qubit_args)} qubit arguments, got {len(call_args)}")
 
-        param_bindings = dict(zip(params, call_param_exprs))
-        arg_bindings = dict(zip(qubit_args, call_args))
+        param_bindings = dict(zip(params, call_param_exprs, strict=False))
+        arg_bindings = dict(zip(qubit_args, call_args, strict=False))
 
         expanded: list[str] = []
         for body_line in body_lines:
@@ -328,7 +328,7 @@ class OpenQASM2_BaseParser:
     def _check_regs(collected_regs, reg_handler):
         # check whether qregs have the same name
         names = set()
-        regs = list()
+        regs = []
         total_size = 0
         if len(collected_regs) == 0:
             raise RegisterDefinitionError("Register is empty")
@@ -474,7 +474,7 @@ class OpenQASM2_BaseParser:
         # add measurements to the circuit, sort by cbit id
         measure_list = sorted(self.measure_qubits, key=lambda x: x[1])
 
-        for qubit, cbit in measure_list:
+        for qubit, _cbit in measure_list:
             origincircuit.measure(qubit)
 
         return origincircuit

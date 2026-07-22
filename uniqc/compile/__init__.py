@@ -7,10 +7,20 @@ from .converter import convert_originir_ext_to_originir as convert_originir_ext_
 from .converter import convert_qasm_to_oir as convert_qasm_to_oir
 from .decompose import (
     ORIGINIR_EXT_DECOMPOSABLE_GATES as ORIGINIR_EXT_DECOMPOSABLE_GATES,
+)
+from .decompose import (
     QASM2_UNREPRESENTABLE_GATES as QASM2_UNREPRESENTABLE_GATES,
+)
+from .decompose import (
     decompose_for_originir as decompose_for_originir,
+)
+from .decompose import (
     decompose_for_qasm2 as decompose_for_qasm2,
+)
+from .decompose import (
     decompose_opcode_for_originir as decompose_opcode_for_originir,
+)
+from .decompose import (
     decompose_opcode_for_qasm2 as decompose_opcode_for_qasm2,
 )
 from .policy import (

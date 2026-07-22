@@ -197,4 +197,4 @@ originir_str = circuit.originir  # OriginIR 原生支持任意宽度多控门
 - `test_QASMBench.py`：QASMBench 兼容性测试
 - `test_circuit_builder_opcode_and_random.py`：多控门 QASM 导出分解测试（`TestMCUQASMSentinel`, `TestMCUQASMDecomposition`, `TestMCUQASMIntegration`）
 
-详见 [测试覆盖说明](testing.md)。
+详见 [测试覆盖说明](../2_advanced/testing.md)。

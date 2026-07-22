@@ -4,9 +4,9 @@
 
 当你需要查看线路信息（深度、门统计）、绘制线路图、分析门类型与数量，或了解量子比特重映射时，进入本页。
 
-本页是 [构建量子线路](../guide/circuit.md) 的延伸阅读，适合已经完成线路构建、需要进一步分析或可视化线路结构的读者。
+本页是 [构建量子线路](../1_basic_usage/circuit.md) 的延伸阅读，适合已经完成线路构建、需要进一步分析或可视化线路结构的读者。
 
-> 如果你还未完成基础线路构建，建议先阅读 [构建量子线路](../guide/circuit.md)。
+> 如果你还未完成基础线路构建，建议先阅读 [构建量子线路](../1_basic_usage/circuit.md)。
 
 ## 线路信息
 
@@ -46,4 +46,4 @@ originir_str = circuit.originir
 qasm_str = circuit.qasm
 ```
 
-> 详细的门对照表见 [QASM 2.0 文档](../guide/qasm.md)。
+> 详细的门对照表见 [QASM 2.0 文档](../1_basic_usage/qasm.md)。

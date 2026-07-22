@@ -88,7 +88,7 @@ def _check_result(transpiled_circuit, reference_result, backend_type):
         print("---------------")
         raise NotMatchError(f"Size not match!\nReference = {reference_array}\nMy Result = {my_result}\n")
     try:
-        v = np.allclose(reference_array, my_result)
+        np.allclose(reference_array, my_result)
     except Exception as e:
         error_message = (
             "---------------\n"

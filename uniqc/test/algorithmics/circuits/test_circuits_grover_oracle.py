@@ -105,7 +105,7 @@ class TestGroverFullSearch:
             c.h(i)
 
         # One Grover iteration: oracle + diffusion
-        anc = grover_oracle(c, marked_state=marked, qubits=list(range(n)))
+        grover_oracle(c, marked_state=marked, qubits=list(range(n)))
         grover_diffusion(c, qubits=list(range(n)))
 
         # Simulate (ignore ancilla, look at data qubits)
@@ -131,7 +131,7 @@ class TestGroverFullSearch:
         c = Circuit()
         for i in range(n):
             c.h(i)
-        anc = grover_oracle(c, marked_state=marked, qubits=list(range(n)))
+        grover_oracle(c, marked_state=marked, qubits=list(range(n)))
         grover_diffusion(c, qubits=list(range(n)))
 
         prob_dict = _simulate_probs(c, total_qubits)

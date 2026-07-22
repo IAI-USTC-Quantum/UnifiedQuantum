@@ -75,10 +75,7 @@ def hva(
                 all_qubits.add(q)
     n_qubits = max(all_qubits) + 1 if all_qubits else 0
 
-    if qubits is None:
-        qubits = list(range(n_qubits))
-    else:
-        qubits = list(qubits)
+    qubits = list(range(n_qubits)) if qubits is None else list(qubits)
 
     n_groups = len(hamiltonian_groups)
     n_params = n_groups * p

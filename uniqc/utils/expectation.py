@@ -188,7 +188,7 @@ def _ensure_dict(
     """Convert list-format measurement results to dict if needed."""
     if isinstance(measured_result, list):
         keys = [f"{i:0{nqubit}b}" for i in range(len(measured_result))]
-        return dict(zip(keys, measured_result))
+        return dict(zip(keys, measured_result, strict=False))
     return measured_result
 
 

@@ -195,13 +195,13 @@ myst_enable_extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# Sphinx's autodoc can be configured to mock certain imports so that they don't actually get executed. 
-autodoc_mock_imports = ["qiskit", 
-                        "qiskit_ibm_provider", 
-                        "quafu", 
-                        "pandas", 
+# Sphinx's autodoc can be configured to mock certain imports so that they don't actually get executed.
+autodoc_mock_imports = ["qiskit",
+                        "qiskit_ibm_provider",
+                        "quafu",
+                        "pandas",
                         "uniqc_cpp",
-                        "qiskit-aer", 
+                        "qiskit-aer",
                         "qutip",
                         "qutip_qip",
                         "matplotlib",
@@ -259,13 +259,10 @@ html_theme_options = {
     "source_directory": "docs/",
 }
 
-suppress_warnings = [
-    "myst.xref_missing",
-    "ref.python",
-    "docutils",
-    "autosectionlabel.*",
-    "epub.duplicated_toc_entry",
-]
+# Keep only the Sphinx warning that is emitted by the EPUB builder's generated
+# navigation. Missing links, docutils diagnostics, and unresolved MyST
+# references must fail the documentation build.
+suppress_warnings = ["epub.duplicated_toc_entry"]
 
 # Napoleon: render ``Attributes:`` sections as ``:ivar:`` roles inline instead
 # of standalone ``.. attribute::`` directives. Otherwise autodoc also picks up

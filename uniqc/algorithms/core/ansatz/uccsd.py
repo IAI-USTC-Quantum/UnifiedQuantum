@@ -116,10 +116,7 @@ def uccsd_ansatz(
             )
         )
 
-    if qubits is None:
-        qubits = list(range(n_qubits))
-    else:
-        qubits = list(qubits)
+    qubits = list(range(n_qubits)) if qubits is None else list(qubits)
 
     occupied = list(range(n_electrons))
     virtual = list(range(n_electrons, n_qubits))

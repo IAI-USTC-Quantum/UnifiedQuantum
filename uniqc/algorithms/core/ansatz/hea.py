@@ -157,10 +157,7 @@ def hea_param_count(
     Returns:
         Total number of parameters required.
     """
-    if qubits is None:
-        qubits = list(range(n_qubits))
-    else:
-        qubits = list(qubits)
+    qubits = list(range(n_qubits)) if qubits is None else list(qubits)
 
     # Handle auto-config from backend_info
     if backend_info is not None:
@@ -257,10 +254,7 @@ def hea(
         >>> backend = get_backend("originq:Simulator")
         >>> c = hea(n_qubits=4, backend_info=backend)
     """
-    if qubits is None:
-        qubits = list(range(n_qubits))
-    else:
-        qubits = list(qubits)
+    qubits = list(range(n_qubits)) if qubits is None else list(qubits)
 
     # Handle auto-config from backend_info
     if backend_info is not None:

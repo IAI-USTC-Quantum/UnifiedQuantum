@@ -86,6 +86,8 @@ PLATFORM_KNOWN_FIELDS = {
 # Exceptions (re-exported from the central module)
 # ---------------------------------------------------------------------------
 
+import contextlib
+
 from uniqc.exceptions import (  # noqa: F401 — re-export for backward compat
     ConfigError,
     ConfigValidationError,
@@ -155,10 +157,8 @@ def save_config(config: dict[str, Any], config_path: str | Path | None = None) -
                 )
         except Exception:
             # Ensure no half-written temp file is left behind.
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
             raise
 
         os.replace(tmp_path, path)

@@ -118,7 +118,7 @@ def random_qasm(n_qubits, n_gates, instruction_set=available_qasm_gates, measure
 
     instructions = list(instruction_set.keys())
 
-    for i in range(n_gates):
+    for _i in range(n_gates):
         gate = random.choice(instructions)
         nqubit = instruction_set[gate]["qubit"]
         nparam = instruction_set[gate]["params"]
@@ -169,7 +169,7 @@ def build_qasm_from_opcodes(opcode_list: list[OpcodeType], measure_qbit_cbit=Non
     for opcode in opcode_list:
         gate = opcode[0]
         qubits = opcode[1]
-        cbits = opcode[2]
+        opcode[2]
         params = opcode[3]
         dagger_flag = opcode[4]
         control_qubit_set = opcode[5]
@@ -183,7 +183,7 @@ def build_qasm_from_opcodes(opcode_list: list[OpcodeType], measure_qbit_cbit=Non
         qasm.append(qasm_gate)
 
     if measure_qbit_cbit is not None:
-        qbit_list, cbit_list = zip(*measure_qbit_cbit)
-        qasm.extend(build_measurements(zip(qbit_list, cbit_list), qreg_name, creg_name))
+        qbit_list, cbit_list = zip(*measure_qbit_cbit, strict=False)
+        qasm.extend(build_measurements(zip(qbit_list, cbit_list, strict=False), qreg_name, creg_name))
 
     return "\n".join(qasm)

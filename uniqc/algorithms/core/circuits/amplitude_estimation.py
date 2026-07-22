@@ -373,10 +373,7 @@ def amplitude_estimation_result(
 
     best = max(counts, key=counts.get)
 
-    if isinstance(best, str):
-        m = int(best, 2)
-    else:
-        m = int(best)
+    m = int(best, 2) if isinstance(best, str) else int(best)
 
     M = n_eval_qubits
     theta = math.pi * m / (2 ** (M + 1))

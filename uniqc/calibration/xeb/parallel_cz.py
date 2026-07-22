@@ -275,7 +275,7 @@ def pair_marginal_counts(
     2-qubit reference simulation in :func:`pair_ideal_probs`.
     """
     a, b = int(pair[0]), int(pair[1])
-    measured = list(int(q) for q in measured_qubits)
+    measured = [int(q) for q in measured_qubits]
     pos_a = measured.index(a)
     pos_b = measured.index(b)
     n = len(measured)
@@ -640,7 +640,7 @@ class ParallelCZBenchmarker:
             probs = probs / probs.sum()
             samples = rng.choice(probs.size, size=self.shots, p=probs)
             keys, vals = np.unique(samples, return_counts=True)
-            out[pc.record_id] = {format(int(k), f"0{n_meas}b"): int(v) for k, v in zip(keys, vals)}
+            out[pc.record_id] = {format(int(k), f"0{n_meas}b"): int(v) for k, v in zip(keys, vals, strict=False)}
         return out
 
     def _execute_via_batch(self, corpus: Sequence[ProbeCircuit]) -> dict[str, dict[Any, int]]:
@@ -660,7 +660,7 @@ class ParallelCZBenchmarker:
                         f"got {len(payload) if hasattr(payload, '__len__') else '?'}"
                         f" results for {len(corpus)} circuits"
                     )
-                return {pc.record_id: dict(p) for pc, p in zip(corpus, payload)}
+                return {pc.record_id: dict(p) for pc, p in zip(corpus, payload, strict=False)}
             if status == "failed":
                 raise RuntimeError(f"XEB batch failed: {result.get('result') or result.get('error')}")
             if time.time() >= deadline:

@@ -5,7 +5,7 @@ import sys
 
 tex_path = sys.argv[1] if len(sys.argv) > 1 else "unifiedquantum.tex"
 
-with open(tex_path, "r", encoding="utf-8") as f:
+with open(tex_path, encoding="utf-8") as f:
     content = f.read()
 
 # The issue: bmatrix & chars inside varwidth are treated as Sphinx table column &

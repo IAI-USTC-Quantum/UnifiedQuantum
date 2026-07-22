@@ -99,10 +99,42 @@ archs = ["AMD64"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+extend-exclude = [
+    "UniqcCpp/Thirdparty",
+    "docs/_build",
+    "docs/_generated",
+    "example-exec-logs",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
 ignore = ["E501", "N801", "N803", "N806"]  # line length; CapWords for ErrorLoader subclasses; lowercase for math vars (U,H,K,E physics notation)
+
+[tool.ruff.lint.per-file-ignores]
+# These packages intentionally expose their imported public API.
+"uniqc/**/__init__.py" = ["F401", "F811", "N814", "SIM105"]
+# Legacy test/example fixtures use compact physics notation and compatibility
+# imports; production modules remain subject to the normal rule set.
+"uniqc/test/**/*.py" = ["B006", "B007", "B017", "B018", "B028", "B904", "C400", "C405", "C408", "C416", "E402", "E702", "E741", "E731", "F403", "F405", "F541", "F601", "F811", "F841", "I001", "N802", "N999", "SIM101", "SIM102", "SIM103", "SIM105", "SIM108", "SIM118", "SIM210", "SIM211", "UP006", "UP007", "UP035", "UP045", "UP031", "W291"]
+"examples/**/*.py" = ["B006", "B007", "B008", "B904", "C400", "C408", "E402", "E702", "E741", "F401", "F403", "F405", "F541", "F601", "F811", "F841", "I001", "N802", "N999", "SIM102", "SIM105", "SIM108", "SIM118", "SIM210", "UP006", "UP007", "UP035", "UP045", "UP031", "W291"]
+"docs/**/*.py" = ["E402", "F541", "F601", "I001", "SIM105", "SIM108", "UP006", "W291"]
+"uniqc/algorithms/core/circuits/dicke_state.py" = ["E741"]
+"uniqc/backend_adapter/task/adapters/originq_adapter.py" = ["E402"]
+"uniqc/backend_adapter/task/adapters/quafu_adapter.py" = ["E402"]
+"uniqc/backend_adapter/task/options.py" = ["SIM108"]
+"uniqc/backend_adapter/task_manager.py" = ["SIM105"]
+"uniqc/calibration/xeb/parallel_cz.py" = ["N802"]
+"uniqc/circuit_builder/opcode.py" = ["UP007", "UP045"]
+"uniqc/circuit_builder/translate_qasm2_oir.py" = ["N802", "SIM102"]
+"uniqc/cli/calibrate.py" = ["B008", "N817"]
+"uniqc/cli/main.py" = ["E402"]
+"uniqc/cli/simulate.py" = ["B008"]
+"uniqc/config.py" = ["E402", "SIM105"]
+"uniqc/simulator/mps_simulator.py" = ["SIM102"]
+"uniqc/simulator/opcode_simulator.py" = ["F403", "F405"]
+"uniqc/utils/expectation.py" = ["N802"]
+"uniqc/visualization/timeline.py" = ["B008", "E402"]
+"setup.py" = ["SIM102"]
 
 [tool.ruff.format]
 quote-style = "double"

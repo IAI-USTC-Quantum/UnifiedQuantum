@@ -58,7 +58,7 @@ def _test_random_originir_compare_density_operator(
 
     err_list = []
     passed_count = 0
-    for i in range(random_batchsize):
+    for _i in range(random_batchsize):
         originir_code = random_originir(
             n_qubits=n_qubits,
             n_gates=n_gates,
@@ -69,7 +69,7 @@ def _test_random_originir_compare_density_operator(
         )
 
         # print(f'{originir_code}')
-        noisy = False if not error_channel else True
+        noisy = bool(error_channel)
         err = compare_density_operator(originir_code, backend_1, backend_2, noisy=noisy)
 
         if err:

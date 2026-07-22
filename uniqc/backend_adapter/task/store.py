@@ -57,7 +57,7 @@ import tempfile
 import threading
 import uuid
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -379,7 +379,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["update_time"],
                     row["result_json"],
                     new_metadata_json,
-                    row["error_message"] if "error_message" in row.keys() else None,
+                    row.get("error_message", None),
                     row["archived_at"],
                 ),
             )
@@ -398,7 +398,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["update_time"],
                     row["result_json"],
                     new_metadata_json,
-                    row["error_message"] if "error_message" in row.keys() else None,
+                    row.get("error_message", None),
                 ),
             )
 
@@ -416,7 +416,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["backend"],
                     row["status"],
                     row["result_json"],
-                    row["error_message"] if "error_message" in row.keys() else None,
+                    row.get("error_message", None),
                     row["submit_time"],
                     row["update_time"],
                     row["archived_at"],
@@ -435,7 +435,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["backend"],
                     row["status"],
                     row["result_json"],
-                    row["error_message"] if "error_message" in row.keys() else None,
+                    row.get("error_message", None),
                     row["submit_time"],
                     row["update_time"],
                 ),
@@ -502,8 +502,8 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
     result = json.loads(row["result_json"]) if row["result_json"] else None
     metadata = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
     # archived_at only exists in archived_tasks, not in tasks
-    archived_at = row["archived_at"] if "archived_at" in row.keys() else None
-    error_message = row["error_message"] if "error_message" in row.keys() else None
+    archived_at = row.get("archived_at", None)
+    error_message = row.get("error_message", None)
     return TaskInfo(
         task_id=row["task_id"],
         backend=row["backend"],
@@ -735,10 +735,8 @@ class TaskStore:
                 self.db_path.with_name(self.db_path.name + "-shm"),
             ):
                 if path.exists():
-                    try:
+                    with suppress(OSError):
                         path.unlink()
-                    except OSError:
-                        pass
 
     # -- task_shards CRUD ---------------------------------------------------
 

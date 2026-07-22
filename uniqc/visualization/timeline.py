@@ -759,13 +759,17 @@ def _schedule_to_svg(schedule: TimelineSchedule, *, use_timing: bool) -> str:
     if use_timing:
         span = max(schedule.total_duration, 1.0)
         scale = min(8.0, max(0.8, 920.0 / span))
-        x_for = lambda gate: left + gate.start * scale
-        w_for = lambda gate: max(min_gate_w, gate.duration * scale if gate.duration > 0 else min_gate_w)
+        def x_for(gate):
+            return left + gate.start * scale
+        def w_for(gate):
+            return max(min_gate_w, gate.duration * scale if gate.duration > 0 else min_gate_w)
         body_width = max(720, int(left + span * scale + right + min_gate_w))
     else:
         scale = 88.0
-        x_for = lambda gate: left + gate.layer * scale
-        w_for = lambda gate: min_gate_w
+        def x_for(gate):
+            return left + gate.layer * scale
+        def w_for(gate):
+            return min_gate_w
         max_layer = max((gate.layer for gate in schedule.gates), default=0)
         body_width = int(left + (max_layer + 1) * scale + right + min_gate_w)
 

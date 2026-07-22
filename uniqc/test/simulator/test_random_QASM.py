@@ -48,7 +48,7 @@ def _check_result(transpiled_circuit, reference_array, backend_type):
         print("---------------")
         raise NotMatchError(f"Size not match!\nReference = {reference_array}\nMy Result = {my_result}\n")
     try:
-        v = np.allclose(reference_array, my_result)
+        np.allclose(reference_array, my_result)
     except Exception as e:
         error_message = (
             "---------------\n"
@@ -95,7 +95,7 @@ def _test_random_qasm_batch(
     err_list = []
     passed_count = 0
 
-    for i in range(random_batchsize):
+    for _i in range(random_batchsize):
         qasm_code = random_qasm(n_qubits=n_qubit, n_gates=n_gates, instruction_set=instruction_set)
         err = _test_random_qasm(qasm_code, backend_type)
         if err:
@@ -284,7 +284,7 @@ def test_random_qasm_compare_density_operator(
 
     err_list = []
     passed_count = 0
-    for i in range(random_batchsize):
+    for _i in range(random_batchsize):
         qasm_code = random_qasm(n_qubits=n_qubit, n_gates=n_gates, instruction_set=instruction_set)
 
         err = compare_density_operator(qasm_code)

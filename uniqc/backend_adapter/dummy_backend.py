@@ -280,7 +280,7 @@ def resolve_dummy_backend(
                     "Run 'uniqc backend chip-display <platform>/<backend> --update' first, "
                     "or pass chip_characterization explicitly."
                 )
-            available_qubits = list(int(q) for q in getattr(chip, "available_qubits", ()))
+            available_qubits = [int(q) for q in getattr(chip, "available_qubits", ())]
             available_topology = [[int(e.u), int(e.v)] for e in getattr(chip, "connectivity", ())]
             spec = DummyBackendSpec(
                 identifier=f"dummy:{source_platform.value}:{source_name}",

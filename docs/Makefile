@@ -36,8 +36,9 @@ TEXPATCHER    = $(SOURCEDIR)/_tex_patch.py
 # Pre-doc-execution driver (paths are relative to PROJECT_ROOT after `cd ..`).
 BUILD_DOCS_SCRIPT = scripts/build_docs.py
 CHECK_LOGS_SCRIPT = scripts/check_doc_logs.py
+CHECK_LINKS_SCRIPT = scripts/check_local_links.py
 
-.PHONY: help apidoc examples examples-real-cloud check-logs html html-fast latexpdf clean Makefile
+.PHONY: help apidoc examples examples-real-cloud check-links check-logs html html-fast latexpdf clean Makefile
 
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
@@ -61,13 +62,17 @@ examples-real-cloud:
 check-logs:
 	cd .. && $(PYTHON) $(CHECK_LOGS_SCRIPT)
 
+# CI-side: validate all active repository-local documentation links offline.
+check-links:
+	cd .. && $(PYTHON) $(CHECK_LINKS_SCRIPT)
+
 # Default html target: full local pipeline (re-run examples, then sphinx).
 html: examples apidoc
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # CI / fast local rebuild: skip the pre-doc-execution step, trust the
 # committed logs / generated pages.
-html-fast: apidoc
+html-fast: check-links apidoc
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target for any other sphinx mode (man, dirhtml, ...).

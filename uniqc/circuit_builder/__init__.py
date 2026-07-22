@@ -37,6 +37,10 @@ from .opcode import (
     opcode_to_line_originir_official,
     opcode_to_line_qasm,
 )
+from .originir_ext_spec import (
+    EXTENDED_GATES_ONLY,
+    available_originir_ext_gates,
+)
 from .originir_spec import (
     OFFICIAL_ORIGINIR_GATES,
     angular_gates,
@@ -46,10 +50,6 @@ from .originir_spec import (
     available_originir_official_gates,
     generate_sub_error_channel_originir,
     generate_sub_gateset_originir,
-)
-from .originir_ext_spec import (
-    EXTENDED_GATES_ONLY,
-    available_originir_ext_gates,
 )
 from .parameter import Parameter, Parameters
 from .qasm_spec import available_qasm_gates, generate_sub_gateset_qasm

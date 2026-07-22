@@ -123,7 +123,7 @@ class M3Mitigator:
 
         # Round to integer counts and convert back to bitstrings of the same width.
         if result.counts:
-            width = max(len(b) for b in result.counts.keys())
+            width = max(len(b) for b in result.counts)
         else:
             width = max(1, int(np.ceil(np.log2(max(1, len(mitigated_int))))))
 

@@ -186,7 +186,7 @@ def compute_operator_gradient(
         n_qubits = circuit.max_qubit + 1
         # Also check the hamiltonian for larger qubit indices
         for p, _ in hamiltonian:
-            for op, q in _parse_pauli_string(p):
+            for _op, q in _parse_pauli_string(p):
                 n_qubits = max(n_qubits, q + 1)
 
     # Build circuit with +shift

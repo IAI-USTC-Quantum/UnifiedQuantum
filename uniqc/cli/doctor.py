@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import platform
 import sqlite3
 import sys
@@ -136,10 +137,8 @@ def _check_config() -> None:
 
     # Per-platform credentials
     cfg: dict[str, Any] = {}
-    try:
+    with contextlib.suppress(Exception):
         cfg = load_config()
-    except Exception:
-        pass
 
     profile_cfg = cfg.get(profile, {}) if isinstance(cfg, dict) else {}
 

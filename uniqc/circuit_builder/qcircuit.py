@@ -952,6 +952,7 @@ class Circuit:
         Returns a float placeholder for the opcode ``params`` field.
         """
         import math as _math
+
         import torch as _torch
 
         n = self._PARAM_COUNTS.get(gate_name, 1)

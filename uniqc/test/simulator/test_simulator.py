@@ -79,7 +79,6 @@ def test_noisy_simulator_2():
     circuit.x(4)
     circuit.x(5)
 
-    shots = 1024
     measure_qubit = [0, 1, 2, 3, 4, 5]
     circuit.measure(*measure_qubit)
 

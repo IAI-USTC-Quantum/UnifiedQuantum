@@ -5,12 +5,13 @@ Metadata and dependencies are defined in pyproject.toml.
 This file is retained solely for CMakeExtension / CMakeBuild,
 which cannot be expressed declaratively in pyproject.toml.
 """
-import re
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext
 import os
+import re
 import subprocess
 import sys
+
+from setuptools import Extension, find_packages, setup
+from setuptools.command.build_ext import build_ext
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {

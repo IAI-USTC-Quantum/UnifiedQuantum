@@ -103,10 +103,7 @@ class UnifiedQuantumError(Exception):
     def __str__(self) -> str:
         from uniqc._error_hints import format_enriched_message, get_hint_key_for_exception
 
-        if self.details:
-            parts = [f"{self.message} (details: {self.details})"]
-        else:
-            parts = [self.message]
+        parts = [f"{self.message} (details: {self.details})"] if self.details else [self.message]
 
         key = self.hint_key or get_hint_key_for_exception(type(self))
         if key:

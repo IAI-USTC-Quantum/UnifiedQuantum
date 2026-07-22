@@ -133,8 +133,10 @@ class NoisySimulator(BaseNoisySimulator):
         available_qubits: list[int] = None,
         available_topology: list[list[int]] = None,
         error_loader: ErrorLoader = None,
-        readout_error: dict[int, list[float]] = {},
+        readout_error: dict[int, list[float]] = None,
     ):
+        if readout_error is None:
+            readout_error = {}
         super().__init__(
             backend_type,
             available_qubits,

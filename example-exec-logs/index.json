@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-21T07:17:15Z",
+  "generated_at": "2026-07-22T13:38:21Z",
   "real_cloud": false,
   "results": [
     {
@@ -11,7 +11,8 @@
       "skip_reason": null,
       "duration_seconds": 3.793,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "a5cc97626fcce66a78360c6418c0e64531f19fccaef28da69ba7fdd457456aa2"
     },
     {
       "example": "examples/1_basic_usage/01_circuit_basics.py",
@@ -22,7 +23,8 @@
       "skip_reason": null,
       "duration_seconds": 0.001,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "18ab839c55fdcf71cf65b5487f334ff75e2640a503853c6ed972e68d3177001a"
     },
     {
       "example": "examples/1_basic_usage/02_local_simulation.py",
@@ -33,7 +35,8 @@
       "skip_reason": null,
       "duration_seconds": 0.002,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "3b10f3eed8f2da888dcb08a163de2058f0489c7cf855cb86c10b6905d6df880a"
     },
     {
       "example": "examples/1_basic_usage/03_submit_and_postprocess.py",
@@ -44,7 +47,8 @@
       "skip_reason": null,
       "duration_seconds": 0.985,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "44a599efeefe1c6517d289a7a89b87efe60efdf73553923c9c81a5b1e909d36c"
     },
     {
       "example": "examples/1_basic_usage/04_config.py",
@@ -55,7 +59,8 @@
       "skip_reason": null,
       "duration_seconds": 0.002,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "3578530344c6cc0292c09397352dbc7c8683c58b44407f75d58808d7004ff48a"
     },
     {
       "example": "examples/1_basic_usage/05_visualize.py",
@@ -66,7 +71,8 @@
       "skip_reason": null,
       "duration_seconds": 0.095,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "05a0f2b87c76d0e92b99495b482eac40e01fb2117546631d33aa72ae5ac2ec79"
     },
     {
       "example": "examples/2_advanced/01_compile_options.py",
@@ -77,7 +83,8 @@
       "skip_reason": null,
       "duration_seconds": 0.03,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "98c25180ca12d6f7f874c9fc4d2b4a63d906de51e663dc4a8840285115f32f8d"
     },
     {
       "example": "examples/2_advanced/02_region_selector.py",
@@ -88,7 +95,8 @@
       "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "3f0b5c8f39a3829f167c07c6917995bd9b9372fac888ff1a95aa04188e5cab40"
     },
     {
       "example": "examples/2_advanced/03_variational_qaoa.py",
@@ -99,7 +107,8 @@
       "skip_reason": null,
       "duration_seconds": 0.005,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "2c93531f22db69dfddd338cdfe9045b5e9eea34da77608baf60bb453a397c995"
     },
     {
       "example": "examples/2_advanced/04_dummy_chip_noise.py",
@@ -110,7 +119,8 @@
       "skip_reason": null,
       "duration_seconds": 2.521,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "1e324b2cfbc258ab3bf1bc331207baab91e94874ba87dfa2110d165bd5b53e5e"
     },
     {
       "example": "examples/2_advanced/05_calibration_xeb.py",
@@ -121,7 +131,8 @@
       "skip_reason": null,
       "duration_seconds": 0.006,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "338a3f0409586f8cd931a125ed63f7a051e4edcbbd33752910a47aa19d11e1c2"
     },
     {
       "example": "examples/2_advanced/06_qem_m3.py",
@@ -132,7 +143,8 @@
       "skip_reason": null,
       "duration_seconds": 0.001,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "4fa00feca6c737845b2782b7561ac0eadf0b1c51dbdf575efb624a4380d3f682"
     },
     {
       "example": "examples/2_advanced/07_mps_simulator.py",
@@ -143,7 +155,8 @@
       "skip_reason": null,
       "duration_seconds": 17.641,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "7a0a06c2ed15667ec2e46320e722bab0041469cb32daba44fc451b3c4cc6d79d"
     },
     {
       "example": "examples/2_advanced/08_mid_circuit_measurement.py",
@@ -154,7 +167,8 @@
       "skip_reason": null,
       "duration_seconds": 0.674,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "48a4db80448e91e0a183a15ecde23f8ac1ad9d511b700a3bf4e52a16bdd0fecc"
     },
     {
       "example": "examples/2_advanced/algorithms/adapt_vqe.py",
@@ -165,7 +179,8 @@
       "skip_reason": null,
       "duration_seconds": 0.099,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "d3d2aeef7f676ab5d4f66be1dc328f362f259e8986b79e6c59b0ab48aab28e5c"
     },
     {
       "example": "examples/2_advanced/algorithms/grover.py",
@@ -176,7 +191,8 @@
       "skip_reason": null,
       "duration_seconds": 0.004,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "a5d46d19ad59d43e322658c2f994b7fe059cbfa57c64489b8d97db84e4f4cab6"
     },
     {
       "example": "examples/2_advanced/algorithms/hea_options.py",
@@ -187,7 +203,8 @@
       "skip_reason": null,
       "duration_seconds": 0.006,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "0d922952cd8473de5fb96d79b154fd2a826242e5845230cf425a305a8c9f3acd"
     },
     {
       "example": "examples/2_advanced/algorithms/hva_example.py",
@@ -198,7 +215,8 @@
       "skip_reason": null,
       "duration_seconds": 0.037,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "6ae405ffb3c4c231e2e903361b9d13918824b9391aff52e55d1b067209187b69"
     },
     {
       "example": "examples/2_advanced/algorithms/hybrid_model.py",
@@ -209,7 +227,8 @@
       "skip_reason": "missing requirements: sklearn (scikit-learn installed)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "5176d0a95b4fe9bfd859436cee0431d30032a4050d351a3888a05790077d7c3e"
     },
     {
       "example": "examples/2_advanced/algorithms/parameters_demo.py",
@@ -220,7 +239,8 @@
       "skip_reason": null,
       "duration_seconds": 0.018,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "59d1f23612a9fcff410340d505f32e51e72001d721c680238807d2588a0c1f2f"
     },
     {
       "example": "examples/2_advanced/algorithms/parametric_originir_roundtrip.py",
@@ -231,7 +251,8 @@
       "skip_reason": null,
       "duration_seconds": 0.005,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "974f13af7da1e327f9e693ce85e55381d622eb139cdc19620716826db7c424e6"
     },
     {
       "example": "examples/2_advanced/algorithms/qaoa.py",
@@ -242,7 +263,8 @@
       "skip_reason": null,
       "duration_seconds": 0.3,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "6828a6523bcd31abda3e64ed438a503cb45c81c64ea1a38574cd9c4bb6b262a0"
     },
     {
       "example": "examples/2_advanced/algorithms/qaoa_pytorch.py",
@@ -253,7 +275,8 @@
       "skip_reason": null,
       "duration_seconds": 1.231,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "61203b6d65ef7d625ed012321a397fcc2f7ab4935319318ca6977cfec0c9853f"
     },
     {
       "example": "examples/2_advanced/algorithms/qaoa_variants.py",
@@ -264,7 +287,8 @@
       "skip_reason": null,
       "duration_seconds": 0.006,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "2d2f614d8b4e9eb834b8fc12eabb8798c8638c6dcb005f72a6ad7cccdde98e33"
     },
     {
       "example": "examples/2_advanced/algorithms/qcnn_classifier.py",
@@ -275,7 +299,8 @@
       "skip_reason": null,
       "duration_seconds": 3.085,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "e11c302f6fdda87cbfb6f1f162ee48a9a0a241df451a7b0f4e5363cbed55cc6c"
     },
     {
       "example": "examples/2_advanced/algorithms/qnn_classifier.py",
@@ -286,7 +311,8 @@
       "skip_reason": "missing requirements: sklearn (scikit-learn installed)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "4bae0ed83956b92db56c1e79885f4651fab134596a1f1b567f5b9375676cd21d"
     },
     {
       "example": "examples/2_advanced/algorithms/qpe.py",
@@ -297,7 +323,8 @@
       "skip_reason": null,
       "duration_seconds": 0.005,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "59410c647c72c4dce8a32ac3172c782ce985b633649d973bf2ee6cf8d3885114"
     },
     {
       "example": "examples/2_advanced/algorithms/vqe.py",
@@ -308,7 +335,8 @@
       "skip_reason": null,
       "duration_seconds": 0.256,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "1be4cd1a0349f85571e84ee8ccbb70f7618843fc0bc6f5cb689df52a8e529e75"
     },
     {
       "example": "examples/2_advanced/algorithms/vqe_pytorch.py",
@@ -319,7 +347,8 @@
       "skip_reason": null,
       "duration_seconds": 4.564,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "d4bca78fad0c160e46bf465fbe692cca29414e808df4595cd9ab9a064547e4ce"
     },
     {
       "example": "examples/2_advanced/circuits/amplitude_estimation.py",
@@ -330,7 +359,8 @@
       "skip_reason": null,
       "duration_seconds": 0.007,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "1c88ac21507fdee03a20d5452970813d633d15e7f26e568850ca31cb2abb687a"
     },
     {
       "example": "examples/2_advanced/circuits/deutsch-jozsa.py",
@@ -341,7 +371,8 @@
       "skip_reason": null,
       "duration_seconds": 0.004,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "a4c6d4e424dc1629b755f75a3216aaf6447c129d60d774974d12aefb5b6bb53b"
     },
     {
       "example": "examples/2_advanced/circuits/dicke_state.py",
@@ -352,7 +383,8 @@
       "skip_reason": null,
       "duration_seconds": 0.007,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "10bc07b81ec7e77501b211b8f2cc542fa2fc42c7b85864e7f6ab2b713a0bbb87"
     },
     {
       "example": "examples/2_advanced/circuits/entangled_states.py",
@@ -363,7 +395,8 @@
       "skip_reason": null,
       "duration_seconds": 0.004,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "ca3b6cb4af79ee7bb394f922849270792aee6cc86b2043d24ec0d326d418d674"
     },
     {
       "example": "examples/2_advanced/circuits/grover_oracle.py",
@@ -374,7 +407,8 @@
       "skip_reason": null,
       "duration_seconds": 0.004,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "a01a0f0e27d647bc0afb7be0d096af6934581b9257cdcff0fa585f0acde3e96e"
     },
     {
       "example": "examples/2_advanced/circuits/qft.py",
@@ -385,7 +419,8 @@
       "skip_reason": null,
       "duration_seconds": 0.004,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "6b428536a73a787e59d6df6bc829c08c011e14266344e82f6b2b2d7391be0927"
     },
     {
       "example": "examples/2_advanced/circuits/thermal_state.py",
@@ -396,7 +431,8 @@
       "skip_reason": null,
       "duration_seconds": 0.005,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "6456fd729fedc8e0d4b4600fd76cf04c9fc32016762da694d90ff595471dc278"
     },
     {
       "example": "examples/2_advanced/circuits/vqd.py",
@@ -407,7 +443,8 @@
       "skip_reason": null,
       "duration_seconds": 0.528,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "572d548c26f62767609cc352d12eea1326b6b0bdda0d76a6aee275a3fb974e23"
     },
     {
       "example": "examples/2_advanced/measurement/shadow_tomography.py",
@@ -418,7 +455,8 @@
       "skip_reason": null,
       "duration_seconds": 0.068,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "f13cd87002d01fb3109a4595b59e485176de2b64d06b7c895f23d2526963ad9c"
     },
     {
       "example": "examples/2_advanced/measurement/state_tomography.py",
@@ -429,7 +467,8 @@
       "skip_reason": null,
       "duration_seconds": 0.012,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "b4902566b53641bf85c2ab5802438f88922cc3a877deeed5783ab29596200505"
     },
     {
       "example": "examples/2_advanced/state_preparation/hadamard_superposition.py",
@@ -440,7 +479,8 @@
       "skip_reason": null,
       "duration_seconds": 0.001,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "470e9e900703e51050daac5ec7b2e89dc81e4771de2b2a16d525bf668d2bbc0f"
     },
     {
       "example": "examples/2_advanced/state_preparation/rotation_prepare.py",
@@ -451,7 +491,8 @@
       "skip_reason": null,
       "duration_seconds": 0.001,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "9de565229bd090718c52770260e9c3ddade80f56ffb4a8c3343331e8938e1d8e"
     },
     {
       "example": "examples/2_advanced/wk180/readout_em.py",
@@ -462,7 +503,8 @@
       "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "fa2464004979170f5699f1645fd5a59fac89e66b89cbbc89787df93d6b90116a"
     },
     {
       "example": "examples/2_advanced/wk180/xeb.py",
@@ -473,7 +515,8 @@
       "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "9269ae3a54c10245f6d9f74eed679da89ad1404ac231548ac3f57e43a8473544"
     },
     {
       "example": "examples/3_best_practices/00_config_and_backend_cache.py",
@@ -484,7 +527,8 @@
       "skip_reason": null,
       "duration_seconds": 0.002,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "74831b4032b4607b293ed64f1f377afd6ae22a2dc40199ea89d30c6115d780b4"
     },
     {
       "example": "examples/3_best_practices/01_bare_circuit_simulation.py",
@@ -495,7 +539,8 @@
       "skip_reason": null,
       "duration_seconds": 0.076,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "7a715b83ae467d30e2770d515aa5acb007f7565c662f5c79e2c69b1b1c5d24e5"
     },
     {
       "example": "examples/3_best_practices/02_named_circuit_and_reuse.py",
@@ -506,7 +551,8 @@
       "skip_reason": null,
       "duration_seconds": 0.086,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "18d24b7cfc871be5c09fb0115e5f936c7eb9343fb4ba713a27fc0e3a1c76b6b2"
     },
     {
       "example": "examples/3_best_practices/03_compile_region_dummy_backend.py",
@@ -517,7 +563,8 @@
       "skip_reason": null,
       "duration_seconds": 0.01,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "8cc9c0a10b82d4e3369be3262f31c53b91f6386286fa9e7d821628c8d0d86065"
     },
     {
       "example": "examples/3_best_practices/04_api_submit_dummy_result.py",
@@ -528,7 +575,8 @@
       "skip_reason": null,
       "duration_seconds": 0.821,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "8f02a25b07a40b52fd0db21d9ac289053e8ed1042f433204b6d52ada37f2b30a"
     },
     {
       "example": "examples/3_best_practices/05_cli_workflow_dummy.py",
@@ -539,7 +587,8 @@
       "skip_reason": null,
       "duration_seconds": 4.882,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "ae89e906605794317e02cdcef118e33173490fb20ff169d3801dc8e2d54a4248"
     },
     {
       "example": "examples/3_best_practices/06_cloud_backend_template.py",
@@ -550,7 +599,8 @@
       "skip_reason": "missing requirements: originq (pyqpanda3 + originq token configured)",
       "duration_seconds": null,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "c8143a5dc76c75adba19e70c564e99f158256bac29ab7f5ad75ec78ed87154af"
     },
     {
       "example": "examples/3_best_practices/07_variational_circuit.py",
@@ -561,7 +611,8 @@
       "skip_reason": null,
       "duration_seconds": 0.117,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "d3061e68bae736cdcc64728d5db7f67178e35cbbaadb8b4ae24fe72e308fc000"
     },
     {
       "example": "examples/3_best_practices/08_torch_quantum_training.py",
@@ -572,7 +623,8 @@
       "skip_reason": null,
       "duration_seconds": 0.128,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "d55ca1f3b482a8ccaccddc5e232b222c2762d9a8a182f6794ed9130c528133a4"
     },
     {
       "example": "examples/3_best_practices/09_calibration_qem_dummy.py",
@@ -583,7 +635,8 @@
       "skip_reason": null,
       "duration_seconds": 0.101,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "5886497b0bd4c51be5b46061ca83bd0053a0ce75e4c372cd4e50c135cf2bc440"
     },
     {
       "example": "examples/3_best_practices/10_xeb_workflow_dummy.py",
@@ -594,7 +647,8 @@
       "skip_reason": null,
       "duration_seconds": 0.118,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "a1bcbddf427392b8a7e7d8816a8e1f567387711180f27c68cce2dff3013207e5"
     },
     {
       "example": "examples/3_best_practices/11_native_torch_training.py",
@@ -605,7 +659,8 @@
       "skip_reason": null,
       "duration_seconds": 0.379,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "f21fd0f2c01eaf722f22fc8c8e17c5526193772215154af39ba4ea7f6ba62abc"
     },
     {
       "example": "examples/4_cli/01_cli_walkthrough.py",
@@ -616,7 +671,8 @@
       "skip_reason": null,
       "duration_seconds": 23.051,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "f0f97c02f3f7035f5e97685bc22b67a5ccae2a5759d1fd049202a38e88a55619"
     },
     {
       "example": "examples/5_webui/01_gateway_demo.py",
@@ -627,7 +683,13 @@
       "skip_reason": null,
       "duration_seconds": 0.624,
       "n_offending": 0,
-      "n_ignored": 0
+      "n_ignored": 0,
+      "source_sha256": "bd020f4f97082d8dd5e1aaf1eea9920fd922fc23a64010886670fa319b28b5b3"
     }
-  ]
+  ],
+  "format_version": 2,
+  "generator": {
+    "name": "scripts/build_docs.py",
+    "version": "2"
+  }
 }

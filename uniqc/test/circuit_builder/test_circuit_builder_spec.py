@@ -272,7 +272,7 @@ class TestGenerateSubGatesetQasm:
 
     def test_result_has_correct_structure(self):
         result = generate_sub_gateset_qasm(["rx", "cz"])
-        for name, entry in result.items():
+        for _name, entry in result.items():
             assert "qubit" in entry
             assert "params" in entry
 
@@ -593,7 +593,7 @@ class TestGenerateSubGatesetOriginir:
 
     def test_result_has_correct_structure(self):
         result = generate_sub_gateset_originir(["RX", "CZ"])
-        for name, entry in result.items():
+        for _name, entry in result.items():
             assert "qubit" in entry
             assert "param" in entry
 
@@ -776,7 +776,7 @@ class TestOriginIRErrorChannelsWithoutKraus:
         assert len(available_originir_error_channels_without_kraus) < len(available_originir_error_channels)
 
     def test_every_entry_has_qubit_and_param(self):
-        for name, entry in available_originir_error_channels_without_kraus.items():
+        for _name, entry in available_originir_error_channels_without_kraus.items():
             assert "qubit" in entry
             assert "param" in entry
 
@@ -824,7 +824,7 @@ class TestGenerateSubErrorChannelOriginir:
 
     def test_result_has_correct_structure(self):
         result = generate_sub_error_channel_originir(["Depolarizing", "TwoQubitDepolarizing"])
-        for name, entry in result.items():
+        for _name, entry in result.items():
             assert "qubit" in entry
             assert "param" in entry
 

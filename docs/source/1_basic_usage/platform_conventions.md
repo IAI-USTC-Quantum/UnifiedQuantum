@@ -431,7 +431,7 @@ backend = get_backend("ibm")
 
 ```
 
-`get_backend()` 返回 `QuantumBackend` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../guide/compiler_options_region.md)。
+`get_backend()` 返回 `QuantumBackend` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../2_advanced/compiler_options_region.md)。
 
 ---
 
@@ -439,4 +439,4 @@ backend = get_backend("ibm")
 
 - 完整示例：参考 [任务管理](task_manager.md)
 - 详细 API 说明：参考 [任务提交指南](submit_task.md)
-- 架构设计说明：参考 [适配器架构](../advanced/adapter_architecture.md)
+- 架构设计说明：参考 [适配器架构](../2_advanced/adapter_architecture.md)

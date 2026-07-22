@@ -406,7 +406,7 @@ class OriginIR_LineParser:
         matches = OriginIR_LineParser.regexp_1q.match(line)
         operation = matches.group(1)
         q = int(matches.group(2))
-        dagger_flag = True if matches.group(3) is not None else False
+        dagger_flag = matches.group(3) is not None
         control_qubits = []
         if matches.group(4) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(4))]
@@ -426,7 +426,7 @@ class OriginIR_LineParser:
             operation = "ECR"
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
-        dagger_flag = True if matches.group(4) is not None else False
+        dagger_flag = matches.group(4) is not None
         control_qubits = []
         if matches.group(5) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(5))]
@@ -445,7 +445,7 @@ class OriginIR_LineParser:
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
         q3 = int(matches.group(4))
-        dagger_flag = True if matches.group(5) is not None else False
+        dagger_flag = matches.group(5) is not None
         control_qubits = []
         if matches.group(6) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(6))]
@@ -463,7 +463,7 @@ class OriginIR_LineParser:
         operation = matches.group(1)
         q = int(matches.group(2))
         parameter = OriginIR_LineParser._parse_param(matches.group(3))
-        dagger_flag = True if matches.group(6) is not None else False
+        dagger_flag = matches.group(6) is not None
         control_qubits = []
         if matches.group(7) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(7))]
@@ -482,7 +482,7 @@ class OriginIR_LineParser:
         q = int(matches.group(2))
         parameter1 = OriginIR_LineParser._parse_param(matches.group(3))
         parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
-        dagger_flag = True if matches.group(9) is not None else False
+        dagger_flag = matches.group(9) is not None
         control_qubits = []
         if matches.group(10) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(10))]
@@ -502,7 +502,7 @@ class OriginIR_LineParser:
         parameter1 = OriginIR_LineParser._parse_param(matches.group(3))
         parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
         parameter3 = OriginIR_LineParser._parse_param(matches.group(9))
-        dagger_flag = True if matches.group(12) is not None else False
+        dagger_flag = matches.group(12) is not None
         control_qubits = []
         if matches.group(13) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(13))]
@@ -523,7 +523,7 @@ class OriginIR_LineParser:
         parameter2 = OriginIR_LineParser._parse_param(matches.group(6))
         parameter3 = OriginIR_LineParser._parse_param(matches.group(9))
         parameter4 = OriginIR_LineParser._parse_param(matches.group(12))
-        dagger_flag = True if matches.group(15) is not None else False
+        dagger_flag = matches.group(15) is not None
         control_qubits = []
         if matches.group(16) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(16))]
@@ -542,7 +542,7 @@ class OriginIR_LineParser:
         q1 = int(matches.group(2))
         q2 = int(matches.group(3))
         parameter1 = OriginIR_LineParser._parse_param(matches.group(4))
-        dagger_flag = True if matches.group(7) is not None else False
+        dagger_flag = matches.group(7) is not None
         control_qubits = []
         if matches.group(8) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(8))]
@@ -563,7 +563,7 @@ class OriginIR_LineParser:
         parameter1 = OriginIR_LineParser._parse_param(matches.group(4))
         parameter2 = OriginIR_LineParser._parse_param(matches.group(7))
         parameter3 = OriginIR_LineParser._parse_param(matches.group(10))
-        dagger_flag = True if matches.group(13) is not None else False
+        dagger_flag = matches.group(13) is not None
         control_qubits = []
         if matches.group(14) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(14))]
@@ -585,7 +585,7 @@ class OriginIR_LineParser:
         for i in range(15):
             parameters.append(OriginIR_LineParser._parse_param(matches.group(4 + i * 3)))
 
-        dagger_flag = True if matches.group(49) is not None else False
+        dagger_flag = matches.group(49) is not None
         control_qubits = []
         if matches.group(50) is not None:
             control_qubits = [int(q) for q in OriginIR_LineParser.regexp_qid.findall(matches.group(50))]
@@ -611,7 +611,7 @@ class OriginIR_LineParser:
         Returns:
             tuple: ("BARRIER", qubit_indices)
         """
-        matches = OriginIR_LineParser.regexp_barrier.match(line)
+        OriginIR_LineParser.regexp_barrier.match(line)
         # Extract individual qubit patterns
         qubits = OriginIR_LineParser.regexp_qid.findall(line)
         # Extract only the numeric part of each qubit pattern

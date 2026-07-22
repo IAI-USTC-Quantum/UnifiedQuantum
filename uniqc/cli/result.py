@@ -50,10 +50,7 @@ def show_result(
 ) -> None:
     """Show task result."""
     try:
-        if wait:
-            result_data = _wait_for_result(task_id, platform, timeout)
-        else:
-            result_data = _query_result(task_id, platform)
+        result_data = _wait_for_result(task_id, platform, timeout) if wait else _query_result(task_id, platform)
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(1) from e

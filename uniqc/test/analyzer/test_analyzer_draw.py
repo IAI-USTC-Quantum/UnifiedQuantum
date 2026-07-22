@@ -213,7 +213,7 @@ class TestParseListFormat:
 class TestParseWrongType:
     """Tests for invalid type input to _parse_measured_result."""
 
-    @pytest.mark.parametrize("wrong_type", [42, 3.14, "00", set([1, 2]), None])
+    @pytest.mark.parametrize("wrong_type", [42, 3.14, "00", {1, 2}, None])
     def test_wrong_type_raises(self, wrong_type):
         with pytest.raises(TypeError, match="must be a dict or a list"):
             _parse_measured_result(wrong_type, (10, 6))

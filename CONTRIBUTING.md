@@ -163,7 +163,7 @@ Typical examples include:
 
 Please update:
 
-- `docs/source/releases/index.md` for the user-facing summary
+- `docs/source/7_releases/index.md` for the user-facing summary
 - the release-history generator inputs indirectly through clear commit titles and tag messages
 
 ## Before Tagging a Release

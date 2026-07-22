@@ -74,10 +74,7 @@ def _as_param_list(params) -> list[float]:
 
 
 def _check_target_qubits(name: str, qubits, expected: int) -> list[int]:
-    if isinstance(qubits, int):
-        qubit_list = [qubits]
-    else:
-        qubit_list = [int(q) for q in qubits]
+    qubit_list = [qubits] if isinstance(qubits, int) else [int(q) for q in qubits]
     if len(qubit_list) != expected:
         raise ValueError(
             f"Decomposition of {name} expects {expected} target qubit(s), got {len(qubit_list)}: {qubit_list}"

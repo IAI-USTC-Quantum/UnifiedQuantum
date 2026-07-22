@@ -60,10 +60,7 @@ def normalize_result(data: dict[str, int] | list[str]) -> dict[str, float]:
         Dict[str, float]: Probability distribution dict with values
         summing to 1.0.
     """
-    if isinstance(data, list):
-        kv = list2kv(data)
-    else:
-        kv = data
+    kv = list2kv(data) if isinstance(data, list) else data
 
     if not kv:
         return {}

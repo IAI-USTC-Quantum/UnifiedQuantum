@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Documentation and CI validation** now block on offline local links, a
+  warning-as-error Sphinx build, fresh source-hashed example logs, and
+  first-party Ruff diagnostics. All cloud tests are skipped unless
+  `--real-cloud-test` is explicitly supplied.
+
 - **`[pytorch]` now installs `torchquantum-ng`** alongside `torch`, so the
   TorchQuantum simulator and high-level QML models no longer require a second
   manual installation step. The portable `[all]` extra includes the same

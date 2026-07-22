@@ -2,19 +2,13 @@
 
 from __future__ import annotations
 
-import math
-
-import pytest
-
 from uniqc.circuit_builder import Circuit
+from uniqc.circuit_builder.originir_spec import OFFICIAL_ORIGINIR_GATES
+from uniqc.compile.converter import convert_originir_ext_to_originir
 from uniqc.compile.decompose import (
     ORIGINIR_EXT_DECOMPOSABLE_GATES,
     decompose_for_originir,
-    decompose_opcode_for_originir,
 )
-from uniqc.compile.converter import convert_originir_ext_to_originir
-from uniqc.circuit_builder.originir_spec import OFFICIAL_ORIGINIR_GATES
-
 
 # ─── Helpers ───────────────────────────────────────────────────────────
 
@@ -282,4 +276,4 @@ class TestSpec:
             "TOFFOLI", "CSWAP",
             "BARRIER",
         }
-        assert OFFICIAL_ORIGINIR_GATES == expected
+        assert expected == OFFICIAL_ORIGINIR_GATES

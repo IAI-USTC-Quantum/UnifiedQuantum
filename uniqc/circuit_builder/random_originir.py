@@ -176,7 +176,7 @@ def random_originir(
     if channel_set is not None:
         instructions.extend(channel_set.keys())
 
-    for i in range(n_gates):
+    for _i in range(n_gates):
         gate_name = random.choice(list(instructions))
 
         if gate_name in instruction_set:
@@ -199,10 +199,7 @@ def random_originir(
             else:
                 control_qubits = None
 
-            if allow_dagger:
-                dagger_flag = random.choice([True, False])
-            else:
-                dagger_flag = False
+            dagger_flag = random.choice([True, False]) if allow_dagger else False
 
             program.append(build_originir_gate(gate_name, qubits_to_act, params, dagger_flag, control_qubits))
 

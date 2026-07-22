@@ -333,10 +333,7 @@ class OpcodeSimulator:
             control_qubits_set: Set of control qubits.
         """
         # convert from set to list (to adapt to C++ input)
-        if control_qubits_set:
-            control_qubits_set = list(control_qubits_set)
-        else:
-            control_qubits_set = list()
+        control_qubits_set = list(control_qubits_set) if control_qubits_set else []
 
         self._simulate_common_gate(operation, qubit, cbit, parameter, is_dagger, control_qubits_set)
 

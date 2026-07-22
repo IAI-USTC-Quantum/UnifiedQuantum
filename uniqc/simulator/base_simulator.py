@@ -66,8 +66,8 @@ class BaseSimulator:
         self.qubit_num = 0
         self.available_qubits = available_qubits
         self.available_topology = available_topology
-        self.program_body: list[OpcodeType] = list()
-        self.qubit_mapping: dict[int, int] = dict()
+        self.program_body: list[OpcodeType] = []
+        self.qubit_mapping: dict[int, int] = {}
         self.backend_type = backend_type
         self.opcode_simulator = OpcodeSimulator(self.backend_type)
         self.parser = None  # Note: parser must be set by subclass.
@@ -84,7 +84,7 @@ class BaseSimulator:
     def _clear(self):
         self.qubit_num = 0
         self.measure_qubit = []
-        self.qubit_mapping = dict()
+        self.qubit_mapping = {}
         self.opcode_simulator = OpcodeSimulator(self.backend_type)
         self.qram_objects = {}
 
@@ -142,7 +142,7 @@ class BaseSimulator:
     def _extract_actual_used_qubits(self):
         # extract from program
         program_body = self.parser.program_body
-        for operation, qubit, cbit, parameter, dagger_flag, control_qubits_set in program_body:
+        for _operation, qubit, _cbit, _parameter, _dagger_flag, control_qubits_set in program_body:
             if isinstance(qubit, list):
                 for q in qubit:
                     self._add_used_qubit(int(q))
@@ -157,7 +157,7 @@ class BaseSimulator:
 
         # extract from measure
         measure_qubits = self.parser.measure_qubits
-        for qubit, cbit in measure_qubits:
+        for qubit, _cbit in measure_qubits:
             self._add_used_qubit(qubit)
 
         if not self.least_qubit_remapping:
@@ -192,7 +192,7 @@ class BaseSimulator:
             raise TopologyError("Unsupported topology.")
 
     def _process_program_body(self) -> list[OpcodeType]:
-        processed_program_body = list()
+        processed_program_body = []
         program_body = self.parser.program_body
 
         _reject_symbolic_program(program_body)
@@ -388,8 +388,10 @@ class BaseNoisySimulator(BaseSimulator):
         available_qubits: list[int] = None,
         available_topology: list[list[int]] = None,
         error_loader: ErrorLoader = None,
-        readout_error: dict[int, list[float]] = {},
+        readout_error: dict[int, list[float]] = None,
     ):
+        if readout_error is None:
+            readout_error = {}
         super().__init__(backend_type, available_qubits, available_topology)
         self.readout_error = readout_error
         self.error_loader = error_loader
@@ -432,7 +434,7 @@ class BaseNoisySimulator(BaseSimulator):
         measure_length = len(measure_qubit)
         result_binary = bin(result)[2:].zfill(measure_length)[::-1]
 
-        result_binary_list = [bit for bit in result_binary]
+        result_binary_list = list(result_binary)
         # decide each measurement qubit has error or not
         for i in range(measure_length):
             r = random.random()

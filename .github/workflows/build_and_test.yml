@@ -122,6 +122,9 @@ jobs:
       run: |
         uv pip install --system pytest pytest-cov ruff httpx
 
+    - name: Lint first-party Python
+      run: ruff check .
+
     # Keep TorchQuantum integration isolated from the core suite so failures
     # remain attributable even though [all] now installs torchquantum-ng.
 
@@ -149,32 +152,10 @@ jobs:
           uniqc/test/simulator/test_simulator_factory.py \
           -v --tb=short -m "not cloud"
 
-    - name: Check for deprecation warnings (fail on error)
+    - name: Fail on first-party warnings
       if: runner.os == 'Linux'
-      env:
-        PYTHONWARNINGS: "error::DeprecationWarning,error::FutureWarning"
       run: |
-        python -c "
-        import warnings
-        warnings.filterwarnings('error')
-
-        # Test each platform import for deprecations
-        try:
-            import qiskit
-            print(f'qiskit version: {qiskit.__version__}')
-        except DeprecationWarning as e:
-            print(f'Qiskit deprecation detected: {e}')
-            raise
-        except ImportError:
-            print('qiskit not installed - skipping')
-
-        print('Deprecation check passed')
-        " || echo "::warning::Deprecation warnings detected in platform libraries"
-
-    - name: Upload coverage report
-      if: runner.os == 'Linux' && matrix.c_compiler == 'gcc' && matrix.python-version == '3.11'
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
-      with:
-        name: coverage-report
-        path: .coverage
-        retention-days: 7
+        pytest uniqc/test/ -q -m "not cloud" -W error::Warning:uniqc \
+          --ignore=uniqc/test/adapter/test_tq_algorithms.py \
+          --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
+          --ignore=uniqc/test/simulator/test_simulator_factory.py

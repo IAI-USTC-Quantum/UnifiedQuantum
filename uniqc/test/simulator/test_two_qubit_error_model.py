@@ -16,7 +16,6 @@ from uniqc.simulator.error_model import (
     TwoQubitDepolarizing,
 )
 
-
 # ---------------------------------------------------------------------------
 # Opcode shape: single opcode, qubit field is the full list
 # ---------------------------------------------------------------------------

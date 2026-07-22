@@ -21,7 +21,7 @@
 
 - 已经会使用 `Circuit` 构建基础线路
 - 已经拿到了 `originir` 或 `qasm` 字符串
-- 已经完成 [快速上手](quickstart.md) 中的最小示例
+- 已经完成 [快速上手](../0_quickstart/quickstart.md) 中的最小示例
 
 如果你还不清楚如何创建线路、添加量子门或导出线路格式，建议先阅读 [构建量子线路](circuit.md)。
 
@@ -46,7 +46,7 @@
 | {class}`uniqc.simulator.Simulator` | `AnyQuantumCircuit`（`Circuit` 对象、`originir` 字符串或 `qasm` 字符串） | 已经用 {class}`uniqc.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果；也适用于 OpenQASM 2.0 输入，`Simulator` 会自动检测格式 |
 | {class}`uniqc.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
 | {class}`uniqc.simulator.NoisySimulator` | `AnyQuantumCircuit` + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
-| `MPSSimulator`（见 [MPS 模拟器](../advanced/mps_simulator.md)） | `AnyQuantumCircuit` + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
+| `MPSSimulator`（见 [MPS 模拟器](../2_advanced/mps_simulator.md)） | `AnyQuantumCircuit` + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
 | `TorchQuantumSimulator`（需要 `unified-quantum[pytorch]`） | `Circuit` / `originir` | 想把模拟接入 PyTorch 计算图、做端到端可微分实验 |
 
 > `MPSSimulator` 与 `TorchQuantumSimulator` 也可通过统一工厂入口构造：`create_simulator(backend='mps')` / `create_simulator(backend='torchquantum')`。
@@ -130,7 +130,7 @@ from uniqc.simulator import OpcodeSimulator
 sim = OpcodeSimulator(backend_type='statevector')
 ```
 
-> Opcode 的详细文档见 [Opcode](../advanced/opcode.md)。
+> Opcode 的详细文档见 [Opcode](../2_advanced/opcode.md)。
 
 ## 带噪声的本地模拟 {#guide-simulation-noisy}
 
@@ -147,7 +147,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 
 > 噪声模拟必须显式指定 `backend_type='density_matrix'`；默认的 `statevector` 后端不支持噪声通道，调用 `simulate_pmeasure` 时会抛 `ValueError`。
 
-> 噪声模型的详细配置见 [噪声模拟](../advanced/noise_simulation.md)。
+> 噪声模型的详细配置见 [噪声模拟](../2_advanced/noise_simulation.md)。
 
 ## 后端对比
 
@@ -177,7 +177,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 - {class}`uniqc.simulator.OpcodeSimulator`
 - {class}`uniqc.simulator.Simulator`
 - {class}`uniqc.simulator.NoisySimulator`
-- `uniqc.simulator.mps_simulator.MPSSimulator` / `MPSConfig` — MPS 后端，详见 [MPS 模拟器](../advanced/mps_simulator.md)
+- `uniqc.simulator.mps_simulator.MPSSimulator` / `MPSConfig` — MPS 后端，详见 [MPS 模拟器](../2_advanced/mps_simulator.md)
 - `uniqc.simulator.torchquantum_simulator.TorchQuantumSimulator` — 基于 torchquantum 的可微分后端（`unified-quantum[pytorch]` 会同时安装 `torch` 与 `torchquantum-ng`）
 - `create_simulator(backend=...)` — 统一工厂入口，`backend` 支持 `'statevector' | 'density_matrix' | 'mps' | 'torchquantum'` 等
 
@@ -193,4 +193,4 @@ prob = sim.simulate_pmeasure(circuit.originir)
 - `test_random_QASM.py`：随机回归测试（statevector/density matrix 对比）
 - `test_demos.py`：示例端到端测试
 
-详见 [测试覆盖说明](testing.md)。
+详见 [测试覆盖说明](../2_advanced/testing.md)。

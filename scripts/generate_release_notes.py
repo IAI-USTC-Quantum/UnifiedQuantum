@@ -10,7 +10,6 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 TAG_SPLIT = "\x1f"
 COMMIT_SPLIT = "\x1f"

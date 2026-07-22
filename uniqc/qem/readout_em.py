@@ -85,7 +85,7 @@ class ReadoutEM:
         if not result.counts:
             return result
 
-        width = max(len(b) for b in result.counts.keys())
+        width = max(len(b) for b in result.counts)
         if measured_qubits is None:
             measured_qubits = list(range(width))
 
@@ -256,10 +256,7 @@ class ReadoutEM:
         mit = self._get_mitigator_1q(qubit)
         # Get the 1q confusion matrix (works with both dict and dataclass)
         cal = mit.calibration_result
-        if hasattr(cal, "confusion_matrix"):
-            cm = cal.confusion_matrix
-        else:
-            cm = cal["confusion_matrix"]
+        cm = cal.confusion_matrix if hasattr(cal, "confusion_matrix") else cal["confusion_matrix"]
         C = np.array(cm)  # 2x2: [p(meas|prep)]
 
         if n_total is None:

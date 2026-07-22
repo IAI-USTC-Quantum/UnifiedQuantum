@@ -162,7 +162,8 @@ uv run pytest uniqc/test --real-cloud-test
 
 维护者环境不应把 qiskit、QuTiP、Sphinx 等当前维护的可选或文档模块缺失视为正常跳过条件。`pyproject.toml` 不钉住第三方依赖版本，主分支也不提交 `uv.lock`；全量开发和 CI 应按当前包索引解析最新可用依赖，及时暴露上游兼容性问题。
 
-真实云平台测试中，读取后端、验证 token、查询平台 status/API 的测试默认执行；只有会实际提交量子线路的测试默认跳过，需要显式传 `--real-cloud-test`。
+所有云平台测试默认跳过，包括读取后端、验证 token、查询 status/API 和真实量子线路提交。只有显式传入
+`--real-cloud-test`（并配置对应凭证）才会执行它们。
 
 **Requirements:**
 - CMake >= 3.26

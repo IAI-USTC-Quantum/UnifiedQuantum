@@ -28,7 +28,7 @@ def _parity(bitstring: str, pauli_string: str) -> int:
     parity = 0
     # Reverse pauli_string to match big-endian bitstring convention
     # where pauli_string[0] corresponds to qubit 0 (rightmost bit)
-    for pauli, bit in zip(reversed(pauli_string), bitstring):
+    for pauli, bit in zip(reversed(pauli_string), bitstring, strict=False):
         if bit == "1" and pauli.upper() in ("Z", "X", "Y"):
             parity ^= 1
     return parity

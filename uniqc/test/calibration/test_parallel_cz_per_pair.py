@@ -70,7 +70,7 @@ def test_pair_ideal_probs_matches_full_simulation_for_disjoint_pairs():
 
     c = Circuit()
     for angles, pat in sched.cycles:
-        for q, (t, p, l) in zip(region, angles):
+        for q, (t, p, l) in zip(region, angles, strict=False):
             c.u3(q, t, p, l)
         for a, b in pat:
             c.cz(a, b)
@@ -115,7 +115,7 @@ def test_per_pair_F_XEB_noiseless_close_to_one_at_low_depth():
         probs = probs / probs.sum()
         samples = rng.choice(len(probs), size=20000, p=probs)
         keys, vals = np.unique(samples, return_counts=True)
-        counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals)}
+        counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals, strict=False)}
         records.append(
             {
                 "record_id": pc.record_id,
@@ -165,7 +165,7 @@ def test_per_pair_F_XEB_detects_depolarising_decay():
         noisy = F_d * probs + (1 - F_d) / D
         samples = rng.choice(len(noisy), size=20000, p=noisy)
         keys, vals = np.unique(samples, return_counts=True)
-        counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals)}
+        counts = {format(int(k), "02b"): int(v) for k, v in zip(keys, vals, strict=False)}
         records.append(
             {
                 "record_id": pc.record_id,

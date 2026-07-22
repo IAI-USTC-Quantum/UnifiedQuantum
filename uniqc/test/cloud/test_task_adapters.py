@@ -545,7 +545,7 @@ class TestOriginQNativeBatch:
         assert len(ids) == 3
         # Three calls, each a single QProg (not a list)
         assert len(run_call_args) == 3
-        for args, kwargs in run_call_args:
+        for args, _kwargs in run_call_args:
             first = args[0]
             assert not isinstance(first, list), "per-circuit fallback must pass single QProg"
         # Per-circuit submissions must not register batch sizing.

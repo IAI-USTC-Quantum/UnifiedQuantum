@@ -128,7 +128,7 @@ def collect_qasm2_custom_gates(opcode_list) -> list[str]:
 
 
 # direct mapping from OriginIR opcode to QASM2 operation
-QASM2_OriginIR_dict = {qasm: oir for (qasm, oir) in qasm2_oir_mapping}
+QASM2_OriginIR_dict = dict(qasm2_oir_mapping)
 
 # direct mapping from QASM2 operation to OriginIR
 OriginIR_QASM2_dict = {oir: qasm for (qasm, oir) in qasm2_oir_mapping}

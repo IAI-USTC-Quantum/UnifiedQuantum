@@ -383,7 +383,7 @@ def pick_chain_region(
                 break
             if len(path) == length:
                 induced = _induced_edges(path, adj)
-                expected = {(min(a, b), max(a, b)) for a, b in zip(path, path[1:])}
+                expected = {(min(a, b), max(a, b)) for a, b in zip(path, path[1:], strict=False)}
                 if {(min(a, b), max(a, b)) for a, b in induced} != expected:
                     continue
                 s = _region_score(path, view, adj)

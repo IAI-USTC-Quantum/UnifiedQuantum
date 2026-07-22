@@ -41,7 +41,7 @@ def expectation(
     hamiltonian: list[tuple[str, float]],
     param_map: dict | None = None,
     backend: str = "virtual",
-) -> "torch.Tensor":
+) -> torch.Tensor:
     """Compute the differentiable expectation value ⟨ψ|H|ψ⟩.
 
     Args:
@@ -90,7 +90,7 @@ def _expectation_virtual(
     hamiltonian: list[tuple[str, float]],
     param_map: dict,
     n_qubits: int,
-) -> "torch.Tensor":
+) -> torch.Tensor:
     state = _execute_opcodes(opcode_list, param_map, n_qubits)
     total = torch.tensor(0.0, dtype=torch.float32)
     for pauli_str, coeff in hamiltonian:
@@ -113,7 +113,7 @@ def _expectation_torchquantum(
     hamiltonian: list[tuple[str, float]],
     param_map: dict,
     n_qubits: int,
-) -> "torch.Tensor":
+) -> torch.Tensor:
     from uniqc.simulator.torchquantum_simulator import TorchQuantumSimulator
 
     sim = TorchQuantumSimulator(n_wires=n_qubits)
@@ -126,11 +126,11 @@ def _expectation_torchquantum(
 
 # ---- linear-algebra helpers ------------------------------------------------
 
-def _eye(n: int) -> "torch.Tensor":
+def _eye(n: int) -> torch.Tensor:
     return torch.eye(n, dtype=torch.complex64)
 
 
-def _kron(a: "torch.Tensor", b: "torch.Tensor") -> "torch.Tensor":
+def _kron(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return torch.kron(a, b)
 
 
@@ -158,7 +158,7 @@ _CNOT = torch.tensor([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], d
 _CZ = torch.diag(torch.tensor([1, 1, 1, -1], dtype=torch.complex64))
 
 
-def _permutation_matrix(n_wires: int, mapping) -> "torch.Tensor":
+def _permutation_matrix(n_wires: int, mapping) -> torch.Tensor:
     dim = 2**n_wires
     matrix = torch.zeros(dim, dim, dtype=torch.complex64)
     for column in range(dim):
@@ -177,31 +177,31 @@ _CSWAP = _permutation_matrix(
 
 # ---- parametric gate matrices (differentiable) ----------------------------
 
-def _rx_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _rx_matrix(theta: torch.Tensor) -> torch.Tensor:
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     return torch.stack([torch.stack([c, -1j * s]), torch.stack([-1j * s, c])])
 
 
-def _ry_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _ry_matrix(theta: torch.Tensor) -> torch.Tensor:
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     return torch.stack([torch.stack([c, -s]), torch.stack([s, c])])
 
 
-def _rz_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _rz_matrix(theta: torch.Tensor) -> torch.Tensor:
     p = torch.exp(-1j * theta / 2).to(torch.complex64)
     m = torch.exp(1j * theta / 2).to(torch.complex64)
     return torch.stack([torch.stack([p, torch.zeros_like(p)]), torch.stack([torch.zeros_like(m), m])])
 
 
-def _u1_matrix(lam: "torch.Tensor") -> "torch.Tensor":
+def _u1_matrix(lam: torch.Tensor) -> torch.Tensor:
     p = torch.exp(1j * lam).to(torch.complex64)
     return torch.stack([torch.stack([torch.ones_like(p), torch.zeros_like(p)]),
                         torch.stack([torch.zeros_like(p), p])])
 
 
-def _u3_matrix(theta: "torch.Tensor", phi: "torch.Tensor", lam: "torch.Tensor") -> "torch.Tensor":
+def _u3_matrix(theta: torch.Tensor, phi: torch.Tensor, lam: torch.Tensor) -> torch.Tensor:
     ct = torch.cos(theta / 2).to(torch.complex64)
     st = torch.sin(theta / 2).to(torch.complex64)
     ep = torch.exp(1j * phi).to(torch.complex64)
@@ -213,7 +213,7 @@ def _u3_matrix(theta: "torch.Tensor", phi: "torch.Tensor", lam: "torch.Tensor") 
     ])
 
 
-def _rxx_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _rxx_matrix(theta: torch.Tensor) -> torch.Tensor:
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     z = torch.zeros_like(c)
@@ -225,7 +225,7 @@ def _rxx_matrix(theta: "torch.Tensor") -> "torch.Tensor":
     ])
 
 
-def _ryy_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _ryy_matrix(theta: torch.Tensor) -> torch.Tensor:
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     z = torch.zeros_like(c)
@@ -237,7 +237,7 @@ def _ryy_matrix(theta: "torch.Tensor") -> "torch.Tensor":
     ])
 
 
-def _rzz_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _rzz_matrix(theta: torch.Tensor) -> torch.Tensor:
     p = torch.exp(-1j * theta / 2).to(torch.complex64)
     m = torch.exp(1j * theta / 2).to(torch.complex64)
     z = torch.zeros_like(p)
@@ -249,7 +249,7 @@ def _rzz_matrix(theta: "torch.Tensor") -> "torch.Tensor":
     ])
 
 
-def _xy_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+def _xy_matrix(theta: torch.Tensor) -> torch.Tensor:
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     z = torch.zeros_like(c)
@@ -264,7 +264,7 @@ def _xy_matrix(theta: "torch.Tensor") -> "torch.Tensor":
 
 # ---- gate application on multi-dim state -----------------------------------
 
-def _apply_1q_gate(state: "torch.Tensor", mat: "torch.Tensor", wire: int) -> "torch.Tensor":
+def _apply_1q_gate(state: torch.Tensor, mat: torch.Tensor, wire: int) -> torch.Tensor:
     """Apply a 2x2 unitary to *wire* (LSB-indexed) of the state tensor."""
     n = state.dim() - 1
     d = n - 1 - wire  # MSB dim index (1-indexed, after batch)
@@ -273,12 +273,12 @@ def _apply_1q_gate(state: "torch.Tensor", mat: "torch.Tensor", wire: int) -> "to
     return s.movedim(-1, d + 1)
 
 
-def _apply_2q_gate(state: "torch.Tensor", mat: "torch.Tensor", w0: int, w1: int) -> "torch.Tensor":
+def _apply_2q_gate(state: torch.Tensor, mat: torch.Tensor, w0: int, w1: int) -> torch.Tensor:
     """Apply a 4x4 unitary to wires (*w0*, *w1*) of the state tensor."""
     return _apply_multiq_gate(state, mat, [w0, w1])
 
 
-def _apply_multiq_gate(state: "torch.Tensor", mat: "torch.Tensor", wires: list[int]) -> "torch.Tensor":
+def _apply_multiq_gate(state: torch.Tensor, mat: torch.Tensor, wires: list[int]) -> torch.Tensor:
     """Apply a 2^k x 2^k unitary to *wires* (LSB-indexed, control first).
 
     Moves target qubit dims to the end of the tensor, applies the gate via
@@ -318,7 +318,7 @@ def _execute_opcodes(
     opcode_list: list,
     param_map: dict,
     n_qubits: int,
-) -> "torch.Tensor":
+) -> torch.Tensor:
     state = torch.zeros([1] + [2] * n_qubits, dtype=torch.complex64)
     state[(0,) + (0,) * n_qubits] = 1.0 + 0j
 
@@ -434,7 +434,7 @@ _Zd = torch.tensor([[1, 0], [0, -1]], dtype=torch.complex64)
 _PAULI_MAP = {"I": _I2d, "X": _Xd, "Y": _Yd, "Z": _Zd}
 
 
-def _pauli_expval(state: "torch.Tensor", pauli_str: str) -> "torch.Tensor":
+def _pauli_expval(state: torch.Tensor, pauli_str: str) -> torch.Tensor:
     """Compute ⟨ψ|P|ψ⟩ for a Pauli string from the state tensor.
 
     The *pauli_str* uses the physics convention: leftmost character = highest

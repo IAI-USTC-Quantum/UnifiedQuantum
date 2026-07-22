@@ -44,6 +44,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     pass
 
+import contextlib
+
 from uniqc._error_hints import format_enriched_message
 from uniqc.backend_adapter.task.adapters import (
     DummyAdapter,
@@ -259,7 +261,7 @@ class QuantumBackend(abc.ABC):
             # Cache saving is non-critical, log but don't fail
             import warnings
 
-            warnings.warn(f"Failed to save backend cache: {e}")
+            warnings.warn(f"Failed to save backend cache: {e}", stacklevel=2)
 
     @classmethod
     def load_from_cache(
@@ -301,10 +303,8 @@ class QuantumBackend(abc.ABC):
         """Clear the cache for this backend instance."""
         cache_file = _get_cache_file_path(self.platform, self._cache_dir)
         if cache_file.exists():
-            try:
+            with contextlib.suppress(OSError):
                 cache_file.unlink()
-            except OSError:
-                pass
 
     # -------------------------------------------------------------------------
     # Class Methods for Instance Management
@@ -937,7 +937,5 @@ def clear_backend_cache(cache_dir: Path | str | None = None) -> None:
         return
 
     for cache_file in cache_path.glob(f"*{CACHE_FILE_SUFFIX}"):
-        try:
+        with contextlib.suppress(OSError):
             cache_file.unlink()
-        except OSError:
-            pass

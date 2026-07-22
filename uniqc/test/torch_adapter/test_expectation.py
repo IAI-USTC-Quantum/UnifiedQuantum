@@ -8,7 +8,6 @@ import torch
 from uniqc.circuit_builder.qcircuit import Circuit
 from uniqc.torch_adapter.expectation import expectation
 
-
 # =============================================================================
 # Gate-level correctness (single-qubit gates on |0⟩)
 # =============================================================================

@@ -84,10 +84,7 @@ def basis_rotation_measurement(
             )
         )
 
-    if qubits is None:
-        qubits = list(range(n_qubits))
-    else:
-        qubits = list(qubits)
+    qubits = list(range(n_qubits)) if qubits is None else list(qubits)
 
     n = len(qubits)
 

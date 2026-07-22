@@ -194,7 +194,6 @@ class TestQASMResultAdapter:
 
     def test_probabilities_computed_correctly(self):
         adapter = QASMResultAdapter(counts={"00": 1, "01": 2, "10": 3, "11": 4})
-        total = 10
         assert adapter.probabilities["00"] == pytest.approx(0.1)
         assert adapter.probabilities["01"] == pytest.approx(0.2)
         assert adapter.probabilities["10"] == pytest.approx(0.3)

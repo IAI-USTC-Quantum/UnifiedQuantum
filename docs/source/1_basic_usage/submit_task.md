@@ -2,7 +2,7 @@
 
 ## 什么时候进入本页 {#guide-submit-task-when-to-read}
 
-当你已经完成本地线路构建，并且已经通过 [快速上手](quickstart.md) 或 [本地模拟](simulation.md) 跑通了最小示例，接下来如果你希望：
+当你已经完成本地线路构建，并且已经通过 [快速上手](../0_quickstart/quickstart.md) 或 [本地模拟](simulation.md) 跑通了最小示例，接下来如果你希望：
 
 - 把线路提交到云平台或真机执行
 - 查询远端任务状态与执行结果
@@ -24,7 +24,7 @@
 
 阅读本页前，默认你已经完成以下至少一项：
 
-- 已经完成 [快速上手](quickstart.md) 中的最小示例
+- 已经完成 [快速上手](../0_quickstart/quickstart.md) 中的最小示例
 - 已经会使用 `Circuit` 构建线路，并能导出 `originir` 或 `qasm`
 - 已经通过 [本地模拟](simulation.md) 对线路做过基本验证
 

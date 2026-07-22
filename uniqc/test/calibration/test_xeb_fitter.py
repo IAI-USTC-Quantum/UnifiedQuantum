@@ -89,7 +89,6 @@ class TestExponentialFit:
 
     def test_high_decay(self):
         """Fast decay: r should be significantly less than 1."""
-        r_true = 0.7
         depths = [2, 5, 10, 20]
         np.random.seed(42)
         fidelities = [0.7**m + np.random.normal(0, 0.01) for m in depths]

@@ -1,7 +1,6 @@
 # API 参考
 
-由 [sphinx-autoapi](https://sphinx-autoapi.readthedocs.io/) 从 ``uniqc/`` 源码自动
-生成。`make html` / `make html-fast` 在每次构建时都会**重新跑** ``sphinx-apidoc``，
+由 ``sphinx-apidoc`` 从 ``uniqc/`` 源码自动生成。`make html` / `make html-fast` 在每次构建时都会**重新跑** ``sphinx-apidoc``，
 所以这一章总是与当前 git checkout 的源码保持一致。
 
 ## 顶层公共 API
@@ -30,6 +29,17 @@
 :maxdepth: 2
 
 uniqc
+```
+
+## PyTorch 与训练 API
+
+以下公开页面与完整 API 树一起生成，并在缺失时由 ``sphinx -W`` 阻止文档构建：
+
+```{toctree}
+:maxdepth: 2
+
+uniqc.torch_adapter
+uniqc.algorithms.core.training
 ```
 
 ## 索引

@@ -2,7 +2,7 @@
 
 UnifiedQuantum 现在按功能边界组织模块，日常代码优先从 `uniqc` 直接导入常用对象。新代码不应继续依赖 `uniqc.transpiler`、`uniqc.task`、`uniqc.qasm`、`uniqc.originir`、`uniqc.pytorch`、`uniqc.analyzer` 等旧入口。
 
-如果你需要发布前的端到端可验证案例，请阅读 [最佳实践](../source/3_best_practices/index.md)。该章节由已执行 notebooks 组成，覆盖配置、后端缓存、线路构建、CLI/API 提交、变分线路、Torch 集成、Calibration 与 QEM。
+如果你需要发布前的端到端可验证案例，请阅读 [最佳实践](../3_best_practices/index.md)。该章节由已执行 notebooks 组成，覆盖配置、后端缓存、线路构建、CLI/API 提交、变分线路、Torch 集成、Calibration 与 QEM。
 
 ## Maintainer 开发环境
 

@@ -152,7 +152,7 @@ from uniqc.compile.draw import draw
 draw(circuit.originir)
 ```
 
-> 可视化功能详见 [线路分析](../advanced/circuit_analysis.md)。
+> 可视化功能详见 [线路分析](../2_advanced/circuit_analysis.md)。
 
 ## 提取酉矩阵 {#guide-circuit-unitary-matrix}
 
@@ -469,7 +469,7 @@ print(bell_pair.num_parameters) # 0
 本页聚焦于“如何把线路写出来”，以下问题不在本页展开：
 
 - 模拟结果怎么看、如何选择本地模拟后端 → 见 [本地模拟](simulation.md#guide-simulation-entry-overview)
-- 噪声模型与性能权衡 → 见 [噪声模拟](../advanced/noise_simulation.md)
+- 噪声模型与性能权衡 → 见 [噪声模拟](../2_advanced/noise_simulation.md)
 - 如何提交到真机或云平台 → 见 [提交任务](submit_task.md#guide-submit-task-entry-overview)
 
 ## 下一步
@@ -480,4 +480,4 @@ print(bell_pair.num_parameters) # 0
 
 - `test_general.py`：电路构建集成测试
 
-详见 [测试覆盖说明](testing.md)。
+详见 [测试覆盖说明](../2_advanced/testing.md)。

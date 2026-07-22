@@ -166,9 +166,7 @@ class BackendTarget:
 def _is_topology_suffix(suffix: str) -> bool:
     if suffix.startswith(("virtual-line-", "virtual-grid-")):
         return True
-    if suffix.startswith(("mps-linear-", "mps:linear-")):
-        return True
-    return False
+    return bool(suffix.startswith(("mps-linear-", "mps:linear-")))
 
 
 def _canonical_topology_suffix(suffix: str) -> str:

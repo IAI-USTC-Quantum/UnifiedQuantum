@@ -140,8 +140,8 @@ class TestParametricCircuit:
 
     def test_circuit_parameter_tracking(self):
         """Circuit tracks parameters used in gates."""
-        c = Circuit()
-        theta = Parameter(name="theta")
+        Circuit()
+        Parameter(name="theta")
         # Add gate with parameter (Phase 2 feature - to be implemented)
         # c.rx(0, theta)
         # assert c.num_parameters == 1
@@ -149,9 +149,9 @@ class TestParametricCircuit:
 
     def test_circuit_with_multiple_parameters(self):
         """Circuit can use multiple parameters."""
-        c = Circuit()
-        theta = Parameter(name="theta")
-        phi = Parameter(name="phi")
+        Circuit()
+        Parameter(name="theta")
+        Parameter(name="phi")
         # c.rx(0, theta)
         # c.ry(1, phi)
         # assert c.num_parameters == 2

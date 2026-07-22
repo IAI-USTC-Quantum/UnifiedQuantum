@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -64,6 +65,8 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 EXAMPLES_ROOT = PROJECT_ROOT / "examples"
 LOGS_ROOT = PROJECT_ROOT / "example-exec-logs"
 DOCS_GENERATED_ROOT = PROJECT_ROOT / "docs" / "source" / "_generated" / "examples"
+LOG_INDEX_FORMAT_VERSION = 2
+GENERATOR_VERSION = "2"
 
 # Patterns considered a build-failure when found in stdout/stderr/warnings.
 # Per-example regexes (from [doc-warning-ignore:]) are subtracted before this
@@ -285,7 +288,7 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
     docs_figures_dir.mkdir(parents=True, exist_ok=True)
 
     os.environ.setdefault("MPLBACKEND", "Agg")
-    os.environ.setdefault("MPLCONFIGDIR", "/tmp/uniqc-mpl")
+    os.environ.setdefault("MPLCONFIGDIR", str(LOGS_ROOT / ".matplotlib"))
 
     captured_warnings: list[str] = []
 
@@ -576,6 +579,7 @@ def process(specs: list[ExampleSpec], fail_on_warnings: bool) -> int:
 
         record = {
             "example": spec.path.relative_to(PROJECT_ROOT).as_posix(),
+            "source_sha256": hashlib.sha256(spec.path.read_bytes()).hexdigest(),
             "chapter": spec.chapter,
             "name": spec.name,
             "title": spec.title,
@@ -610,6 +614,7 @@ def process(specs: list[ExampleSpec], fail_on_warnings: bool) -> int:
                 "duration_seconds": record["duration_seconds"],
                 "n_offending": len(record["offending_lines"] or []),
                 "n_ignored": len(record["ignored_lines"] or []),
+                "source_sha256": record["source_sha256"],
             }
         )
 
@@ -635,6 +640,11 @@ def process(specs: list[ExampleSpec], fail_on_warnings: bool) -> int:
         json.dumps(
             {
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "format_version": LOG_INDEX_FORMAT_VERSION,
+                "generator": {
+                    "name": "scripts/build_docs.py",
+                    "version": GENERATOR_VERSION,
+                },
                 "real_cloud": _RUNTIME_OPTIONS["real_cloud"],
                 "results": merged,
             },
@@ -660,6 +670,32 @@ def process(specs: list[ExampleSpec], fail_on_warnings: bool) -> int:
     return 0
 
 
+def refresh_index_metadata() -> int:
+    """Upgrade source hashes for a legacy index without re-executing examples."""
+    index_path = LOGS_ROOT / "index.json"
+    if not index_path.exists():
+        print("build_docs: cannot refresh metadata; example-exec-logs/index.json is missing.", file=sys.stderr)
+        return 1
+    payload = json.loads(index_path.read_text(encoding="utf-8"))
+    results = payload.get("results", [])
+    if not results:
+        print("build_docs: cannot refresh metadata; index has no results.", file=sys.stderr)
+        return 1
+    for record in results:
+        example = record.get("example")
+        source = PROJECT_ROOT / example if isinstance(example, str) else None
+        if source is None or not source.is_file():
+            print(f"build_docs: cannot hash missing example {example!r}.", file=sys.stderr)
+            return 1
+        record["source_sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+    payload["generated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    payload["format_version"] = LOG_INDEX_FORMAT_VERSION
+    payload["generator"] = {"name": "scripts/build_docs.py", "version": GENERATOR_VERSION}
+    index_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"build_docs: refreshed source metadata for {len(results)} existing example logs")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -677,9 +713,16 @@ def main() -> int:
         action="store_true",
         help="Don't fail the build on unfiltered warnings (still fails on exceptions).",
     )
+    parser.add_argument(
+        "--refresh-index-metadata",
+        action="store_true",
+        help="Upgrade source hashes in an existing legacy index without executing examples.",
+    )
     args = parser.parse_args()
 
     _RUNTIME_OPTIONS["real_cloud"] = args.real_cloud
+    if args.refresh_index_metadata:
+        return refresh_index_metadata()
 
     specs = discover_examples(args.only)
     if not specs:

@@ -117,7 +117,7 @@ def qpe_circuit(
     if n_system < 1:
         raise ValueError("qpe_circuit: unitary_circuit must contain at least one qubit")
 
-    system_qubits = list(range(n_system))
+    list(range(n_system))
     precision_qubits = list(range(n_system, n_system + n_precision))
 
     fragment = Circuit()

@@ -1500,4 +1500,4 @@ MEASURE q[2], c[2]
 - `test_parametric_circuits.py`：参数化线路集成测试
 - `test_random_OriginIR.py`：随机回归 + QuTip 对比
 
-详见 [测试覆盖说明](testing.md)。
+详见 [测试覆盖说明](../2_advanced/testing.md)。

@@ -152,7 +152,7 @@ def test_quafu_adapter_query_reverses_bit_order():
 
     adapter = QuafuAdapter.__new__(QuafuAdapter)
     # Reproduce just the success branch of ``query``:
-    out = adapter.__class__.query.__wrapped__(adapter, "t") if hasattr(adapter.__class__.query, "__wrapped__") else None
+    adapter.__class__.query.__wrapped__(adapter, "t") if hasattr(adapter.__class__.query, "__wrapped__") else None
     # Fallback: invoke the post-processing block directly via normalizer
     # if the adapter relies on the same bit-reversal pathway.
     from uniqc.backend_adapter.task.normalizers import normalize_quafu

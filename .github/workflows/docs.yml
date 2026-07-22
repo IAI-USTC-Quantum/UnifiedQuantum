@@ -77,7 +77,7 @@ jobs:
       - name: Build docs
         run: |
           cd docs
-          uv run --no-sync make html-fast
+          uv run --no-sync make html-fast SPHINXOPTS="-W --keep-going"
 
       - name: Assemble site
         run: |
