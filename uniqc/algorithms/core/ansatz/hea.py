@@ -336,10 +336,10 @@ def hea(
     for layer in range(depth):
         # Single-qubit rotations
         for q in qubits:
-            for _ in rot_gates:
+            for gate in rot_gates:
                 val = params[idx].evaluate()
                 if abs(val) > 1e-15:
-                    _apply_rotation(circuit, q, rot_gates[idx % len(rot_gates)], val)
+                    _apply_rotation(circuit, q, gate, val)
                 idx += 1
 
         # Entangling layer

@@ -1,11 +1,8 @@
-"""Arbitrary state preparation via rotation method.
+"""Arbitrary complex state preparation lowered to ``U3`` and ``CNOT``."""
 
-Uses the Shende–Bullock–Markov (SBM) decomposition: disentangles qubits
-one at a time, then reverses the gate sequence.
-"""
+from __future__ import annotations
 
 __all__ = ["rotation_prepare"]
-
 
 import numpy as np
 
@@ -13,187 +10,103 @@ from uniqc._error_hints import format_enriched_message
 from uniqc.circuit_builder import Circuit
 
 
-def _apply_multiplexed_ry(
-    circuit: Circuit,
-    target: int,
-    controls: list[int],
-    angles: np.ndarray,
-) -> None:
-    """Apply a uniformly-controlled Ry (multiplexed Ry).
-
-    For each control pattern k (0 to 2^n-1), apply Ry(angles[k]) on target.
-    Uses the standard recursive decomposition into CNOTs and single Ry.
-    """
-    n = len(controls)
-    if n == 0:
-        # Base case: no control qubits, just a single rotation.
-        # angles has length 1.
-        if abs(angles[0]) > 1e-15:
-            circuit.ry(target, float(angles[0]))
-        return
-
-    assert len(angles) == 2**n, f"Expected {2**n} angles for {n} controls, got {len(angles)}"
-
-    # Recursive decomposition:
-    # Split angles into even (k with MSB=0) and odd (k with MSB=1)
-    even_angles = angles[0::2]  # control[0] = 0
-    odd_angles = angles[1::2]  # control[0] = 1
-
-    # Compute sum and difference
-    sum_angles = (even_angles + odd_angles) / 2.0
-    diff_angles = (even_angles - odd_angles) / 2.0
-
-    inner_controls = controls[1:]
-
-    _apply_multiplexed_ry(circuit, target, inner_controls, diff_angles)
-    circuit.cx(controls[0], target)
-    _apply_multiplexed_ry(circuit, target, inner_controls, sum_angles)
-    circuit.cx(controls[0], target)
-
-
-def _apply_multiplexed_rz(
-    circuit: Circuit,
-    target: int,
-    controls: list[int],
-    angles: np.ndarray,
-) -> None:
-    """Apply a uniformly-controlled Rz (multiplexed Rz)."""
-    n = len(controls)
-    if n == 0:
-        # Base case: no control qubits, just a single rotation.
-        if abs(angles[0]) > 1e-15:
-            circuit.rz(target, float(angles[0]))
-        return
-
-    assert len(angles) == 2**n, f"Expected {2**n} angles for {n} controls, got {len(angles)}"
-
-    even_angles = angles[0::2]
-    odd_angles = angles[1::2]
-    sum_angles = (even_angles + odd_angles) / 2.0
-    diff_angles = (even_angles - odd_angles) / 2.0
-
-    inner_controls = controls[1:]
-    _apply_multiplexed_rz(circuit, target, inner_controls, diff_angles)
-    circuit.cx(controls[0], target)
-    _apply_multiplexed_rz(circuit, target, inner_controls, sum_angles)
-    circuit.cx(controls[0], target)
-
-
 def rotation_prepare(
     circuit: Circuit,
     target_vector: np.ndarray,
     qubits: list[int] | None = None,
 ) -> None:
-    """Prepare an arbitrary quantum state from a complex amplitude vector.
+    """Prepare an arbitrary normalized complex state on ``qubits``.
 
-    Uses the Shende–Bullock–Markov state-preparation algorithm.  The
-    method works by computing the circuit that would *disentangle* the
-    target state back to ``|00...0>``, collecting the gates, then applying
-    them in reverse order.
-
-    Gate count: O(2^n) for n qubits.
-
-    The vector is automatically normalised.
+    The target vector is completed to a unitary matrix whose first column is
+    the desired state. Qiskit's maintained unitary synthesis lowers it to the
+    stable ``U3``/``CNOT`` basis, which is then remapped onto the requested
+    physical qubit indices. Qiskit and SciPy are core UnifiedQuantum
+    dependencies, so this path has the same availability as the package.
 
     Args:
-        circuit: Quantum circuit to operate on (mutated in-place).
-        target_vector: 1-D complex array of length ``2**n`` specifying
-            the target state amplitudes.
-        qubits: Qubit indices to use.  ``None`` → first n qubits.
+        circuit: Circuit to modify in place.
+        target_vector: One-dimensional complex amplitude vector of length
+            ``2**n``. It is normalized automatically.
+        qubits: Distinct target qubit indices. ``None`` uses ``range(n)``.
 
     Raises:
-        ValueError: *target_vector* length is not a power of 2.
-        ValueError: *target_vector* is the zero vector.
-
-    Example:
-        >>> import numpy as np
-        >>> from uniqc.circuit_builder import Circuit
-        >>> from uniqc.algorithms.core.state_preparation import rotation_prepare
-        >>> target = np.array([1, 0, 0, 1]) / np.sqrt(2)  # Bell state
-        >>> c = Circuit()
-        >>> rotation_prepare(c, target)
+        ValueError: The vector is empty, zero, not one-dimensional, not a
+            power-of-two length, or the qubit mapping is invalid.
     """
-    target_vector = np.asarray(target_vector, dtype=complex)
-    d = len(target_vector)
-
-    if d == 0:
-        raise ValueError(format_enriched_message("target_vector must not be empty", "circuit_validation"))
-
-    n = int(round(np.log2(d)))
-    if 2**n != d:
+    target = np.asarray(target_vector, dtype=np.complex128)
+    if target.ndim != 1 or target.size == 0:
         raise ValueError(
-            format_enriched_message(f"target_vector length ({d}) must be a power of 2", "circuit_validation")
+            format_enriched_message(
+                "target_vector must be a non-empty one-dimensional array",
+                "circuit_validation",
+            )
         )
 
-    norm = np.linalg.norm(target_vector)
+    n_qubits = int(round(np.log2(target.size)))
+    if 2**n_qubits != target.size:
+        raise ValueError(
+            format_enriched_message(
+                f"target_vector length ({target.size}) must be a power of 2",
+                "circuit_validation",
+            )
+        )
+
+    norm = np.linalg.norm(target)
     if norm < 1e-15:
-        raise ValueError(format_enriched_message("target_vector must not be the zero vector", "circuit_validation"))
+        raise ValueError(
+            format_enriched_message(
+                "target_vector must not be the zero vector",
+                "circuit_validation",
+            )
+        )
+    target = target / norm
 
-    alpha = target_vector / norm
+    mapped_qubits = list(range(n_qubits)) if qubits is None else [int(qubit) for qubit in qubits]
+    if len(mapped_qubits) != n_qubits:
+        raise ValueError(
+            format_enriched_message(
+                f"Expected {n_qubits} target qubits, got {len(mapped_qubits)}",
+                "circuit_validation",
+            )
+        )
+    if len(set(mapped_qubits)) != len(mapped_qubits) or any(qubit < 0 for qubit in mapped_qubits):
+        raise ValueError(
+            format_enriched_message(
+                "qubits must contain distinct non-negative indices",
+                "circuit_validation",
+            )
+        )
 
-    if qubits is None:
-        qubits = list(range(n))
-    else:
-        qubits = list(qubits)
+    if n_qubits == 0:
+        return
 
-    # Collect gates in DISENTANGLING order, then reverse.
-    # We disentangle qubits from 0 (LSB) to n-1 (MSB).
-    # At each level l, qubit l is disentangled (set to |0>),
-    # controlled by qubits l+1 .. n-1.
+    # Preserve the requested register width even when synthesis omits idle
+    # leading qubits (for example, preparing |00...0>).
+    for qubit in mapped_qubits:
+        circuit.identity(qubit)
 
-    gates_reverse: list[tuple] = []  # (gate_type, args)
+    from qiskit import QuantumCircuit, transpile
+    from qiskit.circuit.library import UnitaryGate
+    from scipy.linalg import null_space
 
-    for level in range(n):
-        q = qubits[level]
-        controls = qubits[level + 1 :]
-        n_ctrl = len(controls)
-        n_blocks = 2**n_ctrl
+    qiskit_circuit = QuantumCircuit(n_qubits)
+    complement = null_space(target.conj().reshape(1, -1))
+    unitary = np.column_stack([target, complement])
+    qiskit_circuit.append(UnitaryGate(unitary), range(n_qubits))
+    lowered = transpile(
+        qiskit_circuit,
+        basis_gates=["u3", "cx"],
+        optimization_level=0,
+    )
 
-        # Pair amplitudes: for each control pattern k,
-        # pair (alpha[2k], alpha[2k+1]) where the level-th bit is 0/1.
-        # alpha is indexed with level-th bit as the LSB of the remaining state.
-
-        ry_angles = np.zeros(n_blocks)
-        rz_angles = np.zeros(n_blocks)
-
-        for k in range(n_blocks):
-            # Reconstruct full indices: control pattern k determines bits
-            # for qubits level+1..n-1, and the current qubit (level) varies.
-            idx_even = 2 * k  # level-th bit = 0
-            idx_odd = 2 * k + 1  # level-th bit = 1
-
-            a_e = alpha[idx_even]
-            a_o = alpha[idx_odd]
-
-            r_e = abs(a_e)
-            r_o = abs(a_o)
-
-            # Ry angle to disentangle: map (r_e, r_o) → (sqrt(r_e²+r_o²), 0)
-            ry_angles[k] = -2.0 * np.arctan2(r_o, r_e)
-
-            # Phase correction
-            if r_e > 1e-15 and r_o > 1e-15:
-                rz_angles[k] = np.angle(a_o) - np.angle(a_e)
-
-        gates_reverse.append(("rz", q, controls, rz_angles.copy()))
-        gates_reverse.append(("ry", q, controls, ry_angles.copy()))
-
-        # Update alpha: collapse pairs
-        new_alpha = np.zeros(n_blocks, dtype=complex)
-        for k in range(n_blocks):
-            idx_even = 2 * k
-            idx_odd = 2 * k + 1
-            a_e = alpha[idx_even]
-            a_o = alpha[idx_odd]
-            # Use the larger-magnitude element's phase as reference
-            # to avoid phase noise when one amplitude is near zero
-            ref = a_e if abs(a_e) >= abs(a_o) else a_o
-            new_alpha[k] = np.sqrt(abs(a_e) ** 2 + abs(a_o) ** 2) * np.exp(1j * np.angle(ref))
-        alpha = new_alpha
-
-    # Apply gates in REVERSE order (preparation = reverse of disentangling)
-    for gate_type, q, controls, angles in reversed(gates_reverse):
-        if gate_type == "ry":
-            _apply_multiplexed_ry(circuit, q, controls, angles)
-        else:
-            _apply_multiplexed_rz(circuit, q, controls, angles)
+    for instruction in lowered.data:
+        name = instruction.operation.name.lower()
+        logical_qubits = [lowered.find_bit(qubit).index for qubit in instruction.qubits]
+        physical_qubits = [mapped_qubits[index] for index in logical_qubits]
+        if name == "u3":
+            theta, phi, lam = [float(param) for param in instruction.operation.params]
+            circuit.u3(physical_qubits[0], theta, phi, lam)
+        elif name == "cx":
+            circuit.cnot(physical_qubits[0], physical_qubits[1])
+        elif name != "barrier":
+            raise RuntimeError(f"Unexpected state-preparation basis gate: {name!r}")

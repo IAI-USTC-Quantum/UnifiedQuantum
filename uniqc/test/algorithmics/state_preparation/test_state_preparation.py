@@ -10,7 +10,14 @@ from uniqc.simulator import Simulator
 def _statevector(circuit: Circuit) -> np.ndarray:
     """Simulate a circuit and return its statevector (no qubit remapping)."""
     sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
-    return sim.simulate_statevector(circuit.originir)
+    return np.asarray(sim.simulate_statevector(circuit.originir))
+
+
+def _assert_same_state(actual: np.ndarray, expected: np.ndarray, atol: float = 1e-8) -> None:
+    overlap = np.vdot(expected, actual)
+    assert abs(overlap) > atol
+    phase = overlap / abs(overlap)
+    np.testing.assert_allclose(actual, phase * expected, atol=atol)
 
 
 def _ensure_n_qubits(circuit: Circuit, n: int) -> None:
@@ -130,7 +137,7 @@ class TestRotationPrepare:
         rotation_prepare(c, target)
         sv = _statevector(c)
         expected = np.array([1, 0, 0, 0], dtype=complex)
-        np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-8)
+        _assert_same_state(sv, expected)
 
     def run_test_bell_state(self):
         from uniqc.algorithms.core.state_preparation import rotation_prepare
@@ -139,7 +146,7 @@ class TestRotationPrepare:
         target = np.array([1, 0, 0, 1], dtype=complex) / np.sqrt(2)
         rotation_prepare(c, target)
         sv = _statevector(c)
-        np.testing.assert_allclose(np.abs(sv), np.abs(target), atol=1e-8)
+        _assert_same_state(sv, target)
 
     def run_test_normalisation(self):
         from uniqc.algorithms.core.state_preparation import rotation_prepare
@@ -149,7 +156,42 @@ class TestRotationPrepare:
         rotation_prepare(c, target)
         sv = _statevector(c)
         expected = np.array([3, 4], dtype=complex) / 5.0
-        np.testing.assert_allclose(np.abs(sv), np.abs(expected), atol=1e-8)
+        _assert_same_state(sv, expected)
+
+    def run_test_complex_amplitudes(self):
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
+
+        c = Circuit()
+        target = np.array([1.0, 1.0j, -0.3, 0.2j], dtype=complex)
+        target /= np.linalg.norm(target)
+        rotation_prepare(c, target)
+        _assert_same_state(_statevector(c), target)
+
+    def run_test_random_three_qubit_state(self):
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
+
+        rng = np.random.default_rng(20260722)
+        target = rng.normal(size=8) + 1j * rng.normal(size=8)
+        target /= np.linalg.norm(target)
+        c = Circuit()
+        rotation_prepare(c, target)
+        _assert_same_state(_statevector(c), target)
+
+    def run_test_custom_sparse_qubits(self):
+        from uniqc.algorithms.core.state_preparation import rotation_prepare
+
+        c = Circuit(6)
+        target = np.array([1, 1j, -1, 0.5], dtype=complex)
+        target /= np.linalg.norm(target)
+        rotation_prepare(c, target, qubits=[2, 5])
+        state = _statevector(c).reshape((2,) * 6, order="F")
+        reduced = np.zeros(4, dtype=complex)
+        for basis in range(4):
+            index = [0] * 6
+            index[2] = basis & 1
+            index[5] = (basis >> 1) & 1
+            reduced[basis] = state[tuple(index)]
+        _assert_same_state(reduced, target)
 
     def run_test_non_power_of_2_raises(self):
         c = Circuit()

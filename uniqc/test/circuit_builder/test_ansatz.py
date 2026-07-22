@@ -168,6 +168,31 @@ class TestEnhancedHEA:
         c = hea(n_qubits=4, depth=1, entangling_gate="xx", params=params)
         assert c.max_qubit + 1 == 4
 
+    def run_test_mixed_rotation_order_with_parametric_entangler(self):
+        n_params = hea_param_count(
+            2,
+            depth=2,
+            rotation_gates=["rx", "ry", "rz"],
+            entangling_gate="crx",
+            topology="linear",
+        )
+        params = np.linspace(0.1, 1.4, n_params)
+        circuit = hea(
+            n_qubits=2,
+            depth=2,
+            rotation_gates=["rx", "ry", "rz"],
+            entangling_gate="crx",
+            topology="linear",
+            params=params,
+        )
+
+        rotations = [
+            operation
+            for operation, _qubits, _cbits, _params, _dagger, controls in circuit.opcode_list
+            if operation in {"RX", "RY", "RZ"} and not controls
+        ]
+        assert rotations == ["RX", "RY", "RZ"] * 4
+
     def run_test_statevector_validity(self):
         c = hea(n_qubits=3, depth=1, rotation_gates=["rx", "ry"])
         sv = _statevector(c)

@@ -38,11 +38,18 @@ namespace uniqc {
         return ret;
     }
 
-    size_t make_controller_mask(const std::vector<size_t>& global_controller)
+    size_t make_controller_mask(const std::vector<size_t>& global_controller, size_t total_qubit)
     {
         size_t mask = 0;
         for (size_t qn : global_controller)
         {
+            if (qn >= total_qubit)
+            {
+                auto errstr = fmt::format(
+                    "Exceed total (total_qubit = {}, control_qubit = {})",
+                    total_qubit, qn);
+                ThrowInvalidArgument(errstr);
+            }
             mask |= (1ull << qn);
         }
         return mask;

@@ -154,6 +154,25 @@ _SXDG = _SX.conj().T
 
 _SWAP = torch.tensor([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=torch.complex64)
 _ISWAP = torch.tensor([[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0], [0, 0, 0, 1]], dtype=torch.complex64)
+_CNOT = torch.tensor([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=torch.complex64)
+_CZ = torch.diag(torch.tensor([1, 1, 1, -1], dtype=torch.complex64))
+
+
+def _permutation_matrix(n_wires: int, mapping) -> "torch.Tensor":
+    dim = 2**n_wires
+    matrix = torch.zeros(dim, dim, dtype=torch.complex64)
+    for column in range(dim):
+        matrix[mapping(column), column] = 1.0
+    return matrix
+
+
+_TOFFOLI = _permutation_matrix(3, lambda value: value ^ 0b100 if value & 0b011 == 0b011 else value)
+_CSWAP = _permutation_matrix(
+    3,
+    lambda value: value ^ 0b110
+    if value & 0b001 and ((value >> 1) & 1) != ((value >> 2) & 1)
+    else value,
+)
 
 
 # ---- parametric gate matrices (differentiable) ----------------------------
@@ -198,7 +217,6 @@ def _rxx_matrix(theta: "torch.Tensor") -> "torch.Tensor":
     c = torch.cos(theta / 2).to(torch.complex64)
     s = torch.sin(theta / 2).to(torch.complex64)
     z = torch.zeros_like(c)
-    o = torch.ones_like(c)
     return torch.stack([
         torch.stack([c, z, z, -1j * s]),
         torch.stack([z, c, -1j * s, z]),
@@ -231,50 +249,17 @@ def _rzz_matrix(theta: "torch.Tensor") -> "torch.Tensor":
     ])
 
 
-def _build_cnot_matrix(n_qubits: int, control_wire: int, target_wire: int) -> "torch.Tensor":
-    dim = 2**n_qubits
-    mat = torch.zeros(dim, dim, dtype=torch.complex64)
-    for i in range(dim):
-        if (i >> control_wire) & 1:
-            j = i ^ (1 << target_wire)
-            mat[j, i] = 1.0
-        else:
-            mat[i, i] = 1.0
-    return mat
-
-
-def _build_cz_matrix(n_qubits: int, w1: int, w2: int) -> "torch.Tensor":
-    dim = 2**n_qubits
-    mat = torch.eye(dim, dtype=torch.complex64)
-    for i in range(dim):
-        if ((i >> w1) & 1) and ((i >> w2) & 1):
-            mat[i, i] = -1.0
-    return mat
-
-
-def _build_toffoli_matrix(n_qubits: int, c1: int, c2: int, target: int) -> "torch.Tensor":
-    dim = 2**n_qubits
-    mat = torch.eye(dim, dtype=torch.complex64)
-    for i in range(dim):
-        if ((i >> c1) & 1) and ((i >> c2) & 1):
-            j = i ^ (1 << target)
-            mat[i, i] = 0.0
-            mat[j, i] = 1.0
-    return mat
-
-
-def _build_cswap_matrix(n_qubits: int, ctrl: int, a: int, b: int) -> "torch.Tensor":
-    dim = 2**n_qubits
-    mat = torch.eye(dim, dtype=torch.complex64)
-    for i in range(dim):
-        if (i >> ctrl) & 1:
-            bit_a = (i >> a) & 1
-            bit_b = (i >> b) & 1
-            if bit_a != bit_b:
-                j = i ^ (1 << a) ^ (1 << b)
-                mat[i, i] = 0.0
-                mat[j, i] = 1.0
-    return mat
+def _xy_matrix(theta: "torch.Tensor") -> "torch.Tensor":
+    c = torch.cos(theta / 2).to(torch.complex64)
+    s = torch.sin(theta / 2).to(torch.complex64)
+    z = torch.zeros_like(c)
+    o = torch.ones_like(c)
+    return torch.stack([
+        torch.stack([o, z, z, z]),
+        torch.stack([z, c, 1j * s, z]),
+        torch.stack([z, 1j * s, c, z]),
+        torch.stack([z, z, z, o]),
+    ])
 
 
 # ---- gate application on multi-dim state -----------------------------------
@@ -301,39 +286,31 @@ def _apply_multiq_gate(state: "torch.Tensor", mat: "torch.Tensor", wires: list[i
     """
     n = state.dim() - 1
     k = len(wires)
-    batch_shape = state.shape[:1]
-    # MSB dim indices for each wire (1-indexed, after batch dim)
-    target_dims = [n - w for w in wires]  # e.g. wires=[0,1] for n=3 → [3,2]
-    # Destination: last k positions
-    dest_dims = list(range(n - k + 1, n + 1))  # e.g. [2, 3] for n=3, k=2
-    # Move target dims to the end
-    s = state
-    for src, dst in zip(target_dims, dest_dims):
-        s = s.movedim(src, dst)
-    # Reshape to (batch, rest, 2^k)
-    s = s.reshape(*batch_shape, -1, 2**k)
+    if len(set(wires)) != k:
+        raise ValueError(f"Duplicate wires in gate application: {wires}")
+
+    # State axes are [batch, q[n-1], ..., q[0]]. Put the selected wires at
+    # the end in high-to-low local-bit order so wires[0] remains local bit 0.
+    target_dims = [n - wire for wire in reversed(wires)]
+    remaining_dims = [dim for dim in range(1, n + 1) if dim not in target_dims]
+    permutation = [0, *remaining_dims, *target_dims]
+    inverse_permutation = [permutation.index(dim) for dim in range(n + 1)]
+    permuted_shape = [state.shape[dim] for dim in permutation]
+
+    s = state.permute(permutation).reshape(state.shape[0], -1, 2**k)
     # Apply gate: (2^k, 2^k) @ (batch, rest, 2^k, 1) → (batch, rest, 2^k)
     s = (mat @ s.unsqueeze(-1)).squeeze(-1)
-    # Reshape back to (batch, ..., 2, 2, ..., 2)
-    inner = [2] * n
-    s = s.reshape(*batch_shape, *inner)
-    # Move dims back to original positions (reverse the moves)
-    for src, dst in zip(reversed(target_dims), reversed(dest_dims)):
-        s = s.movedim(dst, src)
-    return s
+    return s.reshape(permuted_shape).permute(inverse_permutation)
 
 
 # ---- opcode execution (differentiable) -------------------------------------
 
-def _resolve_params(idx: int, raw_params, param_map: dict, is_parametric: bool, dagger: bool):
+def _resolve_params(idx: int, raw_params, param_map: dict, is_parametric: bool):
     if idx in param_map:
         return param_map[idx]
     if not is_parametric or raw_params is None:
         return None
-    if isinstance(raw_params, (list, tuple)):
-        vals = [-v for v in raw_params] if dagger else list(raw_params)
-    else:
-        vals = [-raw_params] if dagger else [raw_params]
+    vals = list(raw_params) if isinstance(raw_params, (list, tuple)) else [raw_params]
     return torch.tensor(vals, dtype=torch.float32)
 
 
@@ -378,32 +355,28 @@ def _execute_opcodes(
         if n_w == 2:
             w0, w1 = all_wires
             if op_name == "CNOT":
-                mat = _build_cnot_matrix(n_qubits, w0, w1)
-                state = _apply_multiq_gate(state, mat, [w0, w1])
+                state = _apply_2q_gate(state, _CNOT, w0, w1)
                 continue
             if op_name == "CZ":
-                mat = _build_cz_matrix(n_qubits, w0, w1)
-                state = _apply_multiq_gate(state, mat, [w0, w1])
+                state = _apply_2q_gate(state, _CZ, w0, w1)
                 continue
             if op_name == "SWAP":
                 state = _apply_2q_gate(state, _SWAP, w0, w1)
                 continue
             if op_name == "ISWAP":
-                state = _apply_2q_gate(state, _ISWAP, w0, w1)
+                state = _apply_2q_gate(state, _ISWAP.conj().T if dagger else _ISWAP, w0, w1)
                 continue
 
         if n_w == 3:
             if op_name == "TOFFOLI":
-                mat = _build_toffoli_matrix(n_qubits, all_wires[0], all_wires[1], all_wires[2])
-                state = _apply_multiq_gate(state, mat, all_wires)
+                state = _apply_multiq_gate(state, _TOFFOLI, all_wires)
                 continue
             if op_name == "CSWAP":
-                mat = _build_cswap_matrix(n_qubits, all_wires[0], all_wires[1], all_wires[2])
-                state = _apply_multiq_gate(state, mat, all_wires)
+                state = _apply_multiq_gate(state, _CSWAP, all_wires)
                 continue
 
         # --- parametric gates ---
-        p = _resolve_params(idx, raw_params, param_map, True, dagger)
+        p = _resolve_params(idx, raw_params, param_map, True)
         if p is None:
             continue
         if p.dim() == 0:
@@ -413,25 +386,34 @@ def _execute_opcodes(
             w = all_wires[0]
             gate_fn = {"RX": _rx_matrix, "RY": _ry_matrix, "RZ": _rz_matrix, "U1": _u1_matrix}
             if op_name in gate_fn:
-                state = _apply_1q_gate(state, gate_fn[op_name](p[0]), w)
+                state = _apply_1q_gate(state, gate_fn[op_name](-p[0] if dagger else p[0]), w)
                 continue
             if op_name == "U2":
-                state = _apply_1q_gate(state, _u3_matrix(torch.tensor(3.14159265 / 2), p[0], p[1]), w)
+                if dagger:
+                    mat = _u3_matrix(torch.tensor(-3.14159265 / 2), -p[1], -p[0])
+                else:
+                    mat = _u3_matrix(torch.tensor(3.14159265 / 2), p[0], p[1])
+                state = _apply_1q_gate(state, mat, w)
                 continue
             if op_name == "U3":
-                state = _apply_1q_gate(state, _u3_matrix(p[0], p[1], p[2]), w)
+                mat = _u3_matrix(-p[0], -p[2], -p[1]) if dagger else _u3_matrix(p[0], p[1], p[2])
+                state = _apply_1q_gate(state, mat, w)
                 continue
 
         if n_w == 2:
             w0, w1 = all_wires
+            signed_p0 = -p[0] if dagger else p[0]
             if op_name == "XX":
-                state = _apply_2q_gate(state, _rxx_matrix(p[0]), w0, w1)
+                state = _apply_2q_gate(state, _rxx_matrix(signed_p0), w0, w1)
                 continue
             if op_name == "YY":
-                state = _apply_2q_gate(state, _ryy_matrix(p[0]), w0, w1)
+                state = _apply_2q_gate(state, _ryy_matrix(signed_p0), w0, w1)
                 continue
             if op_name == "ZZ":
-                state = _apply_2q_gate(state, _rzz_matrix(p[0]), w0, w1)
+                state = _apply_2q_gate(state, _rzz_matrix(signed_p0), w0, w1)
+                continue
+            if op_name == "XY":
+                state = _apply_2q_gate(state, _xy_matrix(signed_p0), w0, w1)
                 continue
 
         raise NotImplementedError(

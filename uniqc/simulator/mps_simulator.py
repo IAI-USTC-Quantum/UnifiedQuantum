@@ -210,17 +210,18 @@ def _u2(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
         u = np.array(
             [
                 [1, 0, 0, 0],
-                [0, c, -1j * s, 0],
-                [0, -1j * s, c, 0],
+                [0, c, 1j * s, 0],
+                [0, 1j * s, c, 0],
                 [0, 0, 0, 1],
             ],
             dtype=complex,
         )
     elif name == "ECR":
         # Echoed cross-resonance: (1/sqrt(2)) * (IX - iZX)
-        # Matrix form per Qiskit convention.
+        # The public matrix uses the first qubit as the local LSB; MPS sites
+        # use the first qubit as the high-order leg, so swap local bit order.
         s = 1.0 / math.sqrt(2.0)
-        u = s * np.array(
+        canonical = s * np.array(
             [
                 [0, 0, 1, 1j],
                 [0, 0, 1j, 1],
@@ -229,13 +230,23 @@ def _u2(name: str, params: Sequence[float], dagger: bool = False) -> np.ndarray:
             ],
             dtype=complex,
         )
+        swap_order = np.eye(4, dtype=complex)[[0, 2, 1, 3]]
+        u = swap_order @ canonical @ swap_order
     elif name == "PHASE2Q":
-        # 2-qubit phase gate with three diagonal phases (uniqc convention):
-        # diag(1, e^{i p1}, e^{i p2}, e^{i p3})
+        # Public local order is q1-as-LSB, while MPS uses q1 as the high-order
+        # leg: diag(1, e^{i t2}, e^{i t1}, e^{i(t1+t2+tzz)}).
         ps = _floats(params)
         if len(ps) != 3:
             raise ValueError(f"MPSSimulator: PHASE2Q requires 3 parameters, got {len(ps)}.")
-        u = np.diag([1.0, np.exp(1j * ps[0]), np.exp(1j * ps[1]), np.exp(1j * ps[2])]).astype(complex)
+        t1, t2, tzz = ps
+        u = np.diag(
+            [
+                1.0,
+                np.exp(1j * t2),
+                np.exp(1j * t1),
+                np.exp(1j * (t1 + t2 + tzz)),
+            ]
+        ).astype(complex)
     else:
         raise ValueError(
             f"MPSSimulator: unsupported 2-qubit gate '{name}'. Supported: "

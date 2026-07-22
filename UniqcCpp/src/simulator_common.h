@@ -43,7 +43,7 @@
 namespace uniqc {
     std::map<size_t, size_t> preprocess_measure_list(const std::vector<size_t>& measure_list, size_t total_qubit);
     size_t get_state_with_qubit(size_t i, const std::map<size_t, size_t>& measure_map);
-    size_t make_controller_mask(const std::vector<size_t>& global_controller);
+    size_t make_controller_mask(const std::vector<size_t>& global_controller, size_t total_qubit);
 
     /* Validates a QRAM call's qubit lists: no duplicates within addr_qubits,
      * no duplicates within data_qubits, no addr/data overlap, control qubits

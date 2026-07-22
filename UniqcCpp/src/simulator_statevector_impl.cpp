@@ -220,17 +220,17 @@ namespace statevector_simulator_impl {
 
         /* H = 1/2 * (XX+YY)
 
-        XY(theta) = exp(-i*theta/2 * H)
+        XY(theta) = exp(+i*theta/2 * H)
         = [ 1 0 0 0 ]
-        [ 0 cos(theta/2) -i sin(theta/2) 0 ]
-        [ 0 -i sin(theta/2) cos(theta/2) 0 ]
+        [ 0 cos(theta/2) +i sin(theta/2) 0 ]
+        [ 0 +i sin(theta/2) cos(theta/2) 0 ]
         [ 0 0 0 1 ]
         */
         void xy_unsafe_impl(std::vector<complex_t>& state, size_t qn1, size_t qn2, double theta, size_t total_qubit, size_t controller_mask, bool is_dagger)
         {
             using namespace std::literals::complex_literals;
             complex_t cos_t = std::cos(theta / 2);
-            complex_t sin_t = (is_dagger ? complex_t(0, 1) : -complex_t(0, 1)) * std::sin(theta / 2);
+            complex_t sin_t = (is_dagger ? -complex_t(0, 1) : complex_t(0, 1)) * std::sin(theta / 2);
 
             for (size_t i = 0; i < pow2(total_qubit); ++i)
             {
@@ -454,23 +454,24 @@ namespace statevector_simulator_impl {
             }
         }
 
-        /* u1(qn1, theta1),
-           u1(qn2, theta2),
-           zz(qn1, qn2, thetazz)
-        */
+        /* diag(1, exp(i theta1), exp(i theta2),
+           exp(i (theta1 + theta2 + thetazz))) with qn1 as local LSB. */
         void phase2q_unsafe_impl(std::vector<complex_t>& state, size_t qn1, size_t qn2, double theta1, double theta2, double thetazz,
             size_t total_qubit, size_t controller_mask)
         {
-            using namespace std::literals::complex_literals;
+            for (size_t i = 0; i < pow2(total_qubit); ++i)
+            {
+                if ((i & controller_mask) != controller_mask)
+                    continue;
 
-            /* u1(qn1, theta1) */
-            u1_unsafe_impl(state, qn1, theta1, total_qubit, controller_mask, false);
-
-            /* u1(qn2, theta2) */
-            u1_unsafe_impl(state, qn2, theta2, total_qubit, controller_mask, false);
-
-            /* zz(qn1, qn2, thetazz) */
-            zz_unsafe_impl(state, qn1, qn2, thetazz, total_qubit, controller_mask);
+                const bool bit1 = (i >> qn1) & 1;
+                const bool bit2 = (i >> qn2) & 1;
+                const double angle =
+                    (bit1 ? theta1 : 0.0) +
+                    (bit2 ? theta2 : 0.0) +
+                    (bit1 && bit2 ? thetazz : 0.0);
+                state[i] *= std::exp(complex_t(0, angle));
+            }
         }
 
         /* uu15 gate using KAK decomposition

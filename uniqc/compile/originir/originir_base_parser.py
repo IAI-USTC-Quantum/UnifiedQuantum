@@ -457,6 +457,13 @@ class OriginIR_BaseParser:
         elif qubits and qubits >= self.n_qubit:
             raise ValueError(f"Parse error at line {lineno}: {line}\nQubit exceeds the maximum (QINIT {self.n_qubit}).")
 
+        for control_qubit in control_qubits or []:
+            if control_qubit >= self.n_qubit:
+                raise ValueError(
+                    f"Parse error at line {lineno}: {line}\n"
+                    f"Control qubit exceeds the maximum (QINIT {self.n_qubit})."
+                )
+
         if cbit and cbit >= self.n_cbit:
             raise ValueError(f"Parse error at line {lineno}: {line}\nCbit exceeds the maximum (CBIT {self.n_cbit}).")
 

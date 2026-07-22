@@ -460,7 +460,7 @@ namespace density_operator_simulator_impl {
         void xy_unsafe_impl(std::vector<complex_t>& state, size_t qn1, size_t qn2,
             double theta, size_t total_qubit, size_t controller_mask, bool is_dagger) {
             complex_t cos_t = std::cos(theta / 2);
-            complex_t sin_t = (is_dagger ? complex_t(0, 1) : -complex_t(0, 1)) * std::sin(theta / 2);
+            complex_t sin_t = (is_dagger ? -complex_t(0, 1) : complex_t(0, 1)) * std::sin(theta / 2);
 
             // XY 门的 4x4 矩阵
             complex_t U00 = 1, U01 = 0, U02 = 0, U03 = 0;
@@ -639,23 +639,21 @@ namespace density_operator_simulator_impl {
                 total_qubit, controller_mask);
         }
 
-        /* u1(qn1, theta1),
-           u1(qn2, theta2),
-           zz(qn1, qn2, thetazz)
-        */
+        /* diag(1, exp(i theta1), exp(i theta2),
+           exp(i (theta1 + theta2 + thetazz))) with qn1 as local LSB. */
         void phase2q_unsafe_impl(std::vector<complex_t>& state, size_t qn1, size_t qn2, double theta1, double theta2, double thetazz,
             size_t total_qubit, size_t controller_mask)
         {
-            using namespace std::literals::complex_literals;
+            const complex_t phase1 = std::exp(complex_t(0, theta1));
+            const complex_t phase2 = std::exp(complex_t(0, theta2));
+            const complex_t phase12 = std::exp(complex_t(0, theta1 + theta2 + thetazz));
 
-            /* u1(qn1, theta1) */
-            u1_unsafe_impl(state, qn1, theta1, total_qubit, controller_mask, false);
-
-            /* u1(qn2, theta2) */
-            u1_unsafe_impl(state, qn2, theta2, total_qubit, controller_mask, false);
-
-            /* zz(qn1, qn2, thetazz) */
-            zz_unsafe_impl(state, qn1, qn2, thetazz, total_qubit, controller_mask);
+            u44_unsafe_impl(state, qn1, qn2,
+                1, 0, 0, 0,
+                0, phase1, 0, 0,
+                0, 0, phase2, 0,
+                0, 0, 0, phase12,
+                total_qubit, controller_mask);
         }
 
         /* uu15 gate using KAK decomposition

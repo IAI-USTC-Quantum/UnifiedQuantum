@@ -227,7 +227,7 @@ class OpcodeSimulator:
         elif operation == "ZZ":
             self.simulator.zz(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
         elif operation == "UU15":
-            self.simulator.uu15(qubit[0], qubit[1], parameter, control_qubits_set, True)
+            self.simulator.uu15(qubit[0], qubit[1], parameter, control_qubits_set, is_dagger)
         elif operation == "PHASE2Q":
             self.simulator.phase2q(
                 qubit[0], qubit[1], parameter[0], parameter[1], parameter[2], control_qubits_set, is_dagger
@@ -290,25 +290,13 @@ class OpcodeSimulator:
             # parameter: gamma
             self.simulator.amplitude_damping(qubit, parameter)
         elif operation == "ECR":
-            # ECR (Echoed Cross-Resonance) decomposition using native gates.
-            # ECR(0,1) = SX(0)·SX(1)·X(0)·X(1)·CNOT(0,1)·S(0)  (right-to-left)
-            # SX is self-adjoint (SXdagger = SX).
-            # Note: only the non-dagger form is implemented here.
-            if is_dagger:
-                # ECR^dagger = S^dagger(0)·CNOT(0,1)·X(0)·X(1)·SX(0)·SX(1)
-                self.simulator.sx(qubit[0], control_qubits_set, True)
-                self.simulator.sx(qubit[1], control_qubits_set, True)
-                self.simulator.x(qubit[0], control_qubits_set, True)
-                self.simulator.x(qubit[1], control_qubits_set, True)
-                self.simulator.cnot(qubit[0], qubit[1], control_qubits_set, True)
-                self.simulator.s(qubit[0], control_qubits_set, True)
-            else:
-                self.simulator.s(qubit[0], control_qubits_set, False)
-                self.simulator.cnot(qubit[0], qubit[1], control_qubits_set, False)
-                self.simulator.x(qubit[0], control_qubits_set, False)
-                self.simulator.x(qubit[1], control_qubits_set, False)
-                self.simulator.sx(qubit[0], control_qubits_set, False)
-                self.simulator.sx(qubit[1], control_qubits_set, False)
+            from uniqc.compile.decompose import decompose_opcode_for_originir
+
+            replacement = decompose_opcode_for_originir(
+                ("ECR", qubit, cbit, parameter, is_dagger, control_qubits_set)
+            )
+            for replacement_op in replacement:
+                self.simulate_gate(*replacement_op)
         elif (
             operation == "I"
             or operation is None

@@ -5,6 +5,7 @@ __all__ = ["vqd_circuit", "vqd_ansatz", "vqd_overlap_circuit", "vqd_example"]
 import numpy as np
 
 from uniqc._error_hints import format_enriched_message
+from uniqc.algorithms.core.state_preparation import rotation_prepare
 from uniqc.circuit_builder import Circuit
 
 
@@ -164,13 +165,8 @@ def vqd_overlap_circuit(
     the ancilla in the computational basis gives an estimate of the
     overlap.
 
-    Circuit layout (2 data qubits)::
-
-        ancilla: ──H──●──────●──●──────●── Measure
-                       |      |  |      |
-        data_A:  ──[ansatz]──SWAP──[ansatz]──SWAP──
-                       |      |  |      |
-        data_B:  ──[prev]──SWAP──[prev]──SWAP──
+    ``qubits`` names the ansatz register exactly. The ancilla and previous-state
+    register are allocated from the lowest unused non-negative indices.
 
     Args:
         prev_state: State vector :math:`|\phi\rangle` of dimension :math:`2^n`.
@@ -197,125 +193,42 @@ def vqd_overlap_circuit(
     if 2**n != dim:
         raise ValueError(format_enriched_message(f"prev_state length {dim} is not a power of 2.", "circuit_validation"))
 
-    if qubits is None:
-        qubits = list(range(n))
+    data_a = list(range(n)) if qubits is None else [int(qubit) for qubit in qubits]
+    if len(data_a) != n:
+        raise ValueError(
+            format_enriched_message(
+                f"Expected {n} ansatz qubits, got {len(data_a)}",
+                "circuit_validation",
+            )
+        )
+    if len(set(data_a)) != len(data_a) or any(qubit < 0 for qubit in data_a):
+        raise ValueError(
+            format_enriched_message(
+                "qubits must contain distinct non-negative indices",
+                "circuit_validation",
+            )
+        )
 
-    # Total qubits: 1 ancilla + n (ansatz) + n (prev_state)
-    total = 1 + 2 * n
-    circ = Circuit()
-
-    ancilla = 0
-    data_a = list(range(1, 1 + n))  # ansatz register
-    data_b = list(range(1 + n, 1 + 2 * n))  # prev-state register
+    used = set(data_a)
+    available = (qubit for qubit in range(max(data_a, default=-1) + 2 * n + 2) if qubit not in used)
+    ancilla = next(available)
+    data_b = [next(available) for _ in range(n)]
+    circ = Circuit(max([ancilla, *data_a, *data_b], default=-1) + 1)
 
     # Prepare prev_state on data_b using state preparation
-    _prepare_state(circ, prev_state, data_b)
+    rotation_prepare(circ, prev_state, data_b)
 
     # Apply ansatz on data_a
     _hea_ansatz(circ, ansatz_params, n_layers, data_a)
 
     # Swap test
     circ.h(ancilla)
-    for i in range(n):
-        circ.cnot(ancilla, data_a[i])
-        circ.cnot(ancilla, data_b[i])
-        # Controlled-SWAP decomposition: CSWAP(ancilla, a, b)
-        #   = CNOT(b, a) — H(b) — T(b) — CNOT(a, b) — T†(a) — CNOT(ancilla, b)
-        #   — T(a) — CNOT(a, b) — T†(b) — H(b) — CNOT(ancilla, a)
-        # Simpler: just use three CNOTs with ancilla control
-        # Standard decomposition of Toffoli-based CSWAP:
-        circ.cnot(data_b[i], data_a[i])
-        circ.cnot(ancilla, data_b[i])
-        circ.cnot(data_b[i], data_a[i])
-        circ.cnot(ancilla, data_b[i])
-        circ.cnot(data_a[i], data_b[i])
+    for ansatz_qubit, previous_qubit in zip(data_a, data_b, strict=True):
+        circ.cswap(ancilla, ansatz_qubit, previous_qubit)
     circ.h(ancilla)
 
     circ.measure(ancilla)
     return circ
-
-
-def _prepare_state(
-    circuit: Circuit,
-    state: np.ndarray,
-    qubits: list[int],
-) -> None:
-    """Prepare an arbitrary state vector on the given qubits using multiplexed rotations.
-
-    For small state vectors this uses a simple Schmidt-decomposition based
-    preparation.  Normalises *state* if needed.
-
-    Args:
-        circuit: Circuit to modify in-place.
-        state: Target state vector.
-        qubits: Qubit indices.
-    """
-    n = len(qubits)
-    dim = len(state)
-    if dim != 2**n:
-        raise ValueError(
-            format_enriched_message(
-                f"State vector length {dim} does not match {n} qubits (expected {2**n}).", "circuit_validation"
-            )
-        )
-
-    # Normalise
-    norm = np.linalg.norm(state)
-    if norm == 0:
-        raise ValueError(format_enriched_message("State vector is zero.", "circuit_validation"))
-    state = state / norm
-
-    # Use state preparation via multiplexed Ry rotations (Schmidt decomposition)
-    # This is a simplified recursive approach
-    _state_prep_recursive(circuit, state, qubits)
-
-
-def _state_prep_recursive(
-    circuit: Circuit,
-    state: np.ndarray,
-    qubits: list[int],
-) -> None:
-    """Recursively prepare a state vector using controlled Ry rotations."""
-    n = len(qubits)
-    dim = len(state)
-
-    if n == 1:
-        # Single qubit: just Ry
-        alpha = float(state[0])
-        beta = float(state[1]) if dim > 1 else 0.0
-        amp = np.sqrt(abs(alpha) ** 2 + abs(beta) ** 2)
-        if amp < 1e-15:
-            return
-        theta = 2 * np.arccos(np.clip(abs(alpha) / amp, 0, 1))
-        circuit.ry(qubits[0], theta)
-        if beta != 0 and alpha != 0:
-            phase_diff = np.angle(beta) - np.angle(alpha)
-            if abs(phase_diff) > 1e-10:
-                circuit.rz(qubits[0], phase_diff)
-        return
-
-    # Split state into two halves (for most-significant qubit control)
-    half = dim // 2
-    top = state[:half]
-    bot = state[half:]
-
-    norm_top = np.linalg.norm(top)
-    norm_bot = np.linalg.norm(bot)
-    total = np.sqrt(norm_top**2 + norm_bot**2)
-
-    if total < 1e-15:
-        return
-
-    theta = 2 * np.arccos(np.clip(norm_top / total, 0, 1))
-    circuit.ry(qubits[0], theta)
-
-    if norm_top > 1e-15:
-        _state_prep_recursive(circuit, top / norm_top, qubits[1:])
-    # Apply X to flip to bottom half
-    circuit.x(qubits[0])
-    if norm_bot > 1e-15:
-        _state_prep_recursive(circuit, bot / norm_bot, qubits[1:])
-    circuit.x(qubits[0])
 
 
 def vqd_example() -> Circuit:

@@ -32,7 +32,7 @@ namespace uniqc {
     {
         CHECK_QUBIT_RANGE(qn)
 
-        size_t controller_mask = make_controller_mask(global_controller);        
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         hadamard_unsafe_impl(state, qn, total_qubit, controller_mask);
     }
 
@@ -67,7 +67,7 @@ namespace uniqc {
             u11 = unitary[3];
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
 
         u22_unsafe_impl(state, qn, u00, u01, u10, u11, total_qubit, controller_mask);
     }
@@ -81,7 +81,7 @@ namespace uniqc {
     {
         CHECK_QUBIT_RANGE(qn)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         x_unsafe_impl(state, qn, total_qubit, controller_mask);
     }
 
@@ -96,7 +96,7 @@ namespace uniqc {
     void StatevectorSimulator::y(size_t qn, const std::vector<size_t>& global_controller, bool is_dagger)
     {
         CHECK_QUBIT_RANGE(qn)
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         y_unsafe_impl(state, qn, total_qubit, controller_mask);
     }
 
@@ -109,7 +109,7 @@ namespace uniqc {
     void StatevectorSimulator::z(size_t qn, const std::vector<size_t>& global_controller, bool is_dagger)
     {
         CHECK_QUBIT_RANGE(qn)
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         z_unsafe_impl(state, qn, total_qubit, controller_mask);
     }
 
@@ -122,7 +122,7 @@ namespace uniqc {
     void StatevectorSimulator::s(size_t qn, const std::vector<size_t>& global_controller, bool is_dagger)
     {
         CHECK_QUBIT_RANGE(qn)
-            size_t controller_mask = make_controller_mask(global_controller);
+            size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         if (is_dagger)
             sdg_unsafe_impl(state, qn, total_qubit, controller_mask);
         else
@@ -138,7 +138,7 @@ namespace uniqc {
     void StatevectorSimulator::t(size_t qn, const std::vector<size_t>& global_controller, bool is_dagger)
     {
         CHECK_QUBIT_RANGE(qn)
-            size_t controller_mask = make_controller_mask(global_controller);
+            size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         if (is_dagger)
             tdg_unsafe_impl(state, qn, total_qubit, controller_mask);
         else
@@ -160,7 +160,7 @@ namespace uniqc {
         CHECK_QUBIT_RANGE2(qn2, input2)
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         cz_unsafe_impl(state, qn1, qn2, total_qubit, controller_mask);
     }
 
@@ -178,7 +178,7 @@ namespace uniqc {
         CHECK_QUBIT_RANGE2(qn2, input2)
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         swap_unsafe_impl(state, qn1, qn2, total_qubit, controller_mask);
     }
 
@@ -196,7 +196,7 @@ namespace uniqc {
         CHECK_QUBIT_RANGE2(qn2, input2)
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         iswap_unsafe_impl(state, qn1, qn2, total_qubit, controller_mask, is_dagger);
     }
     
@@ -216,7 +216,7 @@ namespace uniqc {
         CHECK_QUBIT_RANGE2(qn2, input2)
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         xy_unsafe_impl(state, qn1, qn2, theta, total_qubit, controller_mask, is_dagger);
     }
     
@@ -234,7 +234,7 @@ namespace uniqc {
         CHECK_QUBIT_RANGE2(target, target)
         CHECK_DUPLICATE_QUBIT(controller, target)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         cnot_unsafe_impl(state, controller, target, total_qubit, controller_mask);
     }
 
@@ -260,7 +260,7 @@ namespace uniqc {
                 -sin(angle / 2) * 1i, cos(angle / 2)};
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -293,7 +293,7 @@ namespace uniqc {
             unitary[3] = 0.5 * std::complex<double>(1, 1);
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -319,7 +319,7 @@ namespace uniqc {
                        sin(angle / 2), cos(angle / 2)};
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -333,7 +333,7 @@ namespace uniqc {
     {
         CHECK_QUBIT_RANGE(qn)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         rz_unsafe_impl(state, qn, angle, total_qubit, controller_mask, is_dagger);
     }
 
@@ -347,7 +347,7 @@ namespace uniqc {
     {
         CHECK_QUBIT_RANGE(qn)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u1_unsafe_impl(state, qn, angle, total_qubit, controller_mask, is_dagger);
     }
 
@@ -379,7 +379,7 @@ namespace uniqc {
             unitary[3] = INVSQRT2 * std::complex<double>(cos(phi + lambda), sin(phi + lambda));
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -409,7 +409,7 @@ namespace uniqc {
             unitary[3] = INVSQRT2;            
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -439,7 +439,7 @@ namespace uniqc {
             unitary[3] = 0;                        
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -471,7 +471,7 @@ namespace uniqc {
             unitary[3] = cos(theta / 2);
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u22_unsafe_impl(state, qn, unitary, total_qubit, controller_mask);
     }
 
@@ -486,7 +486,7 @@ namespace uniqc {
         CHECK_DUPLICATE_QUBIT(qn2, target)
         CHECK_DUPLICATE_QUBIT(qn1, target)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         toffoli_unsafe_impl(state, qn1, qn2, target, total_qubit, controller_mask);
     }
 
@@ -500,7 +500,7 @@ namespace uniqc {
         CHECK_DUPLICATE_QUBIT(target1, target2)
         CHECK_DUPLICATE_QUBIT(controller, target2)
 
-        size_t controller_mask = make_controller_mask({controller});
+        size_t controller_mask = make_controller_mask({controller}, total_qubit);
         cswap_unsafe_impl(state, controller, target1, target2, total_qubit, controller_mask);
     }
 
@@ -520,7 +520,7 @@ namespace uniqc {
         if (is_dagger)
             theta = -theta;
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         zz_unsafe_impl(state, qn1, qn2, theta, total_qubit, controller_mask);
     }
 
@@ -540,7 +540,7 @@ namespace uniqc {
         if (is_dagger)
             theta = -theta;
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         xx_unsafe_impl(state, qn1, qn2, theta, total_qubit, controller_mask);
     }
 
@@ -562,7 +562,7 @@ namespace uniqc {
         if (is_dagger)
             theta = -theta;
         
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         yy_unsafe_impl(state, qn1, qn2, theta, total_qubit, controller_mask);
     }
 
@@ -577,7 +577,7 @@ namespace uniqc {
     {
         CHECK_QUBIT_RANGE(qn)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         u3_unsafe_impl(state, qn, theta, phi, lambda, total_qubit, controller_mask, is_dagger);
     }
 
@@ -595,7 +595,7 @@ namespace uniqc {
             thetazz = -thetazz;
         }
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         phase2q_unsafe_impl(state, qn1, qn2, theta1, theta2, thetazz, total_qubit, controller_mask);
     }
 
@@ -607,7 +607,7 @@ namespace uniqc {
 
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
-        size_t controller_mask = make_controller_mask(global_controller);
+        size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         uu15_unsafe_impl(state, qn1, qn2, parameters, total_qubit, controller_mask, is_dagger);
     }
 
@@ -783,7 +783,7 @@ namespace uniqc {
 
         check_qram_qubit_validity(addr_qubits, data_qubits, control_qubits);
 
-        size_t controller_mask = make_controller_mask(control_qubits);
+        size_t controller_mask = make_controller_mask(control_qubits, total_qubit);
         qram_permutation_impl(state, addr_qubits, data_qubits, data_array, total_qubit, controller_mask);
     }
 

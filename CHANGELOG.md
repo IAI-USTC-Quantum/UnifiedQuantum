@@ -15,6 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency, and CI validates the PyTorch extra on Python 3.10-3.14 across
   Linux, Windows, and macOS.
 
+### Fixed
+
+- **Cross-backend gate semantics** now use the public matrix/decomposition
+  contract as the oracle. Fixed plain `UU15`, the `XY` sign convention,
+  direct `ECR`, dense and MPS `PHASE2Q`, PyTorch virtual multi-qubit wire
+  application, and PyTorch `U2`/`U3`/`ISWAP` dagger handling. A
+  capability-aware oracle suite covers every public unitary gate across dense
+  statevector/density, official decomposition, MPS, and PyTorch where
+  supported.
+- **HEA mixed rotation schedules** no longer drift after parametric
+  entanglers.
+- **VQD overlap circuits** now use exact arbitrary complex state preparation,
+  real `CSWAP` gates, and the caller-provided ansatz qubits. The shared
+  `rotation_prepare` routine now preserves complex amplitudes on arbitrary
+  qubit mappings.
+- **OriginIR control validation** rejects out-of-range inline controls in both
+  the Python parser and the native simulator boundary.
+
 ## [0.0.16] - 2026-07-19
 
 This release adds **user-defined noisy virtual machines** (``dummy:virtual:<name>``)
