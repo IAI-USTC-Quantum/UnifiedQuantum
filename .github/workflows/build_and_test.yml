@@ -4,7 +4,7 @@ name: Build-and-test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "fix/**" ]
     paths:
       - '**.py'
       - '**.cpp'
