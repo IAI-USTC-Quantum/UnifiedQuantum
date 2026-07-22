@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   qubit mappings.
 - **OriginIR control validation** rejects out-of-range inline controls in both
   the Python parser and the native simulator boundary.
+- **Gateway WebSocket cleanup** invalidates stale connection callbacks before
+  closing the socket, so unmounted hooks and path changes cannot schedule a
+  new reconnect timer.
 
 ## [0.0.16] - 2026-07-19
 

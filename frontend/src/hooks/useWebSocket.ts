@@ -15,22 +15,31 @@ export function useWebSocket(path: string = "/ws/events"): UseWebSocketReturn {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const generationRef = useRef(0);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((generation: number) => {
+    if (generationRef.current !== generation) return;
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}${path}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
+    ws.onopen = () => {
+      if (generationRef.current === generation) setConnected(true);
+    };
     ws.onclose = () => {
+      if (generationRef.current !== generation) return;
       setConnected(false);
-      // Reconnect after 5s
-      reconnectTimer.current = setTimeout(connect, 5000);
+      reconnectTimer.current = setTimeout(() => {
+        reconnectTimer.current = null;
+        connect(generation);
+      }, 5000);
     };
     ws.onerror = () => ws.close();
 
     ws.onmessage = (ev) => {
+      if (generationRef.current !== generation) return;
       try {
         const event: WsEvent = JSON.parse(ev.data);
         setLastEvent(event);
@@ -41,10 +50,20 @@ export function useWebSocket(path: string = "/ws/events"): UseWebSocketReturn {
   }, [path]);
 
   useEffect(() => {
-    connect();
+    const generation = ++generationRef.current;
+    setConnected(false);
+    connect(generation);
+
     return () => {
+      generationRef.current++;
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-      wsRef.current?.close();
+      reconnectTimer.current = null;
+      const ws = wsRef.current;
+      wsRef.current = null;
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
     };
   }, [connect]);
 
