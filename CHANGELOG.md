@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Deadline and restart queries** always resolve `uqt_*` parents through
   persisted shards, and OriginQ native batches restore their expected result
   shape after a process restart.
+- **OpenQASM 2.0 whole-register measurement** (`measure q -> c;`) now expands
+  to index-aligned measurements and rejects mismatched register sizes with a
+  clear validation error instead of crashing in the line parser.
 
 ## [0.0.16] - 2026-07-19
 

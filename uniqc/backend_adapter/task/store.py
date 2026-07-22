@@ -379,7 +379,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["update_time"],
                     row["result_json"],
                     new_metadata_json,
-                    row.get("error_message", None),
+                    _optional_row_value(row, "error_message"),
                     row["archived_at"],
                 ),
             )
@@ -398,7 +398,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["update_time"],
                     row["result_json"],
                     new_metadata_json,
-                    row.get("error_message", None),
+                    _optional_row_value(row, "error_message"),
                 ),
             )
 
@@ -416,7 +416,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["backend"],
                     row["status"],
                     row["result_json"],
-                    row.get("error_message", None),
+                    _optional_row_value(row, "error_message"),
                     row["submit_time"],
                     row["update_time"],
                     row["archived_at"],
@@ -435,7 +435,7 @@ def _migrate_legacy_table(conn: sqlite3.Connection, src_table: str, shard_table:
                     row["backend"],
                     row["status"],
                     row["result_json"],
-                    row.get("error_message", None),
+                    _optional_row_value(row, "error_message"),
                     row["submit_time"],
                     row["update_time"],
                 ),
@@ -493,6 +493,12 @@ def _set_application_id(conn: sqlite3.Connection, app_id: int) -> None:
     conn.execute(f"PRAGMA application_id = {int(app_id)}")
 
 
+def _optional_row_value(row: sqlite3.Row, key: str) -> Any:
+    """Read an optional SQLite row column without assuming ``dict.get``."""
+    columns = row.keys()
+    return row[key] if key in columns else None
+
+
 # ---------------------------------------------------------------------------
 # Row <-> TaskInfo
 # ---------------------------------------------------------------------------
@@ -502,8 +508,8 @@ def _row_to_info(row: sqlite3.Row) -> TaskInfo:
     result = json.loads(row["result_json"]) if row["result_json"] else None
     metadata = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
     # archived_at only exists in archived_tasks, not in tasks
-    archived_at = row.get("archived_at", None)
-    error_message = row.get("error_message", None)
+    archived_at = _optional_row_value(row, "archived_at")
+    error_message = _optional_row_value(row, "error_message")
     return TaskInfo(
         task_id=row["task_id"],
         backend=row["backend"],

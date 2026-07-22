@@ -345,10 +345,32 @@ class OpenQASM2_BaseParser:
 
     def _process_measurements(self):
         for measurement in self.collected_measurements_str:
-            qreg_name, qreg_id, creg_name, creg_id = OpenQASM2_LineParser.handle_measure(measurement)
-            qid = self._get_qubit_id(qreg_name, qreg_id)
-            cid = self._get_cbit_id(creg_name, creg_id)
-            self.measure_qubits.append((qid, cid))
+            if OpenQASM2_LineParser.regexp_measure.match(measurement):
+                qreg_name, qreg_id, creg_name, creg_id = OpenQASM2_LineParser.handle_measure(measurement)
+                qid = self._get_qubit_id(qreg_name, qreg_id)
+                cid = self._get_cbit_id(creg_name, creg_id)
+                self.measure_qubits.append((qid, cid))
+                continue
+
+            qreg_name, creg_name = OpenQASM2_LineParser.handle_measure_register(measurement)
+            qreg_sizes = dict(self.qregs)
+            creg_sizes = dict(self.cregs)
+            if qreg_name not in qreg_sizes:
+                raise RegisterNotFoundError(f"Cannot find qreg {qreg_name}, (defined = {self.collected_qregs_str})")
+            if creg_name not in creg_sizes:
+                raise RegisterNotFoundError(f"Cannot find creg {creg_name}, (defined = {self.collected_cregs_str})")
+            if qreg_sizes[qreg_name] != creg_sizes[creg_name]:
+                raise RegisterDefinitionError(
+                    f"Whole-register measurement requires equal sizes, got "
+                    f"qreg {qreg_name}[{qreg_sizes[qreg_name]}] and creg {creg_name}[{creg_sizes[creg_name]}]."
+                )
+            for index in range(qreg_sizes[qreg_name]):
+                self.measure_qubits.append(
+                    (
+                        self._get_qubit_id(qreg_name, index),
+                        self._get_cbit_id(creg_name, index),
+                    )
+                )
 
     def parse(self, raw_qasm):
         """Parse an OpenQASM 2.0 string and populate internal state.

@@ -72,6 +72,9 @@ class OpenQASM2_LineParser:  # noqa: N801
         + "$"
     )
     regexp_measure_str: str = "^" + "measure" + blank + qreg_str + "(?:->|,)" + blank + qreg_str + "$"
+    regexp_measure_register_str: str = (
+        "^" + "measure" + blank + identifier + blank + "(?:->|,)" + blank + identifier + blank + "$"
+    )
     regexp_barrier_str: str = "^" + "barrier" + blank + f"({qreg_str}{comma}{blank})*{qreg_str}" + "$"
 
     # Compiled regex objects
@@ -85,6 +88,7 @@ class OpenQASM2_LineParser:  # noqa: N801
     regexp_2qnp: re.Pattern[str] = re.compile(regexp_2qnp_str)
     regexp_3qnp: re.Pattern[str] = re.compile(regexp_3qnp_str)
     regexp_measure: re.Pattern[str] = re.compile(regexp_measure_str)
+    regexp_measure_register: re.Pattern[str] = re.compile(regexp_measure_register_str)
     regexp_barrier: re.Pattern[str] = re.compile(regexp_barrier_str)
 
     def __init__(self) -> None: ...
@@ -419,11 +423,21 @@ class OpenQASM2_LineParser:  # noqa: N801
             tuple: (qreg_name, qubit_index, creg_name, creg_index)
         """
         matches = OpenQASM2_LineParser.regexp_measure.match(line)
-        qreg_name: str = matches.group(1)  # type: ignore[union-attr]
-        qubit_index: int = int(matches.group(2))  # type: ignore[union-attr]
-        creg_name: str = matches.group(3)  # type: ignore[union-attr]
-        creg_index: int = int(matches.group(4))  # type: ignore[union-attr]
+        if matches is None:
+            raise AttributeError("Invalid indexed measurement statement")
+        qreg_name: str = matches.group(1)
+        qubit_index: int = int(matches.group(2))
+        creg_name: str = matches.group(3)
+        creg_index: int = int(matches.group(4))
         return qreg_name, qubit_index, creg_name, creg_index
+
+    @staticmethod
+    def handle_measure_register(line: str) -> tuple[str, str]:
+        """Parse a whole-register ``measure q -> c`` statement."""
+        matches = OpenQASM2_LineParser.regexp_measure_register.match(line)
+        if matches is None:
+            raise AttributeError("Invalid whole-register measurement statement")
+        return matches.group(1), matches.group(2)
 
     @staticmethod
     def handle_barrier(line: str) -> list[tuple[str, int]]:

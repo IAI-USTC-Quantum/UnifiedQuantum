@@ -1,11 +1,46 @@
 import numpy as np
+import pytest
 
 from uniqc.circuit_builder import Circuit
 from uniqc.circuit_builder.qasm_spec import generate_sub_gateset_qasm
 from uniqc.circuit_builder.random_qasm import random_qasm
 from uniqc.compile.qasm import OpenQASM2_BaseParser
+from uniqc.compile.qasm.exceptions import RegisterDefinitionError
 from uniqc.simulator import Simulator
 from uniqc.test._utils import NotMatchError, uniq_test
+
+
+def test_whole_register_measurement_expands_in_register_order():
+    parser = OpenQASM2_BaseParser()
+    parser.parse(
+        """
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+h q[0];
+cx q[0],q[1];
+measure q -> c;
+"""
+    )
+
+    assert parser.measure_qubits == [(0, 0), (1, 1)]
+    circuit = parser.to_circuit()
+    assert circuit.measure_list == [0, 1]
+
+
+def test_whole_register_measurement_requires_equal_register_sizes():
+    parser = OpenQASM2_BaseParser()
+    with pytest.raises(RegisterDefinitionError, match="requires equal sizes"):
+        parser.parse(
+            """
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[1];
+measure q -> c;
+"""
+        )
 
 
 @uniq_test("Test QASM Parser")

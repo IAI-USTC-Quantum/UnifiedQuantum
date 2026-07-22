@@ -70,7 +70,8 @@ class ArchiveStore:
             row = conn.execute("SELECT * FROM archived_tasks WHERE task_id = ?", (task_id,)).fetchone()
             if not row:
                 return False
-            cols = [c for c in row if c != "archived_at"]
+            cols = list(row.keys())
+            cols.remove("archived_at")
             values = [row[c] for c in cols]
             conn.execute("DELETE FROM archived_tasks WHERE task_id = ?", (task_id,))
             placeholders = ",".join("?" * len(cols))
@@ -84,7 +85,8 @@ class ArchiveStore:
                 (task_id,),
             ).fetchall()
             for srow in srows:
-                scols = [c for c in srow if c != "archived_at"]
+                scols = list(srow.keys())
+                scols.remove("archived_at")
                 svalues = [srow[c] for c in scols]
                 splaceholders = ",".join("?" * len(scols))
                 conn.execute(
