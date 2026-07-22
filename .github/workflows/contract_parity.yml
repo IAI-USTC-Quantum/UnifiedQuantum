@@ -1,0 +1,55 @@
+name: Cross-repository contract parity
+
+on:
+  push:
+    branches: [main, fix/v0.0.17-stabilization]
+    paths:
+      - "pyproject.toml"
+      - "CMakeLists.txt"
+      - "README*.md"
+      - "CHANGELOG.md"
+      - "conftest.py"
+      - "uniqc/cli/**"
+      - "uniqc/backend_adapter/**"
+      - ".github/workflows/contract_parity.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "CMakeLists.txt"
+      - "README*.md"
+      - "CHANGELOG.md"
+      - "conftest.py"
+      - "uniqc/cli/**"
+      - "uniqc/backend_adapter/**"
+      - ".github/workflows/contract_parity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out UnifiedQuantum
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check out aligned Skill validators
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+        with:
+          repository: IAI-USTC-Quantum/quantum-computing.skill
+          ref: fix/v0.0.17-stabilization
+          path: quantum-computing-skill
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify stable public contracts
+        run: >-
+          python
+          quantum-computing-skill/.claude/skills/uniqc-version-tracker/examples/verify_upstream_contract.py
+          --repo-path . --expected-commit d1794d1
