@@ -294,5 +294,5 @@ def grover_diffusion(
 
 
 def grover_oracle_example() -> Circuit:
-    """Return a 3-qubit Grover oracle marking state |5⟩ for tests/docs."""
+    """Return a 3-qubit Grover oracle marking state ``|5⟩`` for tests/docs."""
     return grover_oracle(marked_state=5, qubits=[0, 1, 2])

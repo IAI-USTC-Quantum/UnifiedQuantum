@@ -114,6 +114,8 @@ def check(roots: Iterable[pathlib.Path]) -> list[str]:
         for kind, target, sphinx_doc in references:
             if _is_external(target):
                 continue
+            if kind.startswith("Markdown") and _strip_title(target) in labels:
+                continue
             resolved = _resolve_path(path, target, sphinx_doc=sphinx_doc)
             if resolved is not None and not resolved.exists():
                 errors.append(f"{path.relative_to(PROJECT_ROOT)}: {kind} target does not exist: {target}")

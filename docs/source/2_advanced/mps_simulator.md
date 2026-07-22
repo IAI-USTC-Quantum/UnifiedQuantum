@@ -1,6 +1,6 @@
 # MPS 模拟器 (MPSSimulator)
 
-UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：[`uniqc.simulator.MPSSimulator`](#)。
+UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：{py:class}`uniqc.simulator.MPSSimulator`。
 
 它的目标场景是：
 

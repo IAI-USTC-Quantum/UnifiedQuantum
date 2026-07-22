@@ -154,7 +154,7 @@ depth = compute_gate_depth(circuit)                  # 默认 virtual_z=True
 depth_no_vz = compute_gate_depth(circuit, virtual_z=False)
 ```
 
-`compute_gate_depth` 严格按物理执行 layer 计数：单/双比特门并行折叠；`Z/RZ/S/T/U1` 视为 frame change 不占深度（`virtual_z=True`）；`BARRIER` 同步不计入；`MEASURE` 不计入。详细约定见 [平台约定 §2.8](platform_conventions.md#platform-gate-depth)。
+`compute_gate_depth` 严格按物理执行 layer 计数：单/双比特门并行折叠；`Z/RZ/S/T/U1` 视为 frame change 不占深度（`virtual_z=True`）；`BARRIER` 同步不计入；`MEASURE` 不计入。详细约定见 [平台约定 §2.8](platform-gate-depth)。
 
 **何时绕过校验**：
 

@@ -210,7 +210,7 @@ class BasisRotationMeasurement:
 
 
 def basis_rotation_measurement_example():
-    """Tiny example: measure a |+⟩ state in the X basis."""
+    """Tiny example: measure a ``|+⟩`` state in the X basis."""
     c = Circuit()
     c.h(0)
     return BasisRotationMeasurement(c, basis="X", shots=1024).execute()

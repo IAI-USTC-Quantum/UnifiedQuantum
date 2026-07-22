@@ -324,9 +324,10 @@ def compile_full(
         string, an OpenQASM 2.0 string, or a ``qiskit.QuantumCircuit``.
     backend_info :
         Target backend descriptor.
-    type, level, basis_gates, chip_characterization, output_format,
-    available_qubits :
-        Same as :func:`compile`.
+    options :
+        ``type``, ``level``, ``basis_gates``, ``chip_characterization``,
+        ``output_format``, and ``available_qubits`` have the same semantics as
+        :func:`compile`.
 
     Returns
     -------

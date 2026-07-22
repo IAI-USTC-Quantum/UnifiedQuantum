@@ -1,12 +1,15 @@
-# 构建量子线路 {#guide-circuit}
+(guide-circuit)=
+# 构建量子线路
 
-## 什么时候先看本页 {#guide-circuit-when-to-read}
+(guide-circuit-when-to-read)=
+## 什么时候先看本页
 
 当你还没把量子线路表达出来——还不确定如何用 {class}`uniqc.circuit_builder.Circuit` 把一个量子算法或实验想法写成可执行的线路表示时，先看本页。
 
 本页解决的核心问题是：**如何从空线路开始，构建一个可以交给模拟器或真机的量子程序**。
 
-## 本页解决的问题 {#guide-circuit-problems}
+(guide-circuit-problems)=
+## 本页解决的问题
 
 - 如何创建空线路并添加量子门（{class}`uniqc.circuit_builder.Circuit`）
 - 如何添加测量指令
@@ -15,7 +18,8 @@
 - 如何查看线路结构信息和做基础变换（重映射等）
 - 如何提取线路的酉矩阵（Unitary Matrix）表示
 
-## 推荐阅读顺序 {#guide-circuit-reading-order}
+(guide-circuit-reading-order)=
+## 推荐阅读顺序
 
 建议按以下顺序阅读本页内容：
 
@@ -97,7 +101,8 @@ with circuit.dagger():
     circuit.cnot(0, 1)
 ```
 
-## 格式互转 {#guide-circuit-format-conversion}
+(guide-circuit-format-conversion)=
+## 格式互转
 
 当你需要将线路提交到不同平台、交给不同后端执行，或与外部工具交换数据时，可以使用以下属性和方法导出/导入线路文本：
 
@@ -154,7 +159,8 @@ draw(circuit.originir)
 
 > 可视化功能详见 [线路分析](../2_advanced/circuit_analysis.md)。
 
-## 提取酉矩阵 {#guide-circuit-unitary-matrix}
+(guide-circuit-unitary-matrix)=
+## 提取酉矩阵
 
 对于不含测量门的线路，可以直接通过 `Circuit.get_matrix()`（或顶层 `uniqc.get_matrix(circuit)`）获取完整酉矩阵：
 
@@ -184,7 +190,8 @@ psi = sim.simulate_statevector(c.originir)
 由于 `get_matrix` 显式构造 `2**n × 2**n` 矩阵，仅适合小规模（约 ≤ 12 qubit）线路。
 :::
 
-## 命名量子寄存器 {#guide-circuit-named-qreg}
+(guide-circuit-named-qreg)=
+## 命名量子寄存器
 
 除了使用整数索引，还可以通过命名寄存器来组织量子比特。这在构建复杂电路时尤其有用。
 
@@ -220,7 +227,8 @@ c.x(data[1:3])         # 对 data[1], data[2] 应用 X 门
 - **Qubit**：单个量子比特的命名引用
 - **QRegSlice**：寄存器切片视图，用于多量子比特操作
 
-## 参数化电路 {#guide-circuit-parametric}
+(guide-circuit-parametric)=
+## 参数化电路
 
 UnifiedQuantum 支持符号化参数，可以在运行时绑定具体值。这对于变分算法（如 VQE、QAOA）非常有用。
 
@@ -289,7 +297,8 @@ alphas.bind([0.1, 0.2, 0.3, 0.4])
 c.rx(0, alphas[0])
 ```
 
-### 序列化为 OriginIR-ext（PARAM）{#guide-circuit-param-originir}
+(guide-circuit-param-originir)=
+### 序列化为 OriginIR-ext（PARAM）
 
 符号参数会作为 OriginIR-ext 的本地扩展序列化到 `circuit.originir`：头部用
 `PARAM` 声明参数，门的角度槽内联参数名或表达式。这是官方 OriginIR 的严格超集
@@ -360,9 +369,10 @@ print(partial.free_parameters)  # ['phi', 'w_0', 'w_1']
 未绑定的符号电路可以序列化为 OriginIR-ext 文本，但 **不能** 直接本地模拟、导出
 OpenQASM / 官方 OriginIR，或提交云端——这些操作会抛出明确的错误提示你先调用
 `assign_parameters(...)`。绑定后即可像普通具体电路一样使用（见
-[PyTorch 集成](pytorch.md#guide-pytorch) 中「手动定义 Parameters」一节）。
+[PyTorch 集成](guide-pytorch) 中「手动定义 Parameters」一节）。
 
-## Named Circuit（可复用子程序） {#guide-circuit-named-circuit}
+(guide-circuit-named-circuit)=
+## Named Circuit（可复用子程序）
 
 `@circuit_def` 装饰器用于定义可复用的量子子程序，类似 QASM3 的 gate 定义。
 
@@ -468,13 +478,13 @@ print(bell_pair.num_parameters) # 0
 
 本页聚焦于“如何把线路写出来”，以下问题不在本页展开：
 
-- 模拟结果怎么看、如何选择本地模拟后端 → 见 [本地模拟](simulation.md#guide-simulation-entry-overview)
+- 模拟结果怎么看、如何选择本地模拟后端 → 见 [本地模拟](guide-simulation-entry-overview)
 - 噪声模型与性能权衡 → 见 [噪声模拟](../2_advanced/noise_simulation.md)
-- 如何提交到真机或云平台 → 见 [提交任务](submit_task.md#guide-submit-task-entry-overview)
+- 如何提交到真机或云平台 → 见 [提交任务](submit_task.md)
 
 ## 下一步
 
-当你已经能生成 `circuit.originir` 或 `circuit.qasm`，且想在本地验证线路结果、比较不同模拟方式或做带噪声测试时，进入 [本地模拟](simulation.md#guide-simulation-entry-overview)。如果你已经完成本地验证，准备把线路提交到云平台或真机执行，则进入 [提交任务](submit_task.md#guide-submit-task-entry-overview)。
+当你已经能生成 `circuit.originir` 或 `circuit.qasm`，且想在本地验证线路结果、比较不同模拟方式或做带噪声测试时，进入 [本地模拟](guide-simulation-entry-overview)。如果你已经完成本地验证，准备把线路提交到云平台或真机执行，则进入 [提交任务](submit_task.md)。
 
 ## 相关测试
 

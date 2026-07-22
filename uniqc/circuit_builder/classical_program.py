@@ -395,7 +395,7 @@ class MeasureOp:
 
 @dataclass
 class ResetOp:
-    """``RESET q[qubit]`` — reset *qubit* to |0>."""
+    """``RESET q[qubit]`` — reset *qubit* to ``|0>``."""
 
     qubit: int
 

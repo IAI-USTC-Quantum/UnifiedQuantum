@@ -2,7 +2,7 @@
 
 将电路提交到量子云平台。
 
-后端命名规则和典型示例见 [提交任务 → 后端命名规则](../1_basic_usage/submit_task.md#guide-submit-task-backend-naming)。
+后端命名规则和典型示例见 [提交任务 → 后端命名规则](guide-submit-task-backend-naming)。
 
 ## 基本用法
 
@@ -46,7 +46,7 @@ uniqc submit circuit.ir --backend dummy:local:mps-linear-32:chi=64:cutoff=1e-10
 uniqc submit circuit.ir --backend dummy:originq:WK_C180
 ```
 
-> `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上执行含噪模拟。完整后端命名规则见 [提交任务 → 后端命名规则](../1_basic_usage/submit_task.md#guide-submit-task-backend-naming)。
+> `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上执行含噪模拟。完整后端命名规则见 [提交任务 → 后端命名规则](guide-submit-task-backend-naming)。
 
 ## 批量提交
 

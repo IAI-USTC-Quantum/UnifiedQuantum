@@ -17,7 +17,7 @@ mitigation、MPS 模拟器。每一节都对应一个可运行的 ``examples/2_a
 ```{include} ../_generated/examples/2_advanced/02_region_selector.md
 ```
 
-详细 API 见 [编译选项 · 区域选择器](compiler_options_region.md#3-区域选择器regionselector)。
+详细 API 见 [编译选项 · 区域选择器](compiler_options_region.md)。
 
 ## 3. 变分量子算法（小型 QAOA）
 
@@ -46,7 +46,7 @@ UnifiedQuantum 的 dummy 系统通过 backend id 文法区分三种语义：
 ```
 
 DummyBackend 编号规则与本地噪声模拟说明见
-[平台约定 · DummyBackend](../1_basic_usage/platform_conventions.md#platform-dummy-backend)。
+[平台约定 · DummyBackend](platform-dummy-backend)。
 
 ## 5. Calibration：1q / 2q / parallel-2q XEB + readout
 
@@ -68,7 +68,7 @@ QEM 模块当前覆盖：
 * {py:class}`uniqc.ReadoutEM` —— 自动从 calibration cache 读校准、强制 TTL 检查；
 * {py:mod}`uniqc.qem.zne` —— 零噪声外推（实验性）。
 
-详见 [校准 · M3 / ReadoutEM](calibration.md#2-m3-读出误差缓解m3-mitigator)。
+详见 [校准 · M3 / ReadoutEM](calibration.md)。
 
 ## 7. MPS 模拟器（长链可扩展）
 

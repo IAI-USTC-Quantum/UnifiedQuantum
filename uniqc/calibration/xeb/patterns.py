@@ -1,6 +1,7 @@
 """Parallel pattern generation for 2-qubit XEB.
 
 Provides two modes:
+
 - **auto** mode: Given chip topology (list of edges), computes the minimum
   parallel schedule using DSatur graph coloring on the conflict graph.
 - **circuit** mode: Given a compiled OriginIR circuit, extracts all 2-qubit
@@ -201,6 +202,7 @@ class ParallelPatternGenerator:
     """Generator for parallel execution patterns of 2-qubit gates.
 
     Supports two modes:
+
     - ``auto``: Given a chip topology, partition all edges into parallel
       groups that can be executed simultaneously.
     - ``circuit``: Given an OriginIR string, extract all 2-qubit gates

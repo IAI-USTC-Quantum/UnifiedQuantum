@@ -4,26 +4,23 @@ This module provides backend-agnostic helpers used by every uniqc submission
 path to make sure a :class:`~uniqc.circuit_builder.qcircuit.Circuit` is actually
 runnable on a target backend before any cloud round-trip happens.
 
-Two public entry points
------------------------
+Public entry points
+-------------------
 
-``compute_gate_depth(circuit, *, virtual_z=True)``
-    Returns the parallelism-aware physical depth of ``circuit``. Each layer is
-    the earliest position at which all qubits used by an operation are free.
-    When ``virtual_z=True`` (the default), gates implemented as a frame change
-    on superconducting qubits — :data:`VIRTUAL_Z_GATES` — contribute 0 depth.
+* ``compute_gate_depth(circuit, *, virtual_z=True)`` returns the
+  parallelism-aware physical depth of ``circuit``. Each layer is the earliest
+  position at which all qubits used by an operation are free. When
+  ``virtual_z=True`` (the default), frame-change gates listed in
+  :data:`VIRTUAL_Z_GATES` contribute zero depth.
+* ``compatibility_report(circuit, backend_info, *, basis_gates=None,
+  language=None)`` and the boolean shortcut ``is_compatible(...)`` validate:
 
-``compatibility_report(circuit, backend_info, *, basis_gates=None,
-language=None)`` and the boolean shortcut ``is_compatible(...)``
-    Validate, in this order:
-
-    1. Language acceptance (the platform's submit language can express the gates).
-    2. Qubit count fits within ``backend_info.num_qubits``.
-    3. Every gate appears in the (effective) basis set / supported set.
-    4. Every two-qubit interaction has a corresponding edge in the topology
-       (``CZ``, ``ISWAP``, ``SWAP`` are undirected; ``CNOT`` / ``CX`` /
-       ``ECR`` are directional unless the backend marks the edge as
-       reversible).
+  1. The platform submit language can express the gates.
+  2. The qubit count fits within ``backend_info.num_qubits``.
+  3. Every gate appears in the effective basis or supported set.
+  4. Every two-qubit interaction has a corresponding topology edge.
+     ``CZ``, ``ISWAP``, and ``SWAP`` are undirected; ``CNOT``, ``CX``, and
+     ``ECR`` remain directional unless the backend marks the edge reversible.
 
 The returned :class:`CompatibilityReport` is the same object surfaced by
 ``submit_task(..., dry_run=True)`` and printed by the CLI.

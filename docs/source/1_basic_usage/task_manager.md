@@ -1,6 +1,8 @@
-# 任务管理器 {#guide-task-manager}
+(guide-task-manager)=
+# 任务管理器
 
-## 什么时候进入本页 {#guide-task-manager-when-to-read}
+(guide-task-manager-when-to-read)=
+## 什么时候进入本页
 
 当你需要：
 - 统一管理多个量子云平台的任务
@@ -12,7 +14,8 @@
 
 本页介绍的是 **统一任务管理接口**，提供跨平台的一致 API，简化云平台任务的提交、查询和结果管理。
 
-## 概述 {#guide-task-manager-overview}
+(guide-task-manager-overview)=
+## 概述
 
 `task_manager` 模块提供了高层次的 API 来管理量子计算任务：
 
@@ -21,7 +24,8 @@
 - **批量操作**：支持批量提交和批量查询
 - **Dummy 模式**：开发测试时可使用本地模拟代替真实平台
 
-## 快速开始 {#guide-task-manager-quickstart}
+(guide-task-manager-quickstart)=
+## 快速开始
 
 ### 安装依赖
 
@@ -76,11 +80,12 @@ print(result.counts)
 > **Bitstring 约定（永久不变）**：所有平台返回的 `result.counts` 字典 key
 > 都满足 `c[0]` = 最右字符（LSB）、`c[N-1]` = 最左字符；`c[i]` 是第 `i` 次
 > `circuit.measure(q)` 调用的结果。详见
-> [`submit_task` §结果处理](submit_task.md#guide-submit-task-bitstring-convention)
-> 与 [`platform_conventions` §2.6](platform_conventions.md#platform-bit-endianness)。
+> [`submit_task` §结果处理](submit_task.md)
+> 与 [`platform_conventions` §2.6](platform-bit-endianness)。
 > 由 `uniqc/test/test_endianness_convention.py` 在所有 dummy 平台上回归保护。
 
-## 核心 API {#guide-task-manager-core-api}
+(guide-task-manager-core-api)=
+## 核心 API
 
 ### 任务提交
 
@@ -216,7 +221,8 @@ from uniqc import clear_cache
 clear_cache()
 ```
 
-## Dummy 模式 {#guide-task-manager-dummy-mode}
+(guide-task-manager-dummy-mode)=
+## Dummy 模式
 
 通过 backend 名称前缀 ``dummy`` 激活本地模拟：
 
@@ -268,7 +274,8 @@ task_id = adapter.submit(circuit, shots=1000)
 result = adapter.query(task_id)
 ```
 
-## 任务持久化 {#guide-task-manager-persistence}
+(guide-task-manager-persistence)=
+## 任务持久化
 
 ### TaskPersistence 类
 
@@ -310,7 +317,8 @@ persistence.clear_completed()
 维护 schema 版本；打开时如发现新版本会自动按 `uniqc.backend_adapter.task.store.MIGRATIONS` 顺序迁移。
 可通过向 `TaskPersistence(cache_dir=...)` 或 `TaskStore(cache_dir=...)` 传入其他路径覆盖默认位置。
 
-## 错误处理 {#guide-task-manager-error-handling}
+(guide-task-manager-error-handling)=
+## 错误处理
 
 ### MissingDependencyError
 
@@ -338,7 +346,8 @@ except MissingDependencyError as e:
 | `success` | 任务成功完成 |
 | `failed` | 任务执行失败 |
 
-## 平台对比 {#guide-task-manager-platform-comparison}
+(guide-task-manager-platform-comparison)=
+## 平台对比
 
 | 特性 | OriginQ | IBM | Dummy |
 |------|---------|-----|-------|
@@ -350,7 +359,8 @@ except MissingDependencyError as e:
 | 网络要求 | 需要 | 需要 | 不需要 |
 | 适用场景 | 生产环境 | 国际平台 | 开发测试 |
 
-## 下一步 {#guide-task-manager-next-steps}
+(guide-task-manager-next-steps)=
+## 下一步
 
 - 了解 [云平台适配器架构](../2_advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)

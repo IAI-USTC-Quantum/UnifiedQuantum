@@ -518,6 +518,7 @@ class QiskitAdapter(QuantumAdapter):
         """Dry-run validation for IBM Quantum backends.
 
         Validates offline by:
+
         1. Parsing OriginIR -> Qiskit QuantumCircuit.
         2. Checking chip_id is in available backends (local config lookup).
         3. Checking shots <= max_shots (local config lookup).

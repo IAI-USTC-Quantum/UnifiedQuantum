@@ -607,7 +607,7 @@ class StateTomography:
 
 
 def state_tomography_example() -> np.ndarray:
-    """Tiny tomography demo on a |+⟩ state."""
+    """Tiny tomography demo on a ``|+⟩`` state."""
     c = Circuit()
     c.h(0)
     return StateTomography(c, shots=2048).execute()

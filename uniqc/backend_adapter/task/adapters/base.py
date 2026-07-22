@@ -14,6 +14,7 @@ Dry-run Validation
 ------------------
 Every adapter implements ``dry_run(originir, shots, **kwargs)`` to validate
 a circuit offline before submission. This checks:
+
   1. OriginIR parses without error.
   2. All gates are supported by the target backend.
   3. Qubit count fits within the backend's limits.
@@ -91,7 +92,7 @@ class QuantumAdapter(abc.ABC):
     Subclass this for each backend (originq_cloud, quafu, ibm, ...).
     Each adapter is instantiated once per task module and reused.
 
-    Class attributes:
+    Attributes:
         name: Adapter identifier.
         max_native_batch_size: Maximum number of circuits the adapter
             can pack into a single platform-side job. uniqc relies on

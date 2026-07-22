@@ -305,6 +305,7 @@ def dry_run_task(
     """Validate a circuit against a backend without making network calls.
 
     This performs a dry-run validation that checks:
+
     1. The circuit can be successfully translated to the platform's native format.
     2. The resulting native circuit object is structurally valid.
     3. The qubit count fits within the backend's limits (where determinable offline).
@@ -318,13 +319,10 @@ def dry_run_task(
             :func:`submit_task`, including ``'<platform>:<chip>'``
             (e.g. ``'originq:WK_C180'``, ``'dummy:originq:WK_C180'``).
         shots: Number of measurement shots for validation.
-        **kwargs: Additional backend-specific parameters.
-            - For IBM: chip_id (required for full validation)
-            - For Quafu: chip_id (required for full validation)
-            - For OriginQ: backend_name (e.g., 'WK_C180'). When ``backend``
-              already contains the chip suffix (``'originq:WK_C180'``) the
-              chip is extracted automatically and forwarded as
-              ``backend_name``.
+        **kwargs: Additional backend-specific parameters. IBM and Quafu use
+            ``chip_id`` for full validation. OriginQ uses ``backend_name``
+            (for example ``"WK_C180"``); when ``backend`` already contains
+            the chip suffix, it is extracted and forwarded automatically.
 
     Returns:
         DryRunResult indicating success or failure with details and warnings.

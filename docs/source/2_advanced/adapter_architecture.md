@@ -1,6 +1,8 @@
-# 云平台适配器架构 {#advanced-adapter-architecture}
+(advanced-adapter-architecture)=
+# 云平台适配器架构
 
-## 概述 {#advanced-adapter-overview}
+(advanced-adapter-overview)=
+## 概述
 
 UnifiedQuantum 的云平台适配器采用 **适配器模式（Adapter Pattern）**，通过统一的 `QuantumAdapter` 基类定义接口，各平台实现具体的适配逻辑。这种设计使得用户可以在不同量子云平台之间无缝切换，而无需修改业务代码。
 
@@ -41,7 +43,8 @@ backend_registry 内部已将 IBM 路由到 QiskitAdapter。
                     └───────────────┘
 ```
 
-## 统一输入与结果接口 {#advanced-adapter-unified-io}
+(advanced-adapter-unified-io)=
+## 统一输入与结果接口
 
 `submit_task()` 和 `submit_batch()` 接受多种输入类型（`Circuit`、OriginIR/QASM 字符串、`qiskit.QuantumCircuit`），提交前自动转换为内部 `Circuit` 对象。结果检索有两种模式：
 
@@ -50,7 +53,8 @@ backend_registry 内部已将 IBM 路由到 QiskitAdapter。
 
 所有 adapter 的 `query()` 方法返回统一的 `{"status": "success"|"failed"|"running", ...}` 格式，`task_manager` 自动映射为 `TaskStatus` 枚举。
 
-## QuantumAdapter 基类 {#advanced-adapter-base-class}
+(advanced-adapter-base-class)=
+## QuantumAdapter 基类
 
 `QuantumAdapter` 是所有适配器的抽象基类，定义了统一的接口。
 
@@ -112,7 +116,8 @@ TASK_STATUS_FAILED = "failed"    # 任务失败
 TASK_STATUS_RUNNING = "running"  # 任务运行中
 ```
 
-## 各平台适配器 {#advanced-adapter-implementations}
+(advanced-adapter-implementations)=
+## 各平台适配器
 
 ### OriginQAdapter
 
@@ -204,7 +209,8 @@ result = adapter.query(task_id)
 - 支持拓扑约束
 - 结果立即可用
 
-## 结果归一化 {#advanced-adapter-normalization}
+(advanced-adapter-normalization)=
+## 结果归一化
 
 各平台适配器返回的结果格式可能不同，`normalizers` 模块提供了统一的结果转换函数。
 
@@ -246,7 +252,8 @@ from uniqc.backend_adapter.task.normalizers import (
 unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 ```
 
-## 配置管理 {#advanced-adapter-configuration}
+(advanced-adapter-configuration)=
+## 配置管理
 
 ### 配置文件
 
@@ -270,7 +277,8 @@ config = load_originq_config()
 api_key = config['api_key']  # OriginQ 配置以 api_key 为主键
 ```
 
-## 实现自定义适配器 {#advanced-adapter-custom}
+(advanced-adapter-custom)=
+## 实现自定义适配器
 
 要实现自定义适配器，继承 `QuantumAdapter` 并实现所有抽象方法：
 
@@ -336,7 +344,8 @@ class MyCustomAdapter(QuantumAdapter):
             return False
 ```
 
-## 最佳实践 {#advanced-adapter-best-practices}
+(advanced-adapter-best-practices)=
+## 最佳实践
 
 ### 1. 懒加载依赖
 
@@ -393,7 +402,8 @@ class MyAdapter(QuantumAdapter):
         self._cache[task_id] = result
 ```
 
-## API 参考 {#advanced-adapter-api-reference}
+(advanced-adapter-api-reference)=
+## API 参考
 
 - {mod}`uniqc.backend_adapter.task.adapters.base` - 适配器基类
 - {mod}`uniqc.backend_adapter.task.adapters.originq_adapter` - OriginQ 适配器

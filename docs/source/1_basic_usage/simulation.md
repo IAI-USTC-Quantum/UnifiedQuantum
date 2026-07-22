@@ -1,12 +1,15 @@
-# 本地模拟 {#guide-simulation}
+(guide-simulation)=
+# 本地模拟
 
-## 什么时候进入本页 {#guide-simulation-when-to-read}
+(guide-simulation-when-to-read)=
+## 什么时候进入本页
 
 当你已经有一条线路，想在本地验证结果、查看概率分布、做多次采样，或比较不同模拟后端时，进入本页。
 
 本页解决的核心问题是：**如何把已经写好的线路跑起来，并根据目标选择合适的模拟方式与后端**。
 
-## 本页解决的问题 {#guide-simulation-problems}
+(guide-simulation-problems)=
+## 本页解决的问题
 
 - 如何把已有线路送入模拟器
 - 如何查看概率测量、状态向量、多次采样等不同输出
@@ -25,7 +28,8 @@
 
 如果你还不清楚如何创建线路、添加量子门或导出线路格式，建议先阅读 [构建量子线路](circuit.md)。
 
-## 推荐阅读顺序 {#guide-simulation-reading-order}
+(guide-simulation-reading-order)=
+## 推荐阅读顺序
 
 建议按以下顺序阅读本页内容：
 
@@ -37,7 +41,8 @@
 6. **simulator vs dummy** — `uniqc.simulator` 与 `Backend=dummy` 的区别与选择
 7. **已知限制** — 在使用 density matrix 或复杂噪声路径前优先确认
 
-## 本地模拟入口总览 {#guide-simulation-entry-overview}
+(guide-simulation-entry-overview)=
+## 本地模拟入口总览
 
 在 UnifiedQuantum 中，“本地模拟”指的是**不提交远端任务、直接在当前环境运行线路并查看结果**。常见入口可以先按输入格式与验证目标来分：
 
@@ -51,9 +56,10 @@
 
 > `MPSSimulator` 与 `TorchQuantumSimulator` 也可通过统一工厂入口构造：`create_simulator(backend='mps')` / `create_simulator(backend='torchquantum')`。
 
-如果你还在决定线路该如何表达，先回到 [构建量子线路](circuit.md#guide-circuit-when-to-read)；如果你已经完成本地验证，准备提交到云平台或真机执行，转到 [提交任务](submit_task.md#guide-submit-task-entry-overview)。
+如果你还在决定线路该如何表达，先回到 [构建量子线路](guide-circuit-when-to-read)；如果你已经完成本地验证，准备提交到云平台或真机执行，转到 [提交任务](submit_task.md)。
 
-## uniqc.simulator 与 Backend=dummy 的区别 {#guide-simulation-vs-dummy}
+(guide-simulation-vs-dummy)=
+## uniqc.simulator 与 Backend=dummy 的区别
 
 `uniqc.simulator`（`Simulator` / `NoisySimulator`）与 `submit_task(backend='dummy:*')` 都在本地用经典计算模拟量子线路，但面向不同场景。
 
@@ -73,9 +79,10 @@
 - **需要噪声但想手动配置** → 用 `NoisySimulator` + `ErrorLoader`。
 - **需要噪声且想模拟真实芯片特征** → 用 `submit_task(backend='dummy:<platform>:<backend>')`，噪声自动从 chip 校准数据派生。
 
-> `Backend=dummy` 的详细用法见 [提交任务 — Dummy 模式](submit_task.md#guide-submit-task-dummy)。
+> `Backend=dummy` 的详细用法见 [提交任务 — Dummy 模式](guide-submit-task-dummy)。
 
-## Simulator {#guide-simulation-originir}
+(guide-simulation-originir)=
+## Simulator
 
 最常用的模拟器，统一接受 `Circuit` 对象、`originir` 字符串或 `qasm` 字符串，并自动检测输入格式。无论是 OriginIR 还是 OpenQASM 2.0 线路，都可以直接使用同一个 `Simulator` 类。
 
@@ -112,7 +119,8 @@ result = sim.simulate_shots(circuit.originir, shots=1000)
 # 返回 1000 次采样的统计结果
 ```
 
-## Opcode 模拟器与本地模拟后端 {#guide-simulation-opcode}
+(guide-simulation-opcode)=
+## Opcode 模拟器与本地模拟后端
 
 底层模拟器，直接操作 opcode 列表。支持多后端（每个后端都接受多种别名，便于在 CLI、Python API、文档之间互换）：
 
@@ -132,7 +140,8 @@ sim = OpcodeSimulator(backend_type='statevector')
 
 > Opcode 的详细文档见 [Opcode](../2_advanced/opcode.md)。
 
-## 带噪声的本地模拟 {#guide-simulation-noisy}
+(guide-simulation-noisy)=
+## 带噪声的本地模拟
 
 ```python
 from uniqc.simulator import NoisySimulator
@@ -164,7 +173,8 @@ prob = sim.simulate_pmeasure(circuit.originir)
 - 需要噪声模拟 → {class}`uniqc.simulator.NoisySimulator`（基于 density_matrix）
 - 复杂多比特噪声模型 → `density_matrix_qutip`
 
-## 已知限制 {#guide-simulation-known-limitations}
+(guide-simulation-known-limitations)=
+## 已知限制
 
 - `statevector` 后端无法模拟噪声。
 - 多比特门（> 2）在 density matrix 后端支持有限。

@@ -94,11 +94,11 @@ class ReadoutCalibrationResult(CalibrationResult):
     Attributes:
         type: "readout_1q" or "readout_2q"
         qubit: int for 1q, tuple[int, int] for 2q
-        confusion_matrix:
-            1q: 2x2 matrix where rows=measured, cols=prepared.
-                ``confusion_matrix[i][j] = P(measure=i | prep=j)``, so the
-                diagonal is ``[P(0|0), P(1|1)]``.
-            2q: 4x4 matrix where rows=measured, cols=prepared (|00⟩,|01⟩,|10⟩,|11⟩)
+        confusion_matrix: For 1q, a 2x2 matrix where rows are measured
+            states and columns are prepared states. The entry
+            ``confusion_matrix[i][j] = P(measure=i | prep=j)`` gives the
+            conditional probability. For 2q, this is a 4x4 matrix ordered as
+            ``|00⟩``, ``|01⟩``, ``|10⟩``, ``|11⟩``.
         assignment_fidelity: average diagonal element = (p00+p11)/2 (1q) or avg(diagonal) (2q)
     """
 

@@ -144,6 +144,7 @@ class Circuit:
     _qregs : dict[str, QReg]
         Named quantum registers (if created with qregs parameter).
 
+
     .. rubric:: AnyQuantumCircuit — the universal input type
 
     Most public APIs (:func:`~uniqc.compile.compile`,
@@ -184,7 +185,7 @@ class Circuit:
             param_dict: Optional mapping of parameter names to ``torch.Tensor``
                 values.  Gate methods accept parameter names (strings) which
                 are resolved through this dict and auto-registered in
-                :pyattr:`param_map`.
+                :attr:`param_map`.
 
         Examples:
             >>> # Backward compatible - no registers
@@ -764,7 +765,7 @@ class Circuit:
             control_qubits: Control qubit(s)
             has_param: If *True*, automatically create an ``nn.Parameter`` for
                 this gate's rotation angle(s).  The created parameter is stored
-                in :pyattr:`_auto_params` and registered in :pyattr:`param_map`.
+                in :attr:`_auto_params` and registered in :attr:`param_map`.
                 Requires PyTorch.
             trainable: Whether the auto-created parameter is trainable
                 (``requires_grad``).  Only used when *has_param=True*.
@@ -862,7 +863,7 @@ class Circuit:
         """Register a differentiable tensor for the parametric gate at *opcode_idx*.
 
         Args:
-            opcode_idx: Index into :pyattr:`opcode_list`.
+            opcode_idx: Index into :attr:`opcode_list`.
             tensor: A ``torch.Tensor`` (typically with ``requires_grad=True``).
 
         Raises:
@@ -875,7 +876,7 @@ class Circuit:
     def set_param_last(self, tensor) -> int:
         """Register a tensor for the most recently added gate.
 
-        Convenience wrapper around :pymeth:`set_param` for the common pattern
+        Convenience wrapper around :meth:`set_param` for the common pattern
         of registering a parameter immediately after adding a gate.
 
         Returns:
@@ -1000,7 +1001,7 @@ class Circuit:
         A bare ``Parameter`` becomes its ``sympy.Symbol`` (so the opcode holds a
         uniform sympy object that serializes cleanly); sympy expressions and
         numeric values pass through unchanged.  Array membership (from
-        ``Parameters``) is recorded in :pyattr:`_param_arrays` so serialization
+        ``Parameters``) is recorded in :attr:`_param_arrays` so serialization
         can emit ``PARAM name[size]`` and render ``name_i`` as ``name[i]``.
         """
         from .parameter import Parameter as _Parameter

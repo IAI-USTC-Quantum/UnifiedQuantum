@@ -204,6 +204,8 @@ autodoc_mock_imports = ["qiskit",
                         "qiskit-aer",
                         "qutip",
                         "qutip_qip",
+                        "torchquantum",
+                        "qiskit_ibm_runtime",
                         "matplotlib",
                         "matplotlib.pyplot",
                         "pyqpanda3"]
@@ -233,7 +235,9 @@ exclude_patterns = [
     # not the included file.
     'source/_generated/examples/**/*.md',
 ]
-autodoc_typehints = "description"
+# Keep autodoc deterministic and warning-free across supported Python/library
+# combinations. Source signatures remain available through viewcode.
+autodoc_typehints = "none"
 source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 
 # Use index.md as the master document.
@@ -283,12 +287,14 @@ autodoc_default_options = {
 # External references (numpy / scipy / torch / python stdlib) are resolved via
 # intersphinx. We source the registry from ``intersphinx-registry`` so URLs
 # stay in sync with the upstream community table rather than hard-coded here.
-from intersphinx_registry import get_intersphinx_mapping
+if os.environ.get("DOCS_ONLINE_INTERSPHINX") == "1":
+    from intersphinx_registry import get_intersphinx_mapping
 
-intersphinx_mapping = get_intersphinx_mapping(
-    packages={"python", "numpy", "scipy", "torch"},
-)
-intersphinx_timeout = 5
+    intersphinx_mapping = get_intersphinx_mapping(
+        packages={"python", "numpy", "scipy", "torch"},
+    )
+else:
+    intersphinx_mapping = {}
 
 # Ignore cross-references that autodoc can't resolve but aren't actionable:
 # short names in docstrings, re-exports (registered at canonical location),
@@ -315,6 +321,9 @@ nitpick_ignore = [
     ("py:class", "operation"),
     ("py:class", "optional"),
     ("py:class", "T"),
+    ("py:class", "type"),
+    ("py:obj", "type"),
+    ("py:class", "builtins.type"),
     ("py:class", "np.ndarray"),
     ("py:class", "pd.DataFrame"),
     ("py:class", "qprog"),

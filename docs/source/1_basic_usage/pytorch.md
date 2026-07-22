@@ -1,4 +1,5 @@
-# PyTorch 集成 {#guide-pytorch}
+(guide-pytorch)=
+# PyTorch 集成
 
 ## 什么时候进入本页
 
@@ -21,7 +22,7 @@
 阅读本页前，建议你已经：
 
 - 熟悉 PyTorch 基础用法（`nn.Module`、自动微分、优化器）
-- 了解 [参数化电路](circuit.md#guide-circuit-parametric) 的概念
+- 了解 [参数化电路](guide-circuit-parametric) 的概念
 
 ## 安装
 
@@ -33,7 +34,8 @@ pip install unified-quantum[pytorch]
 
 这会安装 `torch>=2.0` 作为依赖。本页第 2 节（符号参数）不依赖 PyTorch。
 
-## 1. 快速优化参数化电路（has_param） {#guide-pytorch-has-param}
+(guide-pytorch-has-param)=
+## 1. 快速优化参数化电路（has_param）
 
 > **推荐方式**：无需 TorchQuantum 依赖，梯度通过纯 PyTorch 态矢量模拟自动传播。
 
@@ -148,7 +150,8 @@ for step in range(200):
 
 > 完整可运行示例见 `examples/3_best_practices/11_native_torch_training.py`。
 
-## 2. 手动定义 Parameters（符号参数） {#guide-pytorch-manual-params}
+(guide-pytorch-manual-params)=
+## 2. 手动定义 Parameters（符号参数）
 
 当你需要 **显式命名的参数**——例如用经典优化器（`scipy.optimize`）扫描、复用同一
 模板绑定不同数值，或把参数化电路 **序列化 / 共享** 为 OriginIR-ext 文本——使用符号
@@ -218,13 +221,14 @@ c2 = Circuit.from_originir(c.originir)   # 保留参数名与数组结构
 ```
 
 细节（`PARAM` 语法、表达式限制、必须先绑定才能模拟 / 提交云端）见
-[参数化电路 · 序列化为 OriginIR-ext](circuit.md#guide-circuit-param-originir)。
+[参数化电路 · 序列化为 OriginIR-ext](circuit.md)。
 
 > **has_param 还是符号 Parameters？** `has_param` 面向 PyTorch autograd、参数匿名、
 > 最适合训练；符号 `Parameters` 面向命名与序列化，可配任意（经典）优化器，并能
 > 往返 OriginIR-ext。两者互不排斥，可按需选用。
 
-## 3. PyTorch 集成（nn.Module 与进阶用法） {#guide-pytorch-torch}
+(guide-pytorch-torch)=
+## 3. PyTorch 集成（nn.Module 与进阶用法）
 
 ### 推荐：用 expectation() 嵌入 nn.Module
 
@@ -351,7 +355,7 @@ results = batch_execute_with_params(
 
 ## 下一步
 
-- 了解 [参数化电路](circuit.md#guide-circuit-parametric) 与
-  [OriginIR-ext 参数序列化](circuit.md#guide-circuit-param-originir)
-- 学习 [Named Circuit](circuit.md#guide-circuit-named-circuit) 构建复杂电路
+- 了解 [参数化电路](guide-circuit-parametric) 与
+  [OriginIR-ext 参数序列化](circuit.md)
+- 学习 [Named Circuit](guide-circuit-named-circuit) 构建复杂电路
 - 探索 [变分与混合算法示例](../8_algorithms_examples/variational_hybrid.md)

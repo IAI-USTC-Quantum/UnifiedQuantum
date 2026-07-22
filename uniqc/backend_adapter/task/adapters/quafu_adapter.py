@@ -835,6 +835,7 @@ class QuafuAdapter(QuantumAdapter):
         """Dry-run validation for Quafu backends.
 
         Validates offline by:
+
         1. Extracting qubit count from OriginIR QINIT line (no API call).
         2. Checking chip_id in VALID_CHIP_IDS (static check).
         3. Checking qubit count against CHIP_QUBIT_COUNTS (static map).

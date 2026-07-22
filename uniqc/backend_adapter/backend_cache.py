@@ -1,7 +1,7 @@
 """Disk cache for platform backend information.
 
 Cache file layout
-----------------
+=================
 ``~/.uniqc/backend/backends.json``
     Top-level dict with one key per platform::
 
@@ -18,7 +18,7 @@ The cache used to live at ``~/.uniqc/cache/backends.json``; on first access the
 legacy file is moved to the new location automatically.
 
 Cache TTL
----------
+=========
 Each platform entry is considered stale after 24 hours.  The ``update()``
 function bypasses this check when called explicitly (``uniqc backend update``).
 """

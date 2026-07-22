@@ -330,12 +330,18 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
         # Collect any matplotlib figures the example created.
         try:
             import matplotlib.pyplot as plt
-            for idx, fig_num in enumerate(plt.get_fignums(), start=1):
-                fig = plt.figure(fig_num)
-                fname = f"figure-{idx:02d}.svg"
-                fig.savefig(figures_dir / fname, format="svg", bbox_inches="tight")
-                fig.savefig(docs_figures_dir / fname, format="svg", bbox_inches="tight")
-                figure_files.append(fname)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=r"Glyph .* missing from font",
+                    category=UserWarning,
+                )
+                for idx, fig_num in enumerate(plt.get_fignums(), start=1):
+                    fig = plt.figure(fig_num)
+                    fname = f"figure-{idx:02d}.svg"
+                    fig.savefig(figures_dir / fname, format="svg", bbox_inches="tight")
+                    fig.savefig(docs_figures_dir / fname, format="svg", bbox_inches="tight")
+                    figure_files.append(fname)
             plt.close("all")
         except Exception:
             pass

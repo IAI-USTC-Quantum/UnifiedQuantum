@@ -34,7 +34,7 @@
 ## Dummy backend id 命名
 
 CLI ``-p`` / ``-b`` 跟 Python API ``backend=...`` 共用同一套 id 文法（详见
-[进阶教程 · Dummy 系统](../2_advanced/walkthrough.md#advanced-dummy-system)）：
+[进阶教程 · Dummy 系统](advanced-dummy-system)）：
 
 | id | 含义 |
 |----|------|

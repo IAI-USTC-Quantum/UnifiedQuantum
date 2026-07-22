@@ -41,8 +41,8 @@ def hva(
         qubits: Qubit indices.  ``None`` → auto-detect from hamiltonian.
         params: Variational parameters.  Length must equal ``len(hamiltonian_groups) * p``.
             ``None`` → random initialization.
-        hf_state: Qubit indices to initialize in |1> (Hartree-Fock state).
-            ``None`` → all qubits start in |0>.
+        hf_state: Qubit indices to initialize in ``|1>`` (Hartree-Fock state).
+            ``None`` → all qubits start in ``|0>``.
 
     Returns:
         A :class:`Circuit` object.

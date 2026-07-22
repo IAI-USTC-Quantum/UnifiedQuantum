@@ -1,6 +1,8 @@
-# 提交任务到量子云平台 {#guide-submit-task}
+(guide-submit-task)=
+# 提交任务到量子云平台
 
-## 什么时候进入本页 {#guide-submit-task-when-to-read}
+(guide-submit-task-when-to-read)=
+## 什么时候进入本页
 
 当你已经完成本地线路构建，并且已经通过 [快速上手](../0_quickstart/quickstart.md) 或 [本地模拟](simulation.md) 跑通了最小示例，接下来如果你希望：
 
@@ -12,7 +14,8 @@
 
 本页讨论的是**远端任务提交路径**，它解决的是"如何把已经在本地验证过的线路交给外部平台执行"的问题，而不是"如何在本地验证线路是否正确"。
 
-## 本页解决的问题 {#guide-submit-task-problems}
+(guide-submit-task-problems)=
+## 本页解决的问题
 
 - 什么时候应从本地模拟切换到提交任务路径
 - 提交到云平台前需要准备哪些配置
@@ -30,7 +33,8 @@
 
 如果你还不确定线路是否正确、输出是否合理，建议先留在本地模拟路径，不要直接进入远端提交。
 
-## 通用流程 {#guide-submit-task-flow}
+(guide-submit-task-flow)=
+## 通用流程
 
 无论选择哪个平台，远端任务提交通常都遵循以下流程：
 
@@ -42,7 +46,8 @@
 
 与本地模拟相比，这条路径多出了平台账号、配置文件、网络访问、任务排队与远端状态查询等因素。
 
-## 统一云平台接口 {#guide-submit-task-unified-api}
+(guide-submit-task-unified-api)=
+## 统一云平台接口
 
 UnifiedQuantum 提供统一的云平台接入层，通过一致的接口操作 OriginQ、IBM 和 Quark 等平台。
 
@@ -170,7 +175,8 @@ originq_backend = backend.get_backend('originq')
 print(f"OriginQ available: {originq_backend.is_available()}")
 ```
 
-## 后端命名规则 {#guide-submit-task-backend-naming}
+(guide-submit-task-backend-naming)=
+## 后端命名规则
 
 `submit_task()` 和 CLI 的 `--backend` 参数均使用统一的后端标识符格式。
 
@@ -225,7 +231,8 @@ CLI 中同样适用：
 uniqc submit circuit.ir --backend dummy:local:mps-linear-32:chi=64:cutoff=1e-10
 ```
 
-## Dummy 模式（本地模拟） {#guide-submit-task-dummy}
+(guide-submit-task-dummy)=
+## Dummy 模式（本地模拟）
 
 Dummy 模式允许在不连接真实云平台的情况下测试任务提交流程。通过 backend 名称前缀 ``dummy`` 激活。
 
@@ -284,7 +291,8 @@ task_ids = submit_batch(circuits, backend='originq:WK_C180', shots=1000)
 print(f"Submitted {len(task_ids)} tasks")
 ```
 
-## 多种输入格式 {#guide-submit-task-input-formats}
+(guide-submit-task-input-formats)=
+## 多种输入格式
 
 `submit_task()` 和 `submit_batch()` 支持以下输入类型，提交时会自动检测并转换为内部 `Circuit` 对象：
 
@@ -329,7 +337,8 @@ task_id = submit_task(qc, backend='ibm:ibm_brisbane', shots=1000)
 
 ## 结果处理
 
-### Bitstring 约定（永久不变）{#guide-submit-task-bitstring-convention}
+(guide-submit-task-bitstring-convention)=
+### Bitstring 约定（永久不变）
 
 uniqc 在所有平台（OriginQ / IBM-Qiskit / Quark / Dummy / 本地仿真）
 返回的 `result.counts` / `result.probabilities` 字典 key 都满足 **同一条永久
@@ -385,7 +394,8 @@ exp_zz = calculate_expectation(result.probabilities, 'ZZ')
 print(f"<ZZ> = {exp_zz}")
 ```
 
-### 非阻塞查询 {#guide-submit-task-polling}
+(guide-submit-task-polling)=
+### 非阻塞查询
 
 所有任务提交都是异步的——`submit_task()` 立即返回 task_id，不会阻塞等待云端结果。你可以选择阻塞或非阻塞方式获取结果：
 
@@ -424,7 +434,8 @@ while True:
 task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 ```
 
-## 平台选择说明 {#guide-submit-task-platform-selection}
+(guide-submit-task-platform-selection)=
+## 平台选择说明
 
 | 平台 | 定位 | 适用场景 | 额外依赖 |
 |------|------|---------|---------|
@@ -454,7 +465,8 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
   - {mod}`uniqc.backend_adapter.task.adapters`
   - {mod}`uniqc.backend_adapter.task.normalizers`
 
-## 完整 API 参考 {#guide-submit-task-api-reference}
+(guide-submit-task-api-reference)=
+## 完整 API 参考
 
 下面把 `submit_task` 的完整签名 / 默认参数 / 隐藏 kwargs 全部展开列出，避免你必须跳到独立 API 文档去查。`submit_batch` 接受同样的 kwargs，只是把 `circuit` 换成 `circuits: list[Circuit]`，并返回 `list[str]`。
 

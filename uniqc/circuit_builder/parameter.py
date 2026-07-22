@@ -91,7 +91,7 @@ class Parameter:
     def unbind(self) -> None:
         """Clear the bound value, returning the parameter to the symbolic state.
 
-        After ``unbind()`` the parameter is no longer :pyattr:`is_bound`, so
+        After ``unbind()`` the parameter is no longer :attr:`is_bound`, so
         :meth:`evaluate` will again consult a supplied ``values`` dictionary.
         """
         self._bound_value = None

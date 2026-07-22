@@ -1,4 +1,5 @@
-# 编译、选项与区域选择 {#guide-compiler-options}
+(guide-compiler-options)=
+# 编译、选项与区域选择
 
 ```{important}
 本页所有 `compile()` / `compile_with_config()` / `compile_for_backend()` /
@@ -14,7 +15,8 @@
 qiskit；只有进入"编译/调度/timeline"才需要。
 ```
 
-## 什么时候进入本页 {#guide-compiler-options-when-to-read}
+(guide-compiler-options-when-to-read)=
+## 什么时候进入本页
 
 当你已经掌握线路构建和本地模拟的基础流程，并希望：
 

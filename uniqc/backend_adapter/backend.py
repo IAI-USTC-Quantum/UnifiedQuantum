@@ -37,6 +37,7 @@ __all__ = [
 ]
 
 import abc
+import builtins
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -861,7 +862,7 @@ def list_backends() -> list[str]:
 
 def register_backend(
     name: str,
-    backend_class: type[QuantumBackend],
+    backend_class: builtins.type[QuantumBackend],
     allow_override: bool = False,
 ) -> None:
     """Register a custom backend class.
