@@ -59,7 +59,7 @@ uniqc = "uniqc.cli.main:app"
 originq = ["pyqpanda3; python_version < '3.14'"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
-pytorch = ["torch"]
+pytorch = ["torch", "torchquantum-ng"]
 # quarkstudio/quarkcircuit are Linux/macOS x86 (no win32 wheel) and their
 # transitive deps (srpc, proxy.py) don't yet have stable cp314 wheels —
 # gate to py>=3.12 and py<3.14 and non-win32 so cross-platform resolvers
@@ -77,7 +77,7 @@ all = [
     "pyqpanda3; python_version < '3.14'",
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
-    "torch",
+    "torch", "torchquantum-ng",
 ]
 
 [tool.setuptools]

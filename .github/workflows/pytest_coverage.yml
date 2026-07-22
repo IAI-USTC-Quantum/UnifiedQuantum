@@ -92,14 +92,10 @@ jobs:
           --ignore=uniqc/test/simulator/test_torchquantum_simulator.py \
           --ignore=uniqc/test/simulator/test_simulator_factory.py
 
-    # The maintained torchquantum-ng distribution keeps the `torchquantum`
-    # import name and drops the old mandatory dill/TensorFlow dependencies.
-    - name: Install torchquantum-ng
-      if: matrix.python-version != '3.14'
-      run: uv pip install --system torchquantum-ng
+    - name: Smoke-test the complete PyTorch extra
+      run: python scripts/smoke_pytorch_extra.py
 
     - name: Run torchquantum-touching tests
-      if: matrix.python-version != '3.14'
       run: |
         pytest \
           uniqc/test/adapter/test_tq_algorithms.py \
@@ -108,7 +104,6 @@ jobs:
           -v --no-cov -m "not cloud"
 
     - name: Run torchquantum-touching tests with coverage (append)
-      if: matrix.python-version != '3.14'
       continue-on-error: true
       run: |
         pytest \

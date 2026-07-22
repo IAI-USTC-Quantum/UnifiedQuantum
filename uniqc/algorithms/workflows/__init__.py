@@ -9,7 +9,7 @@ Currently includes:
 
 VQE/QAOA workflows here are deliberately torch-free so they work in the base
 install. For autodiff / parameter-shift / batched-gradient flavours, use
-:mod:`uniqc.algorithms.core.training` (requires ``[pytorch] + torchquantum``).
+:mod:`uniqc.algorithms.core.training` (requires ``[pytorch]``).
 """
 
 from . import (

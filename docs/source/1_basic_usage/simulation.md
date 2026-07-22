@@ -47,7 +47,7 @@
 | {class}`uniqc.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
 | {class}`uniqc.simulator.NoisySimulator` | `AnyQuantumCircuit` + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
 | `MPSSimulator`（见 [MPS 模拟器](../advanced/mps_simulator.md)） | `AnyQuantumCircuit` + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
-| `TorchQuantumSimulator`（需要 `unified-quantum[pytorch]` 与 git 安装的 `torchquantum`） | `Circuit` / `originir` | 想把模拟接入 PyTorch 计算图、做端到端可微分实验 |
+| `TorchQuantumSimulator`（需要 `unified-quantum[pytorch]`） | `Circuit` / `originir` | 想把模拟接入 PyTorch 计算图、做端到端可微分实验 |
 
 > `MPSSimulator` 与 `TorchQuantumSimulator` 也可通过统一工厂入口构造：`create_simulator(backend='mps')` / `create_simulator(backend='torchquantum')`。
 
@@ -178,7 +178,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 - {class}`uniqc.simulator.Simulator`
 - {class}`uniqc.simulator.NoisySimulator`
 - `uniqc.simulator.mps_simulator.MPSSimulator` / `MPSConfig` — MPS 后端，详见 [MPS 模拟器](../advanced/mps_simulator.md)
-- `uniqc.simulator.torchquantum_simulator.TorchQuantumSimulator` — 基于 torchquantum 的可微分后端（需要 `unified-quantum[pytorch]` extra 以及 git 安装的 `torchquantum`）
+- `uniqc.simulator.torchquantum_simulator.TorchQuantumSimulator` — 基于 torchquantum 的可微分后端（`unified-quantum[pytorch]` 会同时安装 `torch` 与 `torchquantum-ng`）
 - `create_simulator(backend=...)` — 统一工厂入口，`backend` 支持 `'statevector' | 'density_matrix' | 'mps' | 'torchquantum'` 等
 
 ## 下一步

@@ -206,14 +206,14 @@ pip install -e .
 >
 > Qiskit 已是核心依赖（随 `unified-quantum` 默认安装），无需单独的 `[qiskit]` extra。
 
-TorchQuantum 后端使用 PyPI 上发布的 `torchquantum-ng`：
+`[pytorch]` 同时安装 `torch` 与 PyPI 上维护的 `torchquantum-ng`
+（导入名仍为 `torchquantum`）：
 
 ```bash
 uv pip install unified-quantum[pytorch]
-uv pip install torchquantum-ng
 ```
 
-不安装 TorchQuantum 不会影响核心功能、QuTiP 模拟、云平台适配器或常规 `uniqc.torch_adapter` 功能；只有 TorchQuantum 专用后端与示例会在实际使用时提示缺少该依赖。
+不安装 `[pytorch]` 不会影响核心功能、QuTiP 模拟或云平台适配器。
 
 ---
 

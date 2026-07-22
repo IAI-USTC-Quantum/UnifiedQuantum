@@ -12,7 +12,6 @@ try:
 except ImportError as e:
     print(f"Required dependencies not available: {e}")
     print("Install with: pip install unified-quantum[pytorch]")
-    print("Then install TorchQuantum: pip install torchquantum-ng")
     raise SystemExit(1)
 
 

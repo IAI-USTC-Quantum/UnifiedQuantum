@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`[pytorch]` now installs `torchquantum-ng`** alongside `torch`, so the
+  TorchQuantum simulator and high-level QML models no longer require a second
+  manual installation step. The portable `[all]` extra includes the same
+  dependency, and CI validates the PyTorch extra on Python 3.10-3.14 across
+  Linux, Windows, and macOS.
+
 ## [0.0.16] - 2026-07-19
 
 This release adds **user-defined noisy virtual machines** (``dummy:virtual:<name>``)

@@ -194,11 +194,11 @@ Core dependencies (including `scipy`) are included by default.
 >
 > Qiskit is a core dependency (installed by default with `unified-quantum`); the `[qiskit]` extra has been removed.
 
-Install the published `torchquantum-ng` package for the TorchQuantum backend:
+`[pytorch]` installs both `torch` and the maintained `torchquantum-ng`
+distribution (whose import name remains `torchquantum`):
 
 ```bash
 uv pip install unified-quantum[pytorch]
-uv pip install torchquantum-ng
 ```
 
 ---

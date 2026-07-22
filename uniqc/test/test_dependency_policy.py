@@ -81,3 +81,12 @@ def test_qiskit_is_a_core_dependency() -> None:
             f"{pkg} must be listed in project.dependencies"
         )
     assert "qiskit" not in optional, "[qiskit] extra must be removed"
+
+
+def test_pytorch_extra_includes_torchquantum_and_is_part_of_all() -> None:
+    """The public [pytorch] contract installs both PyTorch integration layers."""
+    pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    optional = pyproject["project"]["optional-dependencies"]
+
+    assert set(optional["pytorch"]) == {"torch", "torchquantum-ng"}
+    assert set(optional["pytorch"]).issubset(optional["all"])

@@ -3,8 +3,7 @@
 Provides reusable algorithm implementations using TorchQuantum backend
 for native PyTorch autograd-based optimization.
 
-Requires optional dependencies: install unified-quantum[pytorch], then install
-the TorchQuantum fork manually.
+Requires the optional dependencies installed by ``unified-quantum[pytorch]``.
 """
 
 from __future__ import annotations

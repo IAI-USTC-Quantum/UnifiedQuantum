@@ -99,5 +99,5 @@ else:
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "PyTorch and TorchQuantum are required. "
-                "Install with: pip install unified-quantum[pytorch] torchquantum-ng"
+                "Install with: pip install unified-quantum[pytorch]"
             )

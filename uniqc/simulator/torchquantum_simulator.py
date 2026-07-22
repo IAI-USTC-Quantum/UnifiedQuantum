@@ -89,8 +89,8 @@ def _require_torchquantum() -> None:
     if TORCHQUANTUM_AVAILABLE:
         return
     raise ImportError(
-        "TorchQuantum backend requires PyTorch and a manual TorchQuantum install. "
-        "Install with: pip install unified-quantum[pytorch] torchquantum-ng"
+        "TorchQuantum backend requires the PyTorch extra. "
+        "Install with: pip install unified-quantum[pytorch]"
     )
 
 

@@ -215,6 +215,9 @@ pip install unified-quantum[visualization]
 
 ### PyTorch 集成
 
+`[pytorch]` 同时安装 `torch` 与 `torchquantum-ng`（导入名为
+`torchquantum`）。
+
 ```bash
 uv pip install unified-quantum[pytorch]
 # 或 pip
