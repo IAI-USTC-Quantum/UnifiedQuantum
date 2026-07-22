@@ -194,6 +194,30 @@ def test_mps_matches_matrix(case: GateCase, dagger: bool) -> None:
     _assert_up_to_global_phase(np.column_stack(columns), _gate_matrix(case, dagger=dagger))
 
 
+@pytest.mark.parametrize(
+    "case",
+    [
+        GateCase("XY", [0, 1], 0.63),
+        GateCase("PHASE2Q", [0, 1], [0.2, -0.4, 0.7]),
+    ],
+    ids=lambda case: case.name,
+)
+@pytest.mark.parametrize("dagger", [False, True], ids=["plain", "dagger"])
+def test_qutip_density_matches_matrix_for_canonicalized_gates(case: GateCase, dagger: bool) -> None:
+    pytest.importorskip("qutip")
+    from uniqc.simulator import Simulator
+
+    circuit = _generic_input_circuit(case, dagger=dagger)
+    expected = _expected_state(circuit)
+    actual = np.asarray(
+        Simulator(
+            backend_type="density_operator_qutip",
+            least_qubit_remapping=False,
+        ).simulate_density_matrix(circuit.originir)
+    )
+    assert np.allclose(actual, np.outer(expected, expected.conj()), atol=1e-7)
+
+
 @pytest.mark.parametrize("case", [case for case in GATE_CASES if case.torch_virtual], ids=lambda case: case.name)
 @pytest.mark.parametrize("dagger", [False, True], ids=["plain", "dagger"])
 def test_torch_virtual_matches_matrix(case: GateCase, dagger: bool) -> None:

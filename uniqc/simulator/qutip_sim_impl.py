@@ -477,7 +477,7 @@ class DensityOperatorSimulatorQutip:
             control_qubits_set: Control qubits.
             is_dagger: Whether to apply the dagger version.
         """
-        H = (tensor(sigmax(), sigmax()) + tensor(sigmay(), sigmay())) * (-1j * theta / 4)
+        H = (tensor(sigmax(), sigmax()) + tensor(sigmay(), sigmay())) * (1j * theta / 4)
         U = H.expm()
         self._apply_unitary(U, [q1, q2], control_qubits_set, is_dagger)
 
@@ -655,15 +655,16 @@ class DensityOperatorSimulatorQutip:
         control_qubits_set: list[int] | None = None,
         is_dagger: bool = False,
     ) -> None:
-        """Phase2Q gate: u1(q1, theta1), u1(q2, theta2), zz(q1, q2, theta3)."""
-        if not is_dagger:
-            self.u1(q1, theta1, control_qubits_set, False)
-            self.u1(q2, theta2, control_qubits_set, False)
-            self.zz(q1, q2, theta3, control_qubits_set, False)
-        else:
-            self.zz(q1, q2, theta3, control_qubits_set, True)
-            self.u1(q2, theta2, control_qubits_set, True)
-            self.u1(q1, theta1, control_qubits_set, True)
+        """Apply the canonical diagonal PHASE2Q unitary."""
+        matrix = np.diag(
+            [
+                1.0,
+                np.exp(1j * theta2),
+                np.exp(1j * theta1),
+                np.exp(1j * (theta1 + theta2 + theta3)),
+            ]
+        )
+        self._apply_unitary(Qobj(matrix, dims=[[2, 2], [2, 2]]), [q1, q2], control_qubits_set, is_dagger)
 
     # ─────────────────── Noise models ───────────────────
 

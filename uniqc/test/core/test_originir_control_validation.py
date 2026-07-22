@@ -18,6 +18,16 @@ X q[0] controlled_by(q[999])
         OriginIR_BaseParser().parse(originir)
 
 
+def test_circuit_width_includes_explicit_control_qubits() -> None:
+    from uniqc.circuit_builder import Circuit
+
+    circuit = Circuit()
+    circuit.add_gate("X", 0, control_qubits=[3])
+
+    assert circuit.qubit_num == 4
+    assert circuit.originir.startswith("QINIT 4\n")
+
+
 @pytest.mark.requires_cpp
 @pytest.mark.parametrize("simulator_name", ["StatevectorSimulator", "DensityOperatorSimulator"])
 def test_cpp_simulator_rejects_out_of_range_global_control(simulator_name: str) -> None:

@@ -844,7 +844,13 @@ class Circuit:
 
         opcode: OpCode = (operation, resolved_qubits, cbits, opcode_params, merged_dagger, merged_controls)  # type: ignore[assignment]
         self.opcode_list.append(opcode)
-        self.record_qubit(resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits])
+        used_qubits = resolved_qubits if isinstance(resolved_qubits, list) else [resolved_qubits]
+        if merged_controls is not None:
+            used_qubits = [
+                *used_qubits,
+                *(merged_controls if isinstance(merged_controls, list) else [merged_controls]),
+            ]
+        self.record_qubit(used_qubits)
         if self.dynamic_program is not None:
             from .classical_program import GateOp
 
