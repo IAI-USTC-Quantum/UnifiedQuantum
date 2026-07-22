@@ -535,6 +535,11 @@ class OriginQAdapter(QuantumAdapter):
     # Task query
     # -------------------------------------------------------------------------
 
+    def restore_batch_context(self, taskid: str, circuit_count: int, shots: int) -> None:
+        """Restore persisted native-batch shape after a process restart."""
+        if circuit_count > 1:
+            self._batch_job_sizes.setdefault(taskid, (int(circuit_count), int(shots)))
+
     def query(self, taskid: str) -> dict[str, Any]:
         """Query a single task's status.
 

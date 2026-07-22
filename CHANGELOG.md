@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Gateway WebSocket cleanup** invalidates stale connection callbacks before
   closing the socket, so unmounted hooks and path changes cannot schedule a
   new reconnect timer.
+- **Task lifecycle persistence** now records one authoritative FAILED
+  transition for backend resolution, availability, adaptation, submission,
+  and shard-persistence errors, including partial-batch context.
+- **Deadline and restart queries** always resolve `uqt_*` parents through
+  persisted shards, and OriginQ native batches restore their expected result
+  shape after a process restart.
 
 ## [0.0.16] - 2026-07-19
 

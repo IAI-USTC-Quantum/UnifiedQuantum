@@ -508,6 +508,25 @@ def save_task(task_info: TaskInfo, cache_dir: Path | None = None) -> None:
     _store(cache_dir).save(task_info)
 
 
+def _transition_task_failed(
+    task_info: TaskInfo,
+    *,
+    stage: str,
+    error: Exception,
+    context: dict[str, Any] | None = None,
+) -> None:
+    """Persist one authoritative FAILED transition before re-raising."""
+    task_info.status = TaskStatus.FAILED
+    task_info.error_message = f"{stage} failed: {error!r}"
+    task_info.metadata = {
+        **(task_info.metadata or {}),
+        "failure_stage": stage,
+        "failure_error": str(error),
+        **(context or {}),
+    }
+    save_task(task_info)
+
+
 def get_task(task_id: str, cache_dir: Path | None = None) -> TaskInfo | None:
     """Get a task from the local cache.
 
@@ -1155,20 +1174,34 @@ def submit_task(
     try:
         backend_instance = backend_module.get_backend(backend)
     except ValueError as e:
+        _transition_task_failed(task_info, stage="backend resolution", error=e)
         raise BackendNotFoundError(str(e)) from e
+    except Exception as e:
+        _transition_task_failed(task_info, stage="backend resolution", error=e)
+        raise
 
     # Check backend availability
-    if not backend_instance.is_available():
-        raise BackendNotAvailableError(
+    try:
+        is_available = backend_instance.is_available()
+    except Exception as e:
+        _transition_task_failed(task_info, stage="availability check", error=e)
+        mapped_error = _map_adapter_error(e, backend)
+        raise mapped_error from e
+    if not is_available:
+        error = BackendNotAvailableError(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
+        _transition_task_failed(task_info, stage="availability check", error=error)
+        raise error
 
     # Convert circuit using adapter
     try:
         adapter = _get_adapter(backend)
         native_circuit = adapter.adapt(circuit)
     except Exception as e:
-        raise _map_adapter_error(e, backend) from e
+        _transition_task_failed(task_info, stage="circuit adaptation", error=e)
+        mapped_error = _map_adapter_error(e, backend)
+        raise mapped_error from e
 
     # Strip uniqc-internal kwargs that adapters don't accept.
     kwargs.pop("cloud_compile", None)
@@ -1177,13 +1210,12 @@ def submit_task(
     try:
         platform_task_id = backend_instance.submit(native_circuit, shots=shots, **kwargs)
     except Exception as e:
-        # Mark the parent FAILED with submission_error metadata so the
-        # uniqc id is still discoverable — important for debugging
-        # transient cloud errors.
-        task_info.status = TaskStatus.FAILED
-        task_info.error_message = f"submit failed: {e!r}"
-        task_info.metadata = {**(task_info.metadata or {}), "submission_error": str(e)}
-        save_task(task_info)
+        _transition_task_failed(
+            task_info,
+            stage="submission",
+            error=e,
+            context={"submission_error": str(e)},
+        )
         mapped_error = _map_adapter_error(e, backend)
         raise mapped_error from e
 
@@ -1197,7 +1229,16 @@ def submit_task(
         sub_index_offset=0,
         status=TaskStatus.RUNNING,
     )
-    _store().save_shard(shard)
+    try:
+        _store().save_shard(shard)
+    except Exception as e:
+        _transition_task_failed(
+            task_info,
+            stage="shard persistence",
+            error=e,
+            context={"platform_task_id": platform_task_id},
+        )
+        raise
 
     # Promote parent to RUNNING now that we have at least one shard.
     task_info.status = TaskStatus.RUNNING
@@ -1470,23 +1511,41 @@ def submit_batch(
     try:
         backend_instance = backend_module.get_backend(backend)
     except ValueError as e:
+        _transition_task_failed(parent_info, stage="backend resolution", error=e)
         raise BackendNotFoundError(str(e)) from e
+    except Exception as e:
+        _transition_task_failed(parent_info, stage="backend resolution", error=e)
+        raise
 
-    if not backend_instance.is_available():
-        raise BackendNotAvailableError(
+    try:
+        is_available = backend_instance.is_available()
+    except Exception as e:
+        _transition_task_failed(parent_info, stage="availability check", error=e)
+        mapped_error = _map_adapter_error(e, backend)
+        raise mapped_error from e
+    if not is_available:
+        error = BackendNotAvailableError(
             f"Backend '{backend}' is not available. Please check your configuration and credentials."
         )
+        _transition_task_failed(parent_info, stage="availability check", error=error)
+        raise error
 
     try:
         adapter = _get_adapter(backend)
         native_circuits = adapter.adapt_batch(circuits)
     except Exception as e:
-        raise _map_adapter_error(e, backend) from e
+        _transition_task_failed(parent_info, stage="circuit adaptation", error=e)
+        mapped_error = _map_adapter_error(e, backend)
+        raise mapped_error from e
 
     # Decide shard size. ``native_batch=False`` forces one circuit per
     # platform job (i.e. shard size 1). Otherwise honour the adapter's
     # ``max_native_batch_size`` (an instance attribute or class attr).
-    task_adapter = backend_instance.adapter  # the QuantumAdapter instance
+    try:
+        task_adapter = backend_instance.adapter  # the QuantumAdapter instance
+    except Exception as e:
+        _transition_task_failed(parent_info, stage="adapter initialization", error=e)
+        raise
     max_size = max(1, int(getattr(task_adapter, "max_native_batch_size", 1)))
     shard_size = 1 if not native_batch else max_size
 
@@ -1504,19 +1563,15 @@ def submit_batch(
                     **kwargs,
                 )
             except Exception as exc:
-                # Mark parent FAILED with submission_error and the list
-                # of already-submitted shards so the user can still
-                # query/cancel them.
-                parent_info.status = TaskStatus.FAILED
-                parent_info.error_message = (
-                    f"Shard {shard_index}/{-(-len(native_circuits) // shard_size)} submit failed: {exc!r}"
+                _transition_task_failed(
+                    parent_info,
+                    stage=f"shard {shard_index}/{-(-len(native_circuits) // shard_size)} submission",
+                    error=exc,
+                    context={
+                        "submission_error": str(exc),
+                        "partial_submitted_shards": [s.platform_task_id for s in shards_submitted],
+                    },
                 )
-                parent_info.metadata = {
-                    **(parent_info.metadata or {}),
-                    "submission_error": str(exc),
-                    "partial_submitted_shards": [s.platform_task_id for s in shards_submitted],
-                }
-                save_task(parent_info)
                 mapped_error = _map_adapter_error(exc, backend)
                 raise mapped_error from exc
 
@@ -1535,7 +1590,19 @@ def submit_batch(
                     sub_index_offset=start,
                     status=TaskStatus.RUNNING,
                 )
-                _store().save_shard(shard)
+                try:
+                    _store().save_shard(shard)
+                except Exception as exc:
+                    _transition_task_failed(
+                        parent_info,
+                        stage="shard persistence",
+                        error=exc,
+                        context={
+                            "partial_submitted_shards": [s.platform_task_id for s in shards_submitted],
+                            "unpersisted_platform_task_ids": ids,
+                        },
+                    )
+                    raise
                 shards_submitted.append(shard)
             else:
                 # Adapter expanded to one job per circuit even though we
@@ -1552,7 +1619,19 @@ def submit_batch(
                         sub_index_offset=start + offset,
                         status=TaskStatus.RUNNING,
                     )
-                    _store().save_shard(shard)
+                    try:
+                        _store().save_shard(shard)
+                    except Exception as exc:
+                        _transition_task_failed(
+                            parent_info,
+                            stage="shard persistence",
+                            error=exc,
+                            context={
+                                "partial_submitted_shards": [s.platform_task_id for s in shards_submitted],
+                                "unpersisted_platform_task_ids": ids[offset:],
+                            },
+                        )
+                        raise
                     shards_submitted.append(shard)
 
         # All shards submitted successfully → parent is RUNNING.
@@ -1776,6 +1855,14 @@ def _refresh_shard_from_backend(shard: TaskShard) -> TaskShard:
     except Exception:
         return shard
     try:
+        restore_batch_context = getattr(backend_instance.adapter, "restore_batch_context", None)
+        if callable(restore_batch_context) and shard.circuit_count > 1:
+            parent = get_task(shard.uniqc_task_id)
+            restore_batch_context(
+                shard.platform_task_id,
+                shard.circuit_count,
+                parent.shots if parent is not None else 0,
+            )
         result = backend_instance.query(shard.platform_task_id)
     except Exception:
         return shard
@@ -2104,7 +2191,6 @@ def wait_for_result(
     while True:
         # Query current status (backend auto-resolved from cache by task_id)
         task_info = query_task(task_id)
-        backend = task_info.backend
 
         # Check if completed
         if task_info.status == TaskStatus.SUCCESS:
@@ -2126,20 +2212,21 @@ def wait_for_result(
         # don't raise TaskTimeoutError for a task that actually failed.
         elapsed = time.time() - start_time
         if elapsed >= timeout:
-            # One last query without cache to get the true cloud status.
             try:
-                final_info = backend_module.get_backend(backend).query(task_id)
-            except Exception:
-                pass  # fall through to timeout error
-            else:
-                if final_info.get("status") == TASK_STATUS_FAILED:
-                    raise TaskFailedError(
-                        f"Task '{task_id}' failed on backend '{backend}'.",
-                        task_id=task_id,
-                        backend=backend,
-                    )
-                if final_info.get("status") == TASK_STATUS_SUCCESS:
-                    return _wrap(final_info.get("result"), backend, task_info.shots, task_info.metadata)
+                final_task = query_task(task_id)
+            except NetworkError:
+                final_task = task_info
+
+            if final_task.status == TaskStatus.FAILED:
+                detail = final_task.error_message or "(no error message recorded)"
+                raise TaskFailedError(
+                    f"Task '{task_id}' failed on backend '{final_task.backend}': {detail}",
+                    task_id=task_id,
+                    backend=final_task.backend,
+                    details={"error_message": final_task.error_message, "metadata": final_task.metadata},
+                )
+            if final_task.status == TaskStatus.SUCCESS:
+                return _wrap(final_task.result, final_task.backend, final_task.shots, final_task.metadata)
 
             raise TaskTimeoutError(
                 f"Timeout waiting for task '{task_id}' to complete.",

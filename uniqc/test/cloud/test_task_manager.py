@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-from uniqc.backend_adapter.task.adapters.base import TASK_STATUS_FAILED, TASK_STATUS_SUCCESS
 from uniqc.backend_adapter.task_manager import (
     TaskInfo,
     TaskManager,
@@ -379,7 +378,7 @@ class TestWaitForResultUnit:
         assert result == {"00": 512, "11": 488}
 
     def test_wait_for_result_timeout_raises_taskfailederror_on_final_failed_query(self, monkeypatch):
-        """Timeout does a final uncached query; raises TaskFailedError if cloud reports FAILED."""
+        """Timeout repeats the shard-aware query and surfaces a final failure."""
         from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus, wait_for_result
 
         call_count = 0
@@ -387,47 +386,46 @@ class TestWaitForResultUnit:
         def mock_query_task(tid):
             nonlocal call_count
             call_count += 1
-            # First call: still running; second call: still running (cached)
-            return TaskInfo(task_id=tid, backend="dummy:local:simulator", status=TaskStatus.RUNNING)
-
-        def mock_final_query(tid):
-            # Final uncached query (after timeout): FAILED
-            return {"status": TASK_STATUS_FAILED, "result": {"error": "cloud error"}}
-
-        class FakeBackend:
-            def query(self, tid):
-                return mock_final_query(tid)
+            status = TaskStatus.RUNNING if call_count == 1 else TaskStatus.FAILED
+            return TaskInfo(
+                task_id=tid,
+                backend="dummy:local:simulator",
+                status=status,
+                error_message="cloud error" if status == TaskStatus.FAILED else None,
+            )
 
         import uniqc.backend_adapter.task_manager as tm
 
         monkeypatch.setattr(tm, "query_task", mock_query_task)
-        # backend_module is imported as `from uniqc import backend as backend_module`
-        monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
 
         with pytest.raises(TaskFailedError):
             wait_for_result("timeout-fail-test", timeout=0.1, poll_interval=1.0)
+        assert call_count == 2
 
     def test_wait_for_result_timeout_returns_success_from_final_query(self, monkeypatch):
-        """Timeout does a final uncached query; returns result if cloud reports SUCCESS."""
+        """Timeout repeats the shard-aware query and returns a final success."""
         from uniqc.backend_adapter.task_manager import TaskInfo, TaskStatus, wait_for_result
 
+        call_count = 0
+
         def mock_query_task(tid):
-            return TaskInfo(task_id=tid, backend="dummy:local:simulator", status=TaskStatus.RUNNING)
-
-        def mock_final_query(tid):
-            return {"status": TASK_STATUS_SUCCESS, "result": {"00": 1024}}
-
-        class FakeBackend:
-            def query(self, tid):
-                return mock_final_query(tid)
+            nonlocal call_count
+            call_count += 1
+            status = TaskStatus.RUNNING if call_count == 1 else TaskStatus.SUCCESS
+            return TaskInfo(
+                task_id=tid,
+                backend="dummy:local:simulator",
+                status=status,
+                result={"00": 1024} if status == TaskStatus.SUCCESS else None,
+            )
 
         import uniqc.backend_adapter.task_manager as tm
 
         monkeypatch.setattr(tm, "query_task", mock_query_task)
-        monkeypatch.setattr(tm.backend_module, "get_backend", lambda b: FakeBackend())
 
         result = wait_for_result("timeout-success-test", timeout=0.1, poll_interval=1.0)
         assert result == {"00": 1024}
+        assert call_count == 2
 
 
 @pytest.mark.cloud
