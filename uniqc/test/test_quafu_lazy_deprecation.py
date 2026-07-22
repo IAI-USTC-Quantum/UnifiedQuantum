@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import textwrap
@@ -96,11 +97,13 @@ def test_workflow_imports_do_not_load_quafu_adapter() -> None:
 
 def test_non_quafu_cli_does_not_warn() -> None:
     for args in (["--help"], ["backend", "list", "--platform", "dummy"]):
+        env = {**os.environ, "PYTHONIOENCODING": "ascii"}
         result = subprocess.run(
             [sys.executable, "-W", "always::DeprecationWarning", "-m", "uniqc.cli", *args],
             check=False,
             capture_output=True,
             text=True,
+            env=env,
         )
         assert result.returncode == 0, result.stderr
         assert "quafu_adapter is deprecated" not in result.stderr

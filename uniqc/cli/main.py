@@ -2,10 +2,27 @@
 
 from __future__ import annotations
 
+import sys
+
 import typer
 
 from uniqc import __version__
 from uniqc.cli.output import ai_hints_enabled
+
+
+def _make_cli_streams_loss_tolerant() -> None:
+    """Prevent legacy Windows encodings from crashing Rich/Typer output."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(errors="replace")
+        except (OSError, ValueError):
+            continue
+
+
+_make_cli_streams_loss_tolerant()
 
 app = typer.Typer(
     name="uniqc",
