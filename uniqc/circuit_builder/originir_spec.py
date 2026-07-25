@@ -54,31 +54,6 @@ available_originir_2q1p_gates = [
 available_originir_2q3p_gates = ["PHASE2Q"]
 available_originir_2q15p_gates = ["UU15"]
 available_originir_3p_gates = ["TOFFOLI", "CSWAP"]
-available_originir_1q1p_gates = [
-    "RX",
-    "RY",
-    "RZ",
-    "U1",
-    "RPhi90",
-    "RPhi180",
-]
-available_originir_1q2p_gates = ["RPhi", "U2"]
-available_originir_1q3p_gates = ["U3"]
-available_originir_2q_gates = [
-    "CNOT",
-    "CZ",
-    "ECR",
-    "ISWAP",
-]  # TODO: SQISWAP
-available_originir_2q1p_gates = [
-    "XX",
-    "YY",
-    "ZZ",
-    "XY",
-]
-available_originir_2q3p_gates = ["PHASE2Q"]
-available_originir_2q15p_gates = ["UU15"]
-available_originir_3p_gates = ["TOFFOLI", "CSWAP"]
 
 available_barrier_gates = ["BARRIER"]
 

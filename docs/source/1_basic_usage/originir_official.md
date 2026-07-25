@@ -55,7 +55,7 @@
 
 | 操作 | 描述 |
 |------|------|
-| `BARRIER` | 屏障（阻止编译器跨越优化） |
+| `BARRIER` | 屏障（阻止编译器跨越优化）。**至少需要 1 个量子比特**：`BARRIER q[0], q[1], ...`；无操作数的整线 `BARRIER` 不被接受 |
 
 ---
 
@@ -102,6 +102,7 @@ MEASURE q[1], c[1]
 | 特性 | 官方 OriginIR | OriginIR-ext |
 |------|:---:|:---:|
 | 基础门（H, X, CNOT 等） | Y | Y |
+| SWAP, BARRIER | Y | Y |
 | ECR, ISWAP, XX, YY, ZZ, XY | - | Y |
 | PHASE2Q, UU15 | - | Y |
 | RPhi, RPhi90, RPhi180 | - | Y |
@@ -111,5 +112,8 @@ MEASURE q[1], c[1]
 | inline `controlled_by` 语法 | - | Y |
 | CONTROL/ENDCONTROL 块 | Y | Y |
 | DAGGER/ENDDAGGER 块 | Y | Y |
+| `PARAM` 符号参数头 | - | Y |
+| 动态电路扩展（`RESET` / `QIF` / `QWHILE` / `AND`/`OR`/`XOR`/`MOV`/`NOT`） | - | Y |
+| `QRAMDECL` / QRAM 调用 | - | Y |
 
 当 OriginIR-ext 代码提交到 OriginQ 云时，扩展门会通过 `decompose_for_originir()` 自动分解为官方门，inline 语法会通过 `opcode_to_line_originir_official()` 转换为块语法。

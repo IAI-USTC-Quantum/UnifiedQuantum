@@ -24,7 +24,8 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 │  OriginIR-ext 额外支持：                                     │
 │    门: ECR, ISWAP, XX, YY, ZZ, XY, PHASE2Q, UU15           │
 │         RPhi, RPhi90, RPhi180                               │
-│    特性: named register, DEF/ENDDEF, QRAM, error channels   │
+│    特性: named register, DEF/ENDDEF, PARAM 符号参数头,       │
+│         QRAM, error channels, 动态电路扩展                   │
 │    语法: inline dagger, controlled_by                       │
 └─────────────────────────────────────────────────────────────┘
 
@@ -67,11 +68,13 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 
 - **Named Register**: `QINIT`/`CREG` 支持命名量子/经典寄存器（如 `QINIT q1[6]`），多个寄存器按声明顺序扫平到同一物理索引空间；导出时始终扁平化为单一 `QINIT`/`CREG` 头部
 - **DEF/ENDDEF**: 子程序定义块，形参签名复用 named register 语法（`DEF name(q[2]) (theta)`），支持标量参数化复用，调用时就地展开
+- **PARAM 符号参数头**: 在头部声明标量或数组符号参数（`PARAM theta` / `PARAM alpha[4]`），门角度槽位可引用符号表达式；未绑定符号不可模拟/导出/提交
 - **QRAM**: `QRAMDECL` 声明和具名 XOR 查询指令，支持地址叠加态与受控调用；仅限受支持的本地模拟器，详见 {ref}`originir-ext-qram`
-- **Error Channels**: 噪声模拟通道（Depolarizing, BitFlip, PhaseFlip 等）
+- **Error Channels**: 噪声模拟通道（Depolarizing, BitFlip, PhaseFlip 等）。注意 `Kraus1Q` 不能从文本解析，只能通过 `ErrorModel` API 构造
 - **Inline 语法**: `dagger` 后缀、`controlled_by(q[...])` 子句（替代 DAGGER/CONTROL 块）
+- **动态电路扩展**: mid-circuit 测量（`MEASURE q[i], c[j]`）、mid-circuit 复位（`RESET q[i]`）、经典比特指令（`AND`/`OR`/`XOR`/`MOV`/`NOT`）与控制流（`QIF`/`QELSE`/`ENDQIF`、`QWHILE`/`ENDQWHILE`）；仅本地模拟，详见 [动态电路](../2_advanced/dynamic_circuits.md)
 
-> 扩展门可以分解成官方 OriginIR 门，但并非所有扩展特性都能转换。尤其是 QRAM 没有官方 OriginIR 或 OpenQASM 2.0 等价表示；转换器遇到 `QRAMDECL` 会明确报错。
+> 扩展门可以分解成官方 OriginIR 门，但并非所有扩展特性都能转换。**QRAM 与动态电路扩展**都没有官方 OriginIR 或 OpenQASM 2.0 等价表示；转换器遇到它们会明确抛 `CircuitTranslationError`，而不是静默丢弃。
 
 ## 转换路径
 
@@ -83,6 +86,7 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 OriginIR（官方）◀──────────── convert_qasm_to_oir() ──────── OpenQASM 2.0
 
 含 QRAM 的 OriginIR-ext ──X──▶ OriginIR（官方）/ OpenQASM 2.0 / 云平台
+含动态电路扩展的 OriginIR-ext ──X──▶ OriginIR（官方）/ OpenQASM 2.0 / 云平台
 ```
 
 ### 编程接口
