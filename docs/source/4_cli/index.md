@@ -35,6 +35,7 @@ circuit
 :maxdepth: 1
 
 config
+sync
 task
 backend
 ```

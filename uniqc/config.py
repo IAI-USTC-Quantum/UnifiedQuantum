@@ -65,7 +65,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm"]
 
-META_KEYS = frozenset({"active_profile", "always_ai_hints"})
+META_KEYS = frozenset({"active_profile", "always_ai_hints", "sync"})
 
 PLATFORM_REQUIRED_FIELDS = {
     "originq": ["token"],

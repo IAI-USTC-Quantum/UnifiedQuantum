@@ -83,3 +83,18 @@ uniqc config profile use production
 # 创建新 profile
 uniqc config profile create testing
 ```
+
+## 跨机器同步配置
+
+`uniqc sync` 可以把 `~/.uniqc/config.yaml` 中的平台凭据与配置同步到
+Infisical 密钥管理平台，用于在多台机器之间共享或恢复凭据：
+
+```bash
+uniqc sync setup --project-id <INFISICAL_PROJECT_ID> --env dev
+uniqc sync status   # 预览本地与远端差异
+uniqc sync push     # 上传（本地优先）
+uniqc sync pull     # 下载（远端优先，自动备份）
+```
+
+详见[凭据同步 (`uniqc sync`)](sync.md)。
+

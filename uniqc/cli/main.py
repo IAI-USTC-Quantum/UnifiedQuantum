@@ -76,7 +76,7 @@ def main(
 # Import and register subcommands
 from uniqc import gateway
 
-from . import backend, calibrate, circuit, doctor, result, simulate, submit, task
+from . import backend, calibrate, circuit, doctor, result, simulate, submit, sync, task
 from . import config_cmd as config
 
 # Register single-action entrypoints as direct commands instead of sub-groups.
@@ -92,3 +92,4 @@ app.add_typer(task.app, name="task")
 app.add_typer(backend.app, name="backend")
 app.add_typer(calibrate.app, name="calibrate")
 app.add_typer(gateway.app, name="gateway")
+app.add_typer(sync.app, name="sync")

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`uniqc sync`** syncs the platform credentials in `~/.uniqc/config.yaml`
+  with an [Infisical](https://infisical.com) secrets project via the local
+  `infisical` CLI: `sync setup` stores the project id/environment,
+  `sync status` previews both-direction diffs (values never echoed),
+  `sync push` uploads (local wins, optional `--prune` for stale remote
+  keys), and `sync pull` restores on a new machine (remote wins, with a
+  timestamped backup and an empty-remote safety refusal). Config values are
+  flattened to `UNIQC_<PROFILE>_<PLATFORM>_<FIELD>` secrets; plain string
+  tokens stay verbatim while non-string values are round-trip-safe via a
+  `json:` prefix encoding. Non-`UNIQC_` secrets in the project are never
+  read or modified; CI can authenticate with `UNIQC_INFISICAL_TOKEN`.
+
 ## [0.0.17] - 2026-08-15
 
 This release is a stabilization cycle across cross-backend gate semantics,

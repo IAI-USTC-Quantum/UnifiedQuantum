@@ -23,6 +23,7 @@
 | ``uniqc backend chip-display <id>`` | 全屏可视化芯片标定（T1/T2、保真度、拓扑） | [`uniqc backend`](backend.md) |
 | ``uniqc backend virtual init / list / show / validate`` | 自定义含噪量子虚拟机（``~/.uniqc/backend/virtual/``） | [`uniqc backend`](backend.md) · [含噪虚拟机](../2_advanced/virtual_backends.md) |
 | ``uniqc config init / set / get / validate`` | 配置文件管理（``~/.uniqc/config.yaml``） | [`uniqc config`](config.md) |
+| ``uniqc sync setup / status / push / pull`` | 凭据同步到 Infisical（多机共享 ``~/.uniqc/config.yaml``） | [`uniqc sync`](sync.md) |
 | ``uniqc calibrate xeb / readout / pattern`` | 芯片标定 → 写入 ``~/.uniqc/calibration_cache/`` | [`uniqc calibrate`](calibrate.md) |
 | ``uniqc circuit ...`` | 电路文件转换 / 检查 | [`uniqc circuit`](circuit.md) |
 | ``uniqc doctor`` | 一键环境诊断：依赖、配置、缓存、网络连通性 | [`uniqc doctor`](doctor.md) |

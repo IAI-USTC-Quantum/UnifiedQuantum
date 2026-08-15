@@ -69,6 +69,10 @@ CMD_REFS: dict[str, list[tuple[str, str]]] = {
         ("CLI Docs", f"{DOCS_URL}source/cli/doctor.html"),
         ("GitHub", GITHUB_URL),
     ],
+    "sync": [
+        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-sync"),
+        ("GitHub", GITHUB_URL),
+    ],
 }
 
 # ----------------------------------------------------------------------
@@ -371,6 +375,25 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "Connectivity failures?",
             "Check your network and API token. For IBM with proxy, set: "
             "uniqc config set ibm.proxy.https http://127.0.0.1:7890",
+        ),
+    ],
+    "sync": [
+        (
+            "First-time setup (step by step)",
+            "1. infisical login — authenticate the Infisical CLI\n"
+            "2. uniqc sync setup --project-id <ID> --env dev — store sync settings\n"
+            "3. uniqc sync status — preview local vs remote differences\n"
+            "4. uniqc sync push — upload local credentials (or pull to download)",
+        ),
+        (
+            "Which direction wins?",
+            "push = local wins (overwrites remote); pull = remote wins (overwrites local, "
+            "with a timestamped backup). Use `status` first to review differences.",
+        ),
+        (
+            "New machine bootstrap",
+            "After `infisical login` + `uniqc sync setup`, run `uniqc sync pull` to restore "
+            "~/.uniqc/config.yaml, then `uniqc config validate`.",
         ),
     ],
 }
