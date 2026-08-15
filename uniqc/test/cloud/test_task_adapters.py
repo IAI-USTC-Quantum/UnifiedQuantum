@@ -10,6 +10,8 @@ Cloud tests require real credentials and are marked with @pytest.mark.cloud.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from uniqc.test.cloud._config_helpers import write_uniqc_config
@@ -423,6 +425,139 @@ class TestOriginQAdapterUnit:
         assert chip.two_qubit_data[0].qubit_v == 1
         # Fidelity was available even without u/v accessors
         assert chip.two_qubit_data[0].gates[0].fidelity == 0.85
+
+
+# ---------------------------------------------------------------------------
+# probCount fallback unit tests (issue #119)
+# ---------------------------------------------------------------------------
+
+
+def _probcount_payload(entries: list[dict]) -> str:
+    """Build a raw ``job.result(keys=["probCount"])`` origin_data payload."""
+    return json.dumps({"obj": {"probCount": [json.dumps(e) for e in entries]}})
+
+
+class _FakeQCloudResult:
+    """Stand-in for pyqpanda3 QCloudResult."""
+
+    def __init__(self, status: str, counts, error: str = "") -> None:
+        self._status = status
+        self._counts = counts
+        self._error = error
+
+    def job_status(self):
+        return type("Status", (), {"name": self._status})()
+
+    def error_message(self) -> str:
+        return self._error
+
+    def get_counts(self):
+        return self._counts
+
+    def get_counts_list(self):
+        raise RuntimeError("no list-shaped counts")
+
+
+class _FakeJob:
+    """Stand-in for pyqpanda3 QCloudJob with result(keys=[...]) support."""
+
+    def __init__(self, qr: _FakeQCloudResult, probcount_payload: str | None = None) -> None:
+        self._qr = qr
+        self._payload = probcount_payload
+        self.result_calls: list[tuple] = []
+
+    def query(self) -> _FakeQCloudResult:
+        return self._qr
+
+    def result(self, keys=None):
+        self.result_calls.append(tuple(keys or ()))
+        payload = self._payload
+
+        class _RawResult:
+            def origin_data(self) -> str:
+                return payload
+
+        return _RawResult()
+
+
+class TestOriginQProbCountFallback:
+    """issue #119: WK_C180 FINISHED tasks lose counts in get_counts() but keep
+    them in the raw probCount key — query() must recover them."""
+
+    @staticmethod
+    def _adapter(job: _FakeJob):
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
+
+        adapter = OriginQAdapter.__new__(OriginQAdapter)
+        adapter._api_key = "test"
+        adapter._service = object()
+        adapter._QCloudOptions = None
+        adapter._QCloudJob = lambda taskid: job
+        adapter._JobStatus = None
+        adapter._DataBase = None
+        adapter._convert_originir = None
+        adapter._batch_job_sizes = {}
+        adapter._ensure_imports = lambda: None
+        return adapter
+
+    def test_finished_empty_counts_recovers_from_probcount(self):
+        bell = {"value": [258, 13, 77, 152], "key": ["0x0", "0x1", "0x2", "0x3"]}
+        job = _FakeJob(
+            _FakeQCloudResult("FINISHED", {}),
+            _probcount_payload([bell]),
+        )
+        result = self._adapter(job).query("T1")
+        assert result["status"] == "success"
+        assert result["result"] == {"00": 258, "01": 13, "10": 77, "11": 152}
+
+    def test_nonempty_counts_skips_fallback(self):
+        job = _FakeJob(
+            _FakeQCloudResult("FINISHED", {"00": 5, "11": 3}),
+            _probcount_payload([{"value": [1], "key": ["0x0"]}]),
+        )
+        result = self._adapter(job).query("T1")
+        assert job.result_calls == []
+        assert result["result"] == {"00": 5, "11": 3}
+
+    def test_running_task_never_calls_fallback(self):
+        job = _FakeJob(_FakeQCloudResult("RUNNING", {}))
+        result = self._adapter(job).query("T1")
+        assert job.result_calls == []
+        assert result["status"] == "running"
+
+    def test_failed_task_never_calls_fallback(self):
+        job = _FakeJob(_FakeQCloudResult("FAILED", {}, error="boom"))
+        result = self._adapter(job).query("T1")
+        assert job.result_calls == []
+        assert result["status"] == "failed"
+
+    def test_malformed_probcount_payload_keeps_empty_result(self):
+        job = _FakeJob(_FakeQCloudResult("FINISHED", {}), "not-json")
+        result = self._adapter(job).query("T1")
+        assert result["status"] == "success"
+        assert result["result"] == {}
+
+    def test_batch_probcount_returns_per_circuit_list(self):
+        entry_a = {"value": [258, 242], "key": ["0x0", "0x3"]}
+        entry_b = {"value": [13, 487], "key": ["0x1", "0x2"]}
+        job = _FakeJob(
+            _FakeQCloudResult("FINISHED", {}),
+            _probcount_payload([entry_a, entry_b]),
+        )
+        adapter = self._adapter(job)
+        adapter._batch_job_sizes["T1"] = (2, 500)
+        result = adapter.query("T1")
+        assert result["status"] == "success"
+        assert result["result"] == [{"00": 258, "11": 242}, {"01": 13, "10": 487}]
+
+    def test_parse_hex_outcomes_width_from_max_key(self):
+        from uniqc.backend_adapter.task.adapters import OriginQAdapter
+
+        parsed = OriginQAdapter._parse_hex_outcomes(["0x0", "0x2"], [1, 2])
+        assert parsed == {"00": 1, "10": 2}
+        # Decimal keys are accepted too.
+        parsed = OriginQAdapter._parse_hex_outcomes([0, 5], [3, 4])
+        assert parsed == {"000": 3, "101": 4}
 
 
 # ---------------------------------------------------------------------------

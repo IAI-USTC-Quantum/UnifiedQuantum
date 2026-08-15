@@ -1839,6 +1839,24 @@ def _extract_error_message(query_result: dict) -> str | None:
     return None
 
 
+def _shard_result_is_empty(result: Any) -> bool:
+    """True when a SUCCESS shard carries no usable counts payload.
+
+    Covers the issue-#119 shape — adapters that reported ``success`` with
+    an empty result (``{}``, ``None``, ``[None]``, ``[{}]``). A counts dict
+    for a measured circuit always has at least one outcome, so an all-empty
+    payload means the data was lost in the query path, not that the
+    measurement produced nothing.
+    """
+    if result is None:
+        return True
+    if isinstance(result, dict):
+        return len(result) == 0
+    if isinstance(result, list):
+        return all(item is None or item == {} for item in result)
+    return False
+
+
 def _refresh_shard_from_backend(shard: TaskShard) -> TaskShard:
     """Best-effort refresh of a single shard's status from its backend.
 
@@ -1846,7 +1864,12 @@ def _refresh_shard_from_backend(shard: TaskShard) -> TaskShard:
     swallowed and the previous status is preserved — callers see the
     stale value rather than a hard failure.
     """
-    if shard.status in TERMINAL_STATUSES:
+    # SUCCESS shards with an empty result are re-queried so tasks recorded
+    # before the issue-#119 fix can recover their counts on the next
+    # query_task/get_result call.
+    if shard.status in TERMINAL_STATUSES and (
+        shard.status != TaskStatus.SUCCESS.value or not _shard_result_is_empty(shard.result)
+    ):
         return shard
     try:
         backend_instance = backend_module.get_backend(shard.backend)

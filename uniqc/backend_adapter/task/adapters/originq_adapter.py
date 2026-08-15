@@ -10,6 +10,7 @@ from __future__ import annotations
 
 __all__ = ["OriginQAdapter"]
 
+import json
 import time
 import warnings
 from typing import Any
@@ -575,7 +576,18 @@ class OriginQAdapter(QuantumAdapter):
             if counts_list:
                 counts = counts_list
         if counts is None:
-            counts = qr.get_counts()
+            try:
+                counts = qr.get_counts()
+            except Exception:
+                counts = None
+
+        # Some hardware results (e.g. WK_C180) come back with an empty
+        # ``get_counts()`` even though the task FINISHED — the counts live in
+        # the raw ``probCount`` result key instead. Re-fetch through
+        # ``job.result(keys=["probCount"])`` and parse the hex keys (see
+        # GitHub issue #119).
+        if not counts and status_name in ("FINISHED", "???"):
+            counts = self._counts_from_probcount(job, expected_batch_size)
 
         if status_name == "FINISHED":
             return {
@@ -636,6 +648,75 @@ class OriginQAdapter(QuantumAdapter):
                     taskinfo["result"].append(payload)
 
         return taskinfo
+
+    def _counts_from_probcount(self, job: Any, expected_batch_size: int | None) -> Any:
+        """Recover counts from the raw ``probCount`` result key.
+
+        WK_C180 hardware results keep the measurement data only in the
+        ``probCount`` field of the raw job result while
+        ``QCloudResult.get_counts()`` parses it to an empty dict (GitHub
+        issue #119). Each ``probCount`` entry is a JSON string
+        ``{"value": [258, 13, ...], "key": ["0x0", "0x1", ...]}`` with one
+        entry per circuit of a native batch; values are shot counts and
+        keys are hexadecimal outcome strings.
+
+        Returns:
+            Single-circuit counts dict, a list of per-circuit dicts for
+            native batch jobs, or ``None`` when the fallback yields no
+            usable data (caller keeps its previous counts value).
+        """
+        try:
+            res = job.result(keys=["probCount"])
+            obj = json.loads(res.origin_data())
+            entries = obj.get("obj", {}).get("probCount") if isinstance(obj, dict) else None
+        except Exception:
+            return None
+        if not isinstance(entries, list) or not entries:
+            return None
+
+        per_circuit: list[dict[str, int]] = []
+        for entry in entries:
+            if isinstance(entry, str):
+                try:
+                    entry = json.loads(entry)
+                except ValueError:
+                    return None
+            if not isinstance(entry, dict):
+                return None
+            keys = entry.get("key") or []
+            values = entry.get("value") or []
+            if len(keys) != len(values) or not keys:
+                return None
+            per_circuit.append(self._parse_hex_outcomes(keys, values))
+        if not any(per_circuit):
+            return None
+        if len(per_circuit) > 1:
+            return per_circuit
+        return per_circuit[0]
+
+    @staticmethod
+    def _parse_hex_outcomes(keys: list[Any], values: list[Any]) -> dict[str, int]:
+        """Map ``["0x0", "0x3"]``-style outcome keys to fixed-width binary.
+
+        Bit width follows the highest observed outcome, matching the
+        inference used by ``normalize_originq``.
+        """
+        max_val = 0
+        int_keys: list[int] = []
+        for key in keys:
+            text = str(key)
+            try:
+                int_val = int(text, 16) if text.lower().startswith("0x") else int(text)
+            except ValueError:
+                return {}
+            int_keys.append(int_val)
+            if int_val > max_val:
+                max_val = int_val
+        width = max(1, max_val.bit_length())
+        return {
+            format(int_val, f"0{width}b"): int(count)
+            for int_val, count in zip(int_keys, values, strict=True)
+        }
 
     def _format_counts(
         self,

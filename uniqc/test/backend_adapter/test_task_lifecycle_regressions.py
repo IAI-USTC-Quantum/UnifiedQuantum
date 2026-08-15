@@ -431,3 +431,128 @@ def test_originq_query_uses_restored_batch_context_after_fresh_adapter() -> None
     result = adapter.query("BATCH-RESTART")
     assert result["status"] == "success"
     assert result["result"] == [{"00": 100}, {"11": 100}]
+
+
+def test_success_shard_with_empty_result_is_requeried(
+    isolated_store: TaskStore,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """issue #119: success+empty shards must self-heal on the next query."""
+    from uniqc.backend_adapter.task.store import generate_uniqc_task_id
+
+    uid = generate_uniqc_task_id()
+    isolated_store.save(
+        TaskInfo(task_id=uid, backend="originq:WK_C180", status=TaskStatus.SUCCESS, shots=500, result={})
+    )
+    isolated_store.save_shard(
+        TaskShard(
+            uniqc_task_id=uid,
+            shard_index=0,
+            platform_task_id="PLAT-119",
+            backend="originq:WK_C180",
+            circuit_count=1,
+            status=TaskStatus.SUCCESS,
+            result={},
+        )
+    )
+    recovered = {"00": 258, "01": 13, "10": 77, "11": 152}
+
+    class Backend:
+        adapter = None
+
+        def __init__(self) -> None:
+            self.queried: list[str] = []
+
+        def query(self, task_id: str):
+            self.queried.append(task_id)
+            return {"taskid": task_id, "status": "success", "result": dict(recovered)}
+
+    backend = Backend()
+    monkeypatch.setattr(tm.backend_module, "get_backend", lambda _backend: backend)
+
+    info = tm.query_task(uid)
+    assert backend.queried == ["PLAT-119"]
+    assert info.status == TaskStatus.SUCCESS
+    assert info.result == recovered
+    assert isolated_store.get_shards(uid)[0].result == recovered
+
+
+def test_success_shard_with_data_is_not_requeried(
+    isolated_store: TaskStore,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from uniqc.backend_adapter.task.store import generate_uniqc_task_id
+
+    uid = generate_uniqc_task_id()
+    isolated_store.save(
+        TaskInfo(task_id=uid, backend="originq:WK_C180", status=TaskStatus.SUCCESS, shots=500, result={"00": 5})
+    )
+    isolated_store.save_shard(
+        TaskShard(
+            uniqc_task_id=uid,
+            shard_index=0,
+            platform_task_id="PLAT-DONE",
+            backend="originq:WK_C180",
+            circuit_count=1,
+            status=TaskStatus.SUCCESS,
+            result={"00": 5},
+        )
+    )
+
+    class Backend:
+        adapter = None
+
+        def __init__(self) -> None:
+            self.queried: list[str] = []
+
+        def query(self, task_id: str):  # pragma: no cover - must not run
+            self.queried.append(task_id)
+            raise AssertionError("terminal shard with data must not be re-queried")
+
+    backend = Backend()
+    monkeypatch.setattr(tm.backend_module, "get_backend", lambda _backend: backend)
+
+    info = tm.query_task(uid)
+    assert backend.queried == []
+    assert info.status == TaskStatus.SUCCESS
+    assert info.result == {"00": 5}
+
+
+def test_failed_shard_is_not_requeried(
+    isolated_store: TaskStore,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from uniqc.backend_adapter.task.store import generate_uniqc_task_id
+
+    uid = generate_uniqc_task_id()
+    isolated_store.save(
+        TaskInfo(task_id=uid, backend="originq:WK_C180", status=TaskStatus.FAILED, shots=500, error_message="boom")
+    )
+    isolated_store.save_shard(
+        TaskShard(
+            uniqc_task_id=uid,
+            shard_index=0,
+            platform_task_id="PLAT-FAIL",
+            backend="originq:WK_C180",
+            circuit_count=1,
+            status=TaskStatus.FAILED,
+            error_message="boom",
+        )
+    )
+
+    class Backend:
+        adapter = None
+
+        def __init__(self) -> None:
+            self.queried: list[str] = []
+
+        def query(self, task_id: str):  # pragma: no cover - must not run
+            self.queried.append(task_id)
+            raise AssertionError("failed shard must not be re-queried")
+
+    backend = Backend()
+    monkeypatch.setattr(tm.backend_module, "get_backend", lambda _backend: backend)
+
+    info = tm.query_task(uid)
+    assert backend.queried == []
+    assert info.status == TaskStatus.FAILED

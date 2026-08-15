@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `json:` prefix encoding. Non-`UNIQC_` secrets in the project are never
   read or modified; CI can authenticate with `UNIQC_INFISICAL_TOKEN`.
 
+### Fixed
+
+- **OriginQ hardware task results** no longer come back empty for chips
+  such as `WK_C180` whose measurement data `QCloudResult.get_counts()`
+  cannot parse: when a FINISHED task yields empty counts,
+  `OriginQAdapter.query()` now re-fetches the raw `probCount` result key
+  and converts its hexadecimal outcomes into bitstring counts. Tasks
+  already recorded in the local cache as `success` with an empty result
+  are re-queried on the next `query_task`/`wait_for_result`/`get_result`
+  call, so records written before this fix recover their counts
+  automatically (GitHub issue #119).
+
 ## [0.0.17] - 2026-08-15
 
 This release is a stabilization cycle across cross-backend gate semantics,
