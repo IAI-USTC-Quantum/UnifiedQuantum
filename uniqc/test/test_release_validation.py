@@ -20,6 +20,15 @@ def test_version_from_tag_requires_strict_semver() -> None:
         version_from_tag("release-1.2.3")
 
 
+def test_version_from_tag_accepts_post_release() -> None:
+    assert version_from_tag("v1.2.3.post1") == "1.2.3.post1"
+    assert version_from_tag("v0.0.17.post12") == "0.0.17.post12"
+    with pytest.raises(ValueError, match="vMAJOR.MINOR.PATCH"):
+        version_from_tag("v1.2.3.post0")
+    with pytest.raises(ValueError, match="vMAJOR.MINOR.PATCH"):
+        version_from_tag("v1.2.3.post")
+
+
 def test_changelog_contains_release_heading(tmp_path: Path) -> None:
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text("## [1.2.3] - 2026-07-21\n", encoding="utf-8")

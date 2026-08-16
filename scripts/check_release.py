@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-TAG_RE = re.compile(r"^v(?P<version>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)$")
+TAG_RE = re.compile(r"^v(?P<version>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:\.post[1-9]\d*)?$")
 WHEEL_RE = re.compile(
     r"^[A-Za-z0-9_.]+-(?P<version>\d+\.\d+\.\d+(?:[A-Za-z0-9_.!+-]*))-[^-]+-[^-]+-[^-]+\.whl$"
 )
@@ -19,7 +19,7 @@ WHEEL_RE = re.compile(
 def version_from_tag(tag: str) -> str:
     match = TAG_RE.fullmatch(tag)
     if match is None:
-        raise ValueError(f"Release tag must use vMAJOR.MINOR.PATCH, got {tag!r}")
+        raise ValueError(f"Release tag must use vMAJOR.MINOR.PATCH[.postN], got {tag!r}")
     return tag[1:]
 
 
