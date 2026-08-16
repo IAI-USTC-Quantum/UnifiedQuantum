@@ -4,7 +4,7 @@
 
 ## 先看什么
 
-如果你在跟随当前开发版，先看 ``Unreleased`` 与 ``v0.0.17`` release candidate；
+如果你在跟随当前开发版，先看 ``v0.0.17.post1``（`uniqc sync` 凭据同步 + OriginQ 空结果修复）；
 如果你是从较早的正式版本直接升级，
 **先看 ``v0.0.16``**——这一版新增**用户自定义含噪虚拟机**（``dummy:virtual:<name>``），
 并把后端发现缓存与芯片缓存统一收拢到 ``~/.uniqc/backend/``。
@@ -44,6 +44,7 @@ deprecation_policy
 ```{toctree}
 :maxdepth: 1
 
+reports/0.0.17.post1
 reports/0.0.17
 reports/0.0.16
 ```
@@ -62,6 +63,20 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.0.17.post1`（快速修复）
+
+`v0.0.17` 之后的热修复版本，包含两项内容：
+
+- **`uniqc sync`**：把 `~/.uniqc/config.yaml` 中的平台凭据与 Infisical
+  密钥管理项目同步（`sync setup / status / push / pull`），用于多台机器
+  共享或恢复凭据。详见[凭据同步 (`uniqc sync`)](../4_cli/sync.md)。
+- **修复 OriginQ 真机任务结果为空**（issue #119）：`WK_C180` 等芯片的
+  FINISHED 任务在 `get_counts()` 路径下返回空计数的问题，现回退解析
+  原始 `probCount` 数据；本地任务库中已记录为"成功但结果为空"的旧任务
+  在下次查询时自动重新拉取恢复。
+
+完整验证结果见 [0.0.17.post1 Hotfix Release Validation](reports/0.0.17.post1.md)。
 
 ### `v0.0.17`（Release Candidate）
 
