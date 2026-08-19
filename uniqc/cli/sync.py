@@ -37,6 +37,7 @@ import typer
 
 from uniqc.config import META_KEYS, PLATFORM_KNOWN_FIELDS, SUPPORTED_PLATFORMS
 
+from . import sync_cmd
 from .output import (
     AI_HINTS_OPTION,
     ai_hints_enabled,
@@ -415,10 +416,16 @@ def backup_config_file(config_path) -> str | None:
 app = typer.Typer(
     help=(
         "Sync ~/.uniqc/config.yaml with an Infisical secrets project\n"
+        "  ('upload' is an independent confsync-based alternative)\n"
         f"  {build_ref_str('sync')}"
     ),
     no_args_is_help=True,
 )
+
+# ``uniqc sync upload`` — confsync backend (see sync_cmd.py).  Independent
+# of the Infisical subcommands; confsync-client stays an optional, lazily
+# imported dependency.
+app.command()(sync_cmd.upload)
 
 PROJECT_ID_OPTION = typer.Option(
     None,

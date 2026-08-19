@@ -11,6 +11,26 @@ uniqc config init
 
 配置文件位置：`~/.uniqc/config.yaml`
 
+## Schema 版本与自动迁移
+
+配置文件带有顶层 `config_version` 字段（当前为 `1`），用于标识 schema 版本：
+
+```yaml
+config_version: 1
+active_profile: default
+default:
+  originq:
+    token: xxx
+```
+
+- **自动迁移**：当 uniqc 升级、配置 schema 发生变化时，`load_config`（CLI 与
+  Python API 共用）会在读取时自动把旧版配置逐级迁移到当前版本，并尽可能写回
+  磁盘（写入失败不影响本次读取）。你不需要手动修改配置文件。
+- **无版本号的旧文件**：在引入 schema 版本之前生成的 `config.yaml` 被视为
+  v0，首次读取时自动补上 `config_version`（布局不变，现有字段全部保留）。
+- **版本过新**：如果配置文件由更新版本的 uniqc 写入（`config_version` 大于
+  当前 uniqc 支持的版本），读取会报错并提示升级 uniqc，而不是静默误读。
+
 ## 设置配置项
 
 ```bash

@@ -1,8 +1,13 @@
 # 凭据同步 (`uniqc sync`)
 
-在多台机器之间同步 `~/.uniqc/config.yaml` 中的量子真机凭据与平台配置，后端为 [Infisical](https://infisical.com) 密钥管理平台（通过本机 `infisical` CLI 访问）。
+在多台机器之间同步 `~/.uniqc/config.yaml` 中的量子真机凭据与平台配置。`uniqc sync` 提供两套**相互独立、可各自单独使用**的后端：
 
-## 概述
+- **Infisical** 后端（`setup` / `status` / `push` / `pull`）：把配置扁平化为一组 `UNIQC_` 前缀的 secrets，存到 [Infisical](https://infisical.com) 密钥管理平台（通过本机 `infisical` CLI 访问）；
+- **confsync** 后端（`upload`）：把整个配置文件作为一份加密文档上传到自托管的 [confsync](https://github.com/Agony5757/confsync) 服务器（依赖可选的 `confsync-client` 包）。
+
+两套机制互不依赖：用哪一套、是否都用，完全由你决定。
+
+## 概述（Infisical 后端）
 
 `uniqc sync` 把配置文件中的平台凭据（以及随之保存的非敏感平台设置，如 `task_group_size`、`available_qubits`、IBM 代理等）扁平化为一组 `UNIQC_` 前缀的 Infisical secrets，从而实现：
 
@@ -16,8 +21,9 @@
 | `status` | 对比本地与远端差异（不写入任何内容） |
 | `push` | 上传本地配置到 Infisical（**本地优先**，远端同名值被覆盖） |
 | `pull` | 下载远端配置覆盖本地（**远端优先**，自动生成时间戳备份） |
+| `upload` | 把整个配置文件上传到 confsync 服务器（独立后端，见下文） |
 
-## 前置条件
+## 前置条件（Infisical 后端）
 
 ```bash
 # 1. 安装 Infisical CLI（https://infisical.com/docs/cli/overview）
@@ -137,6 +143,49 @@ uniqc sync pull --env prod
 ```
 
 自建 Infisical 实例时，域名沿用 CLI 自带的环境变量 `INFISICAL_DOMAIN`。
+
+## 上传到 confsync (`uniqc sync upload`)
+
+`upload` 是独立于上述 Infisical 流程的另一种同步方式：它把本地的
+`~/.uniqc/config.yaml` **整体**上传到自托管的 confsync 服务器，适合在多台
+机器之间共享同一份配置。
+
+### 前置条件（confsync 后端）
+
+`upload` 依赖**可选**的 `confsync-client` 包；uniqc 本身不强制安装它。
+如果未安装，执行 `uniqc sync upload` 时会提示：
+
+```
+✗ confsync-client is not installed. Install it with `pip install confsync-client`,
+  then run `confsync login --server <url>`.
+```
+
+安装并登录（只需一次，凭据保存在 `~/.confsync/credentials.json`，所有接入了
+confsync 的工具共享）：
+
+```bash
+pip install confsync-client
+confsync login --server https://<your-confsync-server>
+```
+
+> **注意**：`~/.uniqc/config.yaml` 里**不需要**（也不应该）配置任何 confsync
+> 字段。服务器地址和 API key 全部由 confsync 自己的凭据文件管理，
+> `uniqc sync upload` 会自动调用 confsync 客户端读取它们。这与 Infisical
+> 后端的 `sync` 节配置互不影响。
+
+### 上传配置
+
+```bash
+# 上传 ~/.uniqc/config.yaml 为 confsync 文档 uniqc/config.yaml
+uniqc sync upload
+
+# 使用自定义文档名（例如区分多台机器）
+uniqc sync upload --name laptop.yaml
+```
+
+每次上传都会在服务器端生成一个新版本（历史版本默认保留最近 20 个，可在
+confsync 的 Web UI 中查看和回滚）。文档在服务器端以 AES-256-GCM 加密存储，
+具体内容由 confsync 服务端保证。
 
 ## 安全说明
 

@@ -41,7 +41,18 @@ from uniqc._error_hints import format_enriched_message
 CONFIG_DIR = Path.home() / ".uniqc"
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
+# Schema version of ``config.yaml``.  ``load_config`` automatically migrates
+# older files (in place, best-effort persisted) to ``CURRENT_CONFIG_VERSION``;
+# files written by a *newer* uniqc are rejected with a clear error.
+#
+# Migration history:
+#   0 -> 1: stamp the ``config_version`` key; the layout itself is unchanged
+#           (v0 = any config.yaml written before schema versioning existed).
+CONFIG_VERSION_KEY = "config_version"
+CURRENT_CONFIG_VERSION = 1
+
 DEFAULT_CONFIG: dict[str, Any] = {
+    CONFIG_VERSION_KEY: CURRENT_CONFIG_VERSION,
     "always_ai_hints": False,
     "default": {
         "originq": {
@@ -65,7 +76,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm"]
 
-META_KEYS = frozenset({"active_profile", "always_ai_hints", "sync"})
+META_KEYS = frozenset({"active_profile", "always_ai_hints", "sync", CONFIG_VERSION_KEY})
 
 PLATFORM_REQUIRED_FIELDS = {
     "originq": ["token"],
@@ -115,11 +126,62 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
             config = yaml.safe_load(f)
         if config is None:
             return DEFAULT_CONFIG.copy()
-        return config
     except yaml.YAMLError as e:
         raise ConfigError(format_enriched_message(f"Failed to parse YAML configuration: {e}", "config")) from e
     except OSError as e:
         raise ConfigError(format_enriched_message(f"Failed to read configuration file: {e}", "config")) from e
+
+    if isinstance(config, dict):
+        original_version = get_config_version(config)
+        config = migrate_config(config)
+        if get_config_version(config) != original_version:
+            # Best-effort: persist the migrated file, but never break reads.
+            with contextlib.suppress(ConfigError):
+                save_config(config, path)
+    return config
+
+
+def get_config_version(config: dict[str, Any]) -> int:
+    """Return the schema version of a parsed config dict (0 = unversioned legacy)."""
+    version = config.get(CONFIG_VERSION_KEY, 0)
+    if isinstance(version, bool) or not isinstance(version, int) or version < 0:
+        raise ConfigError(
+            format_enriched_message(
+                f"Invalid '{CONFIG_VERSION_KEY}' in configuration: {version!r} (expected a non-negative integer)",
+                "config",
+            )
+        )
+    return version
+
+
+def _migrate_0_to_1(config: dict[str, Any]) -> dict[str, Any]:
+    """v0 (unversioned) → v1: layout unchanged, only the version key is added."""
+    return config
+
+
+# Ordered per-step migrations: _MIGRATIONS[v] upgrades a v-config to v+1.
+_MIGRATIONS = {0: _migrate_0_to_1}
+
+
+def migrate_config(config: dict[str, Any]) -> dict[str, Any]:
+    """Migrate a parsed config dict to ``CURRENT_CONFIG_VERSION``.
+
+    Raises ``ConfigError`` if the file was written by a newer uniqc.
+    """
+    version = get_config_version(config)
+    if version > CURRENT_CONFIG_VERSION:
+        raise ConfigError(
+            format_enriched_message(
+                f"Configuration schema version {version} is newer than this uniqc supports "
+                f"({CURRENT_CONFIG_VERSION}). Please upgrade uniqc.",
+                "config",
+            )
+        )
+    while version < CURRENT_CONFIG_VERSION:
+        config = _MIGRATIONS[version](config)
+        version += 1
+        config[CONFIG_VERSION_KEY] = version
+    return config
 
 
 def save_config(config: dict[str, Any], config_path: str | Path | None = None) -> None:
