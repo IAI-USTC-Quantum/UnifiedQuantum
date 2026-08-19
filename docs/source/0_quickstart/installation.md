@@ -41,7 +41,7 @@ uv pip install unified-quantum
 - **操作系统**：跨平台，支持 Windows、Linux、macOS
 - **Python**：>= 3.10, < 3.15
 - **C++ 编译器**：支持 C++17（MSVC / gcc / clang）
-- **CMake**：>= 3.26
+- **CMake**：>= 3.22
 
 > **Python 3.14 注意事项**：v0.0.15 起支持 Python 3.14（`<3.15`），但以下可选
 > extra 在 Python 3.14 上**不可用**（上游尚未发布 cp314 wheel）：
@@ -93,7 +93,7 @@ uv sync --all-extras --group dev --group docs --upgrade
 uv run pytest uniqc/test
 ```
 
-> **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.26），请先运行 `pip install cmake --upgrade` 后再执行上述命令。
+> **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.22），请先运行 `pip install cmake --upgrade` 后再执行上述命令。
 
 ## 备选安装方式：通过 pip 安装
 

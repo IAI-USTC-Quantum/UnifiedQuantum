@@ -494,7 +494,7 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 
 | 参数 / 环境变量 | 默认值 | 作用 |
 |------|--------|------|
-| `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 `docs/source/compile/compile_levels.md`。 |
+| `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 `docs/source/2_advanced/compile_levels.md`。 |
 | `cloud_compile` (kwarg) | `1` | 转发给适配器的云端编译强度。`0` 关闭云端编译（如 OriginQ 适配器会收到 `circuit_optimize=False`），`>0` 开启；支持精细控制的适配器可直接读取 1/2/3。 |
 | `skip_validation` (kwarg) | `False` | 完全跳过离线 compatibility 检查（不推荐，会让已知会被云端拒绝的线路也走到网络层）。 |
 | `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `IBMOptions` 等）。 |

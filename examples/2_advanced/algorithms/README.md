@@ -27,10 +27,10 @@
 python examples/2_advanced/algorithms/grover.py --n-qubits 3 --marked-state 5
 
 # VQE (H2 分子)
-python examples/algorithms/vqe.py --molecule H2 --maxiter 100
+python examples/2_advanced/algorithms/vqe.py --molecule H2 --maxiter 100
 
 # QAOA (MaxCut)
-python examples/algorithms/qaoa.py -p 2 --maxiter 80
+python examples/2_advanced/algorithms/qaoa.py -p 2 --maxiter 80
 
 # QPE
 python examples/2_advanced/algorithms/qpe.py --n-precision 4 --unitary t --shots 4096

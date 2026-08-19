@@ -615,20 +615,6 @@ deprecation warning, and the documentation site is rebuilt around an
   bumped from 2 → 5; the gateway `ArchiveStore.archive_task` /
   `restore_task` / `delete_archived` paths now cascade shard rows
   alongside the parent.
-
-### Fixed
-
-- Cloud failure messages from OriginQ are now propagated to
-  `TaskInfo.error_message` (and `TaskShard.error_message`). Previously
-  the adapter nested the error under `result["result"]["error"]`, but
-  `query_task` and friends only inspected `result.get("error")`,
-  silently leaving `error_message=None` on every failed task.
-- Pre-existing bug in `gateway.db.archive_store.ArchiveStore.restore_task`
-  that iterated a sqlite3 `Row` as values instead of keys (made
-  archive→restore round-trip raise `IndexError`).
-
-### Added
-
 - **Native batch submission for OriginQ and IBM** (`uniqc/backend_adapter/task/adapters/originq_adapter.py`, `qiskit_adapter.py`, `uniqc/backend_adapter/task_manager.py`, `uniqc/backend_adapter/backend.py`):
   `submit_batch(circuits, ..., native_batch=True)` (default) now packs all
   circuits into a single cloud job — one queue position, one task ID per
@@ -642,6 +628,17 @@ deprecation warning, and the documentation site is rebuilt around an
   for batches of 3 circuits, and end-to-end through `wait_for_result`.
   This dramatically reduces queueing time for high-throughput workflows
   like XEB and noise characterization.
+
+### Fixed
+
+- Cloud failure messages from OriginQ are now propagated to
+  `TaskInfo.error_message` (and `TaskShard.error_message`). Previously
+  the adapter nested the error under `result["result"]["error"]`, but
+  `query_task` and friends only inspected `result.get("error")`,
+  silently leaving `error_message=None` on every failed task.
+- Pre-existing bug in `gateway.db.archive_store.ArchiveStore.restore_task`
+  that iterated a sqlite3 `Row` as values instead of keys (made
+  archive→restore round-trip raise `IndexError`).
 
 ## [0.0.11.post1] - 2026-05-07
 
@@ -794,7 +791,6 @@ Full test matrix on this release: **1456 passed, 16 skipped** (`pytest -q` again
 
 ### Added
 
-- **`Circuit.get_matrix()`** (`uniqc/circuit_builder/matrix.py`): Extracts the unitary matrix representation of a `Circuit` by folding all gate matrices via tensor product and contraction. Supports all standard gates (`H`, `X`, `Y`, `Z`, `S`, `T`, `SX`, `RX`, `RY`, `RZ`, `CNOT`, `CZ`, `CPHASE`, `SWAP`, controlled variants). Raises `NotMatrixableError` for gates without a finite unitary (e.g. measurement, decoherence channels).
 - **Measurement probability checks** (`uniqc/compile/compiler.py`): `_originir_to_circuit()` now correctly tracks MEASURE gates with non-contiguous qubit and classical bit registers via a deferred `pending_measurements` buffer, fixing circuits where qubits map to non-zero classical bits.
 - **Calibration module** (`uniqc/calibration/`): New top-level module for chip calibration experiments. All results are saved to `~/.uniqc/calibration_cache/` with ISO-8601 `calibrated_at` timestamps. Architecture: calibration writes cache; QEM reads and enforces TTL freshness. Future PEC/ZNE follow the same split.
 - **`uniqc.calibration.results`** (`calibration/results.py`): `CalibrationResult`, `XEBResult`, `ReadoutCalibrationResult` dataclasses with `to_dict()`/`from_dict()` for JSON serialization. `save_calibration_result()`, `load_calibration_result()`, `find_cached_results()` for cache I/O. File naming: `{type}_{backend}_{identifier}_{timestamp}.json`.
@@ -850,6 +846,31 @@ Full test matrix on this release: **1456 passed, 16 skipped** (`pytest -q` again
 - **Noisy XEB fidelity stuck at 1.0 — shot sampling destroying noise signal** (`uniqc/calibration/xeb/benchmarker.py`, `uniqc/backend_adapter/task/adapters/dummy_adapter.py`): The XEB benchmarker was computing `p_noisy` from shot counts (via `submit/query`), then normalizing — this adds sampling noise that overwhelms the weak hardware noise. For `DummyAdapter` with chip characterization, the injected noise (WK_C180: ~0.9994 1Q fidelity) was invisible against shot variance. Fixed by adding `DummyAdapter.simulate_pmeasure(originir)` which returns the exact density-matrix probability vector (no shot sampling). The benchmarker now calls `adapter.simulate_pmeasure()` when available, giving faithful Hellinger fidelity comparison.
 - **Wheel CI after root cleanup** (`.github/workflows/python_build_wheel.yml`): Updated the wheel workflow to call `scripts/stubgen.py` after the root-level `stubgen.py` cleanup and to install `pybind11-stubgen` explicitly before generating C++ extension stubs.
 - **numpy fallback fitter returning r=1.0 for non-monotonic XEB data** (`uniqc/calibration/xeb/fitter.py`): `_fit_exponential_numpy` clipped the fitted slope to `r = exp(clip(slope, log(0.001), 0))`. With weak noise and shallow depths, mean fidelity per depth is non-monotonic (circuit-to-circuit variance dominates), giving a positive slope and `r=1.0`. Fixed by adding a pairwise ratio method: for each (i,j) pair of data points, `r_ij = ((F_i - B)/(F_j - B))^(1/(m_i - m_j))`, then take the geometric mean. When slope >= 0 the pairwise result is used instead of the clipped linear regression.
+
+## [0.0.8] - 2026-05-03
+
+This release was tagged without a CHANGELOG entry at the time. The bulk of
+its user-facing changes — the calibration / QEM series (XEB, readout EM,
+M3), the `uniqc.backend_adapter` / `uniqc.compile` package layout refactor,
+and the canonical `dummy:<platform>:<backend>` identifiers — were documented
+under [0.0.9], released the following day. The remaining changes in this
+release are listed below.
+
+### Added
+
+- **Quark backend**: New Quark platform adapter with enriched backend metadata, plus a cloud-test gate for Quark CI tests.
+- **Circuit timeline scheduling and HTML rendering** (`uniqc/visualization/timeline.py`, `uniqc/compile/timeline.py`): Timeline scheduling analysis with standalone HTML output.
+- **Executable best-practices notebooks** (`docs/source/3_best_practices/`): Best-practices documentation shipped as executable notebooks (pandoc installed in the docs CI).
+
+### Changed
+
+- **Cloud config and test policy alignment** (`uniqc/config.py`, `conftest.py`): Unified the cloud configuration surface and the real-cloud test gating policy across CLI, Python API, and CI.
+
+### Fixed
+
+- **Gateway SPA direct routes**: Direct navigation to gateway single-page-app sub-routes no longer fails.
+- **Quafu CI skip and backend filters**: Fixed incorrect CI gating and backend filtering for Quafu.
+- **Proxy precedence test on Windows**: Fixed the proxy precedence test failing on Windows.
 
 ## [0.0.7.post1] - 2026-05-01
 
