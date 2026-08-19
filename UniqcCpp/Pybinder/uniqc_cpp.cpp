@@ -1,4 +1,8 @@
 #ifdef __GNUC__
+// pybind11's .def(...) chains trip -Wunused-value on GCC throughout the
+// PYBIND11_MODULE body below (each chained expression discards the class_
+// reference it returns). The warnings are spread across the whole binding
+// block, so the suppression has to span the entire translation unit.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"
 #endif
@@ -36,7 +40,7 @@ PYBIND11_MODULE(uniqc_cpp, m)
 
 	py::class_<uniqc::StatevectorSimulator>(m, "StatevectorSimulator")
 		.def(py::init<>())
-		.def_readwrite_static("max_qubit_num", &uniqc::StatevectorSimulator::max_qubit_num)
+		.def_property_readonly_static("max_qubit_num", [](py::object) { return uniqc::StatevectorSimulator::max_qubit_num; })
 		.def_readonly("total_qubit", &uniqc::StatevectorSimulator::total_qubit)
 		.def_readonly("state", &uniqc::StatevectorSimulator::state)
 		.def("init_n_qubit", &uniqc::StatevectorSimulator::init_n_qubit)
@@ -93,7 +97,7 @@ PYBIND11_MODULE(uniqc_cpp, m)
 
 	py::class_<uniqc::DensityOperatorSimulator>(m, "DensityOperatorSimulator")
 		.def(py::init<>())
-		.def_readwrite_static("max_qubit_num", &uniqc::DensityOperatorSimulator::max_qubit_num)
+		.def_property_readonly_static("max_qubit_num", [](py::object) { return uniqc::DensityOperatorSimulator::max_qubit_num; })
 		.def_readonly("total_qubit", &uniqc::DensityOperatorSimulator::total_qubit)
 		.def_readonly("state", &uniqc::DensityOperatorSimulator::state)
 		.def("init_n_qubit", &uniqc::DensityOperatorSimulator::init_n_qubit)

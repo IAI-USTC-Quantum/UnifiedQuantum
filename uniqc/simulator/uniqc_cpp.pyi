@@ -10,7 +10,7 @@ import typing
 __all__: list[str] = ["DensityOperatorSimulator", "StatevectorSimulator", "rand", "seed"]
 
 class DensityOperatorSimulator:
-    max_qubit_num: typing.ClassVar[int] = 10
+    max_qubit_num: typing.ClassVar[int] = 10  # read-only
     def __init__(self) -> None: ...
     def amplitude_damping(
         self, qn: typing.SupportsInt | typing.SupportsIndex, gamma: typing.SupportsFloat | typing.SupportsIndex
@@ -298,7 +298,7 @@ class DensityOperatorSimulator:
     def total_qubit(self) -> int: ...
 
 class StatevectorSimulator:
-    max_qubit_num: typing.ClassVar[int] = 30
+    max_qubit_num: typing.ClassVar[int] = 30  # read-only
     def __init__(self) -> None: ...
     def amplitude_damping(
         self, qn: typing.SupportsInt | typing.SupportsIndex, gamma: typing.SupportsFloat | typing.SupportsIndex
