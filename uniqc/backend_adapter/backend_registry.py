@@ -297,11 +297,71 @@ def _normalise_ibm(raw: list[dict[str, Any]]) -> list[BackendInfo]:
     return results
 
 
+def _normalise_tianyan(raw: list[dict[str, Any]]) -> list[BackendInfo]:
+    """Convert TianYan ``list_backends()`` output to ``BackendInfo`` objects."""
+    results: list[BackendInfo] = []
+    for entry in raw:
+        name = str(entry.get("name", ""))
+        available: bool = bool(entry.get("available", False))
+        is_sim: bool = bool(entry.get("is_simulator", False))
+        results.append(
+            BackendInfo(
+                platform=Platform.TIANYAN,
+                name=name,
+                description="TianYan cloud simulator" if is_sim else "TianYan quantum computer",
+                num_qubits=int(entry.get("num_qubits", 0) or 0),
+                status="available" if available else "unavailable",
+                is_simulator=is_sim,
+                is_hardware=not is_sim,
+                extra={
+                    "available": available,
+                    "machine_id": entry.get("machine_id", ""),
+                    "price": entry.get("price"),
+                    "raw_status": entry.get("status", ""),
+                },
+            )
+        )
+    return results
+
+
+def _normalise_logicalqubit(raw: list[dict[str, Any]]) -> list[BackendInfo]:
+    """Convert LogicalQubit (lqcloud) ``get_backends()`` output to ``BackendInfo``."""
+    results: list[BackendInfo] = []
+    for entry in raw:
+        name = str(entry.get("name", ""))
+        is_sim = "sim" in name.lower()
+        status_str = str(entry.get("status", "available") or "available").strip().lower()
+        status_map = {
+            "online": "available",
+            "available": "available",
+            "operational": "available",
+            "offline": "unavailable",
+            "unavailable": "unavailable",
+            "maintenance": "maintenance",
+        }
+        extra = {k: v for k, v in entry.items() if k not in ("name", "num_qubits", "n_qubits", "status")}
+        results.append(
+            BackendInfo(
+                platform=Platform.LOGICALQUBIT,
+                name=name,
+                description="LogicalQubit cloud simulator" if is_sim else "LogicalQubit quantum computer",
+                num_qubits=int(entry.get("num_qubits", entry.get("n_qubits", 0)) or 0),
+                status=status_map.get(status_str, status_str),
+                is_simulator=is_sim,
+                is_hardware=not is_sim,
+                extra=extra,
+            )
+        )
+    return results
+
+
 _NORMALISERS = {
     Platform.ORIGINQ: _normalise_originq,
     Platform.QUAFU: _normalise_quafu,
     Platform.QUARK: _normalise_quark,
     Platform.IBM: _normalise_ibm,
+    Platform.TIANYAN: _normalise_tianyan,
+    Platform.LOGICALQUBIT: _normalise_logicalqubit,
 }
 
 
@@ -332,6 +392,14 @@ def _build_adapter(platform: Platform):
         from uniqc.backend_adapter.task.adapters import DummyAdapter
 
         return DummyAdapter()
+    elif platform == Platform.TIANYAN:
+        from uniqc.backend_adapter.task.adapters import TianyanAdapter
+
+        return TianyanAdapter()
+    elif platform == Platform.LOGICALQUBIT:
+        from uniqc.backend_adapter.task.adapters import LogicalQubitAdapter
+
+        return LogicalQubitAdapter()
     raise ValueError(f"No adapter for platform {platform}")
 
 

@@ -26,6 +26,7 @@ walkthrough
 compile_levels
 compiler_options_region
 adapter_architecture
+adding_a_platform
 opcode
 circuit_analysis
 ```

@@ -67,17 +67,34 @@ from .error_model import (
 from .error_model import (
     TwoQubitDepolarizing as TwoQubitDepolarizing,
 )
-from .get_backend import create_simulator as create_simulator
-from .get_backend import get_backend as get_backend
-from .get_backend import get_simulator as get_simulator
 from .mps_simulator import MPSConfig as MPSConfig
 from .mps_simulator import MPSSimulator as MPSSimulator
-from .opcode_simulator import OpcodeSimulator as OpcodeSimulator
-from .opcode_simulator import backend_alias as backend_alias
-from .originir_ext_simulator import LoopWatchdogError as LoopWatchdogError
-from .originir_ext_simulator import OriginIR_ext_Simulator as OriginIR_ext_Simulator
-from .simulator import NoisySimulator as NoisySimulator
-from .simulator import Simulator as Simulator
+
+try:
+    # These re-exports pull in ``base_simulator`` / ``opcode_simulator``,
+    # which require the uniqc_cpp C++ extension. Guard them so the cloud /
+    # adapter layers and the pure-Python simulators above stay importable
+    # without it (the extension-dependent names degrade to None; tests that
+    # need them are gated by the ``requires_cpp`` marker).
+    from .get_backend import create_simulator as create_simulator
+    from .get_backend import get_backend as get_backend
+    from .get_backend import get_simulator as get_simulator
+    from .opcode_simulator import OpcodeSimulator as OpcodeSimulator
+    from .opcode_simulator import backend_alias as backend_alias
+    from .originir_ext_simulator import LoopWatchdogError as LoopWatchdogError
+    from .originir_ext_simulator import OriginIR_ext_Simulator as OriginIR_ext_Simulator
+    from .simulator import NoisySimulator as NoisySimulator
+    from .simulator import Simulator as Simulator
+except ImportError:
+    create_simulator = None  # type: ignore[assignment]
+    get_backend = None  # type: ignore[assignment]
+    get_simulator = None  # type: ignore[assignment]
+    OpcodeSimulator = None  # type: ignore[assignment]
+    backend_alias = None  # type: ignore[assignment]
+    LoopWatchdogError = None  # type: ignore[assignment]
+    OriginIR_ext_Simulator = None  # type: ignore[assignment]
+    NoisySimulator = None  # type: ignore[assignment]
+    Simulator = None  # type: ignore[assignment]
 
 try:
     from .torchquantum_simulator import TORCHQUANTUM_AVAILABLE as TORCHQUANTUM_AVAILABLE

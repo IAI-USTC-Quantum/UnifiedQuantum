@@ -30,6 +30,8 @@ __all__ = [
     "check_quarkcircuit",
     "check_qiskit",
     "check_pyqpanda3",
+    "check_cqlib",
+    "check_lqcloud",
     "check_uniqc_cpp",
     "check_qutip",
     "check_simulation",
@@ -38,6 +40,8 @@ __all__ = [
     "QUARKCIRCUIT_AVAILABLE",
     "QISKIT_AVAILABLE",
     "PYQPANDA3_AVAILABLE",
+    "CQLIB_AVAILABLE",
+    "LQCLOUD_AVAILABLE",
     "UNIQC_CPP_AVAILABLE",
     "QUTIP_AVAILABLE",
     "SIMULATION_AVAILABLE",
@@ -148,6 +152,24 @@ def check_pyqpanda3() -> bool:
     return _can_import("pyqpanda3")
 
 
+def check_cqlib() -> bool:
+    """Check if the cqlib (TianYan / 天衍) package is available.
+
+    Returns:
+        True if cqlib can be imported, False otherwise.
+    """
+    return _can_import("cqlib")
+
+
+def check_lqcloud() -> bool:
+    """Check if the lqcloud (LogicalQubit / 逻辑比特) package is available.
+
+    Returns:
+        True if lqcloud can be imported, False otherwise.
+    """
+    return _can_import("lqcloud")
+
+
 def check_uniqc_cpp() -> bool:
     """Check if the uniqc_cpp C++ simulator extension is available.
 
@@ -196,6 +218,8 @@ QUARK_AVAILABLE = check_quark()
 QUARKCIRCUIT_AVAILABLE = check_quarkcircuit()
 QISKIT_AVAILABLE = check_qiskit()
 PYQPANDA3_AVAILABLE = check_pyqpanda3()
+CQLIB_AVAILABLE = check_cqlib()
+LQCLOUD_AVAILABLE = check_lqcloud()
 UNIQC_CPP_AVAILABLE = check_uniqc_cpp()
 QUTIP_AVAILABLE = check_qutip()
 SIMULATION_AVAILABLE = UNIQC_CPP_AVAILABLE

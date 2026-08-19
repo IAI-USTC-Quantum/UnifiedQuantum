@@ -57,9 +57,11 @@ from .algorithms.workflows import readout_em_workflow, xeb_workflow
 from .backend_adapter.backend import (
     DummyBackend,
     IBMBackend,
+    LogicalQubitBackend,
     OriginQBackend,
     QuantumBackend,
     QuarkBackend,
+    TianyanBackend,
     get_backend,
     list_backends,
     list_backends_by_platform,
@@ -76,8 +78,10 @@ from .backend_adapter.backend_registry import (
 from .backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
+    LogicalQubitCircuitAdapter,
     OriginQCircuitAdapter,
     QuarkCircuitAdapter,
+    TianyanCircuitAdapter,
 )
 from .backend_adapter.network_utils import (
     check_proxy_connectivity,
@@ -86,15 +90,24 @@ from .backend_adapter.network_utils import (
     test_ibm_connectivity,
 )
 from .backend_adapter.region_selector import ChainSearchResult, RegionSearchResult, RegionSelector
-from .backend_adapter.task.normalizers import normalize_dummy, normalize_ibm, normalize_originq, normalize_quafu
+from .backend_adapter.task.normalizers import (
+    normalize_dummy,
+    normalize_ibm,
+    normalize_logicalqubit,
+    normalize_originq,
+    normalize_quafu,
+    normalize_tianyan,
+)
 from .backend_adapter.task.options import (
     BackendOptions,
     BackendOptionsError,
     BackendOptionsFactory,
     DummyOptions,
     IBMOptions,
+    LogicalQubitOptions,
     OriginQOptions,
     QuarkOptions,
+    TianyanOptions,
     UnifiedOptions,
 )
 from .backend_adapter.task.result_types import UnifiedResult
@@ -276,6 +289,9 @@ __all__ = [
     "IBMOptions",
     "HybridQCLModel",
     "InsufficientCreditsError",
+    "LogicalQubitBackend",
+    "LogicalQubitCircuitAdapter",
+    "LogicalQubitOptions",
     "M3Mitigator",
     "MissingDependencyError",
     "NamedCircuit",
@@ -324,6 +340,9 @@ __all__ = [
     "TaskNotFoundError",
     "TaskStatus",
     "TaskTimeoutError",
+    "TianyanBackend",
+    "TianyanCircuitAdapter",
+    "TianyanOptions",
     "TimelineDurationError",
     "TopologyError",
     "TorchQuantumLayer",
@@ -399,8 +418,10 @@ __all__ = [
     "load_calibration_result",
     "normalize_dummy",
     "normalize_ibm",
+    "normalize_logicalqubit",
     "normalize_originq",
     "normalize_quafu",
+    "normalize_tianyan",
     "parameter_shift_gradient",
     "pauli_expectation",
     "poll_result",

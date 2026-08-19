@@ -26,6 +26,8 @@ __all__ = [
     "QiskitAdapter",
     "IBMAdapter",
     "DummyAdapter",
+    "TianyanAdapter",
+    "LogicalQubitAdapter",
     # Constants (re-exported from base for convenience)
     "TASK_STATUS_FAILED",
     "TASK_STATUS_SUCCESS",
@@ -55,6 +57,14 @@ except ImportError:
 def __getattr__(name: str):
     if name == "QuafuAdapter":
         value = import_module("uniqc.backend_adapter.task.adapters.quafu_adapter").QuafuAdapter
+        globals()[name] = value
+        return value
+    if name == "TianyanAdapter":
+        value = import_module("uniqc.backend_adapter.task.adapters.tianyan_adapter").TianyanAdapter
+        globals()[name] = value
+        return value
+    if name == "LogicalQubitAdapter":
+        value = import_module("uniqc.backend_adapter.task.adapters.logicalqubit_adapter").LogicalQubitAdapter
         globals()[name] = value
         return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

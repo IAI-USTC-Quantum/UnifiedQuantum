@@ -180,7 +180,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Filter by platform",
-            "Filter by platform: uniqc task list --platform originq. Supported platforms: originq, quafu, ibm.",
+            "Filter by platform: uniqc task list --platform originq. Supported platforms: originq, quafu, ibm, tianyan, logicalqubit.",
         ),
         (
             "Filter by status",
@@ -364,6 +364,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "Missing dependencies?",
             "Install optional packages with pip: "
             "pip install pyqpanda3 (OriginQ), pyquafu (Quafu), quarkstudio (Quark), "
+            "cqlib (Tianyan), lqcloud (LogicalQubit), "
             "qiskit qiskit-ibm-runtime (IBM). Core deps are numpy, typer, rich, scipy, pyyaml.",
         ),
         (

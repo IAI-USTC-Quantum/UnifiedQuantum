@@ -18,6 +18,8 @@ class Platform(Enum):
     QUARK = "quark"
     IBM = "ibm"
     DUMMY = "dummy"
+    TIANYAN = "tianyan"
+    LOGICALQUBIT = "logicalqubit"
 
 
 # ---------------------------------------------------------------------------

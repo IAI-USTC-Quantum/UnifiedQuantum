@@ -9,7 +9,8 @@
 量子计算聚合框架。它给跨平台量子线路构建、模拟、云端执行提供**单一接口**，并且
 在此之上提供完整的**芯片标定 + 量子误差缓解（QEM）工具集**。
 
-* **多平台聚合**：OriginQ、IBM Quantum、Quark，加上本地 ``dummy`` 模拟器，
+* **多平台聚合**：OriginQ、IBM Quantum、Quark、天衍（tianyan）、
+  逻辑比特（logicalqubit），加上本地 ``dummy`` 模拟器，
   共享 ``submit_task`` / ``uniqc submit`` 同一接口。
 * **CLI-first**：``uv tool install unified-quantum`` 后全局可用 ``uniqc``，覆盖
   线路构建、本地模拟、提交、查询、配置、calibration 全流程。
@@ -47,6 +48,7 @@ uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000 --wait
 
 source/0_quickstart/index
 source/1_basic_usage/index
+source/platforms/index
 source/2_advanced/index
 source/3_best_practices/index
 source/4_cli/index

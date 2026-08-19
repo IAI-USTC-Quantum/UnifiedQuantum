@@ -10,6 +10,9 @@ Honours these markers (declared in ``pytest.ini``):
 * ``requires_pytorch`` — skipped if torch is missing.
 * ``requires_torchquantum`` — skipped if torch or torchquantum is missing.
 * ``requires_cpp`` — skipped if uniqc_cpp is missing.
+* ``requires_tianyan_credentials`` / ``requires_logicalqubit_credentials`` —
+  skipped if the platform credential (``tianyan.login_key`` /
+  ``logicalqubit.api_key``) is not configured in uniqc config.
 
 Tests that use a ``dummy:<provider>:<chip>`` backend must declare the
 appropriate provider ``requires_*`` marker themselves. That path requires the
@@ -130,6 +133,26 @@ def pytest_collection_modifyitems(
         marker: has_provider_credentials(provider)
         for marker, provider in cred_markers.items()
     }
+
+    # Newer platforms gate on uniqc.config directly — their credential fields
+    # are not token-shaped (tianyan.login_key, logicalqubit.api_key).
+    try:
+        from uniqc.config import has_platform_credentials
+    except Exception:
+        def has_platform_credentials(_p: str) -> bool:  # type: ignore[no-redef]
+            return False
+    config_cred_markers = {
+        "requires_tianyan_credentials": ("tianyan", "login_key"),
+        "requires_logicalqubit_credentials": ("logicalqubit", "api_key"),
+    }
+    for marker, (provider, field) in config_cred_markers.items():
+        cred_skips[marker] = pytest.mark.skip(
+            reason=(
+                f"{provider} API credentials not configured. Run "
+                f"`uniqc config set {provider}.{field} <KEY>` to enable this test."
+            )
+        )
+        cred_present[marker] = has_platform_credentials(provider)
 
     for item in items:
         kw = item.keywords

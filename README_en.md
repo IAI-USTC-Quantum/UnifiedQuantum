@@ -14,7 +14,7 @@
 
 **UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
 
-UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, QuarkStudio, and IBM Quantum under one consistent API.
+UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, QuarkStudio, IBM Quantum, TianYan, and LogicalQubit under one consistent API.
 
 Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and quantum error mitigation (QEM) toolkit**:
 
@@ -87,7 +87,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 - **AI-native**: Designed for AI workflows, seamlessly integrated into modern development and inference pipelines
 - **CLI-first**: Out-of-the-box command-line tool — one command to build, simulate, submit, and analyze
-- **Aggregation**: Unified interface across multiple quantum cloud platforms (OriginQ, QuarkStudio, IBM Quantum)
+- **Aggregation**: Unified interface across multiple quantum cloud platforms (OriginQ, QuarkStudio, IBM Quantum, TianYan, LogicalQubit)
 - **Consistency**: One API to rule them all — no per-platform learning curve
 - **Transparency**: Explicit circuit assembly, translation, and submission — no hidden magic
 - **Lightweight**: Pure Python, easy to install and integrate
@@ -102,7 +102,7 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ## Features
 
-- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, QuarkStudio, IBM Quantum, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
+- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, QuarkStudio, IBM Quantum, TianYan, LogicalQubit, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
 - **Format conversion**: `Circuit.from_qasm()` / `Circuit.from_originir()` for import; `circuit.to_qasm()` / `circuit.to_originir()` for export.
 - **Local simulation**: Built-in OriginIR Simulator and QASM Simulator, supporting statevector / density matrix backends, plus noisy variants.
 - **Algorithm components**: Built-in HEA, UCCSD, QAOA ansatz ready for VQE / QAOA research.
@@ -185,6 +185,8 @@ Core dependencies (including `scipy`) are included by default.
 |---------|---------------------|-------------|
 | OriginQ cloud | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
 | QuarkStudio / Quark cloud (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
+| TianYan cloud platform | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
+| LogicalQubit cloud platform | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
 | Advanced simulation (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | Visualization | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
@@ -212,7 +214,7 @@ uniqc --help
 # Local simulation
 uniqc simulate circuit.ir --shots 1000
 
-# Submit to cloud (originq / quark / ibm / dummy)
+# Submit to cloud (originq / quark / ibm / tianyan / logicalqubit / dummy)
 uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # Query result
@@ -229,6 +231,8 @@ uniqc gateway start
 # Configure cloud platform token
 uniqc config init
 uniqc config set originq.token YOUR_TOKEN
+uniqc config set tianyan.login_key YOUR_LOGIN_KEY
+uniqc config set logicalqubit.api_key YOUR_API_KEY
 
 # Calibration and QEM data preparation
 uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000

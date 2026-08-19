@@ -267,7 +267,7 @@ def update(
         None,
         "--platform",
         "-p",
-        help="Only update backends for this platform (originq/quafu/ibm)",
+        help="Only update backends for this platform (originq/quafu/quark/ibm/tianyan/logicalqubit)",
     ),
     clear: bool = typer.Option(
         False,
@@ -458,7 +458,8 @@ def chip_display(
     try:
         platform = Platform(platform_str.strip().lower())
     except ValueError:
-        print_error(f"Unknown platform '{platform_str}'. Valid: originq, quafu, ibm")
+        valid = ", ".join(p.value for p in Platform if p != Platform.DUMMY)
+        print_error(f"Unknown platform '{platform_str}'. Valid: {valid}")
         raise typer.Exit(1) from None
 
     from uniqc.cli.chip_service import fetch_chip_characterization

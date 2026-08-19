@@ -30,6 +30,8 @@ __all__ = [
     "QuarkOptions",
     "IBMOptions",
     "DummyOptions",
+    "TianyanOptions",
+    "LogicalQubitOptions",
     "UnifiedOptions",
     "BackendOptionsFactory",
     "BackendOptionsError",
@@ -237,6 +239,63 @@ class IBMOptions(BackendOptions):
 
 
 @dataclasses.dataclass
+class TianyanOptions(BackendOptions):
+    """Options for TianYan (天衍) backends.
+
+    Parameters
+    ----------
+    machine_name : str
+        TianYan machine name, e.g. ``"tianyan176"`` (hardware) or
+        ``"tianyan_sw"`` (cloud simulator). Default: ``"tianyan_sw"``.
+    task_name : str | None
+        Optional experiment name for server-side tracking.
+    """
+
+    platform: dataclasses.InitVar[Platform] = dataclasses.field(default=Platform.TIANYAN, repr=False)
+    machine_name: str = "tianyan_sw"
+    task_name: str | None = None
+
+    def to_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            "machine_name": self.machine_name,
+        }
+        if self.task_name is not None:
+            kwargs["task_name"] = self.task_name
+        return kwargs
+
+
+@dataclasses.dataclass
+class LogicalQubitOptions(BackendOptions):
+    """Options for LogicalQubit (逻辑比特) backends.
+
+    Parameters
+    ----------
+    backend_name : str | None
+        LogicalQubit backend name. ``None`` defers to the adapter /
+        server-side default.
+    initial_layout : list[int] | None
+        Optional initial qubit layout, passed through to the platform.
+    readout_correction : bool
+        Enable readout error mitigation. Default: ``False``.
+    """
+
+    platform: dataclasses.InitVar[Platform] = dataclasses.field(default=Platform.LOGICALQUBIT, repr=False)
+    backend_name: str | None = None
+    initial_layout: list[int] | None = None
+    readout_correction: bool = False
+
+    def to_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {}
+        if self.backend_name is not None:
+            kwargs["backend_name"] = self.backend_name
+        if self.initial_layout is not None:
+            kwargs["initial_layout"] = self.initial_layout
+        if self.readout_correction:
+            kwargs["readout_correction"] = self.readout_correction
+        return kwargs
+
+
+@dataclasses.dataclass
 class DummyOptions(BackendOptions):
     """Options for the local dummy simulator.
 
@@ -392,11 +451,28 @@ class UnifiedOptions:
                 auto_mapping=bool(self.auto_mapping),
                 circuit_optimize=optimize,
             )
+        if platform_lower == "tianyan":
+            if self.error_mitigation:
+                self._unsupported("error_mitigation", "tianyan")
+            if self.auto_mapping:
+                self._unsupported("auto_mapping", "tianyan")
+            return TianyanOptions(
+                shots=self.shots,
+                machine_name=self.backend_name or "tianyan_sw",
+            )
+        if platform_lower == "logicalqubit":
+            if self.auto_mapping:
+                self._unsupported("auto_mapping", "logicalqubit")
+            return LogicalQubitOptions(
+                shots=self.shots,
+                backend_name=self.backend_name,
+                readout_correction=bool(self.error_mitigation),
+            )
         if platform_lower == "dummy":
             return DummyOptions(shots=self.shots)
         raise BackendOptionsError(
             f"UnifiedOptions: unknown platform {platform_lower!r}. "
-            f"Available: ['originq', 'quafu', 'quark', 'ibm', 'dummy']"
+            f"Available: ['originq', 'quafu', 'quark', 'ibm', 'tianyan', 'logicalqubit', 'dummy']"
         )
 
     def to_kwargs(self, platform: str) -> dict[str, Any]:
@@ -431,6 +507,8 @@ class BackendOptionsFactory:
         "quark": QuarkOptions,
         "ibm": IBMOptions,
         "dummy": DummyOptions,
+        "tianyan": TianyanOptions,
+        "logicalqubit": LogicalQubitOptions,
     }
 
     @classmethod
@@ -516,6 +594,19 @@ class BackendOptionsFactory:
                 auto_mapping=kwargs.pop("auto_mapping", True),
                 circuit_optimize=kwargs.pop("circuit_optimize", True),
                 task_name=kwargs.pop("task_name", None),
+            )
+        elif platform_lower == "tianyan":
+            return TianyanOptions(
+                shots=shots,
+                machine_name=kwargs.pop("machine_name", kwargs.pop("backend_name", kwargs.pop("chip_id", "tianyan_sw"))),
+                task_name=kwargs.pop("task_name", kwargs.pop("exp_name", None)),
+            )
+        elif platform_lower == "logicalqubit":
+            return LogicalQubitOptions(
+                shots=shots,
+                backend_name=kwargs.pop("backend_name", kwargs.pop("chip_id", None)),
+                initial_layout=kwargs.pop("initial_layout", None),
+                readout_correction=kwargs.pop("readout_correction", False),
             )
         elif platform_lower == "dummy":
             return DummyOptions(

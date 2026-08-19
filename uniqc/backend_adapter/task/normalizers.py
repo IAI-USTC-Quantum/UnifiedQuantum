@@ -18,7 +18,15 @@ Usage::
 
 from __future__ import annotations
 
-__all__ = ["normalize_originq", "normalize_quafu", "normalize_ibm", "normalize_dummy"]
+__all__ = [
+    "normalize_originq",
+    "normalize_quafu",
+    "normalize_ibm",
+    "normalize_dummy",
+    "normalize_tianyan",
+    "normalize_logicalqubit",
+    "tianyan_result_status_to_counts",
+]
 
 import warnings
 from typing import Any
@@ -327,4 +335,131 @@ def normalize_dummy(
         shots=shots,
         platform="dummy",
         task_id=task_id,
+    )
+
+
+def tianyan_result_status_to_counts(result_status: Any) -> dict[str, int]:
+    """Convert a cqlib (TianYan) ``resultStatus`` payload to a counts dict.
+
+    ``resultStatus`` is a list of rows: row 0 holds the measured-qubit
+    labels in measurement order (the first entry corresponds to ``c[0]``),
+    and each subsequent row holds one shot's bits in that same order.
+
+    uniqc convention (docs/source/1_basic_usage/platform_conventions.md
+    §2.6): the *rightmost* bitstring character is ``c[0]``. Each shot row
+    is therefore reversed so the first-measured bit lands on the right.
+
+    Args:
+        result_status: Raw ``resultStatus`` value from the TianYan
+            experiment-result response.
+
+    Returns:
+        Counts dict mapping bitstrings to shot counts. Empty when the
+        payload carries no shot rows.
+    """
+    counts: dict[str, int] = {}
+    if not isinstance(result_status, (list, tuple)) or len(result_status) < 2:
+        return counts
+    for shot_row in result_status[1:]:
+        try:
+            key = "".join(str(int(bit)) for bit in reversed(list(shot_row)))
+        except (TypeError, ValueError):
+            continue
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def normalize_tianyan(
+    raw: dict[str, Any],
+    task_id: str,
+    backend_name: str | None = None,
+) -> UnifiedResult:
+    """Normalize a TianYan (cqlib) experiment-result entry.
+
+    ``raw`` is one entry of ``data.experimentResultModelList`` from the
+    TianYan result endpoint, carrying ``resultStatus`` (see
+    :func:`tianyan_result_status_to_counts` for the layout),
+    ``probability`` and ``experimentTaskId``.
+
+    Args:
+        raw: Raw experiment-result entry dict.
+        task_id: Task identifier (cqlib query_id).
+        backend_name: Optional machine name (e.g. ``"tianyan176"``).
+
+    Returns:
+        UnifiedResult with counts following the uniqc cbit convention.
+    """
+    result_status = raw.get("resultStatus") if isinstance(raw, dict) else None
+    counts = tianyan_result_status_to_counts(result_status)
+    return UnifiedResult.from_counts(
+        counts=counts,
+        platform="tianyan",
+        task_id=task_id,
+        backend_name=backend_name,
+        raw_result=raw,
+    )
+
+
+def normalize_logicalqubit(
+    raw: Any,
+    task_id: str,
+    backend_name: str | None = None,
+) -> UnifiedResult:
+    """Normalize an lqcloud (LogicalQubit) counts payload.
+
+    ``job.result().get_counts()`` returns qiskit-style big-endian keys
+    (``{"00": 503, ...}``) where the rightmost character is ``c[0]`` —
+    identical to the uniqc convention (platform_conventions.md §2.6), so
+    no bit reversal is applied. Hex keys (``0x...``) are converted to a
+    uniform-width binary form inferred from the largest observed outcome.
+
+    Args:
+        raw: Counts dict, or an object exposing ``get_counts()``.
+        task_id: Task identifier (lqcloud job id).
+        backend_name: Optional backend name.
+
+    Returns:
+        UnifiedResult with counts following the uniqc cbit convention.
+    """
+    counts: dict[Any, Any] = {}
+    if isinstance(raw, dict):
+        counts = raw
+    elif hasattr(raw, "get_counts"):
+        try:
+            got = raw.get_counts()
+        except (AttributeError, TypeError):
+            got = None
+        if isinstance(got, dict):
+            counts = got
+
+    normalized_counts: dict[str, int] = {}
+    hex_items: list[tuple[int, int]] = []
+    for key, value in counts.items():
+        if isinstance(key, str):
+            stripped = key.replace(" ", "")
+            if stripped.startswith("0x"):
+                try:
+                    hex_items.append((int(stripped, 16), int(value)))
+                    continue
+                except ValueError:
+                    pass
+            normalized_counts[stripped] = normalized_counts.get(stripped, 0) + int(value)
+        else:
+            normalized_counts[str(key)] = int(value)
+
+    if hex_items:
+        # Bare hex keys carry no register width; pad all of them to a single
+        # uniform width inferred from the largest observed outcome so keys
+        # within one counts dict stay comparable.
+        width = max(1, max(int_val for int_val, _ in hex_items).bit_length())
+        for int_val, value in hex_items:
+            bin_key = format(int_val, f"0{width}b")
+            normalized_counts[bin_key] = normalized_counts.get(bin_key, 0) + value
+
+    return UnifiedResult.from_counts(
+        counts=normalized_counts,
+        platform="logicalqubit",
+        task_id=task_id,
+        backend_name=backend_name,
+        raw_result=raw,
     )

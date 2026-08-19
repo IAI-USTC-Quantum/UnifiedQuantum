@@ -227,7 +227,7 @@ def _normalize_backend_id(backend: str) -> str:
     if backend.startswith(("virtual-line-", "virtual-grid-", "mps-linear-")):
         return f"dummy:local:{backend}"
     # Bare platform names are not allowed — guide users to the full identifier.
-    if backend in ("originq", "quafu", "quark", "ibm"):
+    if backend in ("originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"):
         raise typer.BadParameter(
             f"Bare platform name {backend!r} is not a valid backend identifier. "
             f"Use '{backend}:<chip>' (e.g. '{backend}:WK_C180'). "

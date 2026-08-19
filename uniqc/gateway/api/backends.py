@@ -380,7 +380,15 @@ def refresh_backends(platform: str | None = None) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}") from None
         targets = [target]
     else:
-        targets = [Platform.ORIGINQ, Platform.QUAFU, Platform.QUARK, Platform.IBM, Platform.DUMMY]
+        targets = [
+            Platform.ORIGINQ,
+            Platform.QUAFU,
+            Platform.QUARK,
+            Platform.IBM,
+            Platform.TIANYAN,
+            Platform.LOGICALQUBIT,
+            Platform.DUMMY,
+        ]
 
     for target in targets:
         try:

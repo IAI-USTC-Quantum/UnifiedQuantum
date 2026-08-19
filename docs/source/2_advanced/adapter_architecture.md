@@ -209,6 +209,19 @@ result = adapter.query(task_id)
 - 支持拓扑约束
 - 结果立即可用
 
+### TianyanAdapter
+
+用于接入天衍量子计算云平台（SDK `cqlib`）。线路转换为 **QCIS** 格式提交；
+结果按测量比特标签序归一为 counts。凭证字段为 `tianyan.login_key`。
+
+### LogicalQubitAdapter
+
+用于接入逻辑比特超导量子云平台（SDK `lqcloud>=0.4.2`）。线路转换为
+qiskit 风格门集提交；单次 shots ≤ 50000；原生结果为 qiskit 风格大端
+bitstring，由 normalizer 改写为统一 cbit 框架。凭证字段为
+`logicalqubit.api_key`，可选 `logicalqubit.url`（默认
+`https://cloud.logicalqubit.com`）。
+
 (advanced-adapter-normalization)=
 ## 结果归一化
 
@@ -263,6 +276,8 @@ unified = normalize_originq(raw_result, task_id='xxx', shots=1000)
 |------|--------|------|
 | OriginQ | `originq.token` | API 密钥 |
 | IBM | `ibm.token` | IBM Quantum Token |
+| Tianyan | `tianyan.login_key` | 天衍平台登录密钥 |
+| LogicalQubit | `logicalqubit.api_key`（可选 `logicalqubit.url`） | 逻辑比特平台 API Key 与服务地址 |
 | Dummy | backend 前缀 | 通过 ``backend='dummy:local:simulator'`` 或 ``'dummy:...'`` 激活 |
 
 ### 配置加载
@@ -347,6 +362,11 @@ class MyCustomAdapter(QuantumAdapter):
 (advanced-adapter-best-practices)=
 ## 最佳实践
 
+```{note}
+要给 UnifiedQuantum 正式接入一个新云平台（而不只是写一个自定义适配器），
+请按 [添加一个新云平台](adding_a_platform.md) 的完整 checklist 逐层登记。
+```
+
 ### 1. 懒加载依赖
 
 适配器应在实例化时才导入平台特定的包，避免导入错误：
@@ -411,3 +431,10 @@ class MyAdapter(QuantumAdapter):
 - {mod}`uniqc.backend_adapter.task.adapters.dummy_adapter` - Dummy 适配器
 - {mod}`uniqc.backend_adapter.task.result_types` - 统一结果类型
 - {mod}`uniqc.backend_adapter.task.normalizers` - 结果归一化函数
+
+(advanced-adapter-see-also)=
+## 相关文档
+
+- [添加一个新云平台](adding_a_platform.md) —— 新平台接入的完整 checklist
+- [平台约定](../1_basic_usage/platform_conventions.md) —— 各平台输入/输出与 endianness 约定
+- [云平台章节](../platforms/index.md) —— 各平台的用户侧接入指南
