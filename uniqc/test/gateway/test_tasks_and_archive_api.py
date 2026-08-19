@@ -238,3 +238,86 @@ def test_tasks_endpoint_bulk_archive(fastapi_client, isolated_task_db):
     r = fastapi_client.post("/api/tasks/bulk-archive", json={"task_ids": ["ba1", "ba2"]})
     assert r.status_code == 200, r.text
     assert ArchiveStore().count_archived() >= 2
+
+
+# ---------------------------------------------------------------------------
+# Response redaction (issue #109 — sensitive metadata/result fields)
+# ---------------------------------------------------------------------------
+
+
+def _make_sensitive_task(task_id: str) -> TaskInfo:
+    return TaskInfo(
+        task_id=task_id,
+        backend="dummy:local:simulator",
+        status=TaskStatus.SUCCESS,
+        shots=100,
+        result={
+            "counts": {"00": 50, "11": 50},
+            "credentials": {"access_key": "ak-123", "region": "cn"},
+        },
+        metadata={
+            "submitted_by": "test",
+            "originq": {"token": "secret-token", "chip": "WK_C180"},
+            "proxy": {"https": "http://user:pass@proxy:3128"},
+            "nested": {"deep": {"QUARK_API_KEY": "qk-999"}},
+        },
+    )
+
+
+def test_tasks_list_redacts_sensitive_metadata(fastapi_client, isolated_task_db):
+    TaskStore().save(_make_sensitive_task("s1"))
+
+    r = fastapi_client.get("/api/tasks")
+    assert r.status_code == 200, r.text
+    meta = next(t for t in r.json()["tasks"] if t["task_id"] == "s1")["metadata"]
+    assert meta["originq"]["token"] == "[REDACTED]"
+    assert meta["proxy"] == "[REDACTED]"
+    assert meta["nested"]["deep"]["QUARK_API_KEY"] == "[REDACTED]"
+    # Non-sensitive fields pass through untouched
+    assert meta["originq"]["chip"] == "WK_C180"
+    assert meta["submitted_by"] == "test"
+
+
+def test_tasks_get_redacts_metadata_and_result(fastapi_client, isolated_task_db):
+    TaskStore().save(_make_sensitive_task("s2"))
+
+    r = fastapi_client.get("/api/tasks/s2")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["metadata"]["originq"]["token"] == "[REDACTED]"
+    assert body["result"]["credentials"]["access_key"] == "[REDACTED]"
+    assert body["result"]["credentials"]["region"] == "cn"
+    assert body["result"]["counts"] == {"00": 50, "11": 50}
+    # The stored record keeps the original values — only responses are scrubbed
+    assert TaskStore().get("s2").metadata["originq"]["token"] == "secret-token"
+
+
+def test_archive_endpoints_redact_sensitive_fields(fastapi_client, isolated_task_db):
+    TaskStore().save(_make_sensitive_task("s3"))
+    ArchiveStore().archive_task("s3")
+
+    r = fastapi_client.get("/api/archive/s3")
+    assert r.status_code == 200, r.text
+    assert r.json()["metadata"]["originq"]["token"] == "[REDACTED]"
+    assert r.json()["result"]["credentials"]["access_key"] == "[REDACTED]"
+
+    r = fastapi_client.get("/api/archive")
+    assert r.status_code == 200, r.text
+    meta = next(t for t in r.json()["tasks"] if t["task_id"] == "s3")["metadata"]
+    assert meta["proxy"] == "[REDACTED]"
+
+
+def test_redact_sensitive_unit():
+    from uniqc.gateway.redaction import redact_sensitive
+
+    assert redact_sensitive(None) is None
+    assert redact_sensitive("plain") == "plain"
+    assert redact_sensitive({"password": "x", "ok": 1}) == {"password": "[REDACTED]", "ok": 1}
+    assert redact_sensitive([{"token": "x"}]) == [{"token": "[REDACTED]"}]
+    # Words merely containing a sensitive substring are left alone
+    assert redact_sensitive({"monkey": "banana", "keyboard": 1}) == {
+        "monkey": "banana",
+        "keyboard": 1,
+    }
+    # Falsy values are never replaced (matches the CLI config redaction)
+    assert redact_sensitive({"token": ""}) == {"token": ""}

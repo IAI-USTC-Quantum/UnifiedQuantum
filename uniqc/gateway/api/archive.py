@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 from uniqc.backend_adapter.task.store import TaskStore
 from uniqc.gateway.db.archive_store import ArchiveStore
+from uniqc.gateway.redaction import redact_sensitive
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ def _info_to_dict(t: Any) -> dict[str, Any]:
         "submit_time": t.submit_time,
         "update_time": t.update_time,
         "has_result": t.result is not None,
-        "metadata": t.metadata,
+        "metadata": redact_sensitive(t.metadata),
         "archived_at": t.archived_at,
     }
 
@@ -75,7 +76,10 @@ def list_archived(
 
 @_archive_router.get("/{task_id}")
 def get_archived(task_id: str) -> dict[str, Any]:
-    """Return full details of an archived task."""
+    """Return full details of an archived task.
+
+    Credential-like fields in ``metadata``/``result`` are redacted.
+    """
     archive = ArchiveStore()
     task = archive.get_archived(task_id)
     if task is None:
@@ -87,8 +91,8 @@ def get_archived(task_id: str) -> dict[str, Any]:
         "shots": task.shots,
         "submit_time": task.submit_time,
         "update_time": task.update_time,
-        "result": task.result,
-        "metadata": task.metadata,
+        "result": redact_sensitive(task.result),
+        "metadata": redact_sensitive(task.metadata),
         "archived_at": task.archived_at,
     }
 

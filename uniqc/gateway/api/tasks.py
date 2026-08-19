@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from uniqc.backend_adapter.task.store import TERMINAL_STATUSES, TaskInfo, TaskStore
 from uniqc.gateway.db.archive_store import ArchiveStore
+from uniqc.gateway.redaction import redact_sensitive
 
 router = APIRouter()
 
@@ -27,7 +28,7 @@ def _info_to_dict(t: TaskInfo) -> dict[str, Any]:
         "submit_time": t.submit_time,
         "update_time": t.update_time,
         "has_result": t.result is not None,
-        "metadata": t.metadata,
+        "metadata": redact_sensitive(t.metadata),
         "archived_at": t.archived_at,
     }
 
@@ -71,7 +72,10 @@ def task_counts() -> dict[str, int]:
 
 @router.get("/{task_id}")
 def get_task(task_id: str) -> dict[str, Any]:
-    """Return full task details including result."""
+    """Return full task details including result.
+
+    Credential-like fields in ``metadata``/``result`` are redacted.
+    """
     store = TaskStore()
     task = store.get(task_id)
     if task is None:
@@ -83,8 +87,8 @@ def get_task(task_id: str) -> dict[str, Any]:
         "shots": task.shots,
         "submit_time": task.submit_time,
         "update_time": task.update_time,
-        "result": task.result,
-        "metadata": task.metadata,
+        "result": redact_sensitive(task.result),
+        "metadata": redact_sensitive(task.metadata),
         "archived_at": task.archived_at,
     }
 
