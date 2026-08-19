@@ -1026,7 +1026,7 @@ def submit_task(
             - ``2`` / ``3`` — heavier qiskit optimization. Slower but yields
               shorter / higher-fidelity circuits.
 
-            See ``docs/source/compile/compile_levels.md`` for details on what
+            See ``docs/source/2_advanced/compile_levels.md`` for details on what
             each level does.
         cloud_compile: Cloud-side compile request strength forwarded to the
             adapter. ``0`` disables cloud compile (e.g.

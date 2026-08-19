@@ -44,7 +44,7 @@ uv pip install unified-quantum
 ### 2. Build a Circuit (native API or any third-party tool)
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()
 c.h(0)
@@ -155,12 +155,12 @@ Maintainer environments should not treat missing currently maintained optional b
 Real-cloud tests that only fetch backends, validate tokens, or query platform status/API run by default. Only tests that actually submit quantum circuits are skipped by default, and they run when `--real-cloud-test` is passed.
 
 **Requirements:**
-- CMake >= 3.26
+- CMake >= 3.22
 - C++ compiler with C++17 support
 - Git submodules (fmt)
 - pybind11 from the Python build environment, declared in `pyproject.toml`
 
-If your system CMake is too old (< 3.26):
+If your system CMake is too old (< 3.22):
 
 ```bash
 pip install cmake --upgrade
@@ -264,7 +264,7 @@ uniqc backend update
 
 | Example | Description |
 |---------|-------------|
-| [Circuit Remapping](examples/1_basic_usage/02_local_simulation.py) | Build a circuit and remap qubits for real hardware |
+| [Local Simulation](examples/1_basic_usage/02_local_simulation.py) | Run local simulation with the Simulator (pmeasure and shots) |
 | [Dummy Server](examples/1_basic_usage/03_submit_and_postprocess.py) | Submit tasks to the local dummy simulator |
 | [Result Post-Processing](examples/1_basic_usage/03_submit_and_postprocess.py) | Convert and analyze results |
 

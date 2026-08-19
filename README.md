@@ -166,12 +166,12 @@ uv run pytest uniqc/test --real-cloud-test
 `--real-cloud-test`（并配置对应凭证）才会执行它们。
 
 **Requirements:**
-- CMake >= 3.26
+- CMake >= 3.22
 - C++ compiler with C++17 support
 - Git submodules (fmt)
 - pybind11 from the Python build environment, declared in `pyproject.toml`
 
-如果系统 CMake 版本过低（< 3.26），先升级：
+如果系统 CMake 版本过低（< 3.22），先升级：
 
 ```bash
 pip install cmake --upgrade
@@ -283,7 +283,7 @@ uniqc backend update
 
 | Example | Description |
 |---------|-------------|
-| [Circuit Remapping](examples/1_basic_usage/02_local_simulation.py) | Build a circuit and remap qubits for real hardware |
+| [本地模拟](examples/1_basic_usage/02_local_simulation.py) | 使用 Simulator 进行本地模拟（pmeasure 与 shots） |
 | [Dummy Server](examples/1_basic_usage/03_submit_and_postprocess.py) | Submit tasks to the local dummy simulator |
 | [Result Post-Processing](examples/1_basic_usage/03_submit_and_postprocess.py) | Convert and analyze results |
 
