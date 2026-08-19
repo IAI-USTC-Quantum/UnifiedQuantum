@@ -617,6 +617,9 @@ namespace uniqc
 
         CHECK_DUPLICATE_QUBIT(qn1, qn2)
 
+        if (parameters.size() != 15)
+            ThrowInvalidArgument("The uu15 gate requires exactly 15 parameters");
+
         size_t controller_mask = make_controller_mask(global_controller, total_qubit);
         uu15_unsafe_impl(state, qn1, qn2, parameters, total_qubit, controller_mask, is_dagger);
     }
