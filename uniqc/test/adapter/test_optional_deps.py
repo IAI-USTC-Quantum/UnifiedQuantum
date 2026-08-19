@@ -32,9 +32,9 @@ class TestMissingDependencyError:
 
     def test_error_message_format(self):
         """Test that error message includes install instructions."""
-        error = MissingDependencyError("qiskit", "qiskit")
-        assert "qiskit" in str(error)
-        assert "pip install unified-quantum[qiskit]" in str(error)
+        error = MissingDependencyError("pyqpanda3", "originq")
+        assert "pyqpanda3" in str(error)
+        assert "pip install unified-quantum[originq]" in str(error)
 
     def test_error_message_with_install_hint(self):
         """Test that explicit install_hint overrides the default extras message."""
@@ -47,9 +47,9 @@ class TestMissingDependencyError:
 
     def test_error_attributes(self):
         """Test error attributes are set correctly."""
-        error = MissingDependencyError("qiskit", "qiskit")
-        assert error.package == "qiskit"
-        assert error.extra == "qiskit"
+        error = MissingDependencyError("pyqpanda3", "originq")
+        assert error.package == "pyqpanda3"
+        assert error.extra == "originq"
 
     def test_is_import_error_subclass(self):
         """Test that MissingDependencyError is an ImportError."""
