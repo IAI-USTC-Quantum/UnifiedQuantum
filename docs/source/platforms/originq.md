@@ -60,6 +60,6 @@ print(wait_for_result(task_id))
 - 提交为**异步**：`submit()` 立即返回任务 ID，用 `wait_for_result()`
   阻塞等待结果。
 - 支持完整的 OriginIR 门集（含 `RPhi`、`UU15`、`CONTROL`/`DAGGER` 块等），
-  详见 [平台约定](../1_basic_usage/platform_conventions.md#platform-gate-support)。
+  详见 {ref}`平台约定 <platform-gate-support>`。
 - 结果为扁平 `{bitstring: shots}` counts，bitstring 序遵循
-  [统一 endianness 约定](../1_basic_usage/platform_conventions.md#platform-bit-endianness)。
+  {ref}`统一 endianness 约定 <platform-bit-endianness>`。

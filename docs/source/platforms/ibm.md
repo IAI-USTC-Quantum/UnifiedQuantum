@@ -64,5 +64,5 @@ print(wait_for_result(task_id))
   `circuit_optimize` 选项。
 - 结果为扁平 `{bitstring: shots}` counts（batch 查询返回列表），bitstring
   序遵循
-  [统一 endianness 约定](../1_basic_usage/platform_conventions.md#platform-bit-endianness)——
+  {ref}`统一 endianness 约定 <platform-bit-endianness>`——
   IBM 原生 BitArray 顺序已被 normalizer 改写。

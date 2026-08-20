@@ -139,7 +139,7 @@ CLI、Gateway 全部以该枚举为准。
   cbit 框架——bitstring **最右字符对应 `c[0]`**（第一次 `measure()` 写入的
   classical bit），与平台原生顺序无关。这条约定由
   `uniqc/test/test_endianness_convention.py` 回归保护，新平台必须接入同一
-  测试。详见 [平台约定的 2.6 节](../1_basic_usage/platform_conventions.md#platform-bit-endianness)。
+  测试。详见 {ref}`平台约定的 2.6 节 <platform-bit-endianness>`。
   实例：tianyan 的结果按测量比特标签序归一、logicalqubit 原生为 qiskit
   风格大端 bitstring，两者都在各自的 `normalize_<p>()` 里完成改写。
 - **废弃平台的 special-case**：参考 quafu 的做法——保留枚举与 adapter 以兼容

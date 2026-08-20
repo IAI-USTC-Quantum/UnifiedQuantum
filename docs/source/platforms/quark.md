@@ -58,6 +58,6 @@ print(wait_for_result(task_id))
 
 - 提交语言为 QASM 2.0，由 CircuitAdapter 自动转换。
 - 提交前校验按 `cz + sx + rz` 基础门集进行，详见
-  [平台约定](../1_basic_usage/platform_conventions.md#platform-precheck)。
+  {ref}`平台约定 <platform-precheck>`。
 - 结果为扁平 `{bitstring: shots}` counts，bitstring 序遵循
-  [统一 endianness 约定](../1_basic_usage/platform_conventions.md#platform-bit-endianness)。
+  {ref}`统一 endianness 约定 <platform-bit-endianness>`。

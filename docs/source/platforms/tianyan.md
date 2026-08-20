@@ -65,6 +65,6 @@ print(wait_for_result(task_id))
 
 - 提交格式为 **QCIS**，由 `TianyanCircuitAdapter` 从内部 `Circuit` 自动转换。
 - 结果按**测量比特标签序**归一为 `{bitstring: shots}` counts，并遵循
-  [统一 endianness 约定](../1_basic_usage/platform_conventions.md#platform-bit-endianness)
+  {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`，即第一次 `measure()` 写入的比特）。
 - 真机与仿真机的可用性、排队状态以平台实时状态为准。

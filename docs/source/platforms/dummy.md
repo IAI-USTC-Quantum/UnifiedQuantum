@@ -68,4 +68,4 @@ print(wait_for_result(task_id))
 - 虚拟拓扑后端只施加拓扑约束，不注入噪声；含噪模拟请用
   `dummy:<platform>:<chip>` 或 `dummy:virtual:<name>`。
 - 标定数据如何转换为噪声参数等细节见
-  [平台约定的 DummyBackend 一节](../1_basic_usage/platform_conventions.md#platform-dummy-backend)。
+  {ref}`平台约定的 DummyBackend 一节 <platform-dummy-backend>`。

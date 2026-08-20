@@ -59,6 +59,6 @@ print(wait_for_result(task_id))
 - 单次提交 **shots ≤ 50000**，超出会被拒绝；需要更多采样请分批提交。
 - 平台原生结果为 **qiskit 风格大端 bitstring** 的 counts，normalizer 会
   改写为 uniqc 的
-  [统一 endianness 约定](../1_basic_usage/platform_conventions.md#platform-bit-endianness)
+  {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`）。
 - 门集为 qiskit 风格，转换由 `LogicalQubitCircuitAdapter` 自动完成。
