@@ -49,7 +49,10 @@ def test_save_then_load_roundtrip(isolate_config):
     }
     cfg.save_config(payload)
     loaded = cfg.load_config()
-    assert loaded == payload
+    # Payloads saved without a schema version are treated as legacy v0 and
+    # migrated (version key stamped) on load.
+    expected = {cfg.CONFIG_VERSION_KEY: cfg.CURRENT_CONFIG_VERSION, **payload}
+    assert loaded == expected
 
 
 def test_load_config_with_empty_file_returns_defaults(isolate_config):

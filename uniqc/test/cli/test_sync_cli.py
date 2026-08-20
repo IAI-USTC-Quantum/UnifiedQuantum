@@ -1,8 +1,16 @@
-"""CLI tests for ``uniqc sync`` — all Infisical interaction is mocked."""
+"""CLI tests for ``uniqc sync``.
+
+The Infisical subcommands (setup/status/push/pull) are tested with all
+Infisical interaction mocked; the confsync-based ``upload`` subcommand is
+tested with a fake ``confsync`` module.
+"""
 
 from __future__ import annotations
 
 import json
+import sys
+import types
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -326,3 +334,85 @@ def test_sync_error_surfaces_cli_failure(isolate_config, remote, monkeypatch):
     result = runner.invoke(app, ["sync", "status"])
     assert result.exit_code == 1
     assert "401" in result.output
+
+
+# ---------------------------------------------------------------------------
+# upload (confsync backend)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def config_file(tmp_path: Path, monkeypatch) -> Path:
+    """Point uniqc at an isolated config file with known content."""
+    cfg_dir = tmp_path / ".uniqc"
+    cfg_dir.mkdir()
+    cfg_file = cfg_dir / "config.yaml"
+    cfg_file.write_text("active_profile: default\ndefault:\n  originq:\n    token: xxx\n", encoding="utf-8")
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", cfg_file)
+    return cfg_file
+
+
+class _FakeConfsyncError(Exception):
+    pass
+
+
+def _install_fake_confsync(monkeypatch, *, push_result: int = 3, error: Exception | None = None) -> dict:
+    """Register a fake ``confsync`` module; returns a dict recording calls."""
+    calls: dict = {}
+
+    class FakeClient:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return None
+
+        def push(self, app: str, name: str, content: str) -> int:
+            if error is not None:
+                raise error
+            calls["push"] = {"app": app, "name": name, "content": content}
+            return push_result
+
+    fake = types.ModuleType("confsync")
+    fake.ConfsyncError = _FakeConfsyncError
+    fake.load_client = lambda: FakeClient()
+    monkeypatch.setitem(sys.modules, "confsync", fake)
+    return calls
+
+
+def test_upload_missing_config_file(tmp_path, monkeypatch):
+    monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
+    result = runner.invoke(app, ["sync", "upload"])
+    assert result.exit_code == 1
+    assert "not found" in result.output
+
+
+def test_upload_without_confsync_installed(config_file, monkeypatch):
+    monkeypatch.setitem(sys.modules, "confsync", None)  # force ImportError
+    result = runner.invoke(app, ["sync", "upload"])
+    assert result.exit_code == 1
+    assert "confsync-client is not installed" in result.output
+
+
+def test_upload_success(config_file, monkeypatch):
+    calls = _install_fake_confsync(monkeypatch, push_result=7)
+    result = runner.invoke(app, ["sync", "upload"])
+    assert result.exit_code == 0, result.output
+    assert calls["push"]["app"] == "uniqc"
+    assert calls["push"]["name"] == "config.yaml"
+    assert calls["push"]["content"] == config_file.read_text(encoding="utf-8")
+    assert "version 7" in result.output
+
+
+def test_upload_custom_name(config_file, monkeypatch):
+    calls = _install_fake_confsync(monkeypatch)
+    result = runner.invoke(app, ["sync", "upload", "--name", "laptop.yaml"])
+    assert result.exit_code == 0, result.output
+    assert calls["push"]["name"] == "laptop.yaml"
+
+
+def test_upload_server_error(config_file, monkeypatch):
+    _install_fake_confsync(monkeypatch, error=_FakeConfsyncError("cannot reach server"))
+    result = runner.invoke(app, ["sync", "upload"])
+    assert result.exit_code == 1
+    assert "Upload failed" in result.output

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Config schema versioning** for ``~/.uniqc/config.yaml``. The file now
+  carries a top-level ``config_version`` key; ``load_config`` automatically
+  migrates older (unversioned) files to the current schema version and
+  persists the result, and rejects files written by a newer uniqc with a
+  clear upgrade hint.
+- **`uniqc sync upload`** CLI command that pushes ``~/.uniqc/config.yaml`` to
+  a self-hosted [confsync](https://github.com/Agony5757/confsync) server via
+  the optional ``confsync-client`` package (shared ``~/.confsync``
+  credentials; no confsync settings are stored in the uniqc config).
+
 ## [0.0.17.post1] - 2026-08-16
 
 Quick follow-up to 0.0.17: adds the `uniqc sync` credential-sync command
