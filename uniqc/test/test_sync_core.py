@@ -302,7 +302,8 @@ def test_backup_config_file(isolate_config):
     cfg.save_config(SAMPLE_CONFIG)
     backup = sync.backup_config_file(cfg.CONFIG_FILE)
     assert backup is not None and "bak-" in backup
-    assert cfg.load_config(backup) == SAMPLE_CONFIG
+    expected = {**SAMPLE_CONFIG, cfg.CONFIG_VERSION_KEY: cfg.CURRENT_CONFIG_VERSION}
+    assert cfg.load_config(backup) == expected
 
 
 def test_backup_missing_file_returns_none(tmp_path):
