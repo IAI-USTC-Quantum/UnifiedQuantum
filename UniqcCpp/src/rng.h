@@ -3,37 +3,27 @@
 
 namespace uniqc
 {
-	struct RandomEngine
+	namespace detail
 	{
-		std::default_random_engine eng;
-		inline RandomEngine()
-		{}
-
-		inline static RandomEngine& get_instance()
+		// One engine per thread, so rand()/seed() need no locking.
+		// Each thread's engine is seeded from std::random_device by default;
+		// calling uniqc::seed() reseeds only the calling thread's engine,
+		// making its subsequent rand() sequence reproducible.
+		inline std::mt19937_64& thread_engine()
 		{
-			static RandomEngine _eng;
-			return _eng;
+			thread_local std::mt19937_64 eng{ std::random_device{}() };
+			return eng;
 		}
-
-		inline void seed(unsigned int seed_)
-		{
-			eng.seed(seed_);
-		}
-
-		inline double rand()
-		{
-			static std::uniform_real_distribution<double> dist;
-			return dist(eng);
-		}
-	};
+	}
 
 	inline double rand()
 	{
-		return RandomEngine::get_instance().rand();
+		static thread_local std::uniform_real_distribution<double> dist;
+		return dist(detail::thread_engine());
 	}
 
 	inline void seed(unsigned int seed_)
 	{
-		return RandomEngine::get_instance().seed(seed_);
+		detail::thread_engine().seed(seed_);
 	}
 }

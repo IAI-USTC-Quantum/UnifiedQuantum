@@ -5,6 +5,8 @@
 #include <cmath>
 #include <exception>
 #include <iostream>
+#include <stdexcept>
+#include <vector>
 
 int main() {
     try {
@@ -42,6 +44,31 @@ int main() {
             std::abs(density_probabilities[0] - 0.5) > uniqc::eps ||
             std::abs(density_probabilities[1] - 0.5) > uniqc::eps) {
             std::cerr << "density-operator probabilities are incorrect\n";
+            return 1;
+        }
+
+        // uu15 must reject parameter vectors that are not exactly 15-sized
+        // instead of indexing out of bounds.
+        bool uu15_threw = false;
+        try {
+            statevector.uu15(0, 1, std::vector<double>(14, 0.0));
+        } catch (const std::invalid_argument&) {
+            uu15_threw = true;
+        }
+        if (!uu15_threw) {
+            std::cerr << "StatevectorSimulator::uu15 accepted a wrong-sized parameter vector\n";
+            return 1;
+        }
+        uu15_threw = false;
+        uniqc::DensityOperatorSimulator density_operator_2q;
+        density_operator_2q.init_n_qubit(2);
+        try {
+            density_operator_2q.uu15(0, 1, std::vector<double>(16, 0.0));
+        } catch (const std::invalid_argument&) {
+            uu15_threw = true;
+        }
+        if (!uu15_threw) {
+            std::cerr << "DensityOperatorSimulator::uu15 accepted a wrong-sized parameter vector\n";
             return 1;
         }
 
