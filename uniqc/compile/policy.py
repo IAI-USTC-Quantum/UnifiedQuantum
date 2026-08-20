@@ -5,14 +5,15 @@ expect from a circuit before we hand it over". Two pieces of policy live here:
 
 * :data:`PLATFORM_BASIS_GATES` — the gate set we compile to before submission
   on each platform. For superconducting CN-style platforms (originq, quafu,
-  quark) we use ``("CZ", "SX", "RZ")``. For IBM we defer to the backend's
-  advertised ``basis_gates`` (read from
+  quark, tianyan, logicalqubit) we use ``("CZ", "SX", "RZ")``. For IBM we
+  defer to the backend's advertised ``basis_gates`` (read from
   :attr:`BackendInfo.extra` ``["basis_gates"]``) and fall back to qiskit's
   defaults if missing.
 
 * :data:`PLATFORM_SUBMIT_LANGUAGE` — the IR string each adapter actually sends
-  on the wire. ``OriginIR`` for OriginQ (pyqpanda3 path) and ``QASM2`` for
-  qiskit / quafu / quark.
+  on the wire. ``OriginIR`` for OriginQ (pyqpanda3 path), TianYan (translated
+  to QCIS by the adapter) and LogicalQubit (translated to an lqcloud
+  circuit by the adapter); ``QASM2`` for qiskit / quafu / quark.
 
 The high-level helper :func:`compile_for_backend` glues the policy and the
 existing :func:`uniqc.compile.compile` function together, returning a circuit
@@ -43,6 +44,8 @@ PLATFORM_BASIS_GATES: dict[str, tuple[str, ...]] = {
     "quark": ("CZ", "SX", "RZ"),
     "ibm": (),  # IBM: take from backend.extra["basis_gates"]
     "dummy": (),
+    "tianyan": ("CZ", "SX", "RZ"),
+    "logicalqubit": ("CZ", "SX", "RZ"),
 }
 
 
@@ -53,6 +56,8 @@ PLATFORM_SUBMIT_LANGUAGE: dict[str, str] = {
     "quark": "QASM2",
     "ibm": "QASM2",
     "dummy": "OriginIR",
+    "tianyan": "OriginIR",
+    "logicalqubit": "OriginIR",
 }
 
 
@@ -99,8 +104,9 @@ def compile_for_backend(
 ):
     """Compile ``circuit`` so that it satisfies ``backend_info``.
 
-    For ``originq``, ``quafu`` and ``quark`` this lowers the circuit to
-    ``cz + sx + rz`` (the supported superconducting basis) using the existing
+    For ``originq``, ``quafu``, ``quark``, ``tianyan`` and ``logicalqubit``
+    this lowers the circuit to ``cz + sx + rz`` (the supported
+    superconducting basis) using the existing
     :func:`uniqc.compile.compile` pipeline. For ``ibm``, the basis set is
     read from the backend's advertised ``basis_gates`` (typically
     ``("CZ", "SX", "RZ", "X")`` plus IBM-specific extras). When the backend

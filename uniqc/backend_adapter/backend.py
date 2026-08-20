@@ -30,6 +30,8 @@ __all__ = [
     "QuarkBackend",
     "IBMBackend",
     "DummyBackend",
+    "TianyanBackend",
+    "LogicalQubitBackend",
     "get_backend",
     "list_backends",
     "list_backends_by_platform",
@@ -445,6 +447,36 @@ class QuarkBackend(QuantumBackend):
         return QuarkAdapter()
 
 
+class TianyanBackend(QuantumBackend):
+    """Backend for the TianYan quantum cloud platform (天衍).
+
+    This backend connects to the TianYan cloud service via cqlib for
+    executing quantum circuits on TianYan quantum computers and
+    simulators.
+    """
+
+    platform = "tianyan"
+
+    def _create_adapter(self) -> QuantumAdapter:
+        from uniqc.backend_adapter.task.adapters import TianyanAdapter
+
+        return TianyanAdapter()
+
+
+class LogicalQubitBackend(QuantumBackend):
+    """Backend for the LogicalQubit cloud platform (逻辑比特).
+
+    This backend connects to the LogicalQubit cloud service via lqcloud.
+    """
+
+    platform = "logicalqubit"
+
+    def _create_adapter(self) -> QuantumAdapter:
+        from uniqc.backend_adapter.task.adapters import LogicalQubitAdapter
+
+        return LogicalQubitAdapter()
+
+
 class IBMBackend(QuantumBackend):
     """Backend for IBM Quantum via Qiskit.
 
@@ -752,6 +784,8 @@ BACKENDS: dict[str, type[QuantumBackend]] = {
     "quark": QuarkBackend,
     "ibm": IBMBackend,
     "dummy": DummyBackend,
+    "tianyan": TianyanBackend,
+    "logicalqubit": LogicalQubitBackend,
 }
 
 

@@ -40,6 +40,8 @@ from typing import Any
 from uniqc.backend_adapter.backend_info import Platform
 from uniqc.backend_adapter.task.optional_deps import (
     MissingDependencyError,
+    check_cqlib,
+    check_lqcloud,
     check_pyqpanda3,
     check_qiskit,
     check_quafu,
@@ -85,6 +87,10 @@ PROVIDER_INSTALL_HINTS: dict[str, str] = {
         "  pip install QuarkStudio  (the [quark] extra is also available "
         "if QuarkStudio is on a private index)"
     ),
+    "tianyan": ("TianYan backends require the cqlib SDK. Install with:\n  pip install 'unified-quantum[tianyan]'"),
+    "logicalqubit": (
+        "LogicalQubit backends require the lqcloud SDK. Install with:\n  pip install 'unified-quantum[logicalqubit]'"
+    ),
 }
 
 
@@ -122,6 +128,16 @@ def has_provider_credentials(provider: str) -> bool:
             from uniqc.config import load_ibm_config
 
             load_ibm_config()
+            return True
+        if provider == "tianyan":
+            from uniqc.config import load_tianyan_config
+
+            load_tianyan_config()
+            return True
+        if provider == "logicalqubit":
+            from uniqc.config import load_logicalqubit_config
+
+            load_logicalqubit_config()
             return True
     except Exception:
         return False
@@ -309,6 +325,14 @@ def _check_provider_dep(provider: str) -> None:
     if provider == "quark":
         if not check_quark():
             raise MissingDependencyError("quark", install_hint=install_hint)
+        return
+    if provider == "tianyan":
+        if not check_cqlib():
+            raise MissingDependencyError("cqlib", install_hint=install_hint)
+        return
+    if provider == "logicalqubit":
+        if not check_lqcloud():
+            raise MissingDependencyError("lqcloud", install_hint=install_hint)
         return
     # Unknown provider — refuse rather than silently doing nothing.
     raise BackendPreflightError(

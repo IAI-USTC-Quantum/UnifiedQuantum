@@ -50,7 +50,16 @@ def _active_files(roots: Iterable[pathlib.Path]) -> list[pathlib.Path]:
 
 
 def _strip_title(target: str) -> str:
-    return target.strip().split(maxsplit=1)[0].strip("<>").split("#", maxsplit=1)[0]
+    target = target.strip()
+    if target.endswith(">") and "<" in target:
+        # Sphinx titled reference: "link text <actual-target>" — the
+        # target is the part inside the trailing angle brackets.
+        target = target[target.rindex("<") + 1 : -1]
+    else:
+        # Bare target, "<target>", or Markdown link with optional title:
+        # "path \"title\"" — the first whitespace-separated token wins.
+        target = target.split(maxsplit=1)[0].strip("<>")
+    return target.split("#", maxsplit=1)[0]
 
 
 def _is_external(target: str) -> bool:

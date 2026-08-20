@@ -14,7 +14,7 @@
 
 **UnifiedQuantum** — 非商业性量子计算聚合框架。
 
-UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、QuarkStudio、IBM Quantum 等多平台后端于一套一致的 API 下。
+UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、QuarkStudio、IBM Quantum、天衍（tianyan）、逻辑比特（logicalqubit）等多平台后端于一套一致的 API 下。
 
 除了核心的线路构建和执行能力，UnifiedQuantum 还提供完整的**本地芯片校准与量子错误缓解（QEM）工具链**：
 
@@ -87,7 +87,7 @@ UnifiedQuantum 是一个**非商业性**的开源项目，致力于打造 **AI �
 
 - **AI 原生**：专为 AI 工作流设计，无缝集成到现代开发与推理流程中
 - **CLI-first**：开箱即用的命令行工具，一条命令完成线路构建、模拟、提交与结果分析
-- **聚合**：整合多种量子云平台（OriginQ、QuarkStudio、IBM Quantum），提供统一接口
+- **聚合**：整合多种量子云平台（OriginQ、QuarkStudio、IBM Quantum、天衍、逻辑比特），提供统一接口
 - **统一**：一致的 API 设计，屏蔽各平台差异
 - **透明**：清晰的量子程序组装与执行方式，无隐藏行为
 - **轻量**：纯 Python 实现，安装简单，集成方便
@@ -102,7 +102,7 @@ UnifiedQuantum 是一个**非商业性**的开源项目，致力于打造 **AI �
 
 ## Features
 
-- **多平台提交**：一个 `submit_task`（或 `uniqc submit`）即可将同一份线路发往 OriginQ、QuarkStudio、IBM Quantum，或本地 dummy 模拟器。支持自动检测输入格式：`Circuit` 对象、OriginIR 字符串、QASM 字符串、`qiskit.QuantumCircuit`。
+- **多平台提交**：一个 `submit_task`（或 `uniqc submit`）即可将同一份线路发往 OriginQ、QuarkStudio、IBM Quantum、天衍、逻辑比特，或本地 dummy 模拟器。支持自动检测输入格式：`Circuit` 对象、OriginIR 字符串、QASM 字符串、`qiskit.QuantumCircuit`。
 - **格式互转**：`Circuit.from_qasm()` / `Circuit.from_originir()` 导入，`circuit.to_qasm()` / `circuit.to_originir()` 导出。
 - **本地模拟**：自带 OriginIR Simulator、QASM Simulator，支持 statevector / density matrix 两种后端，以及带噪声的变体。
 - **算法组件**：内置 HEA、UCCSD、QAOA 等常用 ansatz，可直接用于 VQE / QAOA 研究。
@@ -198,6 +198,8 @@ pip install -e .
 |------|----------------|---------|
 | OriginQ 云平台 | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
 | QuarkStudio / Quark 云平台 (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
+| 天衍云平台 | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
+| 逻辑比特云平台 | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
 | 高级模拟 (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | 可视化 | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch 集成 | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
@@ -231,7 +233,7 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --sk
 # 本地模拟
 uniqc simulate circuit.ir --shots 1000
 
-# 提交到云端（支持 originq / quark / ibm / dummy）
+# 提交到云端（支持 originq / quark / ibm / tianyan / logicalqubit / dummy）
 uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 
 # 查询任务结果
@@ -248,6 +250,8 @@ uniqc gateway start
 # 配置云平台 Token
 uniqc config init
 uniqc config set originq.token YOUR_TOKEN
+uniqc config set tianyan.login_key YOUR_LOGIN_KEY
+uniqc config set logicalqubit.api_key YOUR_API_KEY
 
 # 校准与 QEM 数据准备
 uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000

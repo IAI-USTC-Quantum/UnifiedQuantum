@@ -71,10 +71,17 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "https": "",
             },
         },
+        "tianyan": {
+            "login_key": "",
+        },
+        "logicalqubit": {
+            "api_key": "",
+            "url": "https://cloud.logicalqubit.com",
+        },
     },
 }
 
-SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm"]
+SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"]
 
 META_KEYS = frozenset({"active_profile", "always_ai_hints", "sync", CONFIG_VERSION_KEY})
 
@@ -83,6 +90,8 @@ PLATFORM_REQUIRED_FIELDS = {
     "quafu": ["token"],
     "quark": ["QUARK_API_KEY"],
     "ibm": ["token"],
+    "tianyan": ["login_key"],
+    "logicalqubit": ["api_key"],
 }
 
 PLATFORM_KNOWN_FIELDS = {
@@ -90,6 +99,8 @@ PLATFORM_KNOWN_FIELDS = {
     "quafu": {"token", "chip_id", "auto_mapping", "task_name", "group_name", "wait", "shots"},
     "quark": {"QUARK_API_KEY", "token"},
     "ibm": {"token", "proxy", "chip_id", "auto_mapping", "circuit_optimize", "task_name", "shots"},
+    "tianyan": {"login_key", "chip_id", "auto_mapping", "task_name", "shots"},
+    "logicalqubit": {"api_key", "url", "chip_id", "auto_mapping", "task_name", "shots"},
 }
 
 
@@ -517,6 +528,41 @@ def load_ibm_config() -> dict[str, Any]:
     )
 
 
+def load_tianyan_config() -> dict[str, Any]:
+    config = _load_platform_config("tianyan")
+    login_key = config.get("login_key", "") or None
+
+    if login_key:
+        return {"login_key": login_key}
+
+    raise ImportError(
+        format_enriched_message(
+            "Tianyan config not found. "
+            "Run `uniqc config set tianyan.login_key <KEY>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
+    )
+
+
+def load_logicalqubit_config() -> dict[str, Any]:
+    config = _load_platform_config("logicalqubit")
+    api_key = config.get("api_key", "") or None
+
+    if api_key:
+        return {
+            "api_key": api_key,
+            "url": config.get("url", "") or "https://cloud.logicalqubit.com",
+        }
+
+    raise ImportError(
+        format_enriched_message(
+            "LogicalQubit config not found. "
+            "Run `uniqc config set logicalqubit.api_key <KEY>` or edit ~/.uniqc/config.yaml.",
+            "config",
+        )
+    )
+
+
 def has_platform_credentials(platform: str) -> bool:
     """Check whether credentials exist for a platform without raising.
 
@@ -531,6 +577,10 @@ def has_platform_credentials(platform: str) -> bool:
         return False
     if platform == "quark":
         token = config.get("QUARK_API_KEY", "") or config.get("token", "")
+    elif platform == "tianyan":
+        token = config.get("login_key", "")
+    elif platform == "logicalqubit":
+        token = config.get("api_key", "")
     else:
         token = config.get("token", "")
     return bool(token)

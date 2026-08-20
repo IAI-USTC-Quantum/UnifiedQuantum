@@ -81,8 +81,10 @@ from uniqc.backend_adapter import backend as backend_module
 from uniqc.backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
+    LogicalQubitCircuitAdapter,
     OriginQCircuitAdapter,
     QuarkCircuitAdapter,
+    TianyanCircuitAdapter,
 )
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
@@ -131,6 +133,8 @@ ADAPTER_MAP: dict[str, type[CircuitAdapter] | None] = {
     "quafu": None,
     "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
+    "tianyan": TianyanCircuitAdapter,
+    "logicalqubit": LogicalQubitCircuitAdapter,
 }
 
 
@@ -188,6 +192,8 @@ _PLATFORM_CHIP_KWARG: dict[str, str] = {
     "quafu": "chip_id",
     "quark": "chip_id",
     "ibm": "chip_id",
+    "tianyan": "machine_name",
+    "logicalqubit": "backend_name",
 }
 
 
@@ -432,11 +438,13 @@ def dry_run_task(
                 error_kind="adapter_init",
             )
 
-        # If the user passed 'originq:WK_C180' we forward the chip via
-        # backend_name kwarg so the adapter validates the right device.
+        # If the user passed 'originq:WK_C180' we forward the chip via the
+        # platform's canonical chip kwarg (``backend_name`` / ``chip_id`` /
+        # ``machine_name``) so the adapter validates the right device.
         forwarded_kwargs = dict(kwargs)
-        if chip is not None and "backend_name" not in forwarded_kwargs:
-            forwarded_kwargs["backend_name"] = chip
+        if chip is not None:
+            chip_key = _PLATFORM_CHIP_KWARG.get(str(platform), "backend_name")
+            forwarded_kwargs.setdefault(chip_key, chip)
 
     originir = circuit.originir
     try:

@@ -24,7 +24,7 @@ REDACTED = "[REDACTED]"
 
 
 def _is_credential_key(key: str) -> bool:
-    return key.lower() in {"token", "quark_api_key"}
+    return key.lower() in {"token", "quark_api_key", "login_key", "api_key"}
 
 
 def _redact_credentials(value: object) -> object:
@@ -99,8 +99,8 @@ def set(
     platform_name, *fields = parts
     platform_name = platform_name.lower()
 
-    if platform_name not in ("originq", "quafu", "quark", "ibm"):
-        print_error(f"Unknown platform: {platform_name}. Use originq/quafu/quark/ibm.")
+    if platform_name not in ("originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"):
+        print_error(f"Unknown platform: {platform_name}. Use originq/quafu/quark/ibm/tianyan/logicalqubit.")
         raise typer.Exit(1)
 
     from uniqc.config import load_config, save_config
@@ -124,7 +124,7 @@ def set(
 
 @app.command()
 def get(
-    platform: str = typer.Argument(..., help="Platform name: originq/quafu/quark/ibm"),
+    platform: str = typer.Argument(..., help="Platform name: originq/quafu/quark/ibm/tianyan/logicalqubit"),
     profile: str = typer.Option("default", "--profile", "-p", help="Profile name"),
     ai_hints: bool = AI_HINTS_OPTION,
 ):
@@ -169,10 +169,15 @@ def list_config(
     profile_config = config[profile]
     results = []
 
-    for platform in ("originq", "quafu", "quark", "ibm"):
+    for platform in ("originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"):
         platform_config = profile_config.get(platform, {})
-        token = platform_config.get("QUARK_API_KEY", "") if platform == "quark" else platform_config.get("token", "")
-        if platform == "quark" and not token:
+        if platform == "quark":
+            token = platform_config.get("QUARK_API_KEY", "") or platform_config.get("token", "")
+        elif platform == "tianyan":
+            token = platform_config.get("login_key", "")
+        elif platform == "logicalqubit":
+            token = platform_config.get("api_key", "")
+        else:
             token = platform_config.get("token", "")
         required = PLATFORM_REQUIRED_FIELDS.get(platform, [])
 
@@ -274,6 +279,8 @@ def profile(
             "originq": {"token": ""},
             "quark": {"QUARK_API_KEY": ""},
             "ibm": {"token": "", "proxy": {"http": "", "https": ""}},
+            "tianyan": {"login_key": ""},
+            "logicalqubit": {"api_key": "", "url": "https://cloud.logicalqubit.com"},
         }
         save_config(config)
         print_success(f"Created profile '{name}'")

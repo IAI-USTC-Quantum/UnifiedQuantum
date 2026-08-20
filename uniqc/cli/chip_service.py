@@ -41,6 +41,8 @@ def fetch_chip_characterization(
         One of :attr:`~uniqc.backend_adapter.backend_info.Platform.ORIGINQ`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.QUAFU`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.IBM`.
+        Platforms without calibration support (e.g. Tianyan, LogicalQubit)
+        fall through to the default branch and return None.
     force_refresh:
         If False (the default), return cached data when available.
         If True, always re-fetch from the platform API.

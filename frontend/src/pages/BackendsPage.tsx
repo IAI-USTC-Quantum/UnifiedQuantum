@@ -19,8 +19,10 @@ const PLATFORM_FILTERS = [
   { id: "originq", label: "OriginQ" },
   { id: "ibm", label: "IBM" },
   { id: "quark", label: "Quark" },
+  { id: "tianyan", label: "Tianyan" },
+  { id: "logicalqubit", label: "LogicalQubit" },
 ] as const;
-const DEFAULT_PLATFORM_FILTERS: PlatformFilter[] = ["originq", "ibm", "quark"];
+const DEFAULT_PLATFORM_FILTERS: PlatformFilter[] = ["originq", "ibm", "quark", "tianyan", "logicalqubit"];
 
 type AvailabilityFilter = (typeof AVAILABILITY_FILTERS)[number]["id"];
 type TypeFilter = (typeof TYPE_FILTERS)[number]["id"];

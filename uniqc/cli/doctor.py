@@ -29,6 +29,8 @@ _DEPENDENCY_GROUPS: list[tuple[str, list[str]]] = [
     ("originq", ["pyqpanda3"]),
     ("quafu", ["pyquafu"]),
     ("quark", ["quarkstudio", "quarkcircuit"]),
+    ("tianyan", ["cqlib"]),
+    ("logicalqubit", ["lqcloud"]),
     ("qiskit", ["qiskit", "qiskit_ibm_runtime"]),
     ("simulation", ["qutip"]),
     ("visualization", ["matplotlib"]),
@@ -152,6 +154,10 @@ def _check_config() -> None:
             plat_cfg = {}
         if plat == "quark":
             raw = plat_cfg.get("QUARK_API_KEY", "") or plat_cfg.get("token", "")
+        elif plat == "tianyan":
+            raw = plat_cfg.get("login_key", "")
+        elif plat == "logicalqubit":
+            raw = plat_cfg.get("api_key", "")
         else:
             raw = plat_cfg.get("token", "")
         if raw:

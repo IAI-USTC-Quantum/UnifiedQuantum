@@ -69,6 +69,8 @@ quark = [
     "quarkcircuit; python_version >= '3.12' and python_version < '3.14' and sys_platform != 'win32'",
     "ipython",
 ]
+tianyan = ["cqlib"]
+logicalqubit = ["lqcloud"]
 # [all] is intentionally the portable, broadly-installable superset.
 # It excludes [quark] because quark deps have no win32 wheels and would
 # break uv lock resolution on Windows. Install [quark] explicitly on
@@ -78,6 +80,8 @@ all = [
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
     "torch", "torchquantum-ng",
+    "cqlib",
+    "lqcloud",
 ]
 
 [tool.setuptools]

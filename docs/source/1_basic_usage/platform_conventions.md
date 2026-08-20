@@ -3,6 +3,8 @@
 
 本文档详细说明各量子云平台的输入/输出约定、运行模式、门支持范围和配置方式。适用于完成基础使用教程后需要针对特定平台调优的场景。
 
+各平台的安装、凭证配置与提交示例见 [云平台章节](../platforms/index.md)；想给 uniqc 接入新平台见 [添加一个新云平台](../2_advanced/adding_a_platform.md)。
+
 ---
 
 (platform-input-formats)=
@@ -15,6 +17,8 @@
 | OriginQ | `str`（OriginIR 字符串） | `circuit.originir` | `OriginQCircuitAdapter().adapt(circuit)` → 返回 OriginIR string |
 | IBM | `qiskit.QuantumCircuit` | `IBMCircuitAdapter().adapt(circuit)` | `QiskitAdapter.translate_circuit(originir)` |
 | Dummy | `str`（OriginIR 字符串） | `circuit.originir` | 无需转换，直接送入本地模拟器 |
+| Tianyan（天衍） | QCIS 字符串 | `TianyanCircuitAdapter().adapt(circuit)` | — |
+| LogicalQubit（逻辑比特） | qiskit 风格线路 | `LogicalQubitCircuitAdapter().adapt(circuit)` | — |
 
 **自动转换路径**：Circuit → CircuitAdapter → Native Circuit → TaskAdapter → 云端
 
@@ -58,6 +62,30 @@
 
 与 OriginQ 相同，扁平 `{bitstring: shots}` 字典。
 
+### 2.3 Tianyan（天衍）
+
+```python
+{
+    "status": "success",
+    "result": {"00": 512, "11": 488}
+}
+```
+
+扁平 `{bitstring: shots}` 字典。bitstring 按**测量比特标签序**生成后，
+normalizer 改写为统一 cbit 框架（见 2.6）。
+
+### 2.4 LogicalQubit（逻辑比特）
+
+```python
+{
+    "status": "success",
+    "result": {"00": 512, "11": 488}
+}
+```
+
+扁平 `{bitstring: shots}` 字典。平台原生结果为 **qiskit 风格大端
+bitstring**，normalizer 改写为统一 cbit 框架（见 2.6）。
+
 ### 2.5 统一结果格式
 
 所有平台的 `wait_for_result()` / `query_task()` 均返回统一的扁平 counts 字典：
@@ -93,8 +121,10 @@ normalizer mock）上回归保护：
   # bitstring "10" 表示 c[1]=1, c[0]=0
   ```
 
-* **跨平台一致性**：OriginQ、IBM/Qiskit、Quark 在底层各有差异（IBM 的 BitArray
-  以 `c[0]` 为整数最低位、Quark 取决于固件），但 `uniqc` 的 normalizer 已经统一
+* **跨平台一致性**：OriginQ、IBM/Qiskit、Quark、Tianyan、LogicalQubit 在
+  底层各有差异（IBM 的 BitArray 以 `c[0]` 为整数最低位、LogicalQubit 原生
+  为 qiskit 大端 bitstring、Tianyan 按测量比特标签序、Quark 取决于固件），
+  但 `uniqc` 的 normalizer 已经统一
   改写为上述 cbit 框架。任何依赖原始平台
   顺序的下游代码请改用 normalizer 输出。
 
@@ -248,6 +278,20 @@ result = wait_for_result(task_id)
 
 `QiskitAdapter.translate_circuit()` 走 OriginIR → QASM → qiskit.QuantumCircuit 路线，借助 Qiskit 的转译器支持所有标准 OpenQASM 2.0 门。
 
+### 4.3 Tianyan（天衍）
+
+`TianyanCircuitAdapter` 把内部 `Circuit` 转换为 **QCIS** 格式提交。天衍平台提供
+真机 `tianyan176` 与多种仿真机：`tianyan_sw`（全振幅）、`tianyan_sa`（单振幅）、
+`tianyan_s`（稳定子）、`tianyan_tn`（张量网络）、`tianyan_tnn`（带噪声张量网络）。
+凭证字段为 `tianyan.login_key`。详见 [天衍平台页](../platforms/tianyan.md)。
+
+### 4.4 LogicalQubit（逻辑比特）
+
+`LogicalQubitCircuitAdapter` 把内部 `Circuit` 转换为 qiskit 风格门集提交。
+单次提交 **shots ≤ 50000**。凭证字段为 `logicalqubit.api_key`，可选
+`logicalqubit.url`（默认 `https://cloud.logicalqubit.com`）。详见
+[逻辑比特平台页](../platforms/logicalqubit.md)。
+
 ---
 
 (platform-chip-names)=
@@ -273,6 +317,24 @@ ibm_sherbrooke         # 真实硬件 Sherbrooke
 
 真实硬件名称因设备代数而异，使用 `QiskitAdapter()._provider.backends()` 查询可用后端。
 
+### Tianyan（天衍）
+
+```
+tianyan176    # 真机（QPU）
+tianyan_sw    # 全振幅仿真
+tianyan_sa    # 单振幅仿真
+tianyan_s     # 稳定子仿真
+tianyan_tn    # 张量网络仿真
+tianyan_tnn   # 带噪声张量网络仿真
+```
+
+使用 `uniqc backend list -p tianyan` 查询当前可用后端。
+
+### LogicalQubit（逻辑比特）
+
+AGate 系列超导芯片（如 30 / 100 比特规格），具体后端名使用
+`uniqc backend list -p logicalqubit` 查询。
+
 ---
 
 (platform-configuration)=
@@ -283,6 +345,8 @@ ibm_sherbrooke         # 真实硬件 Sherbrooke
 ```bash
 uniqc config set originq.token "your-originq-key"
 uniqc config set ibm.token "your-ibm-token"
+uniqc config set tianyan.login_key "your-tianyan-login-key"
+uniqc config set logicalqubit.api_key "your-logicalqubit-api-key"
 ```
 
 ```yaml
@@ -295,6 +359,11 @@ default:
     proxy:
       http: "http://proxy:8080"
       https: "https://proxy:8080"
+  tianyan:
+    login_key: "your-tianyan-login-key"
+  logicalqubit:
+    api_key: "your-logicalqubit-api-key"
+    url: "https://cloud.logicalqubit.com"  # 可选，默认值即此项
 ```
 
 适配器直接读取 active profile 下的平台配置，不再通过 API token 环境变量注入凭据。
@@ -324,17 +393,17 @@ task_id = submit_task(circuit, backend='dummy:local:virtual-line-3')     # 线�
 (platform-quick-reference)=
 ## 7. 快速参考表
 
-| 维度 | OriginQ | IBM | Dummy |
-|------|---------|-----|-------|
-| 地区 | 中国 | 全球 | 本地 |
-| 输入 | OriginIR string | qiskit.QuantumCircuit | OriginIR string |
-| 结果格式 | `{bitstring: shots}` | `{bitstring: shots}`（单电路）/ list（batch） | `{bitstring: shots}` |
-| 提交模式 | 异步 | 同步 | 同步 |
-| `query_sync()` | ✅ | ✅ | ❌ |
-| 1Q 门保真度 | ✅ 可用 | ✅ 可用 | ❌ |
-| 电路优化 | `circuit_optimize` | `circuit_optimize` | N/A |
-| chip_characterization 支持 | ✅ | ✅ | ✅ 从标定数据自动推导噪声参数 |
-| 免费额度 | 有限 | ✅ 有开放设备 | 无需联网 |
+| 维度 | OriginQ | IBM | Tianyan | LogicalQubit | Dummy |
+|------|---------|-----|---------|--------------|-------|
+| 地区 | 中国 | 全球 | 中国 | 中国 | 本地 |
+| 输入 | OriginIR string | qiskit.QuantumCircuit | QCIS string | qiskit 风格线路 | OriginIR string |
+| 结果格式 | `{bitstring: shots}` | `{bitstring: shots}`（单电路）/ list（batch） | `{bitstring: shots}` | `{bitstring: shots}` | `{bitstring: shots}` |
+| 提交模式 | 异步 | 同步 | 见平台页 | 见平台页 | 同步 |
+| `query_sync()` | ✅ | ✅ | — | — | ❌ |
+| 1Q 门保真度 | ✅ 可用 | ✅ 可用 | — | — | ❌ |
+| 电路优化 | `circuit_optimize` | `circuit_optimize` | — | — | N/A |
+| chip_characterization 支持 | ✅ | ✅ | — | — | ✅ 从标定数据自动推导噪声参数 |
+| 免费额度 | 有限 | ✅ 有开放设备 | 以平台政策为准 | 以平台政策为准 | 无需联网 |
 
 ---
 

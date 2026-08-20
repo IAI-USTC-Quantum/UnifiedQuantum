@@ -65,7 +65,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
             "Run: uniqc config init to create a default config",
             "Run: uniqc config validate to check your configuration",
             "Config file location: ~/.uniqc/config.yaml",
-            "Supported platforms: originq, quafu, quark, ibm",
+            "Supported platforms: originq, quafu, quark, ibm, tianyan, logicalqubit",
         ],
     },
     "task_submission": {
