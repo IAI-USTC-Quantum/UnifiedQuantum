@@ -185,8 +185,8 @@ pytest uniqc/test/task_pipeline/test_ibm_fake.py -v
 ### 1. Build-and-test（`build_and_test.yml`）
 
 - **触发**：push/PR 到 main
-- **环境**：Ubuntu（gcc/clang）+ Windows（MSVC）
-- **内容**：C++ 后端编译 + 构建验证
+- **环境**：Ubuntu / Windows / macOS × Python 3.10–3.14
+- **内容**：纯 Python 构建安装 + `ruff check` + pytest 分组测试（C++ 内核由 `uniqc-cppsimulator` 依赖包提供，其编译与 wheel 构建在该仓库的 CI 中验证）
 
 ### 2. Pytest Coverage（`pytest_coverage.yml`）
 

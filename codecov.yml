@@ -11,7 +11,6 @@ ignore:
   - "uniqc/test/**"
   - "uniqc/_version.py"
   - "uniqc/**/__init__.py"
-  - "UniqcCpp/**"
   - "frontend/**"
   - "docs/**"
   - "examples/**"
@@ -20,4 +19,3 @@ ignore:
   - "timeline_plot/**"
   - "example-exec-logs/**"
   - "conftest.py"
-  - "setup.py"

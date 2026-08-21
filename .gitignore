@@ -194,19 +194,3 @@ bad_circuits.txt
 
 # setuptools_scm generated version file
 uniqc/_version.py
-
-# CMake build artifacts
-UniqcCpp/CMakeCache.txt
-UniqcCpp/CMakeFiles/
-UniqcCpp/Makefile
-UniqcCpp/cmake_install.cmake
-UniqcCpp/Pybinder/Makefile
-UniqcCpp/Pybinder/CMakeFiles/
-UniqcCpp/Thirdparty/Makefile
-UniqcCpp/Thirdparty/CMakeFiles/
-UniqcCpp/src/Makefile
-UniqcCpp/src/CMakeFiles/
-UniqcCpp/src/cmake_install.cmake
-UniqcCpp/test/Makefile
-UniqcCpp/test/CMakeFiles/
-UniqcCpp/test/cmake_install.cmake

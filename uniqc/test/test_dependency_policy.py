@@ -11,6 +11,12 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 VERSION_OPERATORS = ("===", "~=", "==", "!=", "<=", ">=", "<", ">", "@")
 
+# First-party compatibility ranges that are exempt from the no-pin policy:
+# uniqc-cppsimulator ships the C++ kernel from its own repository, and the
+# >=1.0,<2 bound is the deliberate API-compatibility contract for that split,
+# not a guard against third-party upstream breakage.
+FIRST_PARTY_COMPATIBILITY_RANGES = {"uniqc-cppsimulator>=1.0,<2"}
+
 
 def _requirement_spec(requirement: str) -> str:
     """Return the package specifier part, excluding PEP 508 environment markers."""
@@ -45,7 +51,8 @@ def test_third_party_dependencies_are_not_version_pinned() -> None:
     constrained = [
         f"{section}: {requirement}"
         for section, requirement in _dependency_entries(pyproject)
-        if any(operator in _requirement_spec(requirement) for operator in VERSION_OPERATORS)
+        if _requirement_spec(requirement) not in FIRST_PARTY_COMPATIBILITY_RANGES
+        and any(operator in _requirement_spec(requirement) for operator in VERSION_OPERATORS)
     ]
 
     assert constrained == []

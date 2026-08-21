@@ -3,22 +3,22 @@
 UnifiedQuantum is a lightweight Python framework that gives quantum circuit
 construction, local simulation, and multi-platform cloud execution (OriginQ,
 Quafu, Quark, IBM) a single unified API, plus a CLI-first workflow and a
-calibration/QEM toolchain. The Python package is `uniqc`; a compiled C++
-simulator (`uniqc_cpp`) lives under `UniqcCpp/`.
+calibration/QEM toolchain. The Python package is `uniqc`; the compiled C++
+simulator (`uniqc_cpp`) lives in the separate
+[`uniqc-cppsimulator`](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)
+repository and is consumed as a regular PyPI dependency.
 
 ## Environment & build
 
-- Requires Python 3.10–3.14, CMake ≥ 3.22 (release build targets 3.26), a
-  C++17 compiler, and git submodules (fmt). **Clone with `--recurse-submodules`** —
-  the C++ backend won't build without `UniqcCpp/Thirdparty/fmt`.
+- Requires Python 3.10–3.14. The package is pure Python — no CMake or C++
+  toolchain is needed (the C++ kernel ships as the `uniqc-cppsimulator`
+  wheel). To hack on the C++ kernel itself, clone the `uniqc-cppsimulator`
+  repository instead.
 - Preferred workflow uses [`uv`](https://github.com/astral-sh/uv). Full dev env:
   ```bash
-  uv sync --all-extras --group dev --group docs   # creates .venv, compiles uniqc_cpp
+  uv sync --all-extras --group dev --group docs   # creates .venv, installs deps
   ```
   Run tools through the env with `uv run ...` (or activate `.venv`).
-- **After editing any C++ source under `UniqcCpp/`**, rebuild the pybind11
-  extension before running Python tests that touch it:
-  `uv pip install -e . --no-deps` (from the activated `.venv`).
 - `pyproject.toml` intentionally does **not** pin third-party versions and `main`
   does **not** commit `uv.lock`; dev/CI resolve latest deps to surface upstream
   breakage. Quafu (`pyquafu`) is deliberately excluded from `[all]` (deprecated,

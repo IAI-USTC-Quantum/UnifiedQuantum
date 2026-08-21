@@ -5,30 +5,12 @@ on:
     branches: [ "main" ]
     paths:
       - '**.py'
-      - '**.cpp'
-      - '**.cc'
-      - '**.c'
-      - '**.h'
-      - '**.hpp'
-      - '**.hxx'
-      - '**/CMakeLists.txt'
-      - '**.cmake'
-      - 'setup.py'
       - 'pyproject.toml'
       - '.github/workflows/pytest_coverage.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - '**.py'
-      - '**.cpp'
-      - '**.cc'
-      - '**.c'
-      - '**.h'
-      - '**.hpp'
-      - '**.hxx'
-      - '**/CMakeLists.txt'
-      - '**.cmake'
-      - 'setup.py'
       - 'pyproject.toml'
       - '.github/workflows/pytest_coverage.yml'
 
@@ -46,8 +28,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
-      with:
-        submodules: 'true'
 
     - name: Install uv
       uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
@@ -59,17 +39,14 @@ jobs:
 
     - name: Install build dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build
         # Remove system-installed typing_extensions to avoid pip conflict
         sudo apt-get remove -y python3-typing-extensions 2>/dev/null || true
 
-    - name: Install package (with all optional dependencies and C++ extension)
+    - name: Install package (with all optional dependencies)
       run: |
-        uv pip install --system setuptools setuptools_scm wheel pybind11
         uv pip uninstall unified-quantum --system -y || true
         rm -rf build/ dist/ *.egg-info uniqc.egg-info
-        uv pip install --system ".[all]" --no-build-isolation
+        uv pip install --system ".[all]"
 
     - name: Install test dependencies
       run: uv pip install --system pytest pytest-cov httpx
