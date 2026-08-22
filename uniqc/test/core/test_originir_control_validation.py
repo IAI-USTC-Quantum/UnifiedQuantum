@@ -27,13 +27,3 @@ def test_circuit_width_includes_explicit_control_qubits() -> None:
     assert circuit.qubit_num == 4
     assert circuit.originir.startswith("QINIT 4\n")
 
-
-@pytest.mark.requires_cpp
-@pytest.mark.parametrize("simulator_name", ["StatevectorSimulator", "DensityOperatorSimulator"])
-def test_cpp_simulator_rejects_out_of_range_global_control(simulator_name: str) -> None:
-    uniqc_cpp = pytest.importorskip("uniqc_cpp")
-    simulator = getattr(uniqc_cpp, simulator_name)()
-    simulator.init_n_qubit(2)
-
-    with pytest.raises(ValueError, match=r"control_qubit = 999"):
-        simulator.x(0, [999], False)

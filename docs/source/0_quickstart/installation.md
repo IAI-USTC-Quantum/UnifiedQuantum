@@ -34,14 +34,12 @@ uv pip install unified-quantum
 
 ### 从源码构建
 
-当你需要安装开发版本、启用 C++ 模拟器或直接修改源码时，可使用源码安装。
+当你需要安装开发版本或直接修改源码时，可使用源码安装。
 
 #### 平台要求
 
 - **操作系统**：跨平台，支持 Windows、Linux、macOS
 - **Python**：>= 3.10, < 3.15
-- **C++ 编译器**：支持 C++17（MSVC / gcc / clang）
-- **CMake**：>= 3.22
 
 > **Python 3.14 注意事项**：v0.0.15 起支持 Python 3.14（`<3.15`），但以下可选
 > extra 在 Python 3.14 上**不可用**（上游尚未发布 cp314 wheel）：
@@ -64,23 +62,8 @@ uv pip install unified-quantum
 #### 获取源码
 
 ```bash
-git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
-```
-
-#### 克隆子模块（C++ 模拟器）
-
-UnifiedQuantum 的 C++ 模拟器作为 Git 子模块存在。**首次克隆后必须初始化子模块**，否则 C++ 模拟器不会被包含：
-
-```bash
-git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
-cd UnifiedQuantum
-```
-
-如果克隆时忘记加 `--recurse-submodules`，后续可以补上：
-
-```bash
-git submodule update --init --recursive
 ```
 
 #### 构建并安装
@@ -92,8 +75,6 @@ uv sync --all-extras --group dev --group docs --upgrade
 # 验证完整测试套件
 uv run pytest uniqc/test
 ```
-
-> **注意：** 从源码构建时 C++ 模拟器为必需组件。如果系统 CMake 版本过低（< 3.22），请先运行 `pip install cmake --upgrade` 后再执行上述命令。
 
 ## 备选安装方式：通过 pip 安装
 
@@ -108,7 +89,7 @@ pip install unified-quantum
 ### 从源码构建
 
 ```bash
-git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
 # 完整安装
@@ -145,16 +126,9 @@ uniqc config validate
 配置文件结构与 profile 切换的完整说明见 [平台约定](../1_basic_usage/platform_conventions.md) 与
 [`uniqc config`](../4_cli/config.md)。
 
-## 构建 C++ 扩展常见问题
+## C++ 模拟器（uniqc-cppsimulator）
 
-**Q：编译时报 `CMake could not find...`**
-> 确保 CMake 已安装并加入 PATH。Windows 上可使用 [CMake 官方安装包](https://cmake.org/download/)。
-
-**Q：编译时报 `fatal error: pybind11/pybind11.h: No such file`**
-> 默认隔离构建会按 `pyproject.toml` 自动安装 PyPI 上的 `pybind11`。如果你显式使用了 `--no-build-isolation`，请先在当前环境安装 `pybind11` 后重新构建。
-
-**Q：如何确认 C++ 模拟器已正确安装？**
-> 安装后运行 `python -c "from uniqc_cpp import *; print('C++ 模拟器正常')"`。若无声出输出说明 C++ 扩展未安装成功。
+C++ 模拟器已拆分为独立仓库 [uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)，并以同名 PyPI 包发布；`pip install unified-quantum` 会自动将其作为依赖安装，import 名仍为 `uniqc_cpp`。本仓库的源码构建是纯 Python 流程，不再需要 CMake / C++ 工具链。编译相关问题（CMake、pybind11、平台 wheel 等）请参阅 uniqc-cppsimulator 仓库的 README。
 
 ## 可选依赖
 

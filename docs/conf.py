@@ -167,7 +167,7 @@ extensions = [
 #         'members', 'undoc-members', 'show-inheritance',
 #         'show-module-summary', 'imported-members',
 #     ]
-#     autoapi_ignore = ['*/test/*', '*/_version.py', '*/uniqc_cpp*']
+#     autoapi_ignore = ['*/test/*', '*/_version.py']
 #     autoapi_python_class_content = 'both'
 # except ImportError:
 #     pass

@@ -137,7 +137,7 @@ uv pip install unified-quantum
 ### Build from Source
 
 ```bash
-git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
 # Maintainer / full development environment: dev, docs, and all optional backend deps
@@ -154,17 +154,7 @@ Maintainer environments should not treat missing currently maintained optional b
 
 Real-cloud tests that only fetch backends, validate tokens, or query platform status/API run by default. Only tests that actually submit quantum circuits are skipped by default, and they run when `--real-cloud-test` is passed.
 
-**Requirements:**
-- CMake >= 3.22
-- C++ compiler with C++17 support
-- Git submodules (fmt)
-- pybind11 from the Python build environment, declared in `pyproject.toml`
-
-If your system CMake is too old (< 3.22):
-
-```bash
-pip install cmake --upgrade
-```
+> **The C++ simulator has been split into the standalone package** [`uniqc-cppsimulator`](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator): `pip install unified-quantum` pulls it in automatically as a dependency (the import name remains `uniqc_cpp`), so source builds no longer need a CMake / C++ toolchain. You only need to clone that repository if you want to modify the C++ kernel itself.
 
 ### pip Alternative
 

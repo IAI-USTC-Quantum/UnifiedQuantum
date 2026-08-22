@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-22T14:27:59Z",
+  "generated_at": "2026-08-21T15:53:11Z",
   "format_version": 2,
   "generator": {
     "name": "scripts/build_docs.py",
@@ -7,6 +7,66 @@
   },
   "real_cloud": false,
   "results": [
+    {
+      "example": "examples/1_basic_usage/01_circuit_basics.py",
+      "chapter": "1_basic_usage",
+      "name": "01_circuit_basics",
+      "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 10.297,
+      "n_offending": 0,
+      "n_ignored": 0,
+      "source_sha256": "18ab839c55fdcf71cf65b5487f334ff75e2640a503853c6ed972e68d3177001a"
+    },
+    {
+      "example": "examples/1_basic_usage/02_local_simulation.py",
+      "chapter": "1_basic_usage",
+      "name": "02_local_simulation",
+      "title": "02 — Local simulation paths",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.006,
+      "n_offending": 0,
+      "n_ignored": 0,
+      "source_sha256": "65ad3d588e34396d4a1d6d67f37c59333b0d6ba04f58ca8388a42fc7844e76c9"
+    },
+    {
+      "example": "examples/1_basic_usage/03_submit_and_postprocess.py",
+      "chapter": "1_basic_usage",
+      "name": "03_submit_and_postprocess",
+      "title": "03 — Submit to dummy + result post-processing",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.121,
+      "n_offending": 0,
+      "n_ignored": 0,
+      "source_sha256": "44a599efeefe1c6517d289a7a89b87efe60efdf73553923c9c81a5b1e909d36c"
+    },
+    {
+      "example": "examples/1_basic_usage/04_config.py",
+      "chapter": "1_basic_usage",
+      "name": "04_config",
+      "title": "04 — Configuration: ``uniqc config`` + ``~/.uniqc/config.yaml``",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.007,
+      "n_offending": 0,
+      "n_ignored": 0,
+      "source_sha256": "3578530344c6cc0292c09397352dbc7c8683c58b44407f75d58808d7004ff48a"
+    },
+    {
+      "example": "examples/1_basic_usage/05_visualize.py",
+      "chapter": "1_basic_usage",
+      "name": "05_visualize",
+      "title": "05 — Visualize circuits and results",
+      "verdict": "pass",
+      "skip_reason": null,
+      "duration_seconds": 0.279,
+      "n_offending": 0,
+      "n_ignored": 0,
+      "source_sha256": "05a0f2b87c76d0e92b99495b482eac40e01fb2117546631d33aa72ae5ac2ec79"
+    },
     {
       "example": "examples/3_best_practices/00_config_and_backend_cache.py",
       "chapter": "3_best_practices",
@@ -162,66 +222,6 @@
       "n_offending": 0,
       "n_ignored": 0,
       "source_sha256": "a5cc97626fcce66a78360c6418c0e64531f19fccaef28da69ba7fdd457456aa2"
-    },
-    {
-      "example": "examples/1_basic_usage/01_circuit_basics.py",
-      "chapter": "1_basic_usage",
-      "name": "01_circuit_basics",
-      "title": "01 — Circuit basics: gates, qregs, OriginIR / OpenQASM export",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.0,
-      "n_offending": 0,
-      "n_ignored": 0,
-      "source_sha256": "18ab839c55fdcf71cf65b5487f334ff75e2640a503853c6ed972e68d3177001a"
-    },
-    {
-      "example": "examples/1_basic_usage/02_local_simulation.py",
-      "chapter": "1_basic_usage",
-      "name": "02_local_simulation",
-      "title": "02 — Local simulation paths",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.002,
-      "n_offending": 0,
-      "n_ignored": 0,
-      "source_sha256": "3b10f3eed8f2da888dcb08a163de2058f0489c7cf855cb86c10b6905d6df880a"
-    },
-    {
-      "example": "examples/1_basic_usage/03_submit_and_postprocess.py",
-      "chapter": "1_basic_usage",
-      "name": "03_submit_and_postprocess",
-      "title": "03 — Submit to dummy + result post-processing",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.92,
-      "n_offending": 0,
-      "n_ignored": 0,
-      "source_sha256": "44a599efeefe1c6517d289a7a89b87efe60efdf73553923c9c81a5b1e909d36c"
-    },
-    {
-      "example": "examples/1_basic_usage/04_config.py",
-      "chapter": "1_basic_usage",
-      "name": "04_config",
-      "title": "04 — Configuration: ``uniqc config`` + ``~/.uniqc/config.yaml``",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.002,
-      "n_offending": 0,
-      "n_ignored": 0,
-      "source_sha256": "3578530344c6cc0292c09397352dbc7c8683c58b44407f75d58808d7004ff48a"
-    },
-    {
-      "example": "examples/1_basic_usage/05_visualize.py",
-      "chapter": "1_basic_usage",
-      "name": "05_visualize",
-      "title": "05 — Visualize circuits and results",
-      "verdict": "pass",
-      "skip_reason": null,
-      "duration_seconds": 0.084,
-      "n_offending": 0,
-      "n_ignored": 0,
-      "source_sha256": "05a0f2b87c76d0e92b99495b482eac40e01fb2117546631d33aa72ae5ac2ec79"
     },
     {
       "example": "examples/2_advanced/01_compile_options.py",

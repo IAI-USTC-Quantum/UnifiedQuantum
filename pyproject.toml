@@ -1,7 +1,6 @@
 [build-system]
-requires = ["setuptools", "setuptools_scm", "wheel", "cmake", "ninja", "pybind11"]
+requires = ["setuptools", "setuptools_scm", "wheel"]
 build-backend = "setuptools.build_meta"
-# setup.py is retained for custom CMakeExtension / CMakeBuild logic
 
 [project]
 name = "unified-quantum"
@@ -41,6 +40,7 @@ dependencies = [
     "rich",
     "scipy",
     "fastapi",
+    "uniqc-cppsimulator>=1.0,<2",
     "uvicorn[standard]",
     "qiskit",
     "qiskit-aer",
@@ -92,19 +92,10 @@ where = ["."]
 include = ["uniqc*"]
 exclude = ["uniqc.test*"]
 
-[tool.cibuildwheel]
-build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
-skip = "*-musllinux_* *-win32"
-test-command = "python -c \"import uniqc_cpp\""
-
-[tool.cibuildwheel.windows]
-archs = ["AMD64"]
-
 [tool.ruff]
 line-length = 120
 target-version = "py310"
 extend-exclude = [
-    "UniqcCpp/Thirdparty",
     "docs/_build",
     "docs/_generated",
     "example-exec-logs",
@@ -138,7 +129,6 @@ ignore = ["E501", "N801", "N803", "N806"]  # line length; CapWords for ErrorLoad
 "uniqc/simulator/opcode_simulator.py" = ["F403", "F405"]
 "uniqc/utils/expectation.py" = ["N802"]
 "uniqc/visualization/timeline.py" = ["B008", "E402"]
-"setup.py" = ["SIM102"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -174,10 +164,6 @@ docs = [
 write_to = "uniqc/_version.py"
 fallback_version = "0.0.0"
 local_scheme = "no-local-version"
-
-[tool.setuptools.package-data]
-"uniqc" = ["*.pyi"]
-"uniqc.simulator" = ["uniqc_cpp.pyi"]
 
 [tool.coverage.run]
 source = ["uniqc"]

@@ -1,4 +1,0 @@
-[submodule "UniqcCpp/Thirdparty/fmt"]
-	path = UniqcCpp/Thirdparty/fmt
-	url = https://github.com/fmtlib/fmt.git
-	branch = master

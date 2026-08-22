@@ -52,15 +52,13 @@ Rules:
 - Dependency failures for maintained extras such as Qiskit, Qutip, Torch, docs, or visualization are release blockers unless the maintainer explicitly scopes them out.
 - Quafu is deprecated; failures there are not blockers unless Quafu is in the release scope.
 
-### 2. C++ Extension Stubs Update
+### 2. C++ Simulator Dependency Check
 
-Generate and verify Python stubs for the C++ simulator extension:
+The C++ simulator extension lives in the separate [`uniqc-cppsimulator`](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator) package (import name `uniqc_cpp`), which ships its own wheels and type stubs; `scripts/stubgen.py` no longer exists in this repository. Verify the installed dependency imports and exposes the simulator classes:
 
 ```bash
-uv run python scripts/stubgen.py
+uv run python -c "import uniqc_cpp; print(uniqc_cpp.StatevectorSimulator, uniqc_cpp.DensityOperatorSimulator)"
 ```
-
-Inspect the generated `uniqc/simulator/uniqc_cpp.pyi` and verify it matches the C++ extension API. Commit the updated stubs if they have changed.
 
 ### 3. Best-Practices Documentation Execution
 

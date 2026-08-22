@@ -43,7 +43,7 @@ uv run pytest uniqc/test --real-cloud-test -m cloud -v
 | `requires_quafu` | 需要 legacy `pyquafu` SDK。 |
 | `requires_pytorch` | 需要 PyTorch。 |
 | `requires_torchquantum` | 需要 PyTorch 和 TorchQuantum。 |
-| `requires_cpp` | 需要编译后的 `uniqc_cpp` 扩展。 |
+| `requires_cpp` | 需要 `uniqc_cpp` 扩展（由 `uniqc-cppsimulator` 依赖包提供）。直连 C++ 绑定的测试已迁移到该仓库。 |
 | `requires_originq_credentials` | 需要 OriginQ token。 |
 | `requires_quafu_credentials` | 需要 Quafu token。 |
 | `requires_quark_credentials` | 需要 Quark token。 |

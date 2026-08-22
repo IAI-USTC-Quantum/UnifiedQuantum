@@ -144,10 +144,10 @@ uv pip install unified-quantum
 
 ### 从源码构建
 
-如果你需要开发新版、安装开发版本或启用 C++ 模拟器：
+如果你需要开发新版或安装开发版本：
 
 ```bash
-git clone --recurse-submodules https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
+git clone https://github.com/IAI-USTC-Quantum/UnifiedQuantum.git
 cd UnifiedQuantum
 
 # Maintainer / 全量开发环境：安装 dev、docs 和全部可选后端依赖，并按当前包索引升级解析
@@ -165,17 +165,7 @@ uv run pytest uniqc/test --real-cloud-test
 所有云平台测试默认跳过，包括读取后端、验证 token、查询 status/API 和真实量子线路提交。只有显式传入
 `--real-cloud-test`（并配置对应凭证）才会执行它们。
 
-**Requirements:**
-- CMake >= 3.22
-- C++ compiler with C++17 support
-- Git submodules (fmt)
-- pybind11 from the Python build environment, declared in `pyproject.toml`
-
-如果系统 CMake 版本过低（< 3.22），先升级：
-
-```bash
-pip install cmake --upgrade
-```
+> **C++ 模拟器已拆分为独立包** [`uniqc-cppsimulator`](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)：`pip install unified-quantum` 会自动将其作为依赖安装（import 名仍为 `uniqc_cpp`），源码构建不再需要 CMake / C++ 工具链。只有需要修改 C++ 内核本身时才需要克隆该仓库。
 
 ### pip 备选方案
 
