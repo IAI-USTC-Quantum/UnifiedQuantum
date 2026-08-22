@@ -60,7 +60,7 @@ If no generator exists, manually draft release notes from:
 
 ### Step 4: Update Documentation Release Notes
 
-1. Read current `docs/source/releases/index.md`
+1. Read current `docs/source/7_releases/index.md`
 2. Add a new version section under `## 版本解读` with:
    - **Version heading**: `### v{x.y.z}`
    - **Summary paragraph**: Brief description of the release theme
@@ -100,15 +100,13 @@ git checkout -b release/<version>
 ### Step 6: Commit Changes
 
 ```bash
-git add CHANGELOG.md docs/source/releases/index.md
+git add CHANGELOG.md docs/source/7_releases/index.md
 git commit -m "$(cat <<'EOF'
 docs(release): prepare v{x.y.z} release
 
 - Update CHANGELOG.md with release notes
 - Move [Unreleased] changes to [{x.y.z}] section
-- Add release notes to docs/source/releases/index.md
-
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+- Add release notes to docs/source/7_releases/index.md
 EOF
 )"
 ```
@@ -124,7 +122,7 @@ gh pr create --title "Release v{x.y.z}" --body "$(cat <<'EOF'
 [Summary of changes from CHANGELOG.md]
 
 ### Pre-release Testing
-- [x] `/uniqc-test-before-release` completed
+- [x] `uniqc-test-before-release` skill completed
 - [x] Test report reviewed and approved
 - [x] All blocking issues resolved
 
@@ -133,8 +131,6 @@ gh pr create --title "Release v{x.y.z}" --body "$(cat <<'EOF'
 - [ ] GitHub Actions CI passes
 - [ ] Tag created and pushed
 - [ ] PyPI publication confirmed
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
 ```
@@ -180,8 +176,6 @@ See CHANGELOG.md for details.
 ## What's Changed
 
 [Summary from release notes]
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )
 ```
@@ -217,7 +211,7 @@ Monitor the release at:
 
 ## Example Conversation Flow
 
-1. User: `/uniqc-release`
+1. User: "Run the uniqc-release skill" (or otherwise asks to create a release)
 2. Assistant: "What version would you like to release? (Current: 0.0.9)"
 3. User: "0.0.10"
 4. Assistant: Creates release PR...

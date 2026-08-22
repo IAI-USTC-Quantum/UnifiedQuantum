@@ -16,12 +16,13 @@ Use this skill when a developer wants to build the documentation locally. The bu
 
 ### Step 1: Ensure the environment is up to date
 
+From the project root:
+
 ```bash
-cd /home/agony/projects/uniqc-skill-dev/UnifiedQuantum
 uv sync --all-extras --group dev --group docs
 ```
 
-If `uv sync` fails because of a missing optional extra (e.g. deprecated `pyquafu`), retry without `--all-extras`:
+If `uv sync` fails because of an unresolvable optional extra (e.g. platform-gated `quark` wheels on Windows / Python 3.14), retry without `--all-extras`:
 
 ```bash
 uv sync --group dev --group docs
@@ -50,7 +51,6 @@ Capture the full output and look for:
 After a successful build, check whether the committed example outputs changed:
 
 ```bash
-cd /home/agony/projects/uniqc-skill-dev/UnifiedQuantum
 git diff --stat -- example-exec-logs/
 ```
 
