@@ -93,6 +93,18 @@ def _qasm_qubit_count(qasm: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def _qasm_used_qubits(qasm: str) -> set[int]:
+    """Return the physical qubit indices actually referenced in a QASM body."""
+    match = re.search(r"\bqreg\s+(\w+)\[(\d+)\]\s*;", qasm)
+    if not match:
+        return set()
+    name = re.escape(match.group(1))
+    # Skip the qreg declaration itself — ``qreg q[3];`` declares size 3
+    # (indices 0..2) and must not count as a reference to qubit 3.
+    body = qasm[match.end() :]
+    return {int(x) for x in re.findall(rf"\b{name}\[(\d+)\]", body)}
+
+
 def _number(value: Any) -> float | None:
     if value is None:
         return None
@@ -463,6 +475,30 @@ class QuarkAdapter(QuantumAdapter):
             )
         if shots % 1024 != 0:
             warnings.append("QuarkStudio documentation recommends shots as an integer multiple of 1024.")
+
+        # Chip-level validation: the circuit's physical qubits must exist on
+        # the target chip. Chip metadata is loaded locally via quarkcircuit
+        # (no network call); when unavailable, skip the check with a warning
+        # rather than failing closed.
+        chip_info = self._load_chip_basic_info(backend_name)
+        if isinstance(chip_info, dict) and chip_info.get("qubits_info"):
+            available = set(_extract_quark_backend_details(chip_info)["available_qubits"])
+            if available:
+                overflow = sorted(_qasm_used_qubits(qasm) - available)
+                if overflow:
+                    return _dry_run_failed(
+                        f"circuit uses qubits not available on chip '{backend_name}': {overflow}",
+                        details=(
+                            f"The circuit references physical qubits {overflow}, but chip "
+                            f"'{backend_name}' exposes {len(available)} qubits "
+                            f"(indices 0..{max(available)}). Remap the circuit or pick a larger chip."
+                        ),
+                        backend_name=backend_name,
+                    )
+        else:
+            warnings.append(
+                f"Chip metadata for '{backend_name}' unavailable; skipped qubit-availability validation."
+            )
 
         return _dry_run_success(
             "OriginIR translated to OpenQASM 2.0 and is structurally valid for QuarkStudio submission.",

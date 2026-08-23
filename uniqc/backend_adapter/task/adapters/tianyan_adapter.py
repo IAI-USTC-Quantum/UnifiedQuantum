@@ -550,6 +550,34 @@ class TianyanAdapter(QuantumAdapter):
                 details=f"Invalid shots value for TianYan: {shots}",
                 backend_name=machine_name,
             )
+
+        # Chip-level validation against the local chip cache (offline). The
+        # cache is typically populated by the pre-flight refresh; when it is
+        # absent, skip the check silently rather than failing closed.
+        import re
+
+        from uniqc.backend_adapter.backend_info import Platform
+        from uniqc.cli.chip_cache import get_chip
+
+        try:
+            chip = get_chip(Platform.TIANYAN, machine_name)
+        except Exception:
+            chip = None
+        if chip is not None and chip.available_qubits:
+            available = set(chip.available_qubits)
+            used = {int(x) for x in re.findall(r"q\[(\d+)\]", originir)}
+            overflow = sorted(used - available)
+            if overflow:
+                return _dry_run_failed(
+                    f"circuit uses qubits not available on machine '{machine_name}': {overflow}",
+                    details=(
+                        f"The circuit references physical qubits {overflow}, but machine "
+                        f"'{machine_name}' exposes {len(available)} available qubits "
+                        f"(max index {max(available)}). Remap the circuit or pick a larger machine."
+                    ),
+                    backend_name=machine_name,
+                )
+
         warnings.append(
             f"Machine '{machine_name}' existence/availability is not verified during dry-run "
             "(offline); it is checked at submission time."

@@ -381,6 +381,33 @@ class LogicalQubitAdapter(QuantumAdapter):
                 "No backend_name given; dry-run validated circuit structure only. "
                 "Backend existence is checked at submission time.",
             )
+        else:
+            # Chip-level validation against the local chip cache (offline).
+            # The cache is typically populated by the pre-flight refresh;
+            # when absent, skip the check silently rather than failing closed.
+            import re
+
+            from uniqc.backend_adapter.backend_info import Platform
+            from uniqc.cli.chip_cache import get_chip
+
+            try:
+                chip = get_chip(Platform.LOGICALQUBIT, backend_name)
+            except Exception:
+                chip = None
+            if chip is not None and chip.available_qubits:
+                available = set(chip.available_qubits)
+                used = {int(x) for x in re.findall(r"q\[(\d+)\]", originir)}
+                overflow = sorted(used - available)
+                if overflow:
+                    return _dry_run_failed(
+                        f"circuit uses qubits not available on backend '{backend_name}': {overflow}",
+                        details=(
+                            f"The circuit references physical qubits {overflow}, but backend "
+                            f"'{backend_name}' exposes {len(available)} qubits "
+                            f"(max index {max(available)}). Remap the circuit or pick a larger backend."
+                        ),
+                        backend_name=backend_name,
+                    )
 
         return _dry_run_success(
             (

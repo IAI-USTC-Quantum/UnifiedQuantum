@@ -389,6 +389,30 @@ class TestLogicalQubitDryRun:
         result = adapter.dry_run(ORIGINIR_BELL, shots=0)
         assert result.success is False
 
+    def test_dry_run_fails_when_circuit_exceeds_cached_chip(self, adapter, monkeypatch):
+        from uniqc.backend_adapter.backend_info import Platform
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        chip = ChipCharacterization(
+            platform=Platform.LOGICALQUBIT,
+            chip_name="QZ01",
+            full_id="logicalqubit:QZ01",
+            available_qubits=(0, 1),
+        )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, backend_name="QZ01")
+        assert result.success is False
+        assert "[2]" in result.error
+
+    def test_dry_run_skips_qubit_validation_without_chip_cache(self, adapter, monkeypatch):
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: None)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, backend_name="QZ01")
+        assert result.success is True
+
 
 # ---------------------------------------------------------------------------
 # Normaliser

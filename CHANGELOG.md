@@ -100,6 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Dry-run now validates circuit qubits against the chip**: Quark
+  (``quark_adapter``) compared nothing against the target chip, so an
+  oversized circuit passed dry-run and only failed at submission. The
+  Quark dry-run now checks the circuit's physical qubits against the
+  chip metadata from ``quarkcircuit`` (offline); TianYan and LogicalQubit
+  dry-runs check against the local chip cache. When no chip data is
+  available offline the check is skipped (Quark emits a warning) instead
+  of failing closed.
 - **TianYan discovery reported the model name as the qubit count**:
   ``tianyan176`` was listed with 176 qubits while only 66 are online (and
   ``tianyan-294`` in fact has 107). ``list_backends`` now makes a
