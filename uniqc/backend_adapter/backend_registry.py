@@ -335,17 +335,18 @@ def _normalise_logicalqubit(raw: list[dict[str, Any]]) -> list[BackendInfo]:
             "online": "available",
             "available": "available",
             "operational": "available",
+            "active": "available",
             "offline": "unavailable",
             "unavailable": "unavailable",
             "maintenance": "maintenance",
         }
-        extra = {k: v for k, v in entry.items() if k not in ("name", "num_qubits", "n_qubits", "status")}
+        extra = {k: v for k, v in entry.items() if k not in ("name", "num_qubits", "n_qubits", "qubits", "status")}
         results.append(
             BackendInfo(
                 platform=Platform.LOGICALQUBIT,
                 name=name,
                 description="LogicalQubit cloud simulator" if is_sim else "LogicalQubit quantum computer",
-                num_qubits=int(entry.get("num_qubits", entry.get("n_qubits", 0)) or 0),
+                num_qubits=int(entry.get("num_qubits") or entry.get("n_qubits") or entry.get("qubits") or 0),
                 status=status_map.get(status_str, status_str),
                 is_simulator=is_sim,
                 is_hardware=not is_sim,

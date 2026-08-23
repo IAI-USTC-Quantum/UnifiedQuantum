@@ -474,6 +474,55 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
         save_chip(chip)
         return chip
 
+    if provider == "tianyan":
+        try:
+            from uniqc.backend_adapter.task.adapters.tianyan_adapter import TianyanAdapter
+            from uniqc.cli.chip_cache import save_chip
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"TianYan SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
+            ) from exc
+        try:
+            adapter = TianyanAdapter(machine_name=chip_name)
+            chip = adapter.get_chip_characterization(chip_name)
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"TianYan refresh failed for {chip_name!r}: {exc}. "
+                "Check the tianyan.login_key credential, network connectivity, "
+                "and that the machine name is valid (e.g. 'tianyan176')."
+            ) from exc
+        if chip is None:
+            raise BackendPreflightError(
+                f"TianYan returned no characterization for {chip_name!r}. Verify the machine name is currently online."
+            )
+        save_chip(chip)
+        return chip
+
+    if provider == "logicalqubit":
+        try:
+            from uniqc.backend_adapter.task.adapters.logicalqubit_adapter import LogicalQubitAdapter
+            from uniqc.cli.chip_cache import save_chip
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"LogicalQubit SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
+            ) from exc
+        try:
+            adapter = LogicalQubitAdapter(backend_name=chip_name)
+            chip = adapter.get_chip_characterization(chip_name)
+        except Exception as exc:
+            raise BackendPreflightError(
+                f"LogicalQubit refresh failed for {chip_name!r}: {exc}. "
+                "Check the logicalqubit.api_key credential, network connectivity, "
+                "and that the backend name is valid."
+            ) from exc
+        if chip is None:
+            raise BackendPreflightError(
+                f"LogicalQubit returned no characterization for {chip_name!r}. "
+                "Verify the backend name is currently online."
+            )
+        save_chip(chip)
+        return chip
+
     raise BackendPreflightError(
         f"Cache refresh not implemented for provider {provider!r}. "
         "Run the provider's CLI 'uniqc backend chip-display "

@@ -38,6 +38,7 @@ def _make_fake_cqlib(*, explode_on_init: bool = False) -> types.ModuleType:
         "instances": [],
         "responses": {},  # query_id -> result entry dict
         "submitted": [],  # submit_job kwargs
+        "download_config": None,  # staged machine config payload
     }
 
     class FakeTianYanPlatform:
@@ -73,7 +74,8 @@ def _make_fake_cqlib(*, explode_on_init: bool = False) -> types.ModuleType:
                     "machine_name": self.machine_name,
                 }
             )
-            return query_id
+            # The real cqlib returns a *list* of query ids (one per circuit).
+            return [query_id]
 
         def _send_request(self, path=None, data=None, method=None):
             assert path == self.QUERY_EXP_PATH
@@ -84,6 +86,9 @@ def _make_fake_cqlib(*, explode_on_init: bool = False) -> types.ModuleType:
                 "code": 0,
                 "data": {"experimentResultModelList": [entry] if entry else []},
             }
+
+        def download_config(self, read_time=None, machine=None):
+            return module.STATE["download_config"]
 
     module.TianYanPlatform = FakeTianYanPlatform
     return module
@@ -376,3 +381,65 @@ class TestNormalizeTianyan:
 
         unified = normalize_tianyan({"experimentTaskId": "x"}, task_id="x")
         assert unified.counts == {}
+
+
+# ---------------------------------------------------------------------------
+# Chip characterization
+# ---------------------------------------------------------------------------
+
+_FAKE_MACHINE_CONFIG = {
+    "calibrationTime": "2026-08-20 10:31:33",
+    "computerId": "tianyan176",
+    "disabledQubits": "Q2",
+    "disabledCouplers": "G1",
+    "overview": {
+        "qubits": ["Q0", "Q1", "Q2"],
+        "coupler_map": {"G0": ["Q0", "Q1"], "G1": ["Q1", "Q2"]},
+    },
+    "qubit": {
+        "relatime": {
+            "T1": {"param_list": [30.0, 25.0], "qubit_used": ["Q0", "Q1"], "unit": "us"},
+            "T2": {"param_list": [20.0, 15.0], "qubit_used": ["Q0", "Q1"], "unit": "us"},
+        },
+        "singleQubit": {
+            "gate error": {"param_list": [0.1, 0.2], "qubit_used": ["Q0", "Q1"], "unit": "%"},
+        },
+    },
+    "readout": {
+        "readoutArray": {
+            "Readout Error": {"param_list": [3.0, 4.0], "qubit_used": ["Q0", "Q1"], "unit": "%"},
+        },
+    },
+    "twoQubitGate": {
+        "czGate": {
+            "gate error": {"param_list": [1.5], "qubit_used": ["G0"], "unit": "%"},
+        },
+    },
+}
+
+
+class TestTianyanChipCharacterization:
+    def test_builds_unified_model(self, adapter, fake_cqlib):
+        fake_cqlib.STATE["download_config"] = _FAKE_MACHINE_CONFIG
+
+        chip = adapter.get_chip_characterization("tianyan176")
+
+        assert chip is not None
+        assert chip.full_id == "tianyan:tianyan176"
+        # Q2 disabled -> only Q0/Q1 available; G1 disabled (and touches the
+        # disabled Q2 anyway) -> only the Q0-Q1 edge remains.
+        assert chip.available_qubits == (0, 1)
+        assert [(e.u, e.v) for e in chip.connectivity] == [(0, 1)]
+        q0 = chip.single_qubit_data[0]
+        assert q0.t1 == pytest.approx(30.0)
+        assert q0.t2 == pytest.approx(20.0)
+        assert q0.single_gate_fidelity == pytest.approx(0.999)
+        assert q0.avg_readout_fidelity == pytest.approx(0.97)
+        assert q0.readout_fidelity_0 is None  # platform reports one combined error
+        assert chip.two_qubit_data[0].gates[0].gate == "cz"
+        assert chip.two_qubit_data[0].gates[0].fidelity == pytest.approx(0.985)
+        assert chip.global_info.two_qubit_gates == ("cz",)
+        assert chip.calibrated_at == "2026-08-20 10:31:33"
+
+    def test_returns_none_without_config(self, adapter):
+        assert adapter.get_chip_characterization("tianyan176") is None

@@ -164,6 +164,122 @@ class TianyanAdapter(QuantumAdapter):
         return results
 
     # -------------------------------------------------------------------------
+    # Chip characterization
+    # -------------------------------------------------------------------------
+
+    def get_chip_characterization(self, chip_name: str):
+        """Return per-qubit and per-pair calibration data for a TianYan machine.
+
+        Uses cqlib's authenticated ``download_config`` endpoint. (The
+        unauthenticated ``get_machine_config``/gplot endpoint sits behind a
+        web-application firewall and is not usable from SDK clients.)
+
+        Parameters
+        ----------
+        chip_name:
+            TianYan machine name, e.g. ``"tianyan176"``.
+
+        Returns
+        -------
+        ChipCharacterization or None
+            None when cqlib is unavailable or the machine config cannot be
+            downloaded.
+        """
+        from uniqc.backend_adapter.backend_info import Platform, QubitTopology
+        from uniqc.cli.chip_info import (
+            ChipCharacterization,
+            ChipGlobalInfo,
+            SingleQubitData,
+            TwoQubitData,
+            TwoQubitGateData,
+        )
+
+        try:
+            conf = self._get_platform(chip_name).download_config(machine=chip_name)
+        except Exception:
+            return None
+        if not isinstance(conf, dict) or not isinstance(conf.get("overview"), dict):
+            return None
+
+        overview = conf["overview"]
+
+        def _qidx(label: Any) -> int | None:
+            text = str(label).strip()
+            return int(text[1:]) if text.startswith("Q") and text[1:].isdigit() else None
+
+        def _metric_map(node: Any) -> dict[str, float]:
+            """Align a ``{qubit_used, param_list}`` section into a label->value map."""
+            if not isinstance(node, dict):
+                return {}
+            used = node.get("qubit_used") or []
+            values = node.get("param_list") or []
+            out: dict[str, float] = {}
+            for label, value in zip(used, values, strict=False):
+                try:
+                    out[str(label)] = float(value)
+                except (TypeError, ValueError):
+                    continue
+            return out
+
+        def _pct_to_fidelity(pct: float | None) -> float | None:
+            return (1.0 - pct / 100.0) if pct is not None else None
+
+        disabled_q = {q.strip() for q in str(conf.get("disabledQubits") or "").split(",") if q.strip()}
+        disabled_c = {c.strip() for c in str(conf.get("disabledCouplers") or "").split(",") if c.strip()}
+
+        all_qubits = sorted(i for i in (_qidx(q) for q in overview.get("qubits") or []) if i is not None)
+        available = tuple(i for i in all_qubits if f"Q{i}" not in disabled_q)
+
+        # coupler_map: {"G0": ["Q6", "Q0"], ...}; drop disabled couplers and
+        # edges touching disabled qubits.
+        edges: dict[tuple[int, int], str] = {}
+        for cid, pair in (overview.get("coupler_map") or {}).items():
+            if cid in disabled_c or not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+            u, v = _qidx(pair[0]), _qidx(pair[1])
+            if u is None or v is None or u == v or f"Q{u}" in disabled_q or f"Q{v}" in disabled_q:
+                continue
+            edges[tuple(sorted((u, v)))] = str(cid)
+
+        qubit_section = conf.get("qubit") or {}
+        t1_map = _metric_map((qubit_section.get("relatime") or {}).get("T1"))
+        t2_map = _metric_map((qubit_section.get("relatime") or {}).get("T2"))
+        sq_err = _metric_map((qubit_section.get("singleQubit") or {}).get("gate error"))
+        ro_err = _metric_map(((conf.get("readout") or {}).get("readoutArray") or {}).get("Readout Error"))
+        cz_err = _metric_map(((conf.get("twoQubitGate") or {}).get("czGate") or {}).get("gate error"))
+
+        single_qubit_data = tuple(
+            SingleQubitData(
+                qubit_id=i,
+                t1=t1_map.get(f"Q{i}"),
+                t2=t2_map.get(f"Q{i}"),
+                single_gate_fidelity=_pct_to_fidelity(sq_err.get(f"Q{i}")),
+                avg_readout_fidelity=_pct_to_fidelity(ro_err.get(f"Q{i}")),
+            )
+            for i in available
+        )
+        two_qubit_data = tuple(
+            TwoQubitData(
+                qubit_u=u,
+                qubit_v=v,
+                gates=(TwoQubitGateData(gate="cz", fidelity=_pct_to_fidelity(cz_err.get(cid))),),
+            )
+            for (u, v), cid in sorted(edges.items())
+        )
+
+        return ChipCharacterization(
+            platform=Platform.TIANYAN,
+            chip_name=chip_name,
+            full_id=f"tianyan:{chip_name}",
+            available_qubits=available,
+            connectivity=tuple(QubitTopology(u=u, v=v) for u, v in sorted(edges)),
+            single_qubit_data=single_qubit_data,
+            two_qubit_data=two_qubit_data,
+            global_info=ChipGlobalInfo(single_qubit_gates=("sx", "rz"), two_qubit_gates=("cz",)),
+            calibrated_at=conf.get("calibrationTime"),
+        )
+
+    # -------------------------------------------------------------------------
     # Circuit translation (OriginIR to QCIS)
     # -------------------------------------------------------------------------
 
@@ -206,13 +322,25 @@ class TianyanAdapter(QuantumAdapter):
 
         qcis = str(circuit) if "QINIT" not in str(circuit) else self.translate_circuit(str(circuit))
 
-        query_id = platform.submit_job(
+        query_ids = platform.submit_job(
             circuit=qcis,
             exp_name=kwargs.get("task_name") or kwargs.get("exp_name") or "",
             num_shots=int(shots),
             lab_id=kwargs.get("lab_id"),
         )
-        return str(query_id)
+        # cqlib returns a *list* of query ids (one per submitted circuit) and
+        # this adapter submits exactly one circuit per job, so unwrap the
+        # single element. A falsy return (0) means the platform rejected the
+        # submission.
+        if not query_ids:
+            raise RuntimeError(
+                f"TianYan rejected the submission for machine '{machine_name}' (submit_job returned {query_ids!r})."
+            )
+        if isinstance(query_ids, (list, tuple)):
+            if len(query_ids) != 1:
+                raise RuntimeError(f"Expected exactly one TianYan query id, got {len(query_ids)}: {query_ids!r}")
+            return str(query_ids[0])
+        return str(query_ids)
 
     def submit_batch(self, circuits: list[str], *, shots: int = 1000, **kwargs: Any) -> list[str]:
         """Submit circuits one by one (one query_id per circuit).

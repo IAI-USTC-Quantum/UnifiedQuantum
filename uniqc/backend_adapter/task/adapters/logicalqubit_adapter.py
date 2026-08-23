@@ -117,6 +117,72 @@ class LogicalQubitAdapter(QuantumAdapter):
         return results
 
     # -------------------------------------------------------------------------
+    # Chip characterization
+    # -------------------------------------------------------------------------
+
+    def get_chip_characterization(self, chip_name: str):
+        """Return topology-level characterization for a LogicalQubit backend.
+
+        lqcloud's ``get_backend_config`` exposes the qubit count and the
+        coupling map but no T1/T2 or fidelity calibration data, so the
+        returned :class:`ChipCharacterization` carries connectivity only
+        (per-qubit fields are left as None).
+
+        Parameters
+        ----------
+        chip_name:
+            LogicalQubit backend name, e.g. ``"QZ01-repetition_code"``.
+
+        Returns
+        -------
+        ChipCharacterization or None
+            None when lqcloud is unavailable or the backend config cannot
+            be fetched.
+        """
+        from uniqc.backend_adapter.backend_info import Platform, QubitTopology
+        from uniqc.cli.chip_info import (
+            ChipCharacterization,
+            ChipGlobalInfo,
+            SingleQubitData,
+            TwoQubitData,
+        )
+
+        try:
+            conf = self._get_provider().get_backend_config(chip_name)
+        except Exception:
+            return None
+        if not isinstance(conf, dict):
+            return None
+
+        edges: set[tuple[int, int]] = set()
+        for pair in (conf.get("topology") or {}).get("coupling_map") or []:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+            try:
+                u, v = int(pair[0]), int(pair[1])
+            except (TypeError, ValueError):
+                continue
+            if u != v:
+                edges.add((min(u, v), max(u, v)))
+
+        nqubits = int(conf.get("qubits") or 0)
+        if nqubits <= 0:
+            nqubits = max((v for _, v in edges), default=-1) + 1
+        available = tuple(range(nqubits))
+
+        return ChipCharacterization(
+            platform=Platform.LOGICALQUBIT,
+            chip_name=chip_name,
+            full_id=f"logicalqubit:{chip_name}",
+            available_qubits=available,
+            connectivity=tuple(QubitTopology(u=u, v=v) for u, v in sorted(edges)),
+            single_qubit_data=tuple(SingleQubitData(qubit_id=i) for i in available),
+            two_qubit_data=tuple(TwoQubitData(qubit_u=u, qubit_v=v) for u, v in sorted(edges)),
+            global_info=ChipGlobalInfo(single_qubit_gates=("sx", "rz"), two_qubit_gates=("cz",)),
+            calibrated_at=None,
+        )
+
+    # -------------------------------------------------------------------------
     # Circuit translation (OriginIR to lqcloud QuantumCircuit)
     # -------------------------------------------------------------------------
 

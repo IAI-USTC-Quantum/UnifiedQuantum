@@ -51,6 +51,7 @@ def _make_fake_lqcloud(*, explode_on_provider_init: bool = False) -> types.Modul
         "statuses": {},  # job_id -> _FakeJobStatus
         "counts": {},  # job_id -> counts dict
         "backend_names": ["lq-sim-1", "lq-qpu-1"],
+        "backend_config": None,  # staged get_backend_config payload
     }
 
     class FakeQuantumCircuit:
@@ -111,6 +112,9 @@ def _make_fake_lqcloud(*, explode_on_provider_init: bool = False) -> types.Modul
             if name not in module.STATE["backend_names"]:
                 raise ValueError(f"unknown backend {name}")
             return FakeBackend(name, self)
+
+        def get_backend_config(self, name):
+            return module.STATE["backend_config"]
 
     module.LQCloudProvider = FakeLQCloudProvider
     module.QuantumCircuit = FakeQuantumCircuit
@@ -412,3 +416,93 @@ class TestNormalizeLogicalQubit:
         fake_result = types.SimpleNamespace(get_counts=lambda: {"10": 3})
         unified = normalize_logicalqubit(fake_result, task_id="j3")
         assert unified.counts == {"10": 3}
+
+
+# ---------------------------------------------------------------------------
+# Chip characterization (topology only — lqcloud exposes no calibration data)
+# ---------------------------------------------------------------------------
+
+_FAKE_BACKEND_CONFIG = {
+    "name": "lq-qpu-1",
+    "status": "active",
+    "qubits": 3,
+    "topology": {
+        "type": "grid",
+        "rows": 2,
+        "cols": 2,
+        "coupling_map": [[0, 1], [1, 2]],
+    },
+    "native_gates": None,
+}
+
+
+class TestLogicalQubitChipCharacterization:
+    def test_builds_topology_only_model(self, adapter, fake_lqcloud):
+        fake_lqcloud.STATE["backend_config"] = _FAKE_BACKEND_CONFIG
+
+        chip = adapter.get_chip_characterization("lq-qpu-1")
+
+        assert chip is not None
+        assert chip.full_id == "logicalqubit:lq-qpu-1"
+        assert chip.available_qubits == (0, 1, 2)
+        assert [(e.u, e.v) for e in chip.connectivity] == [(0, 1), (1, 2)]
+        # No calibration data from the platform — per-qubit fields stay None.
+        assert chip.single_qubit_data[0].t1 is None
+        assert chip.calibrated_at is None
+        assert chip.global_info.two_qubit_gates == ("cz",)
+
+    def test_returns_none_without_config(self, adapter):
+        assert adapter.get_chip_characterization("lq-qpu-1") is None
+
+
+class TestLogicalQubitNormaliser:
+    def test_active_status_and_qubits_field(self):
+        """lqcloud reports ``status: active`` and a ``qubits`` count field."""
+        from uniqc.backend_adapter.backend_registry import _normalise_logicalqubit
+
+        raw = [{"name": "QZ01", "status": "active", "qubits": 17, "type": "real_qpu"}]
+        backend = _normalise_logicalqubit(raw)[0]
+
+        assert backend.status == "available"
+        assert backend.num_qubits == 17
+        assert "qubits" not in backend.extra
+
+
+class TestChipCacheTopologyFallback:
+    def test_enriches_backend_info_from_chip_cache(self, monkeypatch):
+        from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
+        from uniqc.backend_adapter.task_manager import _enrich_backend_info_from_chip_cache
+        from uniqc.cli import chip_cache
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        entry = BackendInfo(platform=Platform.TIANYAN, name="tianyan176", num_qubits=176)
+        chip = ChipCharacterization(
+            platform=Platform.TIANYAN,
+            chip_name="tianyan176",
+            full_id="tianyan:tianyan176",
+            available_qubits=(0, 1),
+            connectivity=(QubitTopology(u=0, v=1),),
+        )
+        monkeypatch.setattr(chip_cache, "get_chip", lambda platform, name: chip)
+
+        enriched = _enrich_backend_info_from_chip_cache(Platform.TIANYAN, entry)
+
+        assert [(e.u, e.v) for e in enriched.topology] == [(0, 1)]
+        assert enriched.extra["_uniqc_topology_source"] == "chip_cache"
+
+    def test_keeps_existing_topology(self, monkeypatch):
+        from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
+        from uniqc.backend_adapter.task_manager import _enrich_backend_info_from_chip_cache
+
+        entry = BackendInfo(
+            platform=Platform.TIANYAN,
+            name="tianyan176",
+            num_qubits=176,
+            topology=(QubitTopology(u=2, v=3),),
+        )
+        monkeypatch.setattr(
+            "uniqc.cli.chip_cache.get_chip",
+            lambda platform, name: pytest.fail("chip cache must not be consulted"),
+        )
+
+        assert _enrich_backend_info_from_chip_cache(Platform.TIANYAN, entry) is entry
