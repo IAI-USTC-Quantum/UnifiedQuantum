@@ -74,10 +74,15 @@ def test_quark_chip_info_extracts_topology_and_gate_data():
     assert pair_data[(1, 2)] == pytest.approx(0.986)
 
 
-def test_quark_backend_summary_uses_backend_cache_topology_and_gates():
+def test_quark_backend_summary_uses_backend_cache_topology_and_gates(monkeypatch):
     from uniqc.backend_adapter.backend_registry import _normalise_quark
     from uniqc.backend_adapter.task.adapters.quark_adapter import _extract_quark_backend_details
+    from uniqc.gateway.api import backends as gateway_backends
     from uniqc.gateway.api.backends import _backend_summary
+
+    # Keep the test hermetic: a developer machine may have a real chip cache
+    # under ~/.uniqc/backend/chips/ populated from live discovery.
+    monkeypatch.setattr(gateway_backends, "_chip_for_backend", lambda b: None)
 
     raw = [
         {

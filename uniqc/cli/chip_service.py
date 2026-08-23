@@ -40,9 +40,13 @@ def fetch_chip_characterization(
     platform:
         One of :attr:`~uniqc.backend_adapter.backend_info.Platform.ORIGINQ`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.QUAFU`,
+        :attr:`~uniqc.backend_adapter.backend_info.Platform.QUARK`,
+        :attr:`~uniqc.backend_adapter.backend_info.Platform.TIANYAN`,
+        :attr:`~uniqc.backend_adapter.backend_info.Platform.LOGICALQUBIT`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.IBM`.
-        Platforms without calibration support (e.g. Tianyan, LogicalQubit)
-        fall through to the default branch and return None.
+        LogicalQubit exposes topology only (no T1/T2/fidelity calibration
+        data). Platforms without any characterization support fall through
+        to the default branch and return None.
     force_refresh:
         If False (the default), return cached data when available.
         If True, always re-fetch from the platform API.
@@ -64,6 +68,12 @@ def fetch_chip_characterization(
         chip = _fetch_originq(backend_name)
     elif platform == Platform.QUAFU:
         chip = _fetch_quafu(backend_name)
+    elif platform == Platform.QUARK:
+        chip = _fetch_quark(backend_name)
+    elif platform == Platform.TIANYAN:
+        chip = _fetch_tianyan(backend_name)
+    elif platform == Platform.LOGICALQUBIT:
+        chip = _fetch_logicalqubit(backend_name)
     elif platform == Platform.IBM:
         chip = _fetch_ibm(backend_name)
     else:
@@ -110,6 +120,69 @@ def _fetch_quafu(backend_name: str):
 
     try:
         adapter = QuafuAdapter()
+    except (ImportError, Exception):
+        return None
+
+    if not adapter.is_available():
+        return None
+
+    try:
+        return adapter.get_chip_characterization(backend_name)
+    except Exception:
+        return None
+
+
+def _fetch_quark(backend_name: str):
+    """Fetch chip characterization from QuarkStudio (via quarkcircuit)."""
+    try:
+        from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
+    except (ImportError, Exception):
+        return None
+
+    try:
+        adapter = QuarkAdapter()
+    except (ImportError, Exception):
+        return None
+
+    if not adapter.is_available():
+        return None
+
+    try:
+        return adapter.get_chip_characterization(backend_name)
+    except Exception:
+        return None
+
+
+def _fetch_tianyan(backend_name: str):
+    """Fetch chip characterization from TianYan (via cqlib download_config)."""
+    try:
+        from uniqc.backend_adapter.task.adapters.tianyan_adapter import TianyanAdapter
+    except (ImportError, Exception):
+        return None
+
+    try:
+        adapter = TianyanAdapter(machine_name=backend_name)
+    except (ImportError, Exception):
+        return None
+
+    if not adapter.is_available():
+        return None
+
+    try:
+        return adapter.get_chip_characterization(backend_name)
+    except Exception:
+        return None
+
+
+def _fetch_logicalqubit(backend_name: str):
+    """Fetch topology-level characterization from LogicalQubit (via lqcloud)."""
+    try:
+        from uniqc.backend_adapter.task.adapters.logicalqubit_adapter import LogicalQubitAdapter
+    except (ImportError, Exception):
+        return None
+
+    try:
+        adapter = LogicalQubitAdapter(backend_name=backend_name)
     except (ImportError, Exception):
         return None
 

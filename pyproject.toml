@@ -60,26 +60,25 @@ originq = ["pyqpanda3; python_version < '3.14'"]
 simulation = ["qutip", "qutip-qip"]
 visualization = ["matplotlib", "seaborn", "pandas"]
 pytorch = ["torch", "torchquantum-ng"]
-# quarkstudio/quarkcircuit are Linux/macOS x86 (no win32 wheel) and their
-# transitive deps (srpc, proxy.py) don't yet have stable cp314 wheels —
-# gate to py>=3.12 and py<3.14 and non-win32 so cross-platform resolvers
-# (uv) don't fail on win32 / cp314 splits.
+# quarkstudio/quarkcircuit/srpc require Python >= 3.12 (upstream publishes
+# cp312+ wheels for Linux/macOS/Windows, including cp314 as of
+# quarkcircuit 0.5.13 / quarkstudio 7.3.9 / srpc 4.7.1).
 quark = [
-    "quarkstudio; python_version >= '3.12' and python_version < '3.14' and sys_platform != 'win32'",
-    "quarkcircuit; python_version >= '3.12' and python_version < '3.14' and sys_platform != 'win32'",
+    "quarkstudio; python_version >= '3.12'",
+    "quarkcircuit; python_version >= '3.12'",
     "ipython",
 ]
 tianyan = ["cqlib"]
 logicalqubit = ["lqcloud"]
-# [all] is intentionally the portable, broadly-installable superset.
-# It excludes [quark] because quark deps have no win32 wheels and would
-# break uv lock resolution on Windows. Install [quark] explicitly on
-# Linux/macOS if you need the Quark platform path.
+# [all] is the broadly-installable superset of maintained extras.
 all = [
     "pyqpanda3; python_version < '3.14'",
     "qutip", "qutip-qip",
     "matplotlib", "seaborn", "pandas",
     "torch", "torchquantum-ng",
+    "quarkstudio; python_version >= '3.12'",
+    "quarkcircuit; python_version >= '3.12'",
+    "ipython",
     "cqlib",
     "lqcloud",
 ]

@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   working. The main package is now published as a pure-Python wheel; building
   from source no longer requires CMake or a C++ toolchain. Tests that
   exercise the C++ bindings directly moved to the new repository.
+- **`[quark]` extra ungated and back in `[all]`**: upstream ``quarkstudio``
+  7.3.9 / ``quarkcircuit`` 0.5.13 / ``srpc`` 4.7.1 now publish Linux, macOS
+  and Windows wheels including cp314, so the former Linux/macOS-only,
+  Python 3.12–3.13 gating (and the ``uv sync`` universal-resolver failure it
+  caused) is gone. The extra now only requires ``python_version >= '3.12'``
+  and is silently skipped on Python 3.10/3.11.
 
 ### Added
 
@@ -29,6 +35,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a self-hosted [confsync](https://github.com/Agony5757/confsync) server via
   the optional ``confsync-client`` package (shared ``~/.confsync``
   credentials; no confsync settings are stored in the uniqc config).
+- **Quark chip characterization**: ``QuarkAdapter.get_chip_characterization``
+  converts ``quarkcircuit`` chip metadata into the unified
+  ``ChipCharacterization`` model, so ``uniqc backend chip-display
+  quark/<chip>`` now works and Quark calibration data flows into the local
+  chip cache (``~/.uniqc/backend/chips/``). The Quark adapter unit tests
+  moved out of the network-gated ``uniqc/test/cloud/`` directory and now run
+  in the default test suite.
+- **TianYan and LogicalQubit chip characterization**:
+  ``TianyanAdapter.get_chip_characterization`` maps cqlib's authenticated
+  ``download_config`` payload (per-qubit T1/T2, gate/readout errors, coupler
+  map with disabled elements filtered) into ``ChipCharacterization``;
+  ``LogicalQubitAdapter.get_chip_characterization`` builds a topology-only
+  model from lqcloud's ``get_backend_config`` (the platform exposes no
+  T1/T2/fidelity data). ``uniqc backend chip-display tianyan/<chip>`` and
+  ``logicalqubit/<backend>`` now work, both providers are wired into the
+  dry-run preflight cache refresh, and their offline adapter tests moved out
+  of the network-gated ``uniqc/test/cloud/`` directory into the default
+  test suite.
+
+### Fixed
+
+- **`wait_for_result` crashed on Quark task completion** with
+  ``int() argument must be ... not 'dict'``: Quark (like Quafu/dummy) nests
+  its histogram as ``{"counts": {...}, "raw_result": ...}``, which the
+  ``UnifiedResult`` wrapper did not unwrap. Verified end-to-end with a live
+  1024-shot Bell task on ``quark:Baihua``.
+- **Gateway backend summary no longer ignores an explicit empty
+  ``chip_meta``** — ``_backend_summary(chip_meta={})`` used to fall back to
+  the on-disk chip cache, leaking live machine state into summaries (and
+  making tests non-hermetic).
+- **Quark readout fidelities of ``0.0`` are treated as "no data"** (the
+  platform reports ``0.0`` for unmeasured qubits) instead of being rendered
+  as a real 0% fidelity.
+- **LogicalQubit discovery normalisation**: lqcloud's ``status: "active"``
+  now maps to ``available`` (previously passed through verbatim, hiding all
+  online backends from the default ``uniqc backend list``), and the
+  ``qubits`` count field is mapped into ``num_qubits`` (previously 0).
+- **Submission compile falls back to the chip cache for topology**: when the
+  discovery cache has no coupling map for a backend (TianYan and
+  LogicalQubit discovery payloads carry none), ``submit_task`` now enriches
+  the cached ``BackendInfo`` from ``~/.uniqc/backend/chips/`` instead of
+  failing with "compile() requires either backend_info.topology or
+  chip_characterization.connectivity". Run ``uniqc backend chip-display
+  <platform>/<chip> --update`` once to populate the cache.
+- **TianYan submissions stored an unusable platform task id**: cqlib's
+  ``submit_job`` returns a *list* of query ids, and the adapter stringified
+  the whole list (``"['2091...']"``), so every later status query failed
+  server-side with "任务id不存在" and tasks appeared stuck in ``running``.
+  The adapter now unwraps the single query id (and raises a clear error when
+  the platform rejects a submission).
 
 ## [0.0.17.post1] - 2026-08-16
 

@@ -664,6 +664,33 @@ def _metadata_with_circuit(circuit: Circuit, metadata: dict | None) -> dict:
     return enriched
 
 
+def _enrich_backend_info_from_chip_cache(platform, entry):
+    """Fill in missing topology from the local chip cache, if available.
+
+    Discovery payloads for some platforms (e.g. TianYan, LogicalQubit) carry
+    no coupling map, while the chip characterization cache
+    (``~/.uniqc/backend/chips/``) does. Compilation needs a topology, so
+    bridge the two caches here.
+    """
+    if entry.topology:
+        return entry
+    try:
+        from uniqc.cli.chip_cache import get_chip
+    except ImportError:
+        return entry
+    try:
+        chip = get_chip(platform, entry.name)
+    except Exception:
+        return entry
+    if chip is None or not chip.connectivity:
+        return entry
+    import dataclasses
+
+    extra = dict(entry.extra)
+    extra.setdefault("_uniqc_topology_source", "chip_cache")
+    return dataclasses.replace(entry, topology=list(chip.connectivity), extra=extra)
+
+
 def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     """Best-effort lookup of a fresh BackendInfo for ``backend``.
 
@@ -749,6 +776,7 @@ def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
     name_ci = name.casefold()
     for entry in cached:
         if entry.name == name or entry.name.casefold() == name_ci:
+            entry = _enrich_backend_info_from_chip_cache(platform, entry)
             # Annotate freshness in extra so callers / reports can react.
             if not fresh:
                 # Frozen dataclass; ship a copy with a warning marker.
@@ -1787,10 +1815,7 @@ def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
         warn_removed_in_0_1_0(
             f"Task lookup via platform id {task_id!r}",
             replacement=f"the uniqc id {found!r}",
-            detail=(
-                "The platform id still resolves via the shard index but this "
-                "fallback is removed in uniqc 0.1.0"
-            ),
+            detail=("The platform id still resolves via the shard index but this fallback is removed in uniqc 0.1.0"),
             stacklevel=3,
         )
         return found, True
@@ -2096,6 +2121,12 @@ def _wrap_as_unified_result(
         counts = raw
     else:
         counts = {}
+
+    # Some adapters nest the histogram one level deeper, e.g. Quark/Quafu
+    # return ``{"counts": {...}, "raw_result": ...}`` as the result payload.
+    # Bitstring keys never collide with the literal "counts" wrapper key.
+    if isinstance(counts.get("counts") if isinstance(counts, dict) else None, dict):
+        counts = counts["counts"]
 
     counts = {str(k): int(v) for k, v in counts.items()} if counts else {}
 

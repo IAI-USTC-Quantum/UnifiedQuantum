@@ -19,7 +19,7 @@ import os
 import re
 from typing import Any
 
-from uniqc.backend_adapter.backend_info import QubitTopology
+from uniqc.backend_adapter.backend_info import Platform, QubitTopology
 from uniqc.backend_adapter.task.adapters.base import (
     TASK_STATUS_FAILED,
     TASK_STATUS_RUNNING,
@@ -30,7 +30,13 @@ from uniqc.backend_adapter.task.adapters.base import (
     _dry_run_success,
 )
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_quark, check_quarkcircuit
-from uniqc.cli.chip_info import ChipGlobalInfo, SingleQubitData, TwoQubitData, TwoQubitGateData
+from uniqc.cli.chip_info import (
+    ChipCharacterization,
+    ChipGlobalInfo,
+    SingleQubitData,
+    TwoQubitData,
+    TwoQubitGateData,
+)
 from uniqc.compile.converter import convert_oir_to_qasm
 from uniqc.config import load_quark_config
 
@@ -97,6 +103,11 @@ def _number(value: Any) -> float | None:
     return result
 
 
+def _positive(value: Any) -> float | None:
+    result = _number(value)
+    return result if result is not None and result > 0 else None
+
+
 def _avg(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
@@ -144,8 +155,10 @@ def _extract_quark_backend_details(chip_info: dict[str, Any]) -> dict[str, Any]:
             continue
         available_qubits.add(qid)
         qdata = qdata if isinstance(qdata, dict) else {}
-        readout_0 = _number(qdata.get("readout g_fidelity"))
-        readout_1 = _number(qdata.get("readout e_fidelity"))
+        # Upstream reports 0.0 for unmeasured readout fidelities — treat
+        # non-positive values as "no data" (a real fidelity is always > 0.5).
+        readout_0 = _positive(qdata.get("readout g_fidelity"))
+        readout_1 = _positive(qdata.get("readout e_fidelity"))
         readout_values = [v for v in (readout_0, readout_1) if v is not None]
         avg_readout = _avg(readout_values)
         if avg_readout is not None:
@@ -368,6 +381,37 @@ class QuarkAdapter(QuantumAdapter):
         """Fetch detailed backend information when quarkcircuit is installed."""
         info = self._load_chip_basic_info(chip)
         return info if isinstance(info, dict) else {}
+
+    def get_chip_characterization(self, chip_name: str) -> ChipCharacterization | None:
+        """Return per-qubit and per-pair calibration data for a Quark chip.
+
+        Parameters
+        ----------
+        chip_name:
+            QuarkStudio chip name, e.g. ``"Baihua"``.
+
+        Returns
+        -------
+        ChipCharacterization or None
+            None when ``quarkcircuit`` is not installed or the chip metadata
+            cannot be loaded.
+        """
+        chip_info = self._load_chip_basic_info(chip_name)
+        if not isinstance(chip_info, dict) or not chip_info.get("qubits_info"):
+            return None
+
+        details = _extract_quark_backend_details(chip_info)
+        return ChipCharacterization(
+            platform=Platform.QUARK,
+            chip_name=chip_name,
+            full_id=f"quark:{chip_name}",
+            available_qubits=tuple(details["available_qubits"]),
+            connectivity=tuple(QubitTopology(u=u, v=v) for u, v in details["topology"]),
+            single_qubit_data=tuple(SingleQubitData.from_dict(s) for s in details["per_qubit_calibration"]),
+            two_qubit_data=tuple(TwoQubitData.from_dict(t) for t in details["per_pair_calibration"]),
+            global_info=ChipGlobalInfo.from_dict(details["global_info"]),
+            calibrated_at=details.get("calibrated_at"),
+        )
 
     def _backend_entry(self, name: str, queue: Any, base: dict[str, Any] | None = None) -> dict[str, Any]:
         entry = dict(base or {})

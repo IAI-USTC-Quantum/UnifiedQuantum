@@ -28,7 +28,7 @@ Use [references/report-template.md](references/report-template.md) for the repor
 3. Build the test environment:
    - `uv sync --extra all --group dev --group docs --upgrade`
    - `cd frontend && npm ci`
-   - Install Quafu only when the release scope explicitly includes deprecated Quafu behavior: `uv pip install pyquafu` (the `[quafu]` extra has been removed; `pyquafu` is unmaintained and pins `numpy<2`, so it may fail on current Python versions). Quafu support is scheduled for removal in 0.1.0 — do not add it to release scope by default. Do not use `--all-extras` as the default release path: `[quark]` is platform-gated (Linux/macOS, Python 3.12–3.13) and `uv sync` is known to fail resolving `quarkcircuit`; install `[quark]` explicitly only when the Quark platform path is in scope.
+   - Install Quafu only when the release scope explicitly includes deprecated Quafu behavior: `uv pip install pyquafu` (the `[quafu]` extra has been removed; `pyquafu` is unmaintained and pins `numpy<2`, so it may fail on current Python versions). Quafu support is scheduled for removal in 0.1.0 — do not add it to release scope by default. `[quark]` requires Python ≥ 3.12 and ships wheels for Linux/macOS/Windows; it is included in `[all]` on supported interpreters.
 4. Identify real-platform readiness:
    - Config file: `~/.uniqc/config.yaml`
    - Required token sections: `originq`, `ibm`, `quark`, plus `tianyan` / `logicalqubit` when those platforms are in scope, and deprecated `quafu` only if explicitly in scope.
@@ -202,7 +202,7 @@ Check at least:
 - Config path is `~/.uniqc/config.yaml`.
 - AI workflow hints use `--ai-hints` / `--ai-hint`, environment variable `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`.
 - IBM proxy can be configured with nested config keys such as `uniqc config set ibm.proxy.https http://127.0.0.1:7890`.
-- Quafu is documented as deprecated (removed in 0.1.0), has no packaged extra, and is not part of `[all]`. `[quark]` is platform-gated and also not part of `[all]`.
+- Quafu is documented as deprecated (removed in 0.1.0), has no packaged extra, and is not part of `[all]`. `[quark]` requires Python ≥ 3.12 and is included in `[all]` on supported interpreters.
 
 When possible, write small one-off scripts for this comparison and include their output in the report. If a comparison is manual, label it manual.
 

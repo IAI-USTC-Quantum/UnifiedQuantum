@@ -13,8 +13,9 @@ pip install unified-quantum[quark]
 ```
 
 ```{note}
-`quarkstudio` / `quarkcircuit` 目前只提供 Linux/macOS x86 的 wheel，且要求
-Python ≥ 3.12、< 3.14；Windows 与其它平台请改用源码方式或换用其它平台。
+`quarkstudio` / `quarkcircuit` 要求 Python ≥ 3.12，官方为 Linux / macOS /
+Windows 提供预编译 wheel（含 Python 3.14）；Python 3.10 / 3.11 环境下
+`[quark]` extra 会被自动跳过。
 ```
 
 ## 配置凭证

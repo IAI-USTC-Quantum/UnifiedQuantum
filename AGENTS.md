@@ -31,13 +31,12 @@ format, readable by Kimi Code / Codex / Copilot / Cursor): `uniqc-build-docs`,
 - `pyproject.toml` intentionally does **not** pin third-party versions and `main`
   does **not** commit `uv.lock`; dev/CI resolve latest deps to surface upstream
   breakage.
-- Optional extras are platform-gated: the `[quafu]` extra has been removed
-  entirely (`pyquafu` is unmaintained and pins `numpy<2`); `[quark]`
-  (`quarkstudio`/`quarkcircuit`) has no win32 wheels and no stable cp314 wheels
-  for its transitive deps, so it is gated to Linux/macOS with Python 3.12–3.13.
-  `[all]` is the portable superset and excludes `[quark]` — install `[quark]`
-  explicitly when you need the Quark platform path. `uv sync` is known to fail
-  resolving `quarkcircuit`; use `uv pip install` for it if needed.
+- Optional extras: the `[quafu]` extra has been removed entirely (`pyquafu`
+  is unmaintained and pins `numpy<2`). `[quark]` (`quarkstudio`/`quarkcircuit`)
+  requires Python ≥ 3.12 (upstream ships Linux/macOS/Windows wheels including
+  cp314) and is included in `[all]` on supported interpreters; on Python
+  3.10/3.11 it is silently skipped. `[all]` is the broadly-installable
+  superset of maintained extras.
 
 ## Test / lint / docs
 

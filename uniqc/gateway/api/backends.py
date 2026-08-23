@@ -260,7 +260,9 @@ def _backend_summary(
     chip_meta: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     chip = _chip_for_backend(b)
-    cache_meta = (chip_meta or chip_cache_info()).get(b.full_id(), {})
+    # NB: chip_meta={} must mean "no cache enrichment", so fall back to the
+    # on-disk cache only when chip_meta was not passed at all.
+    cache_meta = (chip_meta if chip_meta is not None else chip_cache_info()).get(b.full_id(), {})
 
     avg_1q = _fidelity(b.avg_1q_fidelity)
     avg_2q = _fidelity(b.avg_2q_fidelity)

@@ -22,7 +22,7 @@ From the project root:
 uv sync --all-extras --group dev --group docs
 ```
 
-If `uv sync` fails because of an unresolvable optional extra (e.g. platform-gated `quark` wheels on Windows / Python 3.14), retry without `--all-extras`:
+If `uv sync` fails because of an unresolvable optional extra, retry without `--all-extras`:
 
 ```bash
 uv sync --group dev --group docs
