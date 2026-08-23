@@ -216,15 +216,11 @@ pip install unified-quantum[all]
 
 ## 弃用政策
 
-v0.0.15 建立了明确的弃用时间线：**所有在 `0.0.x` 中触发 `DeprecationWarning`
-的公共 API 将在 `0.1.0` 中移除或不再保证兼容性**。
-
-当前已弃用的 API 包括：
-
-- 所有 `*_circuit(circuit, ...)` in-place 形式 — 改用 fragment 形式
-
-详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。
-升级前请运行 `pytest -W error::DeprecationWarning` 清理所有弃用警告。
+v0.0.15 建立了明确的弃用时间线，**0.1.0 已按该政策移除全部在 `0.0.x`
+中触发 `DeprecationWarning` 的公共 API**。当前代码库中不存在已弃用
+但仍可用的 API；从 `0.0.x` 升级时请对照
+[0.1.0 迁移指南](../7_releases/migration_0.1.0.md) 修改调用点。
+政策框架本身详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。
 
 ## 开发者补充
 

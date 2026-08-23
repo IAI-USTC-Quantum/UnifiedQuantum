@@ -5,7 +5,6 @@ __all__ = ["thermal_state_circuit", "thermal_state_example"]
 import math
 
 from uniqc._error_hints import format_enriched_message
-from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc.circuit_builder import Circuit
 
 
@@ -30,42 +29,35 @@ def _build_thermal_fragment(
 
 
 def thermal_state_circuit(
-    first_arg=None,
+    n_qubits: int | None = None,
     beta: float = 1.0,
     qubits: list[int] | None = None,
-) -> Circuit | None:
-    r"""Build (or apply) a thermal-state preparation fragment for :math:`H=\sum_i Z_i`.
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Build a thermal-state preparation fragment for :math:`H=\sum_i Z_i`.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         c = thermal_state_circuit(3, beta=1.0)         # returns Circuit
-
-        # Legacy in-place style (deprecated):
-        c = Circuit(3)
-        thermal_state_circuit(c, beta=1.0)             # mutates c in place
 
     Each qubit is prepared in :math:`\sqrt{p_0}|0\rangle + \sqrt{p_1}|1\rangle`
     with :math:`p_0 = e^\beta / (e^\beta + e^{-\beta})`.
 
     Args:
-        first_arg: Either ``n_qubits: int`` (fragment) or ``circuit: Circuit``
-            (deprecated).
+        n_qubits: Number of qubits. May be ``None`` if ``qubits`` is given,
+            in which case it is inferred as ``max(qubits) + 1``.
         beta: Inverse temperature (must be non-negative).
         qubits: Qubit indices to use.
 
     Returns:
-        Fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+        A fresh :class:`Circuit` containing the preparation fragment.
     """
-    return dispatch_circuit_fragment(
-        name="thermal_state_circuit",
-        fragment_builder=_build_thermal_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-        extra_kwargs={"beta": beta},
-    )
+    if n_qubits is None:
+        if not qubits:
+            raise ValueError(
+                "thermal_state_circuit(...) requires either an integer n_qubits or a non-empty qubits list."
+            )
+        n_qubits = max(qubits) + 1
+    return _build_thermal_fragment(n_qubits=n_qubits, qubits=qubits, beta=beta)
 
 
 def thermal_state_example() -> Circuit:

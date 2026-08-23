@@ -6,8 +6,6 @@ the design notes in the project README):
 - ``qft_circuit(n_qubits, qubits=None, swaps=True) -> Circuit``
   is the canonical fragment-style API and returns a fresh
   :class:`uniqc.circuit_builder.qcircuit.Circuit`.
-- ``qft_circuit(circuit, qubits=...)`` is kept as a deprecated in-place
-  shim that emits :class:`DeprecationWarning`.
 """
 
 __all__ = ["qft_circuit"]
@@ -15,7 +13,6 @@ __all__ = ["qft_circuit"]
 import math
 
 from uniqc._error_hints import format_enriched_message
-from uniqc.algorithms._compat import dispatch_circuit_fragment
 from uniqc.circuit_builder import Circuit
 
 
@@ -50,46 +47,40 @@ def _build_qft_fragment(
     return fragment
 
 
-def qft_circuit(first_arg=None, qubits: list[int] | None = None, swaps: bool = True):
-    r"""Build (or apply) a Quantum Fourier Transform fragment.
-
-    Two calling conventions are supported:
+def qft_circuit(
+    n_qubits: int | None = None,
+    qubits: list[int] | None = None,
+    swaps: bool = True,
+) -> Circuit:
+    r"""Build a Quantum Fourier Transform fragment.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         qft = qft_circuit(n_qubits=3)              # returns a fresh Circuit
         qft = qft_circuit(3, qubits=[2, 3, 4])     # explicit qubit layout
-
-        # Legacy in-place style (deprecated, emits DeprecationWarning):
-        c = Circuit(3)
-        qft_circuit(c, qubits=[0, 1, 2])           # mutates c, returns None
 
     The QFT maps :math:`|j\rangle` to
     :math:`\frac{1}{\sqrt{N}} \sum_{k=0}^{N-1} e^{2\pi i jk / N} |k\rangle`.
 
     Args:
-        first_arg: Either an integer ``n_qubits`` (fragment mode) or a
-            :class:`Circuit` (deprecated in-place mode). May be ``None`` if
-            ``qubits`` is given.
+        n_qubits: Number of qubits. May be ``None`` if ``qubits`` is given,
+            in which case it is inferred as ``max(qubits) + 1``.
         qubits: Qubit indices to operate on. ``None`` defaults to
             ``range(n_qubits)``.
         swaps: Whether to append the SWAP layer that reverses qubit order
             so the output follows the standard big-endian convention.
 
     Returns:
-        A fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+        A fresh :class:`Circuit` containing the QFT fragment.
 
     Raises:
         ValueError: Fewer than 1 qubit specified.
     """
-    return dispatch_circuit_fragment(
-        name="qft_circuit",
-        fragment_builder=_build_qft_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-        extra_kwargs={"swaps": swaps},
-    )
+    if n_qubits is None:
+        if not qubits:
+            raise ValueError("qft_circuit(...) requires either an integer n_qubits or a non-empty qubits list.")
+        n_qubits = max(qubits) + 1
+    return _build_qft_fragment(n_qubits=n_qubits, qubits=qubits, swaps=swaps)
 
 
 def qft_example() -> Circuit:

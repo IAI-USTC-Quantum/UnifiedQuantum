@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from uniqc.algorithms.core.circuits import cluster_state, ghz_state, w_state
-from uniqc.circuit_builder import Circuit
 
 
 def _simulate_probs(circuit, n_qubits):
@@ -22,8 +21,7 @@ class TestGHZState:
 
     def test_ghz_3qubit(self):
         """GHZ(3) → p(000)≈0.5, p(111)≈0.5, other states≈0."""
-        c = Circuit()
-        ghz_state(c, qubits=[0, 1, 2])
+        c = ghz_state(3, qubits=[0, 1, 2])
         probs = _simulate_probs(c, 3)
 
         assert np.isclose(probs[0], 0.5, atol=0.05), f"p(000)={probs[0]}"
@@ -33,8 +31,7 @@ class TestGHZState:
 
     def test_ghz_2qubit_bell_state(self):
         """2-qubit GHZ = Bell state: p(00)≈0.5, p(11)≈0.5."""
-        c = Circuit()
-        ghz_state(c, qubits=[0, 1])
+        c = ghz_state(2, qubits=[0, 1])
         probs = _simulate_probs(c, 2)
 
         assert np.isclose(probs[0], 0.5, atol=0.05)
@@ -44,14 +41,12 @@ class TestGHZState:
 
     def test_ghz_single_qubit_raises(self):
         """GHZ with 1 qubit should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError, match="at least 2"):
-            ghz_state(c, qubits=[0])
+            ghz_state(1, qubits=[0])
 
     def test_ghz_custom_qubits(self):
         """GHZ on custom qubit indices should work."""
-        c = Circuit()
-        ghz_state(c, qubits=[1, 2, 3])
+        c = ghz_state(4, qubits=[1, 2, 3])
         probs = _simulate_probs(c, 4)
         # |0000⟩ and |1110⟩ in the 4-qubit space
         assert probs[0] > 0.1  # |0000⟩
@@ -63,8 +58,7 @@ class TestWState:
 
     def test_w_3qubit(self):
         """W(3) → p(100)≈1/3, p(010)≈1/3, p(001)≈1/3."""
-        c = Circuit()
-        w_state(c, qubits=[0, 1, 2])
+        c = w_state(3, qubits=[0, 1, 2])
         probs = _simulate_probs(c, 3)
 
         expected = 1.0 / 3.0
@@ -76,8 +70,7 @@ class TestWState:
 
     def test_w_2qubit(self):
         """2-qubit W = (|10⟩+|01⟩)/√2: p≈0.5 each."""
-        c = Circuit()
-        w_state(c, qubits=[0, 1])
+        c = w_state(2, qubits=[0, 1])
         probs = _simulate_probs(c, 2)
 
         assert np.isclose(probs[2], 0.5, atol=0.05), f"p(10)={probs[2]}"
@@ -87,9 +80,8 @@ class TestWState:
 
     def test_w_single_qubit_raises(self):
         """W with 1 qubit should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError, match="at least 2"):
-            w_state(c, qubits=[0])
+            w_state(1, qubits=[0])
 
 
 class TestClusterState:
@@ -97,8 +89,7 @@ class TestClusterState:
 
     def test_cluster_linear_chain(self):
         """Linear chain cluster state should produce non-zero probabilities."""
-        c = Circuit()
-        cluster_state(c, qubits=[0, 1, 2, 3])
+        c = cluster_state(4, qubits=[0, 1, 2, 3])
         probs = _simulate_probs(c, 4)
 
         # All basis states should have non-zero probability (superposition)
@@ -110,8 +101,7 @@ class TestClusterState:
 
     def test_cluster_custom_edges(self):
         """Custom edges (square) should produce a valid state."""
-        c = Circuit()
-        cluster_state(c, qubits=[0, 1, 2, 3], edges=[(0, 1), (1, 2), (2, 3), (3, 0)])
+        c = cluster_state(4, qubits=[0, 1, 2, 3], edges=[(0, 1), (1, 2), (2, 3), (3, 0)])
         probs = _simulate_probs(c, 4)
 
         assert np.isclose(sum(probs), 1.0, atol=1e-6)
@@ -120,8 +110,7 @@ class TestClusterState:
 
     def test_cluster_single_qubit(self):
         """Single qubit cluster = just Hadamard → p(0)=p(1)=0.5."""
-        c = Circuit()
-        cluster_state(c, qubits=[0])
+        c = cluster_state(1, qubits=[0])
         probs = _simulate_probs(c, 1)
 
         assert np.isclose(probs[0], 0.5, atol=0.01)
@@ -129,6 +118,5 @@ class TestClusterState:
 
     def test_cluster_edge_out_of_range_raises(self):
         """Edge index out of range should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError, match="out of range"):
-            cluster_state(c, qubits=[0, 1, 2], edges=[(0, 5)])
+            cluster_state(3, qubits=[0, 1, 2], edges=[(0, 5)])

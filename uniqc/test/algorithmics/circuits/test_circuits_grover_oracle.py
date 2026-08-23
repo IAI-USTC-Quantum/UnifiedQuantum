@@ -30,11 +30,12 @@ class TestGroverOracle:
         c.h(0)
         c.h(1)
         c.h(2)
-        anc = grover_oracle(c, marked_state=0, qubits=[0, 1, 2])
+        oracle = grover_oracle(marked_state=0, qubits=[0, 1, 2])
+        c.add_circuit(oracle)
         # Circuit should have gates beyond the initial Hadamards
         assert len(c.opcode_list) > 3
-        assert isinstance(anc, int)
-        assert anc == 3  # max(qubits) + 1
+        # Ancilla defaults to max(qubits) + 1
+        assert 3 in oracle.used_qubit_list
 
     def test_oracle_marked_state_five(self):
         """Oracle with marked_state=5 (binary 101) should generate correctly."""
@@ -42,30 +43,30 @@ class TestGroverOracle:
         c.h(0)
         c.h(1)
         c.h(2)
-        anc = grover_oracle(c, marked_state=5, qubits=[0, 1, 2])
+        oracle = grover_oracle(marked_state=5, qubits=[0, 1, 2])
+        c.add_circuit(oracle)
         assert len(c.opcode_list) > 3
-        assert anc == 3
+        assert 3 in oracle.used_qubit_list
 
     def test_oracle_negative_marked_state_raises(self):
         """Negative marked_state should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError, match="non-negative"):
-            grover_oracle(c, marked_state=-1)
+            grover_oracle(marked_state=-1)
 
     def test_oracle_marked_state_exceeds_qubits_raises(self):
         """marked_state exceeding qubit capacity should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError, match="bits"):
-            grover_oracle(c, marked_state=8, qubits=[0, 1, 2])
+            grover_oracle(marked_state=8, qubits=[0, 1, 2])
 
     def test_oracle_one_qubit(self):
         """1-qubit oracle should work for marked_state=0 and marked_state=1."""
         for marked in [0, 1]:
             c = Circuit()
             c.h(0)
-            anc = grover_oracle(c, marked_state=marked, qubits=[0])
+            oracle = grover_oracle(marked_state=marked, qubits=[0])
+            c.add_circuit(oracle)
             assert len(c.opcode_list) > 1
-            assert anc == 1
+            assert 1 in oracle.used_qubit_list
 
 
 class TestGroverDiffusion:
@@ -73,20 +74,17 @@ class TestGroverDiffusion:
 
     def test_diffusion_nonempty(self):
         """Diffusion operator should produce a non-empty circuit."""
-        c = Circuit()
-        grover_diffusion(c, qubits=[0, 1, 2])
+        c = grover_diffusion(qubits=[0, 1, 2])
         assert len(c.opcode_list) > 0
 
     def test_diffusion_single_qubit(self):
         """Single-qubit diffusion should work without ancilla."""
-        c = Circuit()
-        grover_diffusion(c, qubits=[0])
+        c = grover_diffusion(qubits=[0])
         assert len(c.opcode_list) > 0
 
     def test_diffusion_default_qubits(self):
         """Default qubits should be [0, 1]."""
-        c = Circuit()
-        grover_diffusion(c)
+        c = grover_diffusion()
         assert len(c.opcode_list) > 0
 
 
@@ -105,8 +103,8 @@ class TestGroverFullSearch:
             c.h(i)
 
         # One Grover iteration: oracle + diffusion
-        grover_oracle(c, marked_state=marked, qubits=list(range(n)))
-        grover_diffusion(c, qubits=list(range(n)))
+        c.add_circuit(grover_oracle(marked_state=marked, qubits=list(range(n))))
+        c.add_circuit(grover_diffusion(qubits=list(range(n))))
 
         # Simulate (ignore ancilla, look at data qubits)
         prob_dict = _simulate_probs(c, total_qubits)
@@ -131,8 +129,8 @@ class TestGroverFullSearch:
         c = Circuit()
         for i in range(n):
             c.h(i)
-        grover_oracle(c, marked_state=marked, qubits=list(range(n)))
-        grover_diffusion(c, qubits=list(range(n)))
+        c.add_circuit(grover_oracle(marked_state=marked, qubits=list(range(n))))
+        c.add_circuit(grover_diffusion(qubits=list(range(n))))
 
         prob_dict = _simulate_probs(c, total_qubits)
         data_probs = {}
@@ -159,12 +157,11 @@ class TestGroverFullSearch:
             c.h(i)
 
         # Three Grover iterations (sin²(7θ) ≈ 0.95 for N=32, 1 marked state).
-        anc = grover_oracle(c, marked_state=marked, qubits=list(range(n)))
-        grover_diffusion(c, qubits=list(range(n)))
-        grover_oracle(c, marked_state=marked, qubits=list(range(n)), ancilla=anc)
-        grover_diffusion(c, qubits=list(range(n)))
-        grover_oracle(c, marked_state=marked, qubits=list(range(n)), ancilla=anc)
-        grover_diffusion(c, qubits=list(range(n)))
+        oracle = grover_oracle(marked_state=marked, qubits=list(range(n)))
+        diffusion = grover_diffusion(qubits=list(range(n)))
+        for _ in range(3):
+            c.add_circuit(oracle)
+            c.add_circuit(diffusion)
 
         total_qubits = c.qubit_num  # auto-includes workspace qubits
         prob_dict = _simulate_probs(c, total_qubits)
@@ -178,19 +175,3 @@ class TestGroverFullSearch:
         assert data_probs.get(marked, 0.0) > 0.8, (
             f"Grover 5-qubit: P(marked=13) = {data_probs.get(marked, 0.0):.4f}, expected > 0.8"
         )
-
-
-class TestGroverDiffusionDeprecation:
-    """Tests for the deprecated ancilla parameter in grover_diffusion."""
-
-    def test_ancilla_deprecation_warning(self):
-        """Passing ancilla to grover_diffusion should emit a DeprecationWarning."""
-        c = Circuit()
-        with pytest.warns(DeprecationWarning, match="ancilla"):
-            grover_diffusion(c, qubits=[0, 1, 2], ancilla=3)
-
-    def test_no_warning_when_ancilla_none(self):
-        """grover_diffusion(circuit, ...) emits the new in-place DeprecationWarning."""
-        c = Circuit()
-        with pytest.warns(DeprecationWarning, match="in-place form"):
-            grover_diffusion(c, qubits=[0, 1, 2])

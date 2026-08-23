@@ -9,7 +9,6 @@ Usage:
     python dicke_state.py [--n-qubits N] [--k K] [--shots N]
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -30,7 +29,7 @@ from uniqc import dicke_state_circuit
 def run_dicke(n_qubits, k, shots):
     """Run Dicke state preparation and verify probability distribution."""
     c = Circuit(n_qubits)
-    dicke_state_circuit(c, k=k)
+    c.add_circuit(dicke_state_circuit(n_qubits, k=k))
     c.measure(list(range(n_qubits)))
 
     sim = Simulator()

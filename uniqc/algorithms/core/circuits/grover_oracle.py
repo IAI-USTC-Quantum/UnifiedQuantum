@@ -5,8 +5,8 @@ Provides reusable building blocks for Grover's quantum search algorithm:
 * :func:`grover_oracle` — phase-flip oracle for a marked computational basis state.
 * :func:`grover_diffusion` — Grover diffusion (amplitude amplification) operator.
 
-Both functions operate on a :class:`~uniqc.circuit_builder.Circuit` object
-passed in by the caller, following the standard circuit-building convention of
+Both functions return a fresh :class:`~uniqc.circuit_builder.Circuit` fragment,
+following the standard circuit-fragment convention of
 ``uniqc.algorithms.core.circuits``.
 
 References:
@@ -155,64 +155,23 @@ def _build_grover_oracle_fragment(
 
 
 def grover_oracle(
-    *args,
     marked_state: int | None = None,
+    *,
     qubits: list[int] | None = None,
     ancilla: int | None = None,
     n_qubits: int | None = None,
-):
-    r"""Construct a phase-flip oracle for a marked basis state.
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Construct a phase-flip oracle fragment for a marked basis state.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         oracle = grover_oracle(marked_state=5, qubits=[0, 1, 2])  # -> Circuit
-
-        # Legacy in-place (deprecated):
-        c = Circuit()
-        anc = grover_oracle(c, marked_state=5, qubits=[0, 1, 2])  # mutates, returns ancilla idx
 
     See module docstring for the algorithm.
     """
-    # Fragment-style entry: positional int marked_state OR no positional + kw
-    if len(args) == 0 or (len(args) >= 1 and isinstance(args[0], int)):
-        if len(args) >= 1:
-            marked_state = args[0]
-        if marked_state is None:
-            raise TypeError(format_enriched_message("grover_oracle requires marked_state", "circuit_validation"))
-        return _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
-
-    # Legacy in-place: first arg is a Circuit
-    circuit_in = args[0]
-    if not isinstance(circuit_in, Circuit):
-        raise TypeError(
-            format_enriched_message(
-                "grover_oracle: first positional arg must be int (marked_state) or Circuit (deprecated in-place form)",
-                "circuit_validation",
-            )
-        )
-    if len(args) >= 2 and marked_state is None:
-        marked_state = args[1]
     if marked_state is None:
         raise TypeError(format_enriched_message("grover_oracle requires marked_state", "circuit_validation"))
-    from uniqc._deprecation import warn_removed_in_0_1_0
-
-    warn_removed_in_0_1_0(
-        "grover_oracle(circuit, marked_state, ...) (in-place form)",
-        replacement="grover_oracle(marked_state, qubits=...) with add_circuit()",
-        stacklevel=2,
-    )
-    fragment = _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
-    circuit_in.add_circuit(fragment)
-    # Return ancilla index for backward-compat
-    if qubits is None:
-        n_bits = max(1, marked_state.bit_length())
-        qubits = list(range(n_bits))
-    if ancilla is None:
-        ancilla = max(qubits) + 1
-    return ancilla
+    return _build_grover_oracle_fragment(marked_state, n_qubits=n_qubits, qubits=qubits, ancilla=ancilla)
 
 
 def _build_grover_diffusion_fragment(
@@ -242,55 +201,18 @@ def _build_grover_diffusion_fragment(
 
 
 def grover_diffusion(
-    *args,
-    qubits: list[int] | None = None,
-    ancilla: int | None = None,
     n_qubits: int | None = None,
-):
-    r"""Grover diffusion (amplitude amplification) operator.
-
-    Two calling conventions:
+    *,
+    qubits: list[int] | None = None,
+) -> Circuit:
+    r"""Grover diffusion (amplitude amplification) operator fragment.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         diff = grover_diffusion(qubits=[0, 1, 2])     # -> Circuit
         diff = grover_diffusion(3)                    # n_qubits positional
-
-        # Legacy in-place (deprecated):
-        c = Circuit()
-        grover_diffusion(c, qubits=[0, 1, 2])
     """
-    if ancilla is not None:
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "The 'ancilla' argument of grover_diffusion()",
-            detail="It is unused; remove it from your call site",
-            stacklevel=2,
-        )
-    if len(args) == 0:
-        return _build_grover_diffusion_fragment(qubits=qubits, n_qubits=n_qubits)
-    first = args[0]
-    if isinstance(first, int):
-        return _build_grover_diffusion_fragment(qubits=qubits, n_qubits=first)
-    if isinstance(first, Circuit):
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "grover_diffusion(circuit, ...) (in-place form)",
-            replacement="grover_diffusion(qubits=...) with add_circuit()",
-            stacklevel=2,
-        )
-        fragment = _build_grover_diffusion_fragment(qubits=qubits, n_qubits=n_qubits)
-        first.add_circuit(fragment)
-        return None
-    raise TypeError(
-        format_enriched_message(
-            "grover_diffusion: first positional arg must be int (n_qubits) or Circuit (deprecated in-place form)",
-            "circuit_validation",
-        )
-    )
+    return _build_grover_diffusion_fragment(qubits=qubits, n_qubits=n_qubits)
 
 
 def grover_oracle_example() -> Circuit:

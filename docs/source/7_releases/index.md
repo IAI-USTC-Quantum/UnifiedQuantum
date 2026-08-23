@@ -33,11 +33,13 @@
 :maxdepth: 1
 
 deprecation_policy
+migration_0.1.0
 ```
 
 [弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md) 详细说明：所有在 ``0.0.x``
 中通过 ``DeprecationWarning`` 标记的公共 API，将在 ``0.1.0`` 中移除或不再保证兼容性。
-跨越 ``0.0.x → 0.1.0`` 升级前，请清理所有 ``DeprecationWarning``。
+**0.1.0 已按该政策完成全部移除**，逐项迁移对照见
+[0.1.0 迁移指南](migration_0.1.0.md)。
 
 ## 发布验证报告
 
@@ -137,11 +139,11 @@ v0.0.15 重点更新：**原生 PyTorch 参数集成**、**OriginIR-ext 超集�
   芯片缓存路径（`dummy:originq:*`）在 py3.14 上仍然可用，仅实时云端连接需要
   对应 SDK。详见 [安装说明 - Python 3.14 注意事项](../0_quickstart/installation.md)。
 - **你是否在用已弃用的 API。** 本版建立了项目级弃用政策：所有在 `0.0.x` 中触发
-  `DeprecationWarning` 的公共 API **将在 `0.1.0` 中移除**。当前弃用清单包括：
-  `simulator.get_backend()`、`IBMAdapter`、以及所有
-  `*_circuit(circuit, ...)` in-place 形式。所有弃用警告消息现在都包含
-  字面量 `"uniqc 0.1.0"`，方便 `grep` 和 `pytest.warns` 过滤。
-  详见 [弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md)。
+  `DeprecationWarning` 的公共 API **已在 `0.1.0` 中移除**（包括
+  `simulator.get_backend()`、`IBMAdapter`、Quafu 平台、平台 task id 回退，
+  以及所有 `*_circuit(circuit, ...)` in-place 形式）。迁移对照见
+  [0.1.0 迁移指南](migration_0.1.0.md)；政策框架详见
+  [弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md)。
 - **你是否在用 `Circuit` 的参数化功能。** 本版新增 `param_map` / `param_dict` /
   `has_param` / `set_param_last`，使 `torch.Tensor` 参数成为一等公民——
   通过 `add_gate` 传入的张量参数会自动注册为 `nn.Parameter` 并可通过名称访问。

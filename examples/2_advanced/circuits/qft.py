@@ -15,7 +15,6 @@ References:
     Quantum Information." Cambridge University Press, Section 5.1.
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -48,7 +47,7 @@ def run_qft(n_qubits: int, input_state: int, shots: int = 4096) -> dict:
     basis_state(c, state=input_state, qubits=list(range(n_qubits)))
 
     # Apply QFT
-    qft_circuit(c, qubits=list(range(n_qubits)), swaps=True)
+    c.add_circuit(qft_circuit(n_qubits, qubits=list(range(n_qubits)), swaps=True))
 
     # Measure all qubits
     c.measure(*list(range(n_qubits)))

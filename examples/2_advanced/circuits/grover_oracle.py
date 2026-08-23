@@ -7,7 +7,6 @@ Usage:
     python examples/circuits/grover_oracle.py [--n-qubits N] [--marked-state STATE] [--shots N]
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -33,10 +32,11 @@ def run_grover(n_qubits: int, marked_state: int, shots: int = 4096):
     # Optimal iterations
     n_iter = max(1, min(int(math.pi / 4 * math.sqrt(2**n_qubits)), 10))
 
-    ancilla = None
+    oracle = grover_oracle(marked_state=marked_state, qubits=data_qubits)
+    diffusion = grover_diffusion(qubits=data_qubits)
     for _ in range(n_iter):
-        ancilla = grover_oracle(c, marked_state=marked_state, qubits=data_qubits, ancilla=ancilla)
-        grover_diffusion(c, qubits=data_qubits, ancilla=ancilla)
+        c.add_circuit(oracle)
+        c.add_circuit(diffusion)
 
     c.measure(*data_qubits)
 

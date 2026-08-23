@@ -49,8 +49,8 @@ c = qft_circuit(3)              # 3-qubit QFT
 c = ghz_state(4)                # 4-qubit GHZ
 ```
 
-The legacy in-place forms (e.g. `qft_circuit(circuit, qubits=...)`) are
-kept as deprecated dispatch and emit a `DeprecationWarning`.
+All building blocks are fragment-only: they always return a fresh `Circuit`.
+To place a fragment inside a larger circuit, use `circuit.add_circuit(fragment)`.
 
 ## 3. Oracular algorithms — input a `Circuit`
 

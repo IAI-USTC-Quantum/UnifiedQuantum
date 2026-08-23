@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from uniqc.algorithms.core.circuits import thermal_state_circuit
-from uniqc.circuit_builder import Circuit
 
 
 class TestThermalStateCircuit:
@@ -22,8 +21,7 @@ class TestThermalStateCircuit:
 
     def test_beta_zero_maximally_mixed(self):
         """beta=0 → maximally mixed state: p(0) ≈ p(1) ≈ 0.5."""
-        c = Circuit()
-        thermal_state_circuit(c, beta=0.0, qubits=[0])
+        c = thermal_state_circuit(1, beta=0.0, qubits=[0])
         probs = self._simulate_1qubit(c)
 
         assert np.isclose(probs[0], 0.5, atol=1e-6), f"p(0)={probs[0]}"
@@ -31,16 +29,14 @@ class TestThermalStateCircuit:
 
     def test_beta_large_ground_state(self):
         """beta→∞ → ground state |0⟩: p(0) ≈ 1."""
-        c = Circuit()
-        thermal_state_circuit(c, beta=100.0, qubits=[0])
+        c = thermal_state_circuit(1, beta=100.0, qubits=[0])
         probs = self._simulate_1qubit(c)
 
         assert np.isclose(probs[0], 1.0, atol=1e-3), f"p(0)={probs[0]}"
 
     def test_beta_one_intermediate(self):
         """beta=1 should give p(0) > p(1) but p(1) > 0."""
-        c = Circuit()
-        thermal_state_circuit(c, beta=1.0, qubits=[0])
+        c = thermal_state_circuit(1, beta=1.0, qubits=[0])
         probs = self._simulate_1qubit(c)
 
         exp_beta = math.exp(1.0)
@@ -50,8 +46,7 @@ class TestThermalStateCircuit:
 
     def test_custom_qubits(self):
         """Custom qubits parameter should apply rotation only to specified qubits."""
-        c = Circuit()
-        thermal_state_circuit(c, beta=1.0, qubits=[2, 3])
+        c = thermal_state_circuit(4, beta=1.0, qubits=[2, 3])
         # Should record qubits 2 and 3
         assert 2 in c.used_qubit_list
         assert 3 in c.used_qubit_list
@@ -62,14 +57,12 @@ class TestThermalStateCircuit:
 
     def test_beta_negative_raises(self):
         """beta < 0 should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError):
-            thermal_state_circuit(c, beta=-0.1)
+            thermal_state_circuit(1, beta=-0.1)
 
     def test_beta_zero_analytical(self):
         """beta=0 rotation angle: theta = 2*arccos(sqrt(0.5)) = pi/2."""
-        c = Circuit()
-        thermal_state_circuit(c, beta=0.0, qubits=[0])
+        c = thermal_state_circuit(1, beta=0.0, qubits=[0])
         # Check the rotation angle is pi/2
         for op in c.opcode_list:
             if op[0] == "RY":

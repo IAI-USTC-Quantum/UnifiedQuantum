@@ -86,6 +86,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (``TaskStore.find_uniqc_id_by_platform_id``) stays. The task-id
   indirection tests moved out of the network-gated ``uniqc/test/cloud/``
   directory and now run in the default test suite.
+- **In-place forms of the 12 algorithm building blocks removed**, as
+  announced in the deprecation policy. ``qft_circuit``,
+  ``deutsch_jozsa_circuit``, ``dicke_state_circuit``,
+  ``thermal_state_circuit``, ``cluster_state``, ``ghz_state``, ``w_state``,
+  ``amplitude_estimation_circuit``, ``grover_oracle``, ``grover_diffusion``,
+  ``grover_operator`` and ``vqd_circuit`` no longer accept a ``Circuit`` as
+  their first argument for in-place mutation — they are fragment-only
+  (``f(n_qubits, ...) -> Circuit``); compose with
+  ``circuit.add_circuit(fragment)`` instead. The no-op ``ancilla`` keyword
+  of ``grover_diffusion()`` is removed as well, and the internal
+  dual-mode dispatch helper ``uniqc.algorithms._compat`` is gone.
 
 ### Fixed
 

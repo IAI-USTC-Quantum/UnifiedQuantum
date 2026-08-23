@@ -14,7 +14,6 @@ References:
     quantum computation." Proceedings of the Royal Society of London A.
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -47,8 +46,7 @@ def run_deutsch_jozsa(
     data_qubits = list(range(n_qubits))
     oracle = deutsch_jozsa_oracle(qubits=data_qubits, balanced=balanced)
 
-    c = Circuit()
-    deutsch_jozsa_circuit(c, oracle, qubits=data_qubits, ancilla=n_qubits)
+    c = deutsch_jozsa_circuit(oracle, qubits=data_qubits, ancilla=n_qubits)
 
     sim = Simulator(least_qubit_remapping=False)
     result = sim.simulate_shots(c.qasm, shots=shots)

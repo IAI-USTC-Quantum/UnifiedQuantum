@@ -106,51 +106,20 @@ def _multi_controlled_x(
 
 
 def grover_operator(
-    *args,
     oracle: Circuit | None = None,
+    *,
     qubits: list[int] | None = None,
     state_prep: Circuit | None = None,
-):
-    r"""Build (or apply) one Grover iteration ``G = A · S₀ · A† · S_f``.
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Build one Grover iteration fragment ``G = A · S₀ · A† · S_f``.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         g = grover_operator(oracle, qubits=[0, 1, 2])  # -> Circuit
-
-        # Legacy in-place (deprecated):
-        c = Circuit()
-        grover_operator(c, oracle, qubits=[0, 1, 2])   # mutates c
     """
-    # Resolve dispatch
-    if len(args) == 0:
-        if oracle is None:
-            raise TypeError(format_enriched_message("grover_operator requires an oracle Circuit", "circuit_validation"))
-        return _build_grover_operator_fragment(oracle, qubits, state_prep)
-
-    first = args[0]
-    if isinstance(first, Circuit) and len(args) == 1 and oracle is None:
-        # Fragment style: first arg is the oracle
-        return _build_grover_operator_fragment(first, qubits, state_prep)
-
-    if isinstance(first, Circuit) and (len(args) >= 2 or oracle is not None):
-        # Legacy: first = circuit, second = oracle
-        circuit_in = first
-        ora = args[1] if len(args) >= 2 else oracle
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "grover_operator(circuit, oracle, qubits=...) (in-place form)",
-            replacement="grover_operator(oracle, qubits=...) with add_circuit()",
-            stacklevel=2,
-        )
-        fragment = _build_grover_operator_fragment(ora, qubits, state_prep)
-        circuit_in.add_circuit(fragment)
-        return None
-
-    raise TypeError(format_enriched_message("grover_operator: unrecognised call signature", "circuit_validation"))
+    if oracle is None:
+        raise TypeError(format_enriched_message("grover_operator requires an oracle Circuit", "circuit_validation"))
+    return _build_grover_operator_fragment(oracle, qubits, state_prep)
 
 
 def _build_grover_operator_fragment(
@@ -185,60 +154,28 @@ def _build_grover_operator_fragment(
 
 
 def amplitude_estimation_circuit(
-    *args,
     oracle: Circuit | None = None,
+    *,
     qubits: list[int] | None = None,
     eval_qubits: list[int] | None = None,
     state_prep: Circuit | None = None,
-):
-    r"""Build (or apply) Quantum Amplitude Estimation (QAE).
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Build a Quantum Amplitude Estimation (QAE) circuit fragment.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         c = amplitude_estimation_circuit(
             oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
         )  # -> Circuit
 
-        # Legacy in-place (deprecated):
-        c = Circuit()
-        amplitude_estimation_circuit(
-            c, oracle, qubits=[3, 4], eval_qubits=[0, 1, 2]
-        )
-
     The optional ``state_prep`` Circuit replaces the default ``H^{⊗n}``
     state preparation on the search register.
     """
-    if len(args) == 0:
-        if oracle is None:
-            raise TypeError(
-                format_enriched_message("amplitude_estimation_circuit requires an oracle", "circuit_validation")
-            )
-        return _build_qae_fragment(oracle, qubits, eval_qubits, state_prep)
-
-    first = args[0]
-    if isinstance(first, Circuit) and len(args) == 1 and oracle is None:
-        return _build_qae_fragment(first, qubits, eval_qubits, state_prep)
-
-    if isinstance(first, Circuit) and (len(args) >= 2 or oracle is not None):
-        circuit_in = first
-        ora = args[1] if len(args) >= 2 else oracle
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "amplitude_estimation_circuit(circuit, oracle, ...) (in-place form)",
-            replacement="amplitude_estimation_circuit(oracle, ...) with add_circuit()",
-            stacklevel=2,
+    if oracle is None:
+        raise TypeError(
+            format_enriched_message("amplitude_estimation_circuit requires an oracle", "circuit_validation")
         )
-        fragment = _build_qae_fragment(ora, qubits, eval_qubits, state_prep)
-        circuit_in.add_circuit(fragment)
-        return None
-
-    raise TypeError(
-        format_enriched_message("amplitude_estimation_circuit: unrecognised call signature", "circuit_validation")
-    )
+    return _build_qae_fragment(oracle, qubits, eval_qubits, state_prep)
 
 
 def _build_qae_fragment(

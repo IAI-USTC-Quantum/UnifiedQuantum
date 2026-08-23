@@ -21,7 +21,6 @@ References:
       Physical Review Letters, 86(5), 910.
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -49,11 +48,11 @@ def run_state(state_type: str, n_qubits: int, shots: int = 4096) -> dict:
     c = Circuit(n_qubits)
 
     if state_type == "ghz":
-        ghz_state(c)
+        c.add_circuit(ghz_state(n_qubits))
     elif state_type == "w":
-        w_state(c)
+        c.add_circuit(w_state(n_qubits))
     elif state_type == "cluster":
-        cluster_state(c)
+        c.add_circuit(cluster_state(n_qubits))
     else:
         raise ValueError(f"Unknown state type: {state_type}")
 

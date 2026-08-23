@@ -88,41 +88,32 @@ def _build_dicke_fragment(
 
 
 def dicke_state_circuit(
-    first_arg=None,
+    n_qubits: int | None = None,
     k: int = 1,
     qubits: list[int] | None = None,
-) -> Circuit | None:
-    r"""Build (or apply) a Dicke-state preparation fragment :math:`|D(n,k)\rangle`.
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Build a Dicke-state preparation fragment :math:`|D(n,k)\rangle`.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         c = dicke_state_circuit(4, k=2)                  # returns Circuit
 
-        # Legacy in-place style (deprecated):
-        c = Circuit()
-        dicke_state_circuit(c, k=2, qubits=[0, 1, 2, 3])
-
     Args:
-        first_arg: Either ``n_qubits: int`` (fragment) or ``circuit: Circuit``
-            (deprecated).
+        n_qubits: Number of qubits. May be ``None`` if ``qubits`` is given,
+            in which case it is inferred as ``max(qubits) + 1``.
         k: Number of excitations.
         qubits: Qubit indices to use.
 
     Returns:
-        Fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+        A fresh :class:`Circuit` containing the preparation fragment.
     """
-    from uniqc.algorithms._compat import dispatch_circuit_fragment
-
-    return dispatch_circuit_fragment(
-        name="dicke_state_circuit",
-        fragment_builder=_build_dicke_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-        extra_kwargs={"k": k},
-    )
+    if n_qubits is None:
+        if not qubits:
+            raise ValueError(
+                "dicke_state_circuit(...) requires either an integer n_qubits or a non-empty qubits list."
+            )
+        n_qubits = max(qubits) + 1
+    return _build_dicke_fragment(n_qubits=n_qubits, qubits=qubits, k=k)
 
 
 def dicke_state_example() -> Circuit:
