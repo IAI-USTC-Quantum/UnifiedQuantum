@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **C++ simulator split into a standalone package**: the `UniqcCpp` kernel
   now lives in its own repository
   ([IAI-USTC-Quantum/uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator))
-  and is consumed as the PyPI dependency ``uniqc-cppsimulator>=1.0,<2``.
+  and is consumed as the PyPI dependency ``uniqc-cppsimulator>=1.0.1,<2``
+  (the ``1.0.1`` floor pulls in the fix for the two-qubit depolarizing
+  channel freezing its probability at the first call in a process).
   The import name ``uniqc_cpp`` is unchanged, so all Python-side usage keeps
   working. The main package is now published as a pure-Python wheel; building
   from source no longer requires CMake or a C++ toolchain. Tests that
