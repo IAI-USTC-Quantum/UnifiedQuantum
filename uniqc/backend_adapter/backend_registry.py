@@ -255,6 +255,7 @@ def _normalise_tianyan(raw: list[dict[str, Any]]) -> list[BackendInfo]:
                     "machine_id": entry.get("machine_id", ""),
                     "price": entry.get("price"),
                     "raw_status": entry.get("status", ""),
+                    "num_qubits_source": entry.get("num_qubits_source", "machine_name"),
                 },
             )
         )

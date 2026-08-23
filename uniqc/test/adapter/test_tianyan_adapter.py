@@ -299,7 +299,9 @@ class TestTianyanBackends:
         hw = by_name["tianyan176"]
         assert hw["available"] is True
         assert hw["is_simulator"] is False
+        # download_config not staged -> falls back to the machine-name digits.
         assert hw["num_qubits"] == 176
+        assert hw["num_qubits_source"] == "machine_name"
 
         offline = by_name["tianyan504"]
         assert offline["available"] is False
@@ -307,6 +309,26 @@ class TestTianyanBackends:
         # Simulators are always present, even when the API omits them.
         assert by_name["tianyan_sw"]["is_simulator"] is True
         assert by_name["tianyan_sw"]["available"] is True
+
+    def test_list_backends_prefers_live_config_qubit_count(self, adapter, fake_cqlib):
+        fake_cqlib.STATE["download_config"] = _FAKE_MACHINE_CONFIG
+        backends = adapter.list_backends()
+        by_name = {b["name"]: b for b in backends}
+
+        hw = by_name["tianyan176"]
+        assert hw["num_qubits"] == 3  # len(_FAKE_MACHINE_CONFIG overview qubits)
+        assert hw["num_qubits_source"] == "live_config"
+
+        # Offline machines never attempt the live lookup.
+        assert by_name["tianyan504"]["num_qubits"] == 504
+        assert by_name["tianyan504"]["num_qubits_source"] == "machine_name"
+
+    def test_list_backends_falls_back_when_live_config_unusable(self, adapter, fake_cqlib):
+        fake_cqlib.STATE["download_config"] = {"unexpected": "shape"}
+        backends = adapter.list_backends()
+        by_name = {b["name"]: b for b in backends}
+        assert by_name["tianyan176"]["num_qubits"] == 176
+        assert by_name["tianyan176"]["num_qubits_source"] == "machine_name"
 
     def test_is_available_with_sdk_and_credentials(self, adapter):
         assert adapter.is_available() is True

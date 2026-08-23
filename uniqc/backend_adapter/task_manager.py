@@ -654,15 +654,15 @@ def _metadata_with_circuit(circuit: Circuit, metadata: dict | None) -> dict:
 
 
 def _enrich_backend_info_from_chip_cache(platform, entry):
-    """Fill in missing topology from the local chip cache, if available.
+    """Fill in missing topology / live qubit count from the chip cache.
 
     Discovery payloads for some platforms (e.g. TianYan, LogicalQubit) carry
     no coupling map, while the chip characterization cache
     (``~/.uniqc/backend/chips/``) does. Compilation needs a topology, so
-    bridge the two caches here.
+    bridge the two caches here. Likewise, a discovery-side ``num_qubits``
+    derived from the machine *name* (TianYan) is corrected from the chip
+    cache's live data when the two disagree.
     """
-    if entry.topology:
-        return entry
     try:
         from uniqc.cli.chip_cache import get_chip
     except ImportError:
@@ -671,13 +671,33 @@ def _enrich_backend_info_from_chip_cache(platform, entry):
         chip = get_chip(platform, entry.name)
     except Exception:
         return entry
-    if chip is None or not chip.connectivity:
+    if chip is None:
         return entry
+
     import dataclasses
 
     extra = dict(entry.extra)
-    extra.setdefault("_uniqc_topology_source", "chip_cache")
-    return dataclasses.replace(entry, topology=list(chip.connectivity), extra=extra)
+    topology = entry.topology
+    num_qubits = entry.num_qubits
+
+    if not topology and chip.connectivity:
+        topology = list(chip.connectivity)
+        extra.setdefault("_uniqc_topology_source", "chip_cache")
+
+    if chip.available_qubits:
+        # Only correct counts that are not live-sourced: name-derived
+        # (TianYan) or unknown/zero. Never clobber a count the platform
+        # reported live at discovery time.
+        name_derived = extra.get("num_qubits_source") == "machine_name"
+        if name_derived or num_qubits == 0:
+            live_qubits = max(chip.available_qubits) + 1
+            if live_qubits != num_qubits:
+                num_qubits = live_qubits
+                extra.setdefault("_uniqc_num_qubits_source", "chip_cache")
+
+    if topology is entry.topology and num_qubits == entry.num_qubits:
+        return entry
+    return dataclasses.replace(entry, topology=topology, num_qubits=num_qubits, extra=extra)
 
 
 def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):

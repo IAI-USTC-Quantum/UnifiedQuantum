@@ -100,6 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **TianYan discovery reported the model name as the qubit count**:
+  ``tianyan176`` was listed with 176 qubits while only 66 are online (and
+  ``tianyan-294`` in fact has 107). ``list_backends`` now makes a
+  best-effort authenticated ``download_config`` call per online hardware
+  machine and records ``num_qubits_source`` (``live_config`` vs
+  ``machine_name``) for provenance; the submission path additionally
+  corrects name-derived counts from the chip cache. Live-sourced counts
+  from other platforms are never clobbered by the cache.
 - **`wait_for_result` crashed on Quark task completion** with
   ``int() argument must be ... not 'dict'``: Quark (like dummy) nests
   its histogram as ``{"counts": {...}, "raw_result": ...}``, which the

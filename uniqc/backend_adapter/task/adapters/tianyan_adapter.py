@@ -112,6 +112,29 @@ class TianyanAdapter(QuantumAdapter):
     # Backend discovery
     # -------------------------------------------------------------------------
 
+    def _live_qubit_count(self, machine_name: str) -> int | None:
+        """Best-effort live qubit count from ``download_config``.
+
+        Returns ``None`` on any failure (caller falls back to deriving the
+        count from the machine name). cqlib's retry chatter on unsupported
+        machines is suppressed — discovery should stay quiet.
+        """
+        import contextlib
+        import io
+
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                conf = self._get_platform(machine_name).download_config(machine=machine_name)
+        except Exception:
+            return None
+        if not isinstance(conf, dict):
+            return None
+        overview = conf.get("overview")
+        if not isinstance(overview, dict):
+            return None
+        qubits = overview.get("qubits")
+        return len(qubits) if isinstance(qubits, (list, tuple)) and qubits else None
+
     def list_backends(self) -> list[dict[str, Any]]:
         """Return raw TianYan machine metadata.
 
@@ -122,7 +145,16 @@ class TianyanAdapter(QuantumAdapter):
 
         Returns:
             List of dicts with keys: ``name``, ``available``, ``status``,
-            ``machine_id``, ``price``, ``is_simulator``, ``num_qubits``.
+            ``machine_id``, ``price``, ``is_simulator``, ``num_qubits``,
+            ``num_qubits_source``.
+
+        ``num_qubits`` is the machine's **live** qubit count from
+        ``download_config`` whenever that authenticated call succeeds
+        (``num_qubits_source == "live_config"``); otherwise it falls back
+        to the digits embedded in the machine name
+        (``num_qubits_source == "machine_name"``), which is the model
+        name, not necessarily the online qubit count (e.g. tianyan176
+        has had 66 qubits online).
         """
         import re
 
@@ -137,6 +169,13 @@ class TianyanAdapter(QuantumAdapter):
             available = str(status).strip().lower() == "running"
             is_sim = name in TIANYAN_SIMULATOR_NAMES
             digits = re.search(r"(\d+)$", name)
+            num_qubits = int(digits.group(1)) if (digits and not is_sim) else 0
+            num_qubits_source = "machine_name"
+            if available and not is_sim:
+                live = self._live_qubit_count(name)
+                if live is not None:
+                    num_qubits = live
+                    num_qubits_source = "live_config"
             results.append(
                 {
                     "name": name,
@@ -145,7 +184,8 @@ class TianyanAdapter(QuantumAdapter):
                     "machine_id": str(machine_id),
                     "price": price,
                     "is_simulator": is_sim,
-                    "num_qubits": int(digits.group(1)) if (digits and not is_sim) else 0,
+                    "num_qubits": num_qubits,
+                    "num_qubits_source": num_qubits_source,
                 }
             )
             seen.add(name)
@@ -159,6 +199,7 @@ class TianyanAdapter(QuantumAdapter):
                     "price": "free",
                     "is_simulator": True,
                     "num_qubits": 0,
+                    "num_qubits_source": "machine_name",
                 }
             )
         return results

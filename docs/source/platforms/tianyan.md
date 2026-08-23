@@ -38,7 +38,9 @@ uniqc backend list -p tianyan
 | `tianyan_tn` | 张量网络仿真 |
 | `tianyan_tnn` | 带噪声张量网络仿真 |
 
-实际可用列表以 `uniqc backend list -p tianyan` 输出为准。
+实际可用列表以 `uniqc backend list -p tianyan` 输出为准。机器名中的数字是
+机型名而非在线比特数（例如 `tianyan176` 当前在线 66 比特）；后端发现会尽力
+用 `download_config` 的实况数据，取不到时才回退到机型名数字。
 
 ## 提交任务
 
