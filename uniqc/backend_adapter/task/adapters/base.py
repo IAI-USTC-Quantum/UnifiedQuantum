@@ -89,7 +89,7 @@ def _dry_run_success(
 class QuantumAdapter(abc.ABC):
     """Abstract base class for quantum cloud backend adapters.
 
-    Subclass this for each backend (originq_cloud, quafu, ibm, ...).
+    Subclass this for each backend (originq_cloud, quark, ibm, ...).
     Each adapter is instantiated once per task module and reused.
 
     Attributes:
@@ -242,7 +242,7 @@ class QuantumAdapter(abc.ABC):
         Args:
             originir: Circuit in OriginIR format.
             shots: Number of measurement shots (for shots-limit validation).
-            **kwargs: Adapter-specific options (e.g. chip_id for IBM/Quafu).
+            **kwargs: Adapter-specific options (e.g. chip_id for IBM/Quark).
 
         Returns:
             DryRunResult with success=True/False, details, warnings, and metadata.

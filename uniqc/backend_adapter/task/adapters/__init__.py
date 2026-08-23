@@ -21,10 +21,8 @@ __all__ = [
     "QuantumAdapter",
     "DryRunResult",
     "OriginQAdapter",
-    "QuafuAdapter",
     "QuarkAdapter",
     "QiskitAdapter",
-    "IBMAdapter",
     "DummyAdapter",
     "TianyanAdapter",
     "LogicalQubitAdapter",
@@ -41,7 +39,6 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
@@ -55,10 +52,6 @@ except ImportError:
 
 
 def __getattr__(name: str):
-    if name == "QuafuAdapter":
-        value = import_module("uniqc.backend_adapter.task.adapters.quafu_adapter").QuafuAdapter
-        globals()[name] = value
-        return value
     if name == "TianyanAdapter":
         value = import_module("uniqc.backend_adapter.task.adapters.tianyan_adapter").TianyanAdapter
         globals()[name] = value

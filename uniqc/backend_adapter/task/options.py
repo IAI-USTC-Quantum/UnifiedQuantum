@@ -26,7 +26,6 @@ from __future__ import annotations
 __all__ = [
     "BackendOptions",
     "OriginQOptions",
-    "QuafuOptions",
     "QuarkOptions",
     "IBMOptions",
     "DummyOptions",
@@ -113,50 +112,8 @@ class OriginQOptions(BackendOptions):
 
 
 @dataclasses.dataclass
-class QuafuOptions(BackendOptions):
-    """Options for Quafu (ScQ) backends.
-
-    Parameters
-    ----------
-    chip_id : str
-        Quafu chip identifier, e.g. ``"ScQ-P18"``. Default: ``"ScQ-P18"``.
-    auto_mapping : bool
-        Enable automatic qubit mapping. Default: ``True``.
-    task_name : str | None
-        Optional task name for the server-side task list.
-    group_name : str | None
-        Optional group name for batch tracking.
-    wait : bool
-        Block until server acknowledges receipt. Default: ``False``.
-    """
-
-    platform: dataclasses.InitVar[Platform] = dataclasses.field(default=Platform.QUAFU, repr=False)
-    chip_id: str = "ScQ-P18"
-    auto_mapping: bool = True
-    task_name: str | None = None
-    group_name: str | None = None
-    wait: bool = False
-
-    def __post_init__(self, _platform: Platform) -> None:
-        from uniqc.backend_adapter.task.adapters import quafu_adapter  # noqa: F401
-
-    def to_kwargs(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {
-            "chip_id": self.chip_id,
-            "auto_mapping": self.auto_mapping,
-        }
-        if self.task_name is not None:
-            kwargs["task_name"] = self.task_name
-        if self.group_name is not None:
-            kwargs["group_name"] = self.group_name
-        if self.wait:
-            kwargs["wait"] = self.wait
-        return kwargs
-
-
-@dataclasses.dataclass
 class QuarkOptions(BackendOptions):
-    """Options for QuarkStudio / Quafu-SQC backends.
+    """Options for QuarkStudio backends.
 
     Parameters
     ----------
@@ -350,21 +307,20 @@ class UnifiedOptions:
     (default ``False`` → :func:`warnings.warn`; ``True`` → raise
     :class:`BackendOptionsError`):
 
-    ===========================  ===================================  ========================  =========================  ====================================
-    Unified option               OriginQ                              Quafu                     Quark                      IBM
-    ===========================  ===================================  ========================  =========================  ====================================
-    ``optimize_level=0``         ``circuit_optimize=False``           ignored (no knob)         ``compile=False``          ``circuit_optimize=False``
-    ``optimize_level>=1``        ``circuit_optimize=True``            ``auto_mapping=True``     ``compile=True``           ``circuit_optimize=True``
-    ``error_mitigation=True``    ``measurement_amend=True``           warn / raise              ``correct=True``           warn / raise
-    ``auto_mapping=True``        ``auto_mapping=True``                ``auto_mapping=True``     warn / raise               ``auto_mapping=True``
-    ``backend_name``             ``backend_name=...``                 ``chip_id=...``           ``chip_id=...``            ``chip_id=...``
-    ``shots``                    forwarded                            forwarded                 forwarded                  forwarded
-    ===========================  ===================================  ========================  =========================  ====================================
+    ===========================  ===================================  =========================  ====================================
+    Unified option               OriginQ                              Quark                      IBM
+    ===========================  ===================================  =========================  ====================================
+    ``optimize_level=0``         ``circuit_optimize=False``           ``compile=False``          ``circuit_optimize=False``
+    ``optimize_level>=1``        ``circuit_optimize=True``            ``compile=True``           ``circuit_optimize=True``
+    ``error_mitigation=True``    ``measurement_amend=True``           ``correct=True``           warn / raise
+    ``auto_mapping=True``        ``auto_mapping=True``                warn / raise               ``auto_mapping=True``
+    ``backend_name``             ``backend_name=...``                 ``chip_id=...``            ``chip_id=...``
+    ``shots``                    forwarded                            forwarded                  forwarded
+    ===========================  ===================================  =========================  ====================================
 
     Per-platform :class:`BackendOptions` instances remain a fully-supported
     "escape hatch" for platform-specific knobs that have no unified
-    counterpart (Quark's ``open_dd``, Quafu's ``group_name``, IBM's
-    ``task_name`` etc.).
+    counterpart (Quark's ``open_dd``, IBM's ``task_name`` etc.).
 
     Parameters
     ----------
@@ -425,14 +381,6 @@ class UnifiedOptions:
                 measurement_amend=bool(self.error_mitigation),
                 auto_mapping=bool(self.auto_mapping),
             )
-        if platform_lower == "quafu":
-            if self.error_mitigation:
-                self._unsupported("error_mitigation", "quafu")
-            return QuafuOptions(
-                shots=self.shots,
-                chip_id=self.backend_name or "ScQ-P18",
-                auto_mapping=bool(self.auto_mapping or optimize),
-            )
         if platform_lower == "quark":
             if self.auto_mapping:
                 self._unsupported("auto_mapping", "quark")
@@ -472,7 +420,7 @@ class UnifiedOptions:
             return DummyOptions(shots=self.shots)
         raise BackendOptionsError(
             f"UnifiedOptions: unknown platform {platform_lower!r}. "
-            f"Available: ['originq', 'quafu', 'quark', 'ibm', 'tianyan', 'logicalqubit', 'dummy']"
+            f"Available: ['originq', 'quark', 'ibm', 'tianyan', 'logicalqubit', 'dummy']"
         )
 
     def to_kwargs(self, platform: str) -> dict[str, Any]:
@@ -503,7 +451,6 @@ class BackendOptionsFactory:
 
     _PLATFORM_MAP: dict[str, type[BackendOptions]] = {
         "originq": OriginQOptions,
-        "quafu": QuafuOptions,
         "quark": QuarkOptions,
         "ibm": IBMOptions,
         "dummy": DummyOptions,
@@ -528,7 +475,7 @@ class BackendOptionsFactory:
         Parameters
         ----------
         platform :
-            Platform name — one of ``"originq"``, ``"quafu"``, ``"ibm"``, ``"dummy"``.
+            Platform name — one of ``"originq"``, ``"quark"``, ``"ibm"``, ``"dummy"``.
         kwargs :
             Optional keyword arguments dict. Merged with any additional
             keyword arguments passed via ``**extra``.
@@ -566,15 +513,6 @@ class BackendOptionsFactory:
                 circuit_optimize=kwargs.pop("circuit_optimize", True),
                 measurement_amend=kwargs.pop("measurement_amend", False),
                 auto_mapping=kwargs.pop("auto_mapping", False),
-            )
-        elif platform_lower == "quafu":
-            return QuafuOptions(
-                shots=shots,
-                chip_id=kwargs.pop("chip_id", "ScQ-P18"),
-                auto_mapping=kwargs.pop("auto_mapping", True),
-                task_name=kwargs.pop("task_name", None),
-                group_name=kwargs.pop("group_name", None),
-                wait=kwargs.pop("wait", False),
             )
         elif platform_lower == "quark":
             return QuarkOptions(

@@ -16,8 +16,7 @@ class TestQFTCircuit:
         """3-qubit QFT on |0⟩ should produce uniform probability 1/8 for each basis state."""
         from uniqc.simulator import Simulator
 
-        c = Circuit()
-        qft_circuit(c, qubits=[0, 1, 2])
+        c = qft_circuit(3, qubits=[0, 1, 2])
 
         sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
@@ -31,8 +30,7 @@ class TestQFTCircuit:
         from uniqc.simulator import Simulator
 
         # QFT circuit
-        c_qft = Circuit()
-        qft_circuit(c_qft, qubits=[0])
+        c_qft = qft_circuit(1, qubits=[0])
 
         # H gate circuit
         c_h = Circuit()
@@ -46,15 +44,13 @@ class TestQFTCircuit:
 
     def test_swaps_true_produces_gates(self):
         """With swaps=True, the circuit should contain SWAP gates for n >= 2."""
-        c = Circuit()
-        qft_circuit(c, qubits=[0, 1, 2], swaps=True)
+        c = qft_circuit(3, qubits=[0, 1, 2], swaps=True)
         op_names = [op[0] for op in c.opcode_list]
         assert "SWAP" in op_names
 
     def test_swaps_false_no_swap_gates(self):
         """With swaps=False, no SWAP gates should appear."""
-        c = Circuit()
-        qft_circuit(c, qubits=[0, 1, 2], swaps=False)
+        c = qft_circuit(3, qubits=[0, 1, 2], swaps=False)
         op_names = [op[0] for op in c.opcode_list]
         assert "SWAP" not in op_names
 
@@ -62,8 +58,7 @@ class TestQFTCircuit:
         """QFT followed by inverse QFT should return to |0⟩."""
         from uniqc.simulator import Simulator
 
-        c = Circuit()
-        qft_circuit(c, qubits=[0, 1, 2], swaps=True)
+        c = qft_circuit(3, qubits=[0, 1, 2], swaps=True)
 
         # Apply inverse QFT (dagger of QFT)
         n = 3
@@ -91,25 +86,18 @@ class TestQFTCircuit:
         assert np.isclose(probs[0], 1.0, atol=1e-6), f"probs[0]={probs[0]}"
 
     def test_default_qubits_uses_all(self):
-        """When circuit has gates and qubits=None, QFT should use all used qubits."""
-        c = Circuit()
-        c.h(0)
-        c.h(1)
-        c.h(2)
-        # After adding gates, qubit_num=3
-        qft_circuit(c)
+        """When qubits=None, QFT should use all n_qubits qubits."""
+        c = qft_circuit(3)
         # Should have gates (Hadamards + controlled phases + swaps)
         assert len(c.opcode_list) > 3
 
     def test_empty_qubits_raises(self):
         """Empty qubits list should raise ValueError."""
-        c = Circuit()
         with pytest.raises(ValueError):
-            qft_circuit(c, qubits=[])
+            qft_circuit(3, qubits=[])
 
     def test_single_qubit_no_swaps(self):
         """1-qubit QFT with swaps=True should not add SWAP (n//2=0)."""
-        c = Circuit()
-        qft_circuit(c, qubits=[0], swaps=True)
+        c = qft_circuit(1, qubits=[0], swaps=True)
         op_names = [op[0] for op in c.opcode_list]
         assert "SWAP" not in op_names

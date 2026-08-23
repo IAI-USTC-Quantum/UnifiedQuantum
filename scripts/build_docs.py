@@ -52,6 +52,7 @@ import io
 import json
 import os
 import pathlib
+import random
 import re
 import runpy
 import sys
@@ -77,6 +78,50 @@ WARNING_ERROR_PATTERNS = (
     re.compile(r"\bERROR\b"),
     re.compile(r"\bTraceback \(most recent call last\)"),
 )
+
+# Fixed seed applied before every example run so committed doc logs do not
+# jitter between builds. Covers the stdlib ``random`` module (used by the
+# local simulators for shot sampling), NumPy's global RNG, and torch.
+DOC_EXAMPLE_SEED = 2024
+
+# Fresh ``uqt_<uuid4-hex>`` task ids are unseedable; rewrite them in captured
+# output so committed logs are stable across builds. Rich tables truncate ids
+# (``uqt_<12 hex>…``), so match 12-32 hex chars; full-length ids become a
+# readable placeholder while truncated ones are zero-padded to preserve table
+# alignment.
+_TASK_ID_RE = re.compile(r"uqt_[0-9a-f]{12,32}")
+# ISO datetimes (e.g. task submit times in ``uniqc task list``) jitter with the
+# wall clock; pin them to a fixed value, preserving truncation suffixes.
+_TIMESTAMP_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?")
+
+
+def _normalize_output(text: str) -> str:
+    """Replace unseedable, run-varying values in captured example output."""
+    text = _TASK_ID_RE.sub(
+        lambda m: "uqt_<task-id>" if len(m.group(0)) == 36 else "uqt_" + "0" * (len(m.group(0)) - 4),
+        text,
+    )
+    return _TIMESTAMP_RE.sub(
+        lambda m: "2000-01-01T00:00:00" if m.group(1) else "2000-01-01T00:00",
+        text,
+    )
+
+
+def _seed_rngs() -> None:
+    """Seed every RNG an example might touch, for reproducible doc logs."""
+    random.seed(DOC_EXAMPLE_SEED)
+    try:
+        import numpy as np
+
+        np.random.seed(DOC_EXAMPLE_SEED)
+    except Exception:  # noqa: BLE001 - numpy is an optional dependency here
+        pass
+    try:
+        import torch
+
+        torch.manual_seed(DOC_EXAMPLE_SEED)
+    except Exception:  # noqa: BLE001 - torch is an optional dependency here
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +156,6 @@ _RUNTIME_OPTIONS: dict[str, Any] = {"real_cloud": False}
 REQUIREMENT_REGISTRY: dict[str, tuple[str, Any]] = {
     # SDK-only (no credentials):
     "originq-sdk": ("pyqpanda3 installed", lambda: _have_module("pyqpanda3")),
-    "quafu-sdk": ("pyquafu installed", lambda: _have_module("quafu")),
     "ibm-sdk": ("qiskit_ibm_runtime installed", lambda: _have_module("qiskit_ibm_runtime")),
     "quark-sdk": (
         "quarkstudio installed",
@@ -132,10 +176,6 @@ REQUIREMENT_REGISTRY: dict[str, tuple[str, Any]] = {
     "originq": (
         "pyqpanda3 + originq token configured",
         lambda: _have_module("pyqpanda3") and _have_credentials("originq"),
-    ),
-    "quafu": (
-        "pyquafu + quafu token configured",
-        lambda: _have_module("quafu") and _have_credentials("quafu"),
     ),
     "ibm": (
         "qiskit_ibm_runtime + ibm token configured",
@@ -313,6 +353,8 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
     exc: BaseException | None = None
     figure_files: list[str] = []
 
+    _seed_rngs()
+
     try:
         with warnings.catch_warnings():
             warnings.resetwarnings()
@@ -329,7 +371,12 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
 
         # Collect any matplotlib figures the example created.
         try:
+            import matplotlib
             import matplotlib.pyplot as plt
+
+            # Deterministic SVG output: fixed element-id hash salt and no
+            # creation-date metadata, so committed figures do not jitter.
+            matplotlib.rcParams["svg.hashsalt"] = "uniqc-docs"
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -339,8 +386,8 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
                 for idx, fig_num in enumerate(plt.get_fignums(), start=1):
                     fig = plt.figure(fig_num)
                     fname = f"figure-{idx:02d}.svg"
-                    fig.savefig(figures_dir / fname, format="svg", bbox_inches="tight")
-                    fig.savefig(docs_figures_dir / fname, format="svg", bbox_inches="tight")
+                    fig.savefig(figures_dir / fname, format="svg", bbox_inches="tight", metadata={"Date": None})
+                    fig.savefig(docs_figures_dir / fname, format="svg", bbox_inches="tight", metadata={"Date": None})
                     figure_files.append(fname)
             plt.close("all")
         except Exception:
@@ -353,8 +400,8 @@ def _run_example(spec: ExampleSpec, log_dir: pathlib.Path) -> dict[str, Any]:
     duration = time.time() - started_at
 
     return {
-        "stdout": stdout.getvalue(),
-        "stderr": stderr.getvalue(),
+        "stdout": _normalize_output(stdout.getvalue()),
+        "stderr": _normalize_output(stderr.getvalue()),
         "warnings": captured_warnings,
         "figure_files": figure_files,
         "exception": (

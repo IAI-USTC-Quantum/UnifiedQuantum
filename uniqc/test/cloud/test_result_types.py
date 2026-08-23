@@ -13,11 +13,11 @@ class TestUnifiedResult:
     def test_from_counts_basic(self):
         """Test creating UnifiedResult from counts."""
         counts = {"00": 512, "11": 488}
-        result = UnifiedResult.from_counts(counts, "quafu", "task-1")
+        result = UnifiedResult.from_counts(counts, "quark", "task-1")
 
         assert result.counts == counts
         assert result.shots == 1000
-        assert result.platform == "quafu"
+        assert result.platform == "quark"
         assert result.task_id == "task-1"
 
     def test_from_counts_probabilities_computed(self):

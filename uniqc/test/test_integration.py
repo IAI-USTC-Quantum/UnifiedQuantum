@@ -7,7 +7,6 @@ from uniqc.backend_adapter.task.options import (
     BackendOptionsFactory,
     IBMOptions,
     OriginQOptions,
-    QuafuOptions,
 )
 from uniqc.cli.chip_info import (
     ChipCharacterization,
@@ -55,16 +54,6 @@ def _make_chip(nodes: list[int], edges: list[tuple[int, int]]) -> ChipCharacteri
 
 class TestOptionsIntegration:
     """Integration: BackendOptions work with the full options class hierarchy."""
-
-    def test_quafu_options_with_task_name(self):
-        """QuafuOptions with task_name round-trips through factory."""
-        original = QuafuOptions(chip_id="ScQ-P10", task_name="test-task", wait=True)
-        kwargs = original.to_kwargs()
-        restored = BackendOptionsFactory.from_kwargs("quafu", kwargs)
-        assert isinstance(restored, QuafuOptions)
-        assert restored.chip_id == "ScQ-P10"
-        assert restored.task_name == "test-task"
-        assert restored.wait is True
 
     def test_originq_options_roundtrip(self):
         """OriginQOptions round-trips through factory.from_kwargs."""

@@ -19,7 +19,7 @@ These tests guard the convention by:
   MPS / TorchQuantum if installed).
 * Exercising every dummy adapter path (virtual-line, virtual-grid, mps-linear,
   density-matrix from chip caches such as originq:WK_C180 / PQPUMESH8).
-* Exercising the real-platform normalisers (Quafu / IBM-Qiskit) using mocked
+* Exercising the real-platform normalisers (IBM-Qiskit) using mocked
   raw responses captured from the actual SDK so we do not need cloud
   credentials in CI.
 """
@@ -120,45 +120,6 @@ def test_dummy_originq_chip_endianness(backend):
     info = query_task(uid)
     assert info.status == "success", f"{backend} failed: {info.error_message}"
     assert _dominant(info.result) == "01", f"{backend} returned {info.result}; expected '01' as dominant key"
-
-
-# ---------------------------------------------------------------------------
-# Quafu normaliser (mocked raw response captured from quafu local sim)
-# ---------------------------------------------------------------------------
-
-
-def test_quafu_normalizer_reverses_bit_order():
-    """Quafu reports c[0] as LEFTMOST char ('10'); normaliser must reverse."""
-    from uniqc.backend_adapter.task.normalizers import normalize_quafu
-
-    class _FakeQuafuResult:
-        # Captured from `quafu.simulate(qc).counts` for x(0)+measure(0,1)
-        counts = {"10": 1024}
-        task_status = "Completed"
-
-    unified = normalize_quafu(_FakeQuafuResult(), task_id="t-quafu")
-    assert unified.counts == {"01": 1024}
-
-
-def test_quafu_adapter_query_reverses_bit_order():
-    """End-to-end check on the adapter's ``query`` method."""
-    pytest.importorskip("quafu")
-    from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-
-    class _FakeResult:
-        counts = {"10": 1024}
-        task_status = "Completed"
-        probabilities = None
-
-    adapter = QuafuAdapter.__new__(QuafuAdapter)
-    # Reproduce just the success branch of ``query``:
-    adapter.__class__.query.__wrapped__(adapter, "t") if hasattr(adapter.__class__.query, "__wrapped__") else None
-    # Fallback: invoke the post-processing block directly via normalizer
-    # if the adapter relies on the same bit-reversal pathway.
-    from uniqc.backend_adapter.task.normalizers import normalize_quafu
-
-    normalised = normalize_quafu(_FakeResult(), task_id="t")
-    assert normalised.counts == {"01": 1024}
 
 
 # ---------------------------------------------------------------------------

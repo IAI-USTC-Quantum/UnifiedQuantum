@@ -17,12 +17,12 @@ Usage::
     circuit.measure(0, 1)
 
     # Dry-run: validate circuit offline before submitting
-    result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+    result = dry_run_task(circuit, backend='originq:WK_C180', shots=1000)
     if not result.success:
         print(f"Validation failed: {result.error}")
 
     # Submit task
-    task_id = submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+    task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 
     # Wait for result (backend is auto-resolved from the cached TaskInfo)
     result = wait_for_result(task_id, timeout=300)
@@ -128,9 +128,8 @@ from uniqc.exceptions import (
 # Circuit Adapter Mapping
 # -----------------------------------------------------------------------------
 
-ADAPTER_MAP: dict[str, type[CircuitAdapter] | None] = {
+ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
     "originq": OriginQCircuitAdapter,
-    "quafu": None,
     "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
     "tianyan": TianyanCircuitAdapter,
@@ -176,10 +175,6 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
             f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}.{hint}"
         )
     adapter_class = ADAPTER_MAP[platform_key]
-    if adapter_class is None:
-        from uniqc.backend_adapter.circuit_adapter import QuafuCircuitAdapter
-
-        adapter_class = QuafuCircuitAdapter
     return adapter_class()
 
 
@@ -189,7 +184,6 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
 # legacy bare ``backend='originq'`` form together with a chip kwarg.
 _PLATFORM_CHIP_KWARG: dict[str, str] = {
     "originq": "backend_name",
-    "quafu": "chip_id",
     "quark": "chip_id",
     "ibm": "chip_id",
     "tianyan": "machine_name",
@@ -325,7 +319,7 @@ def dry_run_task(
             :func:`submit_task`, including ``'<platform>:<chip>'``
             (e.g. ``'originq:WK_C180'``, ``'dummy:originq:WK_C180'``).
         shots: Number of measurement shots for validation.
-        **kwargs: Additional backend-specific parameters. IBM and Quafu use
+        **kwargs: Additional backend-specific parameters. IBM and Quark use
             ``chip_id`` for full validation. OriginQ uses ``backend_name``
             (for example ``"WK_C180"``); when ``backend`` already contains
             the chip suffix, it is extracted and forwarded automatically.
@@ -338,7 +332,7 @@ def dry_run_task(
         >>> circuit = Circuit()
         >>> circuit.h(0)
         >>> circuit.measure(0)
-        >>> result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+        >>> result = dry_run_task(circuit, backend='originq:WK_C180', shots=1000)
         >>> if result.success:
         ...     print("Circuit is valid for submission")
         >>> else:
@@ -409,15 +403,10 @@ def dry_run_task(
                 details=str(e),
                 error=str(e),
                 error_kind="unknown_backend",
-                warnings=("Known backends: originq, quafu, quark, ibm, dummy",),
+                warnings=("Known backends: originq, quark, ibm, dummy",),
             )
         except (ImportError, ModuleNotFoundError) as e:
-            if str(platform) == "quafu":
-                hint = (
-                    "The Quafu adapter is deprecated; install pyquafu directly "
-                    "if you still need it: `pip install pyquafu` (pulls numpy<2)."
-                )
-            elif str(platform) in ("qiskit", "ibm"):
+            if str(platform) in ("qiskit", "ibm"):
                 hint = (
                     "Qiskit is a core dependency of unified-quantum; the install "
                     "appears broken. Reinstall with `pip install --upgrade unified-quantum`."
@@ -665,15 +654,15 @@ def _metadata_with_circuit(circuit: Circuit, metadata: dict | None) -> dict:
 
 
 def _enrich_backend_info_from_chip_cache(platform, entry):
-    """Fill in missing topology from the local chip cache, if available.
+    """Fill in missing topology / live qubit count from the chip cache.
 
     Discovery payloads for some platforms (e.g. TianYan, LogicalQubit) carry
     no coupling map, while the chip characterization cache
     (``~/.uniqc/backend/chips/``) does. Compilation needs a topology, so
-    bridge the two caches here.
+    bridge the two caches here. Likewise, a discovery-side ``num_qubits``
+    derived from the machine *name* (TianYan) is corrected from the chip
+    cache's live data when the two disagree.
     """
-    if entry.topology:
-        return entry
     try:
         from uniqc.cli.chip_cache import get_chip
     except ImportError:
@@ -682,13 +671,33 @@ def _enrich_backend_info_from_chip_cache(platform, entry):
         chip = get_chip(platform, entry.name)
     except Exception:
         return entry
-    if chip is None or not chip.connectivity:
+    if chip is None:
         return entry
+
     import dataclasses
 
     extra = dict(entry.extra)
-    extra.setdefault("_uniqc_topology_source", "chip_cache")
-    return dataclasses.replace(entry, topology=list(chip.connectivity), extra=extra)
+    topology = entry.topology
+    num_qubits = entry.num_qubits
+
+    if not topology and chip.connectivity:
+        topology = list(chip.connectivity)
+        extra.setdefault("_uniqc_topology_source", "chip_cache")
+
+    if chip.available_qubits:
+        # Only correct counts that are not live-sourced: name-derived
+        # (TianYan) or unknown/zero. Never clobber a count the platform
+        # reported live at discovery time.
+        name_derived = extra.get("num_qubits_source") == "machine_name"
+        if name_derived or num_qubits == 0:
+            live_qubits = max(chip.available_qubits) + 1
+            if live_qubits != num_qubits:
+                num_qubits = live_qubits
+                extra.setdefault("_uniqc_num_qubits_source", "chip_cache")
+
+    if topology is entry.topology and num_qubits == entry.num_qubits:
+        return entry
+    return dataclasses.replace(entry, topology=topology, num_qubits=num_qubits, extra=extra)
 
 
 def _resolve_backend_info_for_validation(backend: str, kwargs: dict[str, Any]):
@@ -1035,7 +1044,7 @@ def submit_task(
     Args:
         circuit: The UnifiedQuantum Circuit to submit.
         backend: Backend identifier in the canonical ``'provider:chip-name'``
-            format (e.g. ``'originq:WK_C180'``, ``'quafu:ScQ-P10'``,
+            format (e.g. ``'originq:WK_C180'``, ``'quark:Baihua'``,
             ``'ibm:ibm_brisbane'``). Cloud submissions reject the bare
             ``'provider'`` form (e.g. ``'originq'``) and surface the list
             of cached chips for that provider — call
@@ -1072,7 +1081,7 @@ def submit_task(
             directly.
         backend_name: OriginQ chip name (e.g. ``'WK_C180'``). Optional when
             ``backend`` already encodes the chip as ``'originq:<chip>'``.
-        chip_id: Quafu / IBM chip ID. Required for full validation on those
+        chip_id: Quark / IBM chip ID. Required for full validation on those
             platforms.
         **kwargs: Additional backend-specific parameters passed through to
             the underlying adapter. Common implicit / hidden defaults:
@@ -1080,7 +1089,7 @@ def submit_task(
             - ``skip_validation`` (default ``False``): bypass the offline
               IR-language compatibility check. Use sparingly — most
               validation failures are real bugs.
-            - For Quafu: ``chip_id``, ``auto_mapping``
+            - For Quark: ``chip_id``, ``compile``
             - For OriginQ: ``backend_name`` (e.g. ``'WK_C180'``),
               ``measurement_amend``
             - For dummy: ``chip_characterization``, ``noise_model``,
@@ -1417,7 +1426,7 @@ def submit_batch(
       into one platform job per shard. uniqc auto-shards if the batch
       exceeds the adapter's :attr:`max_native_batch_size` (e.g. OriginQ
       ``task_group_size`` 200, IBM 100).
-    * For platforms without native batch (Quafu, Quark, Dummy) —
+    * For platforms without native batch (Quark, Dummy) —
       ``max_native_batch_size = 1``: uniqc loops one platform job per
       circuit, but the user still receives a single ``uqt_*`` id and
       :func:`wait_for_result` returns the per-circuit results in
@@ -1434,7 +1443,7 @@ def submit_batch(
             :func:`submit_task`. Default ``1``.
         backend_name: OriginQ chip name (optional when ``backend`` already
             encodes the chip).
-        chip_id: Quafu / IBM chip ID.
+        chip_id: Quark / IBM chip ID.
         native_batch: When ``True`` (default), shards use the platform's
             native grouped-submission API (one platform job per shard).
             When ``False``, every circuit is submitted as a separate
@@ -1796,33 +1805,6 @@ def _submit_batch_dummy(
 # -----------------------------------------------------------------------------
 
 
-def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
-    """Resolve ``task_id`` to a uniqc parent id.
-
-    Returns ``(uniqc_id, is_legacy_alias)``. When the input was a
-    platform task id discovered via the shard index, ``is_legacy_alias``
-    is ``True`` and a one-shot ``DeprecationWarning`` is emitted.
-
-    Raises ``TaskNotFoundError`` if neither path resolves.
-    """
-    if is_uniqc_task_id(task_id):
-        return task_id, False
-    # Try platform-id lookup via the shard index.
-    found = _store().find_uniqc_id_by_platform_id(task_id)
-    if found is not None:
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            f"Task lookup via platform id {task_id!r}",
-            replacement=f"the uniqc id {found!r}",
-            detail=("The platform id still resolves via the shard index but this fallback is removed in uniqc 0.1.0"),
-            stacklevel=3,
-        )
-        return found, True
-    # Fall through to legacy direct path — caller's job to handle missing.
-    return task_id, False
-
-
 def get_platform_task_ids(task_id: str) -> list[TaskShard]:
     """Return the shard mapping for a uniqc task id.
 
@@ -1836,17 +1818,14 @@ def get_platform_task_ids(task_id: str) -> list[TaskShard]:
     * ``status`` / ``error_message`` — per-shard liveness
 
     Args:
-        task_id: A uniqc task id (``uqt_*``). For backwards compatibility
-            this will also accept a platform task id and emit a
-            :class:`DeprecationWarning` while resolving the parent.
+        task_id: A uniqc task id (``uqt_*``).
 
     Returns:
         Shards in submission order. Empty list when the task has no
         shards yet (e.g. submission failed before any shard was
         persisted) or when ``task_id`` is unknown.
     """
-    uniqc_id, _ = _resolve_to_uniqc_id(task_id)
-    return _store().get_shards(uniqc_id)
+    return _store().get_shards(task_id)
 
 
 def _extract_error_message(query_result: dict) -> str | None:
@@ -1957,7 +1936,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
 
     Args:
         task_id: The task identifier. Accepts a uniqc id (``uqt_*``)
-            or, with a deprecation warning, a raw platform id.
+            or a raw platform id for the legacy direct-query path.
         backend: Ignored when the task is found in cache (the backend
             is resolved from the stored shards). Only used for legacy
             direct-query fallback.
@@ -1997,12 +1976,8 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
         if backend.startswith("dummy:"):
             return cached_task
 
-    # Path C: not in cache. Try resolving via platform-id alias first
-    # (legacy support — emits DeprecationWarning).
-    if cached_task is None and not is_uniqc_task_id(task_id):
-        uniqc_id, was_alias = _resolve_to_uniqc_id(task_id)
-        if was_alias:
-            return query_task(uniqc_id, backend=backend)
+    # Path C: not in cache. Fall through to the legacy direct query path
+    # below (requires an explicit ``backend``).
 
     if backend is None:
         raise TaskNotFoundError(f"Task '{task_id}' not found in local cache. Please provide the backend parameter.")
@@ -2122,8 +2097,8 @@ def _wrap_as_unified_result(
     else:
         counts = {}
 
-    # Some adapters nest the histogram one level deeper, e.g. Quark/Quafu
-    # return ``{"counts": {...}, "raw_result": ...}`` as the result payload.
+    # Some adapters nest the histogram one level deeper, e.g. Quark
+    # returns ``{"counts": {...}, "raw_result": ...}`` as the result payload.
     # Bitstring keys never collide with the literal "counts" wrapper key.
     if isinstance(counts.get("counts") if isinstance(counts, dict) else None, dict):
         counts = counts["counts"]
@@ -2367,7 +2342,7 @@ class TaskManager:
 
     Example:
         >>> manager = TaskManager()
-        >>> task_id = manager.submit(circuit, backend='quafu:ScQ-P18', shots=1000)
+        >>> task_id = manager.submit(circuit, backend='originq:WK_C180', shots=1000)
         >>> result = manager.wait_for_result(task_id)
         >>> print(result)
     """

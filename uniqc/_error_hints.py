@@ -37,7 +37,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
         "troubleshooting": [
             "Run: uniqc config validate",
             "Set token: uniqc config set originq.token <YOUR_TOKEN>",
-            "Token URLs: OriginQ: q.本源量子.com | Quafu: quafu.baike.scut.cn | IBM: quantum.ibm.com",
+            "Token URLs: OriginQ: q.本源量子.com | IBM: quantum.ibm.com",
         ],
     },
     "backend_not_found": {
@@ -65,7 +65,7 @@ HINTS: dict[str, dict[str, list[str] | str]] = {
             "Run: uniqc config init to create a default config",
             "Run: uniqc config validate to check your configuration",
             "Config file location: ~/.uniqc/config.yaml",
-            "Supported platforms: originq, quafu, quark, ibm, tianyan, logicalqubit",
+            "Supported platforms: originq, quark, ibm, tianyan, logicalqubit",
         ],
     },
     "task_submission": {

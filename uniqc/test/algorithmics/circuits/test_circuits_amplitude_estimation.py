@@ -55,7 +55,7 @@ class TestGroverOperator:
         c = Circuit()
         c.h(0)
         c.h(1)
-        grover_operator(c, oracle, qubits=[0, 1])
+        c.add_circuit(grover_operator(oracle, qubits=[0, 1]))
         assert len(c.opcode_list) > 2  # more than just initial H gates
 
     def test_grover_operator_single_qubit(self):
@@ -65,15 +65,14 @@ class TestGroverOperator:
 
         c = Circuit()
         c.h(0)
-        grover_operator(c, oracle, qubits=[0])
+        c.add_circuit(grover_operator(oracle, qubits=[0]))
         assert len(c.opcode_list) > 1
 
     def test_grover_operator_zero_qubits_raises(self):
         """Empty qubit list should raise ValueError."""
         oracle = Circuit()
-        c = Circuit()
         with pytest.raises(ValueError, match="at least 1"):
-            grover_operator(c, oracle, qubits=[])
+            grover_operator(oracle, qubits=[])
 
 
 class TestAmplitudeEstimationCircuit:
@@ -85,8 +84,7 @@ class TestAmplitudeEstimationCircuit:
         oracle.z(0)
 
         # 2 eval qubits + 2 search qubits
-        c = Circuit()
-        amplitude_estimation_circuit(c, oracle, qubits=[2, 3], eval_qubits=[0, 1])
+        c = amplitude_estimation_circuit(oracle, qubits=[2, 3], eval_qubits=[0, 1])
         assert len(c.opcode_list) > 0
 
     def test_circuit_non_list_qubits_raises(self):
@@ -94,15 +92,13 @@ class TestAmplitudeEstimationCircuit:
         oracle = Circuit()
         oracle.z(0)
 
-        c = Circuit()
         with pytest.raises(TypeError, match="qubits"):
-            amplitude_estimation_circuit(c, oracle, qubits=(2, 3), eval_qubits=[0, 1])
+            amplitude_estimation_circuit(oracle, qubits=(2, 3), eval_qubits=[0, 1])
 
     def test_circuit_zero_eval_qubits_raises(self):
         """Empty eval_qubits should raise ValueError."""
         oracle = Circuit()
         oracle.z(0)
 
-        c = Circuit()
         with pytest.raises(ValueError, match="[Aa]t least 1 evaluation qubit"):
-            amplitude_estimation_circuit(c, oracle, qubits=[2, 3], eval_qubits=[])
+            amplitude_estimation_circuit(oracle, qubits=[2, 3], eval_qubits=[])

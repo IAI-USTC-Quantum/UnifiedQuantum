@@ -40,7 +40,7 @@ dependencies = [
     "rich",
     "scipy",
     "fastapi",
-    "uniqc-cppsimulator>=1.0,<2",
+    "uniqc-cppsimulator>=1.0.1,<2",
     "uvicorn[standard]",
     "qiskit",
     "qiskit-aer",
@@ -114,7 +114,6 @@ ignore = ["E501", "N801", "N803", "N806"]  # line length; CapWords for ErrorLoad
 "docs/**/*.py" = ["E402", "F541", "F601", "I001", "SIM105", "SIM108", "UP006", "W291"]
 "uniqc/algorithms/core/circuits/dicke_state.py" = ["E741"]
 "uniqc/backend_adapter/task/adapters/originq_adapter.py" = ["E402"]
-"uniqc/backend_adapter/task/adapters/quafu_adapter.py" = ["E402"]
 "uniqc/backend_adapter/task/options.py" = ["SIM108"]
 "uniqc/backend_adapter/task_manager.py" = ["SIM105"]
 "uniqc/calibration/xeb/parallel_cz.py" = ["N802"]

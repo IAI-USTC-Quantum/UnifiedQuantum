@@ -6,13 +6,12 @@ Covers:
 * TaskShard CRUD + FK cascade behaviour
 * Status aggregation rules
 * Submit / query / wait flow against the dummy backend
-* Legacy platform-id alias with DeprecationWarning
+* Platform task ids no longer alias to the uniqc parent (removed in 0.1.0)
 * Archive cascade via gateway ArchiveStore
 """
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import pytest
@@ -209,8 +208,10 @@ def test_submit_batch_return_platform_ids(tmp_store):
     assert isinstance(plat_ids, list) and len(plat_ids) == 3
 
 
-def test_legacy_platform_id_alias_emits_deprecation(tmp_store):
+def test_platform_id_lookup_does_not_resolve_to_parent(tmp_store):
+    """Removed in 0.1.0: a raw platform id no longer aliases the parent."""
     from uniqc import get_platform_task_ids, query_task, submit_batch
+    from uniqc.exceptions import TaskNotFoundError
 
     uid = submit_batch(
         [_make_bell() for _ in range(2)],
@@ -218,12 +219,8 @@ def test_legacy_platform_id_alias_emits_deprecation(tmp_store):
         shots=50,
     )
     plat_id = get_platform_task_ids(uid)[0].platform_task_id
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        info = query_task(plat_id)
-        deps = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        assert deps, "expected DeprecationWarning when looking up via platform id"
-    assert is_uniqc_task_id(info.task_id)
+    with pytest.raises(TaskNotFoundError):
+        query_task(plat_id)
 
 
 # ---------------------------------------------------------------------------

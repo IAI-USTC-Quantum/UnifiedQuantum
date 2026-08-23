@@ -143,6 +143,51 @@ def test_dry_run_accepts_qasm2_translation_and_warns_on_non_1024_shots():
     assert result.warnings
 
 
+ORIGINIR_3Q = """
+QINIT 3
+CREG 3
+H q[0]
+CNOT q[0], q[1]
+CNOT q[1], q[2]
+MEASURE q[0], c[0]
+MEASURE q[1], c[1]
+MEASURE q[2], c[2]
+""".strip()
+
+
+def test_dry_run_fails_when_circuit_exceeds_chip_qubits(monkeypatch):
+    """A circuit touching qubits outside the chip's available set must fail."""
+    adapter = QuarkAdapter(token="token", task_client=FakeTask())
+    # FAKE_CHIP_INFO (defined below) exposes exactly qubits {0, 1}.
+    monkeypatch.setattr(adapter, "_load_chip_basic_info", lambda chip: FAKE_CHIP_INFO)
+
+    result = adapter.dry_run(ORIGINIR_3Q, shots=1024, chip_id="Baihua")
+
+    assert not result.success
+    assert "[2]" in result.error
+    assert "Baihua" in result.details
+
+
+def test_dry_run_passes_when_circuit_fits_chip(monkeypatch):
+    adapter = QuarkAdapter(token="token", task_client=FakeTask())
+    monkeypatch.setattr(adapter, "_load_chip_basic_info", lambda chip: FAKE_CHIP_INFO)
+
+    result = adapter.dry_run(ORIGINIR_BELL, shots=1024, chip_id="Baihua")
+
+    assert result.success
+    assert not any("skipped qubit-availability" in w for w in result.warnings)
+
+
+def test_dry_run_skips_qubit_validation_when_chip_metadata_unavailable(monkeypatch):
+    adapter = QuarkAdapter(token="token", task_client=FakeTask())
+    monkeypatch.setattr(adapter, "_load_chip_basic_info", lambda chip: None)
+
+    result = adapter.dry_run(ORIGINIR_3Q, shots=1024, chip_id="Baihua")
+
+    assert result.success
+    assert any("skipped qubit-availability validation" in w for w in result.warnings)
+
+
 FAKE_CHIP_INFO = {
     "global_info": {
         "nqubits_available": 2,

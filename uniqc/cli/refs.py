@@ -174,13 +174,13 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "No tasks shown?",
             "1. Configure your platform token: uniqc config set originq.token <TOKEN>\n"
-            "   (Token URLs: OriginQ: q.本源量子.com | Quafu: quafu.baike.scut.cn | IBM: quantum.ibm.com)\n"
+            "   (Token URLs: OriginQ: q.本源量子.com | IBM: quantum.ibm.com)\n"
             "2. Validate: uniqc config validate\n"
             "3. Retry: uniqc task list",
         ),
         (
             "Filter by platform",
-            "Filter by platform: uniqc task list --platform originq. Supported platforms: originq, quafu, ibm, tianyan, logicalqubit.",
+            "Filter by platform: uniqc task list --platform originq. Supported platforms: originq, quark, ibm, tianyan, logicalqubit.",
         ),
         (
             "Filter by status",
@@ -253,7 +253,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
             "First-time setup (step by step)",
             "1. uniqc config init — create ~/.uniqc/config.yaml with default settings\n"
             "2. uniqc config set originq.token <YOUR_TOKEN> — set your API token\n"
-            "   (Token URLs: OriginQ: q.本源量子.com | Quafu: quafu.baike.scut.cn | IBM: quantum.ibm.com)\n"
+            "   (Token URLs: OriginQ: q.本源量子.com | IBM: quantum.ibm.com)\n"
             "3. uniqc config always-ai-hint on — keep AI workflow hints visible by default\n"
             "4. uniqc config validate — verify the configuration is valid\n"
             "5. uniqc backend update — fetch available backends",
@@ -272,7 +272,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         ),
         (
             "Get your API token",
-            "OriginQ: https://q.本源量子.com\nQuafu: https://quafu.baike.scut.cn/\nIBM: https://quantum.ibm.com/",
+            "OriginQ: https://q.本源量子.com\nIBM: https://quantum.ibm.com/",
         ),
         (
             "After configuring",
@@ -363,7 +363,7 @@ AI_HINTS: dict[str, list[tuple[str, str]]] = {
         (
             "Missing dependencies?",
             "Install optional packages with pip: "
-            "pip install pyqpanda3 (OriginQ), pyquafu (Quafu), quarkstudio (Quark), "
+            "pip install pyqpanda3 (OriginQ), quarkstudio (Quark), "
             "cqlib (Tianyan), lqcloud (LogicalQubit), "
             "qiskit qiskit-ibm-runtime (IBM). Core deps are numpy, typer, rich, scipy, pyyaml.",
         ),

@@ -13,7 +13,6 @@ from uniqc.backend_adapter.task.options import (
     DummyOptions,
     IBMOptions,
     OriginQOptions,
-    QuafuOptions,
     QuarkOptions,
     UnifiedOptions,
 )
@@ -50,42 +49,6 @@ class TestOriginQOptions:
         opts = OriginQOptions(shots=500)
         kwargs = opts.to_kwargs()
         assert "shots" not in kwargs
-
-
-class TestQuafuOptions:
-    """Tests for QuafuOptions."""
-
-    def test_defaults(self):
-        opts = QuafuOptions()
-        assert opts.platform == Platform.QUAFU
-        assert opts.chip_id == "ScQ-P18"
-        assert opts.auto_mapping is True
-        assert opts.task_name is None
-        assert opts.group_name is None
-        assert opts.wait is False
-
-    def test_to_kwargs(self):
-        opts = QuafuOptions(
-            chip_id="ScQ-P10",
-            auto_mapping=False,
-            task_name="my-task",
-            group_name="my-group",
-            wait=True,
-        )
-        kwargs = opts.to_kwargs()
-        assert kwargs["chip_id"] == "ScQ-P10"
-        assert kwargs["auto_mapping"] is False
-        assert kwargs["task_name"] == "my-task"
-        assert kwargs["group_name"] == "my-group"
-        assert kwargs["wait"] is True
-
-    def test_optional_fields_omitted_when_none(self):
-        """Optional fields not included when None."""
-        opts = QuafuOptions()
-        kwargs = opts.to_kwargs()
-        assert "task_name" not in kwargs
-        assert "group_name" not in kwargs
-        assert "wait" not in kwargs
 
 
 class TestIBMOptions:
@@ -169,11 +132,6 @@ class TestBackendOptionsFactory:
         assert isinstance(opts, OriginQOptions)
         assert opts.backend_name == "origin:wuyuan:d6"
 
-    def test_from_kwargs_quafu(self):
-        opts = BackendOptionsFactory.from_kwargs("quafu", {"chip_id": "ScQ-P10"})
-        assert isinstance(opts, QuafuOptions)
-        assert opts.chip_id == "ScQ-P10"
-
     def test_from_kwargs_ibm(self):
         opts = BackendOptionsFactory.from_kwargs("ibm", {})
         assert isinstance(opts, IBMOptions)
@@ -210,14 +168,14 @@ class TestBackendOptionsFactory:
         assert opts.chip_id == "Baihua"
 
     def test_normalize_options_with_none(self):
-        opts = BackendOptionsFactory.normalize_options(None, "quafu")
-        assert isinstance(opts, QuafuOptions)
+        opts = BackendOptionsFactory.normalize_options(None, "quark")
+        assert isinstance(opts, QuarkOptions)
 
     def test_normalize_options_with_instance(self):
-        original = QuafuOptions(chip_id="ScQ-P10")
-        opts = BackendOptionsFactory.normalize_options(original, "quafu")
+        original = QuarkOptions(chip_id="Dongling")
+        opts = BackendOptionsFactory.normalize_options(original, "quark")
         assert opts is original
-        assert opts.chip_id == "ScQ-P10"
+        assert opts.chip_id == "Dongling"
 
     def test_normalize_options_with_dict(self):
         opts = BackendOptionsFactory.normalize_options({"backend_name": "origin:wuyuan:d6"}, "originq")
@@ -270,29 +228,6 @@ class TestUnifiedOptions:
         assert opts.measurement_amend is False
         assert opts.auto_mapping is False
 
-    def test_translate_to_quafu_optimize_drives_auto_mapping(self):
-        u = UnifiedOptions(optimize_level=2, auto_mapping=False)
-        opts = u.to_platform_options("quafu")
-        assert isinstance(opts, QuafuOptions)
-        # Quafu has no separate "optimize" knob; optimize_level>=1 enables auto_mapping.
-        assert opts.auto_mapping is True
-
-    def test_translate_to_quafu_disables_auto_mapping(self):
-        u = UnifiedOptions(optimize_level=0, auto_mapping=False)
-        opts = u.to_platform_options("quafu")
-        assert opts.auto_mapping is False
-
-    def test_translate_to_quafu_with_backend_name(self):
-        u = UnifiedOptions(backend_name="ScQ-P10")
-        opts = u.to_platform_options("quafu")
-        assert opts.chip_id == "ScQ-P10"
-
-    def test_translate_to_quafu_warns_on_error_mitigation(self):
-        u = UnifiedOptions(error_mitigation=True, auto_mapping=False)
-        with pytest.warns(UserWarning, match="error_mitigation"):
-            opts = u.to_platform_options("quafu")
-        assert isinstance(opts, QuafuOptions)
-
     def test_translate_to_quark_full(self):
         u = UnifiedOptions(
             optimize_level=1,
@@ -343,7 +278,7 @@ class TestUnifiedOptions:
     def test_strict_raises_on_unsupported(self):
         u = UnifiedOptions(error_mitigation=True, strict=True)
         with pytest.raises(BackendOptionsError, match="error_mitigation"):
-            u.to_platform_options("quafu")
+            u.to_platform_options("tianyan")
         with pytest.raises(BackendOptionsError, match="error_mitigation"):
             u.to_platform_options("ibm")
 
@@ -369,7 +304,7 @@ class TestUnifiedOptions:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            u.to_platform_options("quafu")
+            u.to_platform_options("tianyan")
             u.to_platform_options("ibm")
             u.to_platform_options("quark")
 
@@ -382,13 +317,6 @@ class TestUnifiedOptionsViaFactory:
         opts = BackendOptionsFactory.normalize_options(u, "originq")
         assert isinstance(opts, OriginQOptions)
         assert opts.circuit_optimize is True
-
-    def test_normalize_options_with_unified_quafu_translates(self):
-        u = UnifiedOptions(optimize_level=1, auto_mapping=False)
-        opts = BackendOptionsFactory.normalize_options(u, "quafu")
-        assert isinstance(opts, QuafuOptions)
-        # optimize_level>=1 lifts Quafu's auto_mapping.
-        assert opts.auto_mapping is True
 
     def test_normalize_options_invalid_type_message_lists_unified(self):
         with pytest.raises(BackendOptionsError, match="UnifiedOptions"):

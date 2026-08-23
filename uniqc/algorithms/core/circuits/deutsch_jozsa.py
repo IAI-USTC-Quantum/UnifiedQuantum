@@ -5,9 +5,6 @@ The oracular convention here (per the design notes in the project README) is:
 - :func:`deutsch_jozsa_oracle` returns a fresh ``Circuit`` (the oracle).
 - :func:`deutsch_jozsa_circuit` accepts a *quantum-circuit* oracle as its
   argument and returns a fresh full-DJ ``Circuit`` (fragment style).
-
-A legacy in-place form ``deutsch_jozsa_circuit(circuit, oracle, qubits)`` is
-preserved as a deprecated dispatch and emits :class:`DeprecationWarning`.
 """
 
 __all__ = ["deutsch_jozsa_circuit", "deutsch_jozsa_oracle", "deutsch_jozsa_example"]
@@ -99,75 +96,31 @@ def _build_dj_fragment(
 
 
 def deutsch_jozsa_circuit(
-    *args,
+    oracle: Circuit | None = None,
+    *,
     qubits: list[int] | None = None,
     ancilla: int | None = None,
-    oracle: Circuit | None = None,
-):
-    r"""Build (or apply) the Deutsch-Jozsa algorithm circuit.
-
-    Two calling conventions are supported:
+) -> Circuit:
+    r"""Build the Deutsch-Jozsa algorithm circuit fragment.
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         ora = deutsch_jozsa_oracle(qubits=[0, 1, 2], balanced=True)
         circuit = deutsch_jozsa_circuit(ora, qubits=[0, 1, 2])      # returns Circuit
 
-        # Legacy in-place style (deprecated):
-        c = Circuit()
-        deutsch_jozsa_circuit(c, ora, qubits=[0, 1, 2], ancilla=3)  # mutates c
-
     Args:
-        *args: Either ``(oracle: Circuit, ...)`` (fragment) or
-            ``(circuit: Circuit, oracle: Circuit, ...)`` (deprecated in-place).
+        oracle: The oracle ``Circuit`` (positional or keyword).
         qubits: Data-qubit indices.
         ancilla: Ancilla qubit index. ``None`` means ``max(qubits) + 1``.
-        oracle: The oracle ``Circuit`` (positional or keyword).
 
     Returns:
-        A fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+        A fresh :class:`Circuit` containing the full DJ circuit.
     """
-    # Resolve dispatch
-    if len(args) == 0:
-        if oracle is None:
-            raise TypeError(
-                format_enriched_message(
-                    "deutsch_jozsa_circuit requires an oracle Circuit argument", "circuit_validation"
-                )
-            )
-        return _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
-
-    if len(args) == 1:
-        first = args[0]
-        # Fragment style: first arg IS the oracle
-        if oracle is None:
-            return _build_dj_fragment(oracle=first, qubits=qubits, ancilla=ancilla)
-        # Legacy: first arg is the in-place circuit
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "deutsch_jozsa_circuit(circuit, oracle=...) (in-place form)",
-            replacement="deutsch_jozsa_circuit(oracle, qubits=...) with add_circuit()",
-            stacklevel=2,
+    if oracle is None:
+        raise TypeError(
+            format_enriched_message("deutsch_jozsa_circuit requires an oracle Circuit argument", "circuit_validation")
         )
-        fragment = _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
-        first.add_circuit(fragment)
-        return None
-
-    if len(args) >= 2:
-        # Legacy positional: (circuit, oracle, qubits=..., ancilla=...)
-        circuit_in, ora = args[0], args[1]
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "deutsch_jozsa_circuit(circuit, oracle, ...) (in-place form)",
-            replacement="deutsch_jozsa_circuit(oracle, qubits=...) with add_circuit()",
-            stacklevel=2,
-        )
-        fragment = _build_dj_fragment(oracle=ora, qubits=qubits, ancilla=ancilla)
-        circuit_in.add_circuit(fragment)
-        return None
+    return _build_dj_fragment(oracle=oracle, qubits=qubits, ancilla=ancilla)
 
 
 def deutsch_jozsa_example() -> Circuit:

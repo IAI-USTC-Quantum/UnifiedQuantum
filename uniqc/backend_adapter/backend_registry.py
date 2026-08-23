@@ -50,21 +50,6 @@ class FetchResult:
     fetch_failures: dict[Platform, str] = dataclasses.field(default_factory=dict)
 
 
-def _clean_quafu_gates(gates: list[str]) -> list[str]:
-    """Strip artefacts from Quafu's ``get_valid_gates()`` output.
-
-    The quafu package returns gate names with literal ``[ "`` prefix and ``"``
-    suffix characters embedded in the strings (e.g. ``'[ "cx"'``).  This
-    function removes those artefacts.
-    """
-    cleaned: list[str] = []
-    for g in gates:
-        g = g.lstrip('[ "').rstrip('" ]')
-        if g:
-            cleaned.append(g)
-    return cleaned
-
-
 def _topology_from_raw(raw_edges: Any) -> tuple[QubitTopology, ...]:
     """Convert serialised ``[[u, v], ...]`` topology into BackendInfo edges."""
     topology: list[QubitTopology] = []
@@ -141,54 +126,6 @@ def _normalise_originq(raw: list[dict[str, Any]]) -> list[BackendInfo]:
                     coherence_t2=entry.get("coherence_t2"),
                 )
             )
-    return results
-
-
-def _normalise_quafu(raw: list[dict[str, Any]]) -> list[BackendInfo]:
-    """Convert Quafu ``list_backends()`` output to ``BackendInfo`` objects."""
-    # Names that indicate a simulator rather than real hardware
-    _QUAFU_SIM_PATTERNS = ("sim", "Sim", "SIM")
-    results: list[BackendInfo] = []
-    for entry in raw:
-        name = entry.get("name", "")
-        status_str: str = entry.get("status", "unknown")
-        num_qubits: int = entry.get("num_qubits", 0)
-        is_sim = any(p in name for p in _QUAFU_SIM_PATTERNS)
-        # Map Quafu status to our canonical status
-        status_map = {
-            "Online": "available",
-            "Offline": "unavailable",
-            "Obsolete": "deprecated",
-        }
-        mapped_status = status_map.get(status_str, status_str)
-        topology = _topology_from_raw(entry.get("topology", []))
-        results.append(
-            BackendInfo(
-                platform=Platform.QUAFU,
-                name=name,
-                description="BAQIS Quafu simulator" if is_sim else "BAQIS Quafu chip",
-                num_qubits=num_qubits,
-                topology=topology,
-                status=mapped_status,
-                is_simulator=is_sim,
-                is_hardware=not is_sim,
-                extra={
-                    "task_in_queue": entry.get("task_in_queue", 0),
-                    "qv": entry.get("qv", 0),
-                    "valid_gates": _clean_quafu_gates(entry.get("valid_gates", [])),
-                    "available_qubits": entry.get("available_qubits", []),
-                    "per_qubit_calibration": entry.get("per_qubit_calibration", []),
-                    "per_pair_calibration": entry.get("per_pair_calibration", []),
-                    "global_info": entry.get("global_info", {}),
-                    "calibrated_at": entry.get("calibrated_at"),
-                },
-                avg_1q_fidelity=entry.get("avg_1q_fidelity"),
-                avg_2q_fidelity=entry.get("avg_2q_fidelity"),
-                avg_readout_fidelity=entry.get("avg_readout_fidelity"),
-                coherence_t1=entry.get("coherence_t1"),
-                coherence_t2=entry.get("coherence_t2"),
-            )
-        )
     return results
 
 
@@ -318,6 +255,7 @@ def _normalise_tianyan(raw: list[dict[str, Any]]) -> list[BackendInfo]:
                     "machine_id": entry.get("machine_id", ""),
                     "price": entry.get("price"),
                     "raw_status": entry.get("status", ""),
+                    "num_qubits_source": entry.get("num_qubits_source", "machine_name"),
                 },
             )
         )
@@ -358,7 +296,6 @@ def _normalise_logicalqubit(raw: list[dict[str, Any]]) -> list[BackendInfo]:
 
 _NORMALISERS = {
     Platform.ORIGINQ: _normalise_originq,
-    Platform.QUAFU: _normalise_quafu,
     Platform.QUARK: _normalise_quark,
     Platform.IBM: _normalise_ibm,
     Platform.TIANYAN: _normalise_tianyan,
@@ -377,10 +314,6 @@ def _build_adapter(platform: Platform):
         from uniqc.backend_adapter.task.adapters import OriginQAdapter
 
         return OriginQAdapter()
-    elif platform == Platform.QUAFU:
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        return QuafuAdapter()
     elif platform == Platform.QUARK:
         from uniqc.backend_adapter.task.adapters import QuarkAdapter
 
@@ -483,13 +416,7 @@ def fetch_platform_backends(
         logger.warning("Platform %s SDK not installed — skipping", platform.value)
         backends = get_cached_backends(platform)
         if not backends:
-            if platform.value == "quafu":
-                hint = (
-                    "Quafu support is deprecated and no longer installable via an extra. "
-                    "If you still need it, install pyquafu directly: `pip install pyquafu` "
-                    "(warning: pulls numpy<2)."
-                )
-            elif platform.value in ("qiskit", "ibm"):
+            if platform.value in ("qiskit", "ibm"):
                 hint = (
                     "Qiskit is a core dependency of unified-quantum; the install appears "
                     "broken. Reinstall with `pip install --upgrade unified-quantum`."
@@ -540,8 +467,6 @@ def fetch_all_backends_with_status(
     results: dict[Platform, list[BackendInfo]] = {}
     failures: dict[Platform, str] = {}
     for platform in Platform:
-        if platform == Platform.QUAFU:
-            continue
         try:
             backends, _ = fetch_platform_backends(platform, force_refresh=force_refresh)
             if backends:

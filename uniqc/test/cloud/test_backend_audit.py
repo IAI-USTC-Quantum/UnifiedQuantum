@@ -77,6 +77,5 @@ def test_has_platform_credentials(tmp_path, monkeypatch):
     # Point to a temp empty config
     monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / "config.yaml")
     assert has_platform_credentials("originq") is False
-    assert has_platform_credentials("quafu") is False
     assert has_platform_credentials("quark") is False
     assert has_platform_credentials("ibm") is False

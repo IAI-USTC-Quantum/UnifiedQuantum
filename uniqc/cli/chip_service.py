@@ -36,10 +36,9 @@ def fetch_chip_characterization(
     ----------
     backend_name:
         Bare backend name as reported by the platform, e.g. ``"wuyuan:d5"``
-        (OriginQ), ``"ScQ-P18"`` (Quafu), ``"ibm-sherbrooke"`` (IBM).
+        (OriginQ), ``"Baihua"`` (Quark), ``"ibm-sherbrooke"`` (IBM).
     platform:
         One of :attr:`~uniqc.backend_adapter.backend_info.Platform.ORIGINQ`,
-        :attr:`~uniqc.backend_adapter.backend_info.Platform.QUAFU`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.QUARK`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.TIANYAN`,
         :attr:`~uniqc.backend_adapter.backend_info.Platform.LOGICALQUBIT`,
@@ -66,8 +65,6 @@ def fetch_chip_characterization(
     # Dispatch to platform-specific adapter
     if platform == Platform.ORIGINQ:
         chip = _fetch_originq(backend_name)
-    elif platform == Platform.QUAFU:
-        chip = _fetch_quafu(backend_name)
     elif platform == Platform.QUARK:
         chip = _fetch_quark(backend_name)
     elif platform == Platform.TIANYAN:
@@ -99,27 +96,6 @@ def _fetch_originq(backend_name: str):
 
     try:
         adapter = OriginQAdapter()
-    except (ImportError, Exception):
-        return None
-
-    if not adapter.is_available():
-        return None
-
-    try:
-        return adapter.get_chip_characterization(backend_name)
-    except Exception:
-        return None
-
-
-def _fetch_quafu(backend_name: str):
-    """Fetch chip characterization from Quafu."""
-    try:
-        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-    except (ImportError, Exception):
-        return None
-
-    try:
-        adapter = QuafuAdapter()
     except (ImportError, Exception):
         return None
 
@@ -198,12 +174,12 @@ def _fetch_logicalqubit(backend_name: str):
 def _fetch_ibm(backend_name: str):
     """Fetch chip characterization from IBM Quantum."""
     try:
-        from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+        from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
     except (ImportError, Exception):
         return None
 
     try:
-        adapter = IBMAdapter()
+        adapter = QiskitAdapter()
     except (ImportError, Exception):
         return None
 

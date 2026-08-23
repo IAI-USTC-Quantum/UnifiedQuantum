@@ -7,12 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-23
+
+The deprecation-cliff release: every public API marked with
+`DeprecationWarning` throughout `0.0.x` is now removed, per the
+[deprecation policy](docs/source/7_releases/deprecation_policy.md)
+(migration guide: `docs/source/7_releases/migration_0.1.0.md`). The C++
+simulator kernel moved to the standalone `uniqc-cppsimulator` package,
+making `unified-quantum` a pure-Python wheel. Validation is documented in
+`RELEASE_REPORT_0.1.0.md` (verdict: RELEASE WITH KNOWN GAPS — gaps are
+external: an upstream `pyqpanda3` 0.4.1 OriginQ discovery failure with a
+working stale-cache fallback, and an invalid IBM token in the validation
+environment).
+
 ### Changed
 
 - **C++ simulator split into a standalone package**: the `UniqcCpp` kernel
   now lives in its own repository
   ([IAI-USTC-Quantum/uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator))
-  and is consumed as the PyPI dependency ``uniqc-cppsimulator>=1.0,<2``.
+  and is consumed as the PyPI dependency ``uniqc-cppsimulator>=1.0.1,<2``
+  (the ``1.0.1`` floor pulls in the fix for the two-qubit depolarizing
+  channel freezing its probability at the first call in a process).
   The import name ``uniqc_cpp`` is unchanged, so all Python-side usage keeps
   working. The main package is now published as a pure-Python wheel; building
   from source no longer requires CMake or a C++ toolchain. Tests that
@@ -23,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python 3.12–3.13 gating (and the ``uv sync`` universal-resolver failure it
   caused) is gone. The extra now only requires ``python_version >= '3.12'``
   and is silently skipped on Python 3.10/3.11.
+- **Deterministic documentation example execution**: ``scripts/build_docs.py``
+  seeds ``random``/NumPy/torch before each example and normalizes task ids,
+  timestamps, and matplotlib SVG ids/dates in captured output, so committed
+  ``example-exec-logs/`` no longer jitter between doc builds — a content diff
+  now reliably signals a real behavior change.
 
 ### Added
 
@@ -42,6 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chip cache (``~/.uniqc/backend/chips/``). The Quark adapter unit tests
   moved out of the network-gated ``uniqc/test/cloud/`` directory and now run
   in the default test suite.
+- **``classical_shadow()`` accepts a ``seed`` parameter** for reproducible
+  shadow snapshots (``uniqc.algorithms.core.measurement.classical_shadow``);
+  the default ``None`` keeps the previous OS-entropy behavior.
 - **TianYan and LogicalQubit chip characterization**:
   ``TianyanAdapter.get_chip_characterization`` maps cqlib's authenticated
   ``download_config`` payload (per-qubit T1/T2, gate/readout errors, coupler
@@ -54,10 +77,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the network-gated ``uniqc/test/cloud/`` directory into the default
   test suite.
 
+### Removed
+
+- **Quafu platform support removed**, as announced in the deprecation
+  policy (deprecated throughout `0.0.x`, scheduled for removal in `0.1.0`).
+  This drops the ``quafu_adapter`` module, ``QuafuBackend``,
+  ``QuafuCircuitAdapter``, ``QuafuOptions``, ``normalize_quafu``,
+  ``Platform.QUAFU``, the quafu branches in the CLI / gateway / backend
+  discovery / chip services, the ``quafu.*`` config keys, the
+  ``requires_quafu*`` pytest markers, and any reference to the ``pyquafu``
+  dependency. BAQIS ScQ chips are now served by the Quark platform —
+  migrate to ``pip install unified-quantum[quark]`` and use
+  ``quark:<chip>`` backend identifiers.
+- **`uniqc.simulator.get_backend()` removed**, as announced in the
+  deprecation policy. Use ``uniqc.simulator.get_simulator()`` or
+  ``uniqc.simulator.create_simulator()`` instead (same arguments). The
+  cloud-backend factory ``uniqc.get_backend()`` is unaffected.
+- **`IBMAdapter` removed**, as announced in the deprecation policy. The
+  class was a pure delegate shim; use ``QiskitAdapter`` directly (same
+  ``proxy=`` constructor signature, same functionality via
+  ``qiskit-ibm-runtime``). The ``ibm_adapter`` module itself stays — its
+  calibration helper functions are still used by ``QiskitAdapter``.
+- **Platform task-id lookup fallback removed**, as announced in the
+  deprecation policy. Query interfaces (``query_task``,
+  ``get_platform_task_ids``, …) no longer resolve a raw platform task id
+  to its ``uqt_*`` parent via the shard index — use the uniqc task id
+  returned at submission time. The explicit ``backend=`` legacy
+  direct-query path is unaffected, and the shard index itself
+  (``TaskStore.find_uniqc_id_by_platform_id``) stays. The task-id
+  indirection tests moved out of the network-gated ``uniqc/test/cloud/``
+  directory and now run in the default test suite.
+- **In-place forms of the 12 algorithm building blocks removed**, as
+  announced in the deprecation policy. ``qft_circuit``,
+  ``deutsch_jozsa_circuit``, ``dicke_state_circuit``,
+  ``thermal_state_circuit``, ``cluster_state``, ``ghz_state``, ``w_state``,
+  ``amplitude_estimation_circuit``, ``grover_oracle``, ``grover_diffusion``,
+  ``grover_operator`` and ``vqd_circuit`` no longer accept a ``Circuit`` as
+  their first argument for in-place mutation — they are fragment-only
+  (``f(n_qubits, ...) -> Circuit``); compose with
+  ``circuit.add_circuit(fragment)`` instead. The no-op ``ancilla`` keyword
+  of ``grover_diffusion()`` is removed as well, and the internal
+  dual-mode dispatch helper ``uniqc.algorithms._compat`` is gone.
+
 ### Fixed
 
+- **Dry-run now validates circuit qubits against the chip**: Quark
+  (``quark_adapter``) compared nothing against the target chip, so an
+  oversized circuit passed dry-run and only failed at submission. The
+  Quark dry-run now checks the circuit's physical qubits against the
+  chip metadata from ``quarkcircuit`` (offline); TianYan and LogicalQubit
+  dry-runs check against the local chip cache. When no chip data is
+  available offline the check is skipped (Quark emits a warning) instead
+  of failing closed.
+- **TianYan discovery reported the model name as the qubit count**:
+  ``tianyan176`` was listed with 176 qubits while only 66 are online (and
+  ``tianyan-294`` in fact has 107). ``list_backends`` now makes a
+  best-effort authenticated ``download_config`` call per online hardware
+  machine and records ``num_qubits_source`` (``live_config`` vs
+  ``machine_name``) for provenance; the submission path additionally
+  corrects name-derived counts from the chip cache. Live-sourced counts
+  from other platforms are never clobbered by the cache.
 - **`wait_for_result` crashed on Quark task completion** with
-  ``int() argument must be ... not 'dict'``: Quark (like Quafu/dummy) nests
+  ``int() argument must be ... not 'dict'``: Quark (like dummy) nests
   its histogram as ``{"counts": {...}, "raw_result": ...}``, which the
   ``UnifiedResult`` wrapper did not unwrap. Verified end-to-end with a live
   1024-shot Bell task on ``quark:Baihua``.

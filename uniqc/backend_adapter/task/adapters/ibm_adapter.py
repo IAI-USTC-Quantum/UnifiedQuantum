@@ -15,10 +15,6 @@ from collections.abc import Mapping
 from inspect import Parameter, signature
 from typing import Any
 
-from uniqc.backend_adapter.task.adapters.base import (
-    QuantumAdapter,
-)
-
 _SINGLE_QUBIT_GATE_PRIORITY = ("sx", "x", "id")
 _TWO_QUBIT_GATE_PRIORITY = ("cz", "ecr", "cx")
 _IBM_DATA_ERRORS = (AttributeError, KeyError, TypeError, ValueError, RuntimeError, IndexError)
@@ -288,91 +284,6 @@ def _compute_ibm_fidelity(b: Any) -> dict[str, Any]:
         "coherence_t1": _avg(t1s),
         "coherence_t2": _avg(t2s),
     }
-
-
-class IBMAdapter(QuantumAdapter):
-    """Deprecated: delegates to QiskitAdapter.
-
-    .. deprecated::
-        IBMAdapter is deprecated. Use :class:`QiskitAdapter` instead,
-        which uses ``qiskit-ibm-runtime`` for task submission.
-
-    This class is kept for backwards compatibility and delegates all
-    operations to an internal QiskitAdapter instance.
-    """
-
-    name = "ibm"
-
-    def __init__(self, proxy: dict[str, str] | str | None = None) -> None:
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "IBMAdapter",
-            replacement="QiskitAdapter",
-            detail="It provides the same functionality via qiskit-ibm-runtime",
-            stacklevel=2,
-        )
-        from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
-
-        self._delegate = QiskitAdapter(proxy=proxy)
-
-    # -------------------------------------------------------------------------
-    # Forward all methods to the delegate QiskitAdapter
-    # -------------------------------------------------------------------------
-
-    def is_available(self) -> bool:
-        return self._delegate.is_available()
-
-    def _get_service(self):
-        return self._delegate._service
-
-    def list_backends(self) -> list[dict[str, Any]]:
-        """List IBM backends — delegates to :class:`QiskitAdapter`."""
-        return self._delegate.list_backends()
-
-    def translate_circuit(self, originir: str) -> Any:
-        return self._delegate.translate_circuit(originir)
-
-    def submit(self, circuit: Any, *, shots: int = 1000, **kwargs: Any) -> str:
-        return self._delegate.submit(circuit, shots=shots, **kwargs)
-
-    def submit_batch(self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any) -> list[str]:
-        return self._delegate.submit_batch(circuits, shots=shots, **kwargs)
-
-    def query(self, taskid: str) -> dict[str, Any]:
-        return self._delegate.query(taskid)
-
-    def query_batch(self, taskids: list[str]) -> dict[str, Any]:
-        return self._delegate.query_batch(taskids)
-
-    def query_sync(
-        self,
-        taskid: str | list[str],
-        interval: float = 2.0,
-        timeout: float = 60.0,
-        retry: int = 5,
-    ) -> list[dict[str, Any]]:
-        return self._delegate.query_sync(taskid, interval=interval, timeout=timeout, retry=retry)
-
-    # -------------------------------------------------------------------------
-    # Chip characterization
-    # -------------------------------------------------------------------------
-
-    def get_chip_characterization(self, backend_name: str):
-        """Return per-qubit and per-pair calibration data for an IBM backend.
-
-        Delegates to :class:`QiskitAdapter`.
-
-        Parameters
-        ----------
-        backend_name:
-            IBM backend name, e.g. ``"ibm_brisbane"``.
-
-        Returns
-        -------
-        ChipCharacterization or None
-        """
-        return self._delegate.get_chip_characterization(backend_name)
 
 
 def _chip_characterization_from_backend(backend: Any, *, backend_name: str | None = None):

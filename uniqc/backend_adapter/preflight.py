@@ -44,7 +44,6 @@ from uniqc.backend_adapter.task.optional_deps import (
     check_lqcloud,
     check_pyqpanda3,
     check_qiskit,
-    check_quafu,
     check_quark,
     check_uniqc_cpp,
 )
@@ -77,11 +76,6 @@ PROVIDER_INSTALL_HINTS: dict[str, str] = {
         "  pip install 'unified-quantum[originq]'"
     ),
     "ibm": ("IBM backends require qiskit + qiskit_ibm_runtime. Install with:\n  pip install 'unified-quantum[ibm]'"),
-    "quafu": (
-        "The Quafu adapter is deprecated. Install pyquafu directly only "
-        "if you really need it:\n  pip install pyquafu  (warning: "
-        "pyquafu requires numpy<2)"
-    ),
     "quark": (
         "Quark backends require QuarkStudio. Install with:\n"
         "  pip install QuarkStudio  (the [quark] extra is also available "
@@ -113,11 +107,6 @@ def has_provider_credentials(provider: str) -> bool:
             from uniqc.config import load_originq_config
 
             load_originq_config()
-            return True
-        if provider == "quafu":
-            from uniqc.config import load_quafu_config
-
-            load_quafu_config()
             return True
         if provider == "quark":
             from uniqc.config import load_quark_config
@@ -318,10 +307,6 @@ def _check_provider_dep(provider: str) -> None:
                 install_hint=install_hint,
             )
         return
-    if provider == "quafu":
-        if not check_quafu():
-            raise MissingDependencyError("quafu", install_hint=install_hint)
-        return
     if provider == "quark":
         if not check_quark():
             raise MissingDependencyError("quark", install_hint=install_hint)
@@ -403,14 +388,14 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
 
     if provider == "ibm":
         try:
-            from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+            from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
                 f"IBM SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
-            adapter = IBMAdapter()
+            adapter = QiskitAdapter()
             chip = adapter.get_chip_characterization(chip_name)
         except Exception as exc:
             raise BackendPreflightError(
@@ -422,31 +407,6 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
             raise BackendPreflightError(
                 f"IBM returned no characterization for {chip_name!r}. "
                 "Verify the backend name is reachable from your IBM account."
-            )
-        save_chip(chip)
-        return chip
-
-    if provider == "quafu":
-        try:
-            from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-            from uniqc.cli.chip_cache import save_chip
-        except Exception as exc:
-            raise BackendPreflightError(
-                f"Quafu SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
-            ) from exc
-        try:
-            adapter = QuafuAdapter()
-            chip = adapter.get_chip_characterization(chip_name)
-        except Exception as exc:
-            raise BackendPreflightError(
-                f"Quafu refresh failed for {chip_name!r}: {exc}. "
-                "Check UNIQC_QUAFU_TOKEN, network connectivity, and "
-                "that the chip name is valid."
-            ) from exc
-        if chip is None:
-            raise BackendPreflightError(
-                f"Quafu returned no characterization for {chip_name!r}. "
-                "Verify the chip name (e.g. 'ScQ-P18') is currently online."
             )
         save_chip(chip)
         return chip

@@ -43,10 +43,6 @@ def _get_adapter(backend: str, **kwargs) -> Any:
         return DummyAdapter(**dummy_adapter_kwargs(backend, **kwargs))
     if target.provider == "originq":
         return OriginQAdapter(backend_name=target.chip_name or "")
-    if target.provider == "quafu":
-        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-
-        return QuafuAdapter(**kwargs)
     raise ValueError(
         f"Backend identifier {backend!r} (kind={target.kind!r}, "
         f"provider={target.provider!r}) has no adapter wired in this "

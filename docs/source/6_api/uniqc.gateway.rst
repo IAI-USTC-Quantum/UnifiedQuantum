@@ -18,6 +18,7 @@ Submodules
 
    uniqc.gateway.cli
    uniqc.gateway.config
+   uniqc.gateway.redaction
    uniqc.gateway.server
    uniqc.gateway.ws
 

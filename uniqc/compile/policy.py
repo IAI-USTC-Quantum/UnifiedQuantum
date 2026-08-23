@@ -4,7 +4,7 @@ This module is the single source of truth for "what does each cloud platform
 expect from a circuit before we hand it over". Two pieces of policy live here:
 
 * :data:`PLATFORM_BASIS_GATES` — the gate set we compile to before submission
-  on each platform. For superconducting CN-style platforms (originq, quafu,
+  on each platform. For superconducting CN-style platforms (originq,
   quark, tianyan, logicalqubit) we use ``("CZ", "SX", "RZ")``. For IBM we
   defer to the backend's advertised ``basis_gates`` (read from
   :attr:`BackendInfo.extra` ``["basis_gates"]``) and fall back to qiskit's
@@ -13,7 +13,7 @@ expect from a circuit before we hand it over". Two pieces of policy live here:
 * :data:`PLATFORM_SUBMIT_LANGUAGE` — the IR string each adapter actually sends
   on the wire. ``OriginIR`` for OriginQ (pyqpanda3 path), TianYan (translated
   to QCIS by the adapter) and LogicalQubit (translated to an lqcloud
-  circuit by the adapter); ``QASM2`` for qiskit / quafu / quark.
+  circuit by the adapter); ``QASM2`` for qiskit / quark.
 
 The high-level helper :func:`compile_for_backend` glues the policy and the
 existing :func:`uniqc.compile.compile` function together, returning a circuit
@@ -40,7 +40,6 @@ __all__ = [
 #: Empty tuple means "no opinion — defer to the backend's own advertisement".
 PLATFORM_BASIS_GATES: dict[str, tuple[str, ...]] = {
     "originq": ("CZ", "SX", "RZ"),
-    "quafu": ("CZ", "SX", "RZ"),
     "quark": ("CZ", "SX", "RZ"),
     "ibm": (),  # IBM: take from backend.extra["basis_gates"]
     "dummy": (),
@@ -52,7 +51,6 @@ PLATFORM_BASIS_GATES: dict[str, tuple[str, ...]] = {
 #: The wire language each adapter submits with.
 PLATFORM_SUBMIT_LANGUAGE: dict[str, str] = {
     "originq": "OriginIR",
-    "quafu": "QASM2",
     "quark": "QASM2",
     "ibm": "QASM2",
     "dummy": "OriginIR",
@@ -104,7 +102,7 @@ def compile_for_backend(
 ):
     """Compile ``circuit`` so that it satisfies ``backend_info``.
 
-    For ``originq``, ``quafu``, ``quark``, ``tianyan`` and ``logicalqubit``
+    For ``originq``, ``quark``, ``tianyan`` and ``logicalqubit``
     this lowers the circuit to ``cz + sx + rz`` (the supported
     superconducting basis) using the existing
     :func:`uniqc.compile.compile` pipeline. For ``ibm``, the basis set is

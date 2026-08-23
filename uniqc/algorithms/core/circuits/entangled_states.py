@@ -8,8 +8,7 @@ the design notes in the project README). The canonical APIs are:
 - ``cluster_state_circuit(n_qubits, qubits=None, edges=None) -> Circuit``
 
 The shorter names ``ghz_state``, ``w_state`` and ``cluster_state`` are
-preserved as dual-mode dispatchers: pass an integer to get a fresh fragment;
-pass an existing ``Circuit`` (deprecated) to mutate it in place.
+fragment-style aliases: pass an integer ``n_qubits`` to get a fresh fragment.
 """
 
 __all__ = [
@@ -23,9 +22,17 @@ __all__ = [
 
 
 from uniqc._error_hints import format_enriched_message
-from uniqc.algorithms._compat import dispatch_circuit_fragment
-from uniqc.algorithms.core.circuits.dicke_state import dicke_state_circuit
+from uniqc.algorithms.core.circuits.dicke_state import _build_dicke_fragment
 from uniqc.circuit_builder import Circuit
+
+
+def _infer_n_qubits(name: str, n_qubits: int | None, qubits: list[int] | None) -> int:
+    """Infer ``n_qubits`` from a qubits list when not given explicitly."""
+    if n_qubits is None:
+        if not qubits:
+            raise ValueError(f"{name}(...) requires either an integer n_qubits or a non-empty qubits list.")
+        n_qubits = max(qubits) + 1
+    return n_qubits
 
 
 def _build_ghz_fragment(*, n_qubits: int, qubits: list[int] | None = None) -> Circuit:
@@ -40,35 +47,24 @@ def _build_ghz_fragment(*, n_qubits: int, qubits: list[int] | None = None) -> Ci
     return fragment
 
 
-def ghz_state(first_arg=None, qubits: list[int] | None = None):
+def ghz_state(n_qubits: int | None = None, qubits: list[int] | None = None) -> Circuit:
     r"""Prepare a GHZ state :math:`(|0\ldots0\rangle + |1\ldots1\rangle)/\sqrt 2`.
-
-    Two calling conventions:
 
     .. code-block:: python
 
-        # Fragment style (recommended):
         c = ghz_state(3)                         # returns Circuit
         c = ghz_state(3, qubits=[1, 2, 4])       # use offset qubits
 
-        # Legacy in-place style (deprecated):
-        c = Circuit(3)
-        ghz_state(c)                             # mutates c in place
-
     Args:
-        first_arg: Either an integer ``n_qubits`` (fragment mode) or a
-            :class:`Circuit` (deprecated in-place mode).
+        n_qubits: Number of qubits. May be ``None`` if ``qubits`` is given,
+            in which case it is inferred as ``max(qubits) + 1``.
         qubits: Qubit indices.
 
     Returns:
-        A fresh :class:`Circuit` in fragment mode; ``None`` in legacy mode.
+        A fresh :class:`Circuit` containing the preparation fragment.
     """
-    return dispatch_circuit_fragment(
-        name="ghz_state",
-        fragment_builder=_build_ghz_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-    )
+    n_qubits = _infer_n_qubits("ghz_state", n_qubits, qubits)
+    return _build_ghz_fragment(n_qubits=n_qubits, qubits=qubits)
 
 
 def ghz_state_circuit(n_qubits: int, qubits: list[int] | None = None) -> Circuit:
@@ -81,24 +77,17 @@ def _build_w_fragment(*, n_qubits: int, qubits: list[int] | None = None) -> Circ
         qubits = list(range(n_qubits))
     if len(qubits) < 2:
         raise ValueError(format_enriched_message("w_state requires at least 2 qubits", "circuit_validation"))
-    # Build a fresh circuit and use the (already-fragment-style)
-    # ``dicke_state_circuit`` to populate it with k=1.
-    fragment = Circuit()
-    dicke_state_circuit(fragment, k=1, qubits=qubits)  # legacy in-place; safe on fragment
-    return fragment
+    # A W state is the k=1 Dicke state.
+    return _build_dicke_fragment(n_qubits=n_qubits, qubits=qubits, k=1)
 
 
-def w_state(first_arg=None, qubits: list[int] | None = None):
+def w_state(n_qubits: int | None = None, qubits: list[int] | None = None) -> Circuit:
     r"""Prepare a W state — equal superposition of single-excitation basis states.
 
-    See :func:`ghz_state` for the dual-mode signature contract.
+    See :func:`ghz_state` for the signature contract.
     """
-    return dispatch_circuit_fragment(
-        name="w_state",
-        fragment_builder=_build_w_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-    )
+    n_qubits = _infer_n_qubits("w_state", n_qubits, qubits)
+    return _build_w_fragment(n_qubits=n_qubits, qubits=qubits)
 
 
 def w_state_circuit(n_qubits: int, qubits: list[int] | None = None) -> Circuit:
@@ -134,22 +123,17 @@ def _build_cluster_fragment(
 
 
 def cluster_state(
-    first_arg=None,
+    n_qubits: int | None = None,
     qubits: list[int] | None = None,
     edges: list[tuple[int, int]] | None = None,
-):
+) -> Circuit:
     r"""Prepare a cluster (graph) state via :math:`H^{\otimes n}` + CZ on each edge.
 
-    See :func:`ghz_state` for the dual-mode signature contract. ``edges``
+    See :func:`ghz_state` for the signature contract. ``edges``
     defaults to a linear nearest-neighbour chain.
     """
-    return dispatch_circuit_fragment(
-        name="cluster_state",
-        fragment_builder=_build_cluster_fragment,
-        first_arg=first_arg,
-        legacy_qubits=qubits,
-        extra_kwargs={"edges": edges},
-    )
+    n_qubits = _infer_n_qubits("cluster_state", n_qubits, qubits)
+    return _build_cluster_fragment(n_qubits=n_qubits, qubits=qubits, edges=edges)
 
 
 def cluster_state_circuit(

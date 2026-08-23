@@ -14,7 +14,6 @@ from typing import Any
 
 class Platform(Enum):
     ORIGINQ = "originq"
-    QUAFU = "quafu"
     QUARK = "quark"
     IBM = "ibm"
     DUMMY = "dummy"

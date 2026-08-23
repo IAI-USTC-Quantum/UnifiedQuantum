@@ -159,14 +159,12 @@ def test_per_platform_get_dispatches(isolate_config):
         {
             "default": {
                 "originq": {"token": "o"},
-                "quafu": {"token": "q"},
                 "quark": {"QUARK_API_KEY": "k"},
                 "ibm": {"token": "i"},
             },
         }
     )
     assert cfg.get_originq_config() == {"token": "o"}
-    assert cfg.get_quafu_config() == {"token": "q"}
     assert cfg.get_quark_config() == {"QUARK_API_KEY": "k"}
     assert cfg.get_ibm_config() == {"token": "i"}
 
@@ -181,17 +179,6 @@ def test_load_originq_config_missing_token_raises(isolate_config):
     cfg.save_config({"default": {"originq": {"token": ""}}})
     with pytest.raises(ImportError):
         cfg.load_originq_config()
-
-
-def test_load_quafu_config_round_trip(isolate_config):
-    cfg.save_config({"default": {"quafu": {"token": "q"}}})
-    assert cfg.load_quafu_config() == {"api_token": "q"}
-
-
-def test_load_quafu_config_missing_token_raises(isolate_config):
-    cfg.save_config({"default": {"quafu": {"token": ""}}})
-    with pytest.raises(ImportError):
-        cfg.load_quafu_config()
 
 
 def test_load_quark_config_supports_legacy_token(isolate_config):

@@ -13,9 +13,10 @@ VERSION_OPERATORS = ("===", "~=", "==", "!=", "<=", ">=", "<", ">", "@")
 
 # First-party compatibility ranges that are exempt from the no-pin policy:
 # uniqc-cppsimulator ships the C++ kernel from its own repository, and the
-# >=1.0,<2 bound is the deliberate API-compatibility contract for that split,
-# not a guard against third-party upstream breakage.
-FIRST_PARTY_COMPATIBILITY_RANGES = {"uniqc-cppsimulator>=1.0,<2"}
+# >=1.0.1,<2 bound is the deliberate API-compatibility contract for that split
+# (1.0.1 fixes the two-qubit depolarizing p-freezing bug), not a guard
+# against third-party upstream breakage.
+FIRST_PARTY_COMPATIBILITY_RANGES = {"uniqc-cppsimulator>=1.0.1,<2"}
 
 
 def _requirement_spec(requirement: str) -> str:
@@ -56,22 +57,6 @@ def test_third_party_dependencies_are_not_version_pinned() -> None:
     ]
 
     assert constrained == []
-
-
-def test_quafu_extra_has_been_removed() -> None:
-    """The legacy [quafu] extra is fully removed; pyquafu must not appear in any extra.
-
-    The Quafu platform SDK (pyquafu) is deprecated and pulls numpy<2; users who still
-    need it must install pyquafu manually. See docs/source/guide/installation.md.
-    """
-    pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    optional = pyproject["project"]["optional-dependencies"]
-
-    assert "quafu" not in optional, "[quafu] extra must be removed"
-    for group, requirements in optional.items():
-        assert all("pyquafu" not in requirement for requirement in requirements), (
-            f"pyquafu unexpectedly listed under [{group}]"
-        )
 
 
 def test_qiskit_is_a_core_dependency() -> None:

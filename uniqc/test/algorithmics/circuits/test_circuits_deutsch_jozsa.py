@@ -42,9 +42,8 @@ class TestDeutschJozsaCircuit:
 
         n = 3
         oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=False)
-        c = Circuit()
         # Use explicit qubits: data qubits 0,1,2 and ancilla qubit 3
-        deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
+        c = deutsch_jozsa_circuit(oracle, qubits=[0, 1, 2], ancilla=3)
 
         sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
@@ -62,8 +61,7 @@ class TestDeutschJozsaCircuit:
 
         n = 3
         oracle = deutsch_jozsa_oracle(qubits=list(range(n)), balanced=True)
-        c = Circuit()
-        deutsch_jozsa_circuit(c, oracle, qubits=[0, 1, 2], ancilla=3)
+        c = deutsch_jozsa_circuit(oracle, qubits=[0, 1, 2], ancilla=3)
 
         sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)
@@ -80,8 +78,7 @@ class TestDeutschJozsaCircuit:
         from uniqc.simulator import Simulator
 
         oracle = deutsch_jozsa_oracle(qubits=[0], balanced=True)
-        c = Circuit()
-        deutsch_jozsa_circuit(c, oracle, qubits=[0], ancilla=1)
+        c = deutsch_jozsa_circuit(oracle, qubits=[0], ancilla=1)
 
         sim = Simulator(backend_type="statevector", least_qubit_remapping=False)
         result = sim.simulate_statevector(c.qasm)

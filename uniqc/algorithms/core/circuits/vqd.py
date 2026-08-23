@@ -85,59 +85,31 @@ def vqd_ansatz(
 
 
 def vqd_circuit(
-    *args,
+    n_qubits: int | None = None,
+    *,
     ansatz_params: list[float] | None = None,
     prev_states: list[np.ndarray] | None = None,
     qubits: list[int] | None = None,
     penalty: float = 10.0,
     n_layers: int = 2,
-):
-    r"""Build (or apply) a VQD ansatz.
-
-    Two calling conventions:
+) -> Circuit:
+    r"""Build a VQD ansatz circuit fragment.
 
     .. code-block:: python
 
-        # Variational fragment style (recommended; see also vqd_ansatz):
+        # Variational fragment style (see also vqd_ansatz):
         c = vqd_circuit(2, ansatz_params=[0.1]*4, prev_states=[gs], n_layers=2)
 
-        # Legacy in-place (deprecated):
-        c = Circuit(2)
-        vqd_circuit(c, [0.1]*4, prev_states=[gs], n_layers=2)
+    ``n_qubits`` may be ``None`` if ``qubits`` is given, in which case it is
+    inferred as ``max(qubits) + 1``.
     """
-    if len(args) >= 1 and isinstance(args[0], Circuit):
-        circuit_in = args[0]
-        if len(args) >= 2 and ansatz_params is None:
-            ansatz_params = args[1]
-        if len(args) >= 3 and prev_states is None:
-            prev_states = args[2]
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            "vqd_circuit(circuit, ansatz_params, prev_states, ...) (in-place form)",
-            replacement="vqd_ansatz(n_qubits, ansatz_params, prev_states, ...) with add_circuit()",
-            stacklevel=2,
-        )
-        if qubits is None:
-            qubits = list(range(circuit_in.qubit_num))
-        if not prev_states:
-            raise ValueError(
-                format_enriched_message(
-                    "prev_states is empty. Use VQE (not VQD) for the ground state.", "circuit_validation"
-                )
+    if n_qubits is None:
+        if qubits is not None:
+            n_qubits = max(qubits) + 1
+        else:
+            raise TypeError(
+                format_enriched_message("vqd_circuit requires n_qubits as first positional arg", "circuit_validation")
             )
-        _hea_ansatz(circuit_in, ansatz_params, n_layers, qubits)
-        return None
-
-    # Fragment-style call
-    if len(args) >= 1 and isinstance(args[0], int):
-        n_qubits = args[0]
-    elif qubits is not None:
-        n_qubits = max(qubits) + 1
-    else:
-        raise TypeError(
-            format_enriched_message("vqd_circuit requires n_qubits as first positional arg", "circuit_validation")
-        )
     if ansatz_params is None or prev_states is None:
         raise TypeError(
             format_enriched_message("vqd_circuit requires ansatz_params and prev_states", "circuit_validation")

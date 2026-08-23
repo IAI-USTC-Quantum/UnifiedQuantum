@@ -39,7 +39,7 @@ uv sync --all-extras --group dev --group docs
 
 This creates or updates `.venv` and installs the package in **editable mode** with:
 - The C++ simulation backend (`uniqc_cpp`) via the `uniqc-cppsimulator` dependency
-- All optional dependencies (Qiskit, Quafu, IBM Runtime, visualization tools, etc.)
+- All optional dependencies (Qiskit, Quark, IBM Runtime, visualization tools, etc.)
 - Development tools (pytest, ruff, pre-commit)
 
 Run project commands through uv so they use the managed environment:
@@ -209,7 +209,7 @@ committed `example-exec-logs/`. CI only ever runs step 2 + `scripts/check_doc_lo
 * You must locally have the dependencies for the area of code you change.
   If you only touched local-simulator code, you only need to be able to run
   the `dummy:local:*` examples. If you touched real-chip code (originq /
-  quafu / ibm / quark), you should at least have the matching SDK installed —
+  quark / ibm), you should at least have the matching SDK installed —
   ideally credentials too.
 * If you change anything that user-visible code or examples might depend on,
   you **must** run `cd docs && uv run make html` locally before opening the
@@ -217,7 +217,7 @@ committed `example-exec-logs/`. CI only ever runs step 2 + `scripts/check_doc_lo
   conditions there should be no diff at all — diffs are exactly the signal
   that an example's behaviour changed.
 * If your example only makes sense on a real chip / cloud platform, mark it
-  with `[doc-require: originq]` (or `quafu` / `ibm` / `quark`) plus
+  with `[doc-require: originq]` (or `ibm` / `quark`) plus
   `[doc-skip-execute]` so the build pipeline lists it for documentation but
   never tries to run it.
 * If a third-party library produces a noisy `DeprecationWarning` on import

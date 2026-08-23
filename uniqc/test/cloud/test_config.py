@@ -21,7 +21,6 @@ from uniqc.config import (
     get_ibm_config,
     get_originq_config,
     get_platform_config,
-    get_quafu_config,
     get_quark_config,
     load_config,
     save_config,
@@ -104,7 +103,6 @@ class TestSaveConfig:
         test_config = {
             "default": {
                 "originq": {"token": "originq_token"},
-                "quafu": {"token": "quafu_token"},
                 "quark": {"QUARK_API_KEY": "quark_token"},
                 "ibm": {"token": "ibm_token", "proxy": {"http": "http://proxy"}},
             },
@@ -133,14 +131,6 @@ class TestGetPlatformConfig:
         save_config(test_config, config_file)
         result = get_platform_config("originq", config_path=config_file)
         assert result["token"] == "originq_token"
-
-    def test_get_quafu_config(self, tmp_path: Path) -> None:
-        """Test getting Quafu configuration."""
-        config_file = tmp_path / "config.yml"
-        test_config = {"default": {"quafu": {"token": "quafu_token"}}}
-        save_config(test_config, config_file)
-        result = get_platform_config("quafu", config_path=config_file)
-        assert result["token"] == "quafu_token"
 
     def test_get_ibm_config_with_proxy(self, tmp_path: Path) -> None:
         """Test getting IBM configuration with proxy."""
@@ -200,7 +190,6 @@ class TestValidateConfig:
         valid_config = {
             "default": {
                 "originq": {"token": "t"},
-                "quafu": {"token": "t"},
                 "quark": {"QUARK_API_KEY": "t"},
                 "ibm": {"token": "t"},
             }
@@ -297,9 +286,9 @@ class TestUpdatePlatformConfig:
         create_default_config(config_file)
 
         new_config = {"token": "test_token"}
-        update_platform_config("quafu", new_config, profile="test", config_path=config_file)
+        update_platform_config("ibm", new_config, profile="test", config_path=config_file)
 
-        result = get_platform_config("quafu", profile="test", config_path=config_file)
+        result = get_platform_config("ibm", profile="test", config_path=config_file)
         assert result["token"] == "test_token"
 
     def test_update_unsupported_platform_raises(self, tmp_path: Path) -> None:
@@ -378,19 +367,6 @@ class TestConvenienceFunctions:
             result = get_originq_config()
             assert result["token"] == "test_token"
 
-    def test_get_quafu_config(self, tmp_path: Path) -> None:
-        """Test get_quafu_config convenience function."""
-        config_file = tmp_path / "config.yml"
-        test_config = {"default": {"quafu": {"token": "test_token"}}}
-        save_config(test_config, config_file)
-
-        with (
-            mock.patch.object(config, "CONFIG_FILE", config_file),
-            mock.patch.object(legacy_config, "CONFIG_FILE", config_file),
-        ):
-            result = get_quafu_config()
-            assert result["token"] == "test_token"
-
     def test_get_quark_config(self, tmp_path: Path) -> None:
         """Test get_quark_config convenience function."""
         config_file = tmp_path / "config.yml"
@@ -425,7 +401,6 @@ class TestDefaultConfig:
         """Test that DEFAULT_CONFIG has expected structure."""
         assert "default" in DEFAULT_CONFIG
         assert "originq" in DEFAULT_CONFIG["default"]
-        assert "quafu" not in DEFAULT_CONFIG["default"]
         assert "quark" in DEFAULT_CONFIG["default"]
         assert "ibm" in DEFAULT_CONFIG["default"]
 

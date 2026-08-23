@@ -102,6 +102,7 @@ def classical_shadow(
     qubits: list[int] | None = None,
     shots: int = 4096,
     n_shadow: int | None = None,
+    seed: int | None = None,
 ) -> list[ShadowSnapshot]:
     """Generate classical-shadow snapshots of a quantum state.
 
@@ -130,6 +131,8 @@ def classical_shadow(
             ``None`` auto-computes as ``2 * n * log(2/δ)`` with ``δ = 0.01``.
             This bound guarantees fidelity error ≤ ε with high probability
             for up to M = exp(ε² n / 10) observables.
+        seed: Seed for the snapshot RNG. ``None`` (default) draws from OS
+            entropy; pass an integer for reproducible snapshots.
 
     Returns:
         List of :class:`ShadowSnapshot` objects.
@@ -171,7 +174,7 @@ def classical_shadow(
     if not isinstance(n_shadow, int) or n_shadow <= 0:
         raise ValueError(format_enriched_message(f"n_shadow must be a positive integer, got {n_shadow}", "measurement"))
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
     sim = Simulator()
 
     # Stratified basis sampling: when n_shadow >= 3^n, cycle through every

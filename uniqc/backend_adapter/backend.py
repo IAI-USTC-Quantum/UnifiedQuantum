@@ -4,7 +4,7 @@ This module provides a centralized Backend management system with:
 - Abstract base class QuantumBackend defining a unified interface
 - Factory pattern for backend instance creation/retrieval
 - Caching mechanism for backend instances
-- Integration with existing adapters (OriginQ, Quafu, IBM)
+- Integration with existing adapters (OriginQ, Quark, IBM)
 
 Usage::
 
@@ -26,7 +26,6 @@ from __future__ import annotations
 __all__ = [
     "QuantumBackend",
     "OriginQBackend",
-    "QuafuBackend",
     "QuarkBackend",
     "IBMBackend",
     "DummyBackend",
@@ -94,7 +93,7 @@ class QuantumBackend(abc.ABC):
 
     Attributes:
         name: The name of this backend instance.
-        platform: The platform identifier (e.g., 'originq', 'quafu', 'ibm').
+        platform: The platform identifier (e.g., 'originq', 'quark', 'ibm').
         adapter: The underlying quantum adapter instance.
         config: Backend-specific configuration dictionary.
     """
@@ -393,48 +392,8 @@ class OriginQBackend(QuantumBackend):
         return OriginQAdapter()
 
 
-class QuafuBackend(QuantumBackend):
-    """Backend for BAQIS Quafu (ScQ) quantum cloud platform.
-
-    This backend connects to the Quafu service for executing quantum
-    circuits on superconducting quantum computers.
-    """
-
-    platform = "quafu"
-    _adapter_class = QuantumAdapter
-
-    # Valid chip IDs for Quafu
-    VALID_CHIP_IDS = frozenset({"ScQ-P10", "ScQ-P18", "ScQ-P136", "ScQ-P10C", "Dongling"})
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        from uniqc.backend_adapter.task.adapters import quafu_adapter  # noqa: F401
-
-        super().__init__(*args, **kwargs)
-
-    def _create_adapter(self) -> QuantumAdapter:
-        """Create a Quafu adapter.
-
-        Returns:
-            A configured QuafuAdapter instance.
-        """
-        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-
-        return QuafuAdapter()
-
-    def validate_chip_id(self, chip_id: str) -> bool:
-        """Validate if the chip ID is valid for Quafu.
-
-        Args:
-            chip_id: The chip identifier to validate.
-
-        Returns:
-            True if the chip ID is valid.
-        """
-        return chip_id in self.VALID_CHIP_IDS
-
-
 class QuarkBackend(QuantumBackend):
-    """Backend for QuarkStudio / Quafu-SQC.
+    """Backend for the QuarkStudio quantum cloud (BAQIS ScQ).
 
     This backend uses the ``quarkstudio`` package and submits OpenQASM 2.0
     task dictionaries through ``quark.Task``.
@@ -780,7 +739,6 @@ class DummyBackend(QuantumBackend):
 
 BACKENDS: dict[str, type[QuantumBackend]] = {
     "originq": OriginQBackend,
-    "quafu": QuafuBackend,
     "quark": QuarkBackend,
     "ibm": IBMBackend,
     "dummy": DummyBackend,
@@ -808,7 +766,7 @@ def get_backend(
     and returns a configured instance.
 
     Args:
-        name: The platform name ('originq', 'quafu', 'quark', 'ibm', or 'dummy').
+        name: The platform name ('originq', 'quark', 'ibm', or 'dummy').
         config: Optional configuration dictionary for the backend.
         use_cache: Whether to use cache. Defaults to True.
         cache_dir: Optional custom cache directory path.
@@ -861,7 +819,7 @@ def list_backends_by_platform() -> dict[str, dict[str, Any]]:
 
             {
                 'originq': {'available': True, 'platform': 'originq'},
-                'quafu': {'available': False, 'platform': 'quafu'},
+                'quark': {'available': False, 'platform': 'quark'},
                 ...
             }
 
@@ -885,11 +843,11 @@ def list_backends() -> list[str]:
 
     Returns:
         Sorted list of backend name strings, e.g.
-        ``['ibm', 'originq', 'quafu', 'quark']``.
+        ``['ibm', 'originq', 'quark']``.
 
     Example:
         >>> list_backends()
-        ['dummy', 'ibm', 'originq', 'quafu', 'quark']
+        ['dummy', 'ibm', 'originq', 'quark']
     """
     return sorted(BACKENDS.keys())
 

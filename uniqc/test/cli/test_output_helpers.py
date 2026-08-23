@@ -4,7 +4,7 @@ These tests lock the contract of ``extract_counts_and_probs`` so the CLI
 ``task show`` / ``uniqc result`` displays stay compatible with the result
 shapes each cloud adapter actually produces:
 
-- dummy / quafu: ``{"counts": {...}, "probabilities": {...}}``
+- dummy / quark: ``{"counts": {...}, "probabilities": {...}}``
 - originq      : ``[{"key": "0x..", "value": prob}, ...]``
 - ibm          : ``[{"0x..": int, ...}, ...]`` (list of count dicts)
 - legacy flat  : ``{"state": int}``
@@ -19,7 +19,7 @@ from uniqc.cli.output import extract_counts_and_probs
 
 class TestExtractCountsAndProbs:
     def test_nested_counts_probabilities(self):
-        """dummy / quafu shape: pass counts through, keep probabilities."""
+        """dummy / quark shape: pass counts through, keep probabilities."""
         result = {
             "counts": {"00": 512, "11": 488},
             "probabilities": {"00": 0.512, "11": 0.488},

@@ -28,9 +28,9 @@ References:
  Oracle type: balanced
 
  Results (top outcomes):
-   |000⟩  100.0% ← all zeros
+   |111⟩  100.0%
 
-  → CONSTANT function (all measurements = |000⟩)
+  → BALANCED function (non-zero measurements detected)
 
   ✓ Run complete.
 ```

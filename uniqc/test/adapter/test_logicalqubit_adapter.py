@@ -389,6 +389,30 @@ class TestLogicalQubitDryRun:
         result = adapter.dry_run(ORIGINIR_BELL, shots=0)
         assert result.success is False
 
+    def test_dry_run_fails_when_circuit_exceeds_cached_chip(self, adapter, monkeypatch):
+        from uniqc.backend_adapter.backend_info import Platform
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        chip = ChipCharacterization(
+            platform=Platform.LOGICALQUBIT,
+            chip_name="QZ01",
+            full_id="logicalqubit:QZ01",
+            available_qubits=(0, 1),
+        )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, backend_name="QZ01")
+        assert result.success is False
+        assert "[2]" in result.error
+
+    def test_dry_run_skips_qubit_validation_without_chip_cache(self, adapter, monkeypatch):
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: None)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, backend_name="QZ01")
+        assert result.success is True
+
 
 # ---------------------------------------------------------------------------
 # Normaliser
@@ -493,16 +517,72 @@ class TestChipCacheTopologyFallback:
     def test_keeps_existing_topology(self, monkeypatch):
         from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
         from uniqc.backend_adapter.task_manager import _enrich_backend_info_from_chip_cache
+        from uniqc.cli.chip_info import ChipCharacterization
 
         entry = BackendInfo(
             platform=Platform.TIANYAN,
             name="tianyan176",
-            num_qubits=176,
+            num_qubits=66,
             topology=(QubitTopology(u=2, v=3),),
+            extra={"num_qubits_source": "live_config"},
         )
-        monkeypatch.setattr(
-            "uniqc.cli.chip_cache.get_chip",
-            lambda platform, name: pytest.fail("chip cache must not be consulted"),
+        chip = ChipCharacterization(
+            platform=Platform.TIANYAN,
+            chip_name="tianyan176",
+            full_id="tianyan:tianyan176",
+            available_qubits=(0, 1),
+            connectivity=(QubitTopology(u=0, v=1),),
         )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
 
+        # Topology present and live-sourced qubit count -> nothing to enrich.
         assert _enrich_backend_info_from_chip_cache(Platform.TIANYAN, entry) is entry
+
+    def test_corrects_name_derived_num_qubits_from_chip_cache(self, monkeypatch):
+        from uniqc.backend_adapter.backend_info import BackendInfo, Platform, QubitTopology
+        from uniqc.backend_adapter.task_manager import _enrich_backend_info_from_chip_cache
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        entry = BackendInfo(
+            platform=Platform.TIANYAN,
+            name="tianyan176",
+            num_qubits=176,  # derived from the machine *name*
+            topology=(QubitTopology(u=2, v=3),),
+            extra={"num_qubits_source": "machine_name"},
+        )
+        chip = ChipCharacterization(
+            platform=Platform.TIANYAN,
+            chip_name="tianyan176",
+            full_id="tianyan:tianyan176",
+            available_qubits=tuple(range(66)),
+        )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
+
+        enriched = _enrich_backend_info_from_chip_cache(Platform.TIANYAN, entry)
+
+        assert enriched.num_qubits == 66
+        assert enriched.extra["_uniqc_num_qubits_source"] == "chip_cache"
+        # Existing topology is preserved.
+        assert [(e.u, e.v) for e in enriched.topology] == [(2, 3)]
+
+    def test_live_sourced_num_qubits_is_never_clobbered(self, monkeypatch):
+        from uniqc.backend_adapter.backend_info import BackendInfo, Platform
+        from uniqc.backend_adapter.task_manager import _enrich_backend_info_from_chip_cache
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        entry = BackendInfo(
+            platform=Platform.ORIGINQ,
+            name="WK_C180",
+            num_qubits=180,
+            extra={"num_qubits_source": "live_config"},
+        )
+        # Stale chip cache disagreeing with the live count must not win.
+        chip = ChipCharacterization(
+            platform=Platform.ORIGINQ,
+            chip_name="WK_C180",
+            full_id="originq:WK_C180",
+            available_qubits=tuple(range(72)),
+        )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
+
+        assert _enrich_backend_info_from_chip_cache(Platform.ORIGINQ, entry) is entry

@@ -62,6 +62,9 @@
 │            CLI Docs  |  GitHub                                               │
 │ config     Manage API key and configuration                                  │
 │            CLI Docs  |  GitHub                                               │
+│ sync       Sync ~/.uniqc/config.yaml with an Infisical secrets project       │
+│            ('upload' is an independent confsync-based alternative)           │
+│            CLI Docs  |  GitHub                                               │
 │ task       Manage submitted tasks                                            │
 │            CLI Docs  |  GitHub                                               │
 │ backend    List, update, and inspect quantum cloud backends                  │
@@ -88,9 +91,12 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 3d ago (stale)
-    quafu: 16 backends, updated 84d ago (stale)
-    ibm: 3 backends, updated 48d ago (stale)
+    originq: 7 backends, updated 8d ago (stale)
+    quafu: 16 backends, updated 116d ago (stale)
+    ibm: 3 backends, updated 80d ago (stale)
+    quark: 5 backends, updated 10h ago
+    tianyan: 15 backends, updated 3h ago
+    logicalqubit: 5 backends, updated 9h ago
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       
@@ -103,7 +109,7 @@ Cache:
 
 == uniqc submit bell.originir --backend dummy -s 64 --wait --format json ==
 {
-  "task_id": "uqt_7e6609258c1c4751a8b8465abb09008f",
+  "task_id": "uqt_<task-id>",
   "backend": "dummy:local:simulator",
   "shots": 64
 }
@@ -118,7 +124,7 @@ Cache:
   },
   "shots": 64,
   "platform": "dummy",
-  "task_id": "uqt_7e6609258c1c4751a8b8465abb09008f",
+  "task_id": "uqt_<task-id>",
   "backend_name": "dummy:local:simulator",
   "execution_time": null,
   "error_message": null
@@ -129,11 +135,11 @@ Cache:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
 ┃ Task ID           ┃ Platform          ┃ Status  ┃ Shots ┃ Submit Time        ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-│ uqt_7e6609258c1c… │ dummy:local:simu… │ success │ 64    │ 2026-07-22T14:26:… │
-│ uqt_c58cb2f1f3a4… │ dummy:local:simu… │ success │ 64    │ 2026-07-22T14:26:… │
-│ uqt_c52d5098e72e… │ dummy:local:simu… │ success │ 128   │ 2026-07-22T14:26:… │
-│ uqt_6665cbebf759… │ dummy:local:simu… │ success │ 2000  │ 2026-07-22T14:25:… │
-│ uqt_123038d717a5… │ dummy:local:mps-… │ success │ 400   │ 2026-07-22T14:25:… │
+│ uqt_000000000000… │ dummy:local:simu… │ success │ 64    │ 2000-01-01T00:00:… │
+│ uqt_000000000000… │ dummy:local:simu… │ success │ 64    │ 2000-01-01T00:00:… │
+│ uqt_000000000000… │ dummy:local:simu… │ success │ 128   │ 2000-01-01T00:00:… │
+│ uqt_000000000000… │ dummy:local:simu… │ success │ 2000  │ 2000-01-01T00:00:… │
+│ uqt_000000000000… │ dummy:local:mps-… │ success │ 400   │ 2000-01-01T00:00:… │
 └───────────────────┴───────────────────┴─────────┴───────┴────────────────────┘
 ```
 

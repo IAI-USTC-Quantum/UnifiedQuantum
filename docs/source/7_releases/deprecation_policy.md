@@ -47,50 +47,67 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 - 以单下划线开头的对象（如 `uniqc._deprecation`、`Adapter._delegate`）。
 - `uniqc.test.*` 测试套件内部。
 - 任何标注 “internal / experimental / unstable” 的对象。
-- 未在 API 参考中出现的子模块（例如 `uniqc.algorithms._compat`）。
+- 未在 API 参考中出现的子模块（例如 `uniqc._deprecation`）。
 
 依赖私有对象等同于自担风险——Hyrum's Law 不在我们承诺范围内。
 
 ## 当前进入 0.1.0 悬崖的 API 清单
 
-下面是 `0.0.15` 时刻已经触发 `DeprecationWarning` 的全部 API。
-**全部条目都将在 `0.1.0` 中删除或不再保证兼容。**
+**当前 0.1.0 悬崖清单为空。** 所有在 `0.0.x` 期间触发
+`DeprecationWarning` 的公共 API 均已按本政策在 `0.1.0` 移除，
+完整清单见下方“已在 0.1.0 移除的 API”与
+[0.1.0 迁移指南](migration_0.1.0.md)。
 
-### 模拟器
+0.1.0 之后的兼容性承诺回归 SemVer 正常规则：未来若在 `0.1.x` 中引入新的
+`DeprecationWarning`，其移除版本将随弃用条目明确给出（不再默认
+0.1.0）。政策框架（公共 API 定义、弃用流程）继续有效。
 
-- `uniqc.simulator.get_backend()` —— 改用
-  {func}`uniqc.simulator.get_simulator` 或 {func}`uniqc.simulator.create_simulator`。
+## 已在 0.1.0 移除的 API
 
-### 后端 / 适配器
+下列条目在 `0.0.x` 期间触发 `DeprecationWarning`，并已在 `0.1.0`
+按本政策移除。逐项的 before/after 对照见
+[0.1.0 迁移指南](migration_0.1.0.md)：
 
-- `uniqc.backend_adapter.task.adapters.ibm_adapter.IBMAdapter`
-  —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`）。
-- 整个 `uniqc.backend_adapter.task.adapters.quafu_adapter` 模块
-  —— Quafu 平台支持已停止维护，`[quafu]` 安装 extra 已被移除。
-- 通过平台原生 task id（非 `uqt_*`）查询任务的回退路径
-  （位于 `uniqc.backend_adapter.task_manager`）—— 改用 uniqc 内部 task id。
+- **算法构件的 in-place 旧形式** —— 下列 `*_circuit(circuit, ...)`
+  就地突变写法已全部移除，统一收敛为 fragment 形式
+  `*_circuit(n_qubits, ...) -> Circuit`，调用方用
+  `circuit.add_circuit(fragment)` 组合：
 
-### 算法构件（in-place 旧形式）
+  - `qft_circuit(circuit, ...)`
+  - `deutsch_jozsa_circuit(circuit, oracle, ...)`
+  - `dicke_state_circuit(circuit, ...)`
+  - `thermal_state_circuit(circuit, ...)`
+  - `cluster_state(circuit, ...)`、`ghz_state(circuit, ...)`、`w_state(circuit, ...)`
+  - `amplitude_estimation_circuit(circuit, oracle, ...)`
+  - `grover_oracle(circuit, marked_state, ...)`
+  - `grover_diffusion(circuit, ...)`
+  - `grover_operator(circuit, oracle, ...)`
+  - `vqd_circuit(circuit, ansatz_params, prev_states, ...)`
 
-下列 `*_circuit(circuit, ...)` in-place 写法均已弃用，
-请改用 fragment 形式
-`*_circuit(n_qubits, ...) -> Circuit` 再
-`circuit.add_circuit(fragment)`：
+  以及关键字参数：
 
-- `qft_circuit(circuit, ...)`
-- `deutsch_jozsa_circuit(circuit, oracle, ...)`
-- `dicke_state_circuit(circuit, ...)`
-- `thermal_state_circuit(circuit, ...)`
-- `cluster_state(circuit, ...)`、`ghz_state(circuit, ...)`、`w_state(circuit, ...)`
-- `amplitude_estimation_circuit(circuit, oracle, ...)`
-- `grover_oracle(circuit, marked_state, ...)`
-- `grover_diffusion(circuit, ...)`
-- `grover_operator(circuit, oracle, ...)`
-- `vqd_circuit(circuit, ansatz_params, prev_states, ...)`
+  - `grover_diffusion(..., ancilla=...)` —— 该参数无效果，已删除。
 
-以及关键字参数：
+- **`uniqc.simulator.get_backend()`** —— 改用
+  {func}`uniqc.simulator.get_simulator` 或
+  {func}`uniqc.simulator.create_simulator`（参数相同）。顶层
+  `uniqc.get_backend()`（云后端工厂）不受影响。
+- **`IBMAdapter`**（`uniqc.backend_adapter.task.adapters.ibm_adapter`）
+  —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`，构造签名
+  `proxy=` 一致）。`ibm_adapter` 模块本身保留（其中的标定数据辅助
+  函数仍被 `QiskitAdapter` 使用）。
+- **平台原生 task id 查询回退**（`uniqc.backend_adapter.task_manager`）
+  —— 查询接口（`query_task` / `get_platform_task_ids` 等）不再把平台
+  原生 id 经 shard 索引隐式解析到 `uqt_*` 父任务；请改用提交时返回的
+  uniqc 内部 task id。显式传入 `backend=` 的 legacy 直连查询路径不受
+  影响。shard 索引本身（`TaskStore.find_uniqc_id_by_platform_id`）
+  保留。
 
-- `grover_diffusion(..., ancilla=...)` —— 该参数无效果，请直接删掉。
+- **Quafu 平台支持整体移除**：`quafu_adapter` 模块、`QuafuBackend`、
+  `QuafuCircuitAdapter`、`QuafuOptions`、`normalize_quafu`、`Platform.QUAFU`、
+  CLI / 网关 / 后端发现中的 quafu 分支、`quafu.*` 配置键，以及 `pyquafu`
+  依赖。BAQIS ScQ 芯片的后续支持由 Quark 平台（`unified-quantum[quark]`）
+  承接，请迁移到 `quark:<chip>` 后端标识符。
 
 ## 弃用流程（针对维护者）
 
@@ -103,7 +120,7 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
    迁移工具识别。
 2. **在 docstring 顶部加 `.. deprecated::` 指令**，写明替代方案。
 3. **在本页“当前进入 0.1.0 悬崖的 API 清单”补一条**，
-   说明何时弃用、替代方案、删除版本（默认就是 0.1.0）。
+   说明何时弃用、替代方案、删除版本（0.1.0 之后必须在条目里明确给出）。
 4. **在 `CHANGELOG.md` 的 `Deprecated` 小节登记**。
 5. **保留行为不变**：除非这次提交是真的把弃用项删掉，
    否则不要修改旧路径的可观察行为。
@@ -144,5 +161,6 @@ Packaging changes (e.g. the contents of the `[all]` extra) and supported
 Python versions are announced via the `CHANGELOG.md` only — they are not
 `DeprecationWarning`s but are still subject to clear migration notes.
 
-The full list of APIs scheduled for removal in `0.1.0` is the bulleted
-list above (`当前进入 0.1.0 悬崖的 API 清单`).
+The full list of APIs removed in `0.1.0` is the bulleted list above
+(`已在 0.1.0 移除的 API`); the `0.1.0` cliff list itself is now empty, and
+post-`0.1.0` releases follow normal SemVer guarantees.

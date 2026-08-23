@@ -6,7 +6,6 @@ Honours these markers (declared in ``pytest.ini``):
 * ``cloud`` — same gate as ``real_cloud_execution``.
 * ``requires_pyqpanda3`` — skipped if pyqpanda3 is not installed.
 * ``requires_qiskit`` — skipped if qiskit + qiskit_ibm_runtime are missing.
-* ``requires_quafu`` — skipped if pyquafu is not installed.
 * ``requires_pytorch`` — skipped if torch is missing.
 * ``requires_torchquantum`` — skipped if torch or torchquantum is missing.
 * ``requires_cpp`` — skipped if uniqc_cpp is missing.
@@ -79,12 +78,6 @@ def pytest_collection_modifyitems(
                 "`pip install unified-quantum`"
             )
         ),
-        "requires_quafu": pytest.mark.skip(
-            reason=(
-                "pyquafu legacy SDK not installed; install with "
-                "`pip install pyquafu` (deprecated; pulls numpy<2)"
-            )
-        ),
         "requires_pytorch": pytest.mark.skip(
             reason="torch not installed; install with `pip install torch`"
         ),
@@ -101,7 +94,6 @@ def pytest_collection_modifyitems(
     available = {
         "requires_pyqpanda3": _have("pyqpanda3"),
         "requires_qiskit": _have_all("qiskit", "qiskit_ibm_runtime"),
-        "requires_quafu": _have("quafu"),
         "requires_pytorch": _have("torch"),
         "requires_torchquantum": _have_all("torch", "torchquantum"),
         "requires_cpp": _have("uniqc_cpp"),
@@ -115,7 +107,6 @@ def pytest_collection_modifyitems(
             return False
     cred_markers = {
         "requires_originq_credentials": "originq",
-        "requires_quafu_credentials": "quafu",
         "requires_quark_credentials": "quark",
         "requires_ibm_credentials": "ibm",
     }

@@ -43,7 +43,7 @@ def main() -> None:
     print(f"\n== dummy:local:mps-linear-{n} backend (chi=8, forces truncation) ==")
     task = submit_task(
         circuit,
-        backend=f"dummy:local:mps-linear-{n}:chi=8:cutoff=1e-10",
+        backend=f"dummy:local:mps-linear-{n}:chi=8:cutoff=1e-10:seed=2024",
         shots=400,
     )
     print("  result:", wait_for_result(task, timeout=60))

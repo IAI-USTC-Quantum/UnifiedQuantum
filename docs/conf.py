@@ -198,7 +198,6 @@ templates_path = ['_templates']
 # Sphinx's autodoc can be configured to mock certain imports so that they don't actually get executed.
 autodoc_mock_imports = ["qiskit",
                         "qiskit_ibm_provider",
-                        "quafu",
                         "pandas",
                         "uniqc_cpp",
                         "qiskit-aer",

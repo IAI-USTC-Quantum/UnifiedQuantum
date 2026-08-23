@@ -52,7 +52,7 @@ def sample_task_info() -> TaskInfo:
     """Create a sample TaskInfo for testing."""
     return TaskInfo(
         task_id="test-task-123",
-        backend="quafu",
+        backend="quark",
         status=TaskStatus.RUNNING,
         shots=1000,
         metadata={"test": True},
@@ -71,10 +71,10 @@ class TestTaskInfo:
         """Test TaskInfo can be created with required fields."""
         task = TaskInfo(
             task_id="test-123",
-            backend="quafu",
+            backend="quark",
         )
         assert task.task_id == "test-123"
-        assert task.backend == "quafu"
+        assert task.backend == "quark"
         assert task.status == TaskStatus.PENDING
         assert task.shots == 1000
         assert task.result is None
@@ -83,7 +83,7 @@ class TestTaskInfo:
         """Test TaskInfo.to_dict()."""
         data = sample_task_info.to_dict()
         assert data["task_id"] == "test-task-123"
-        assert data["backend"] == "quafu"
+        assert data["backend"] == "quark"
         assert data["status"] == TaskStatus.RUNNING
         assert isinstance(data, dict)
 
@@ -129,7 +129,7 @@ class TestCacheManagement:
         loaded = get_task("test-task-123", temp_cache_dir)
         assert loaded is not None
         assert loaded.task_id == "test-task-123"
-        assert loaded.backend == "quafu"
+        assert loaded.backend == "quark"
 
     def test_get_task_found(self, sample_task_info: TaskInfo, temp_cache_dir: Path):
         """Test get_task when task exists."""
@@ -150,7 +150,7 @@ class TestCacheManagement:
         for i in range(3):
             task = TaskInfo(
                 task_id=f"task-{i}",
-                backend="quafu" if i % 2 == 0 else "originq",
+                backend="quark" if i % 2 == 0 else "originq",
                 status=TaskStatus.RUNNING if i < 2 else TaskStatus.SUCCESS,
             )
             save_task(task, temp_cache_dir)
@@ -161,7 +161,7 @@ class TestCacheManagement:
     def test_list_tasks_filter_by_status(self, temp_cache_dir: Path):
         """Test list_tasks filtered by status."""
         for i, status in enumerate([TaskStatus.RUNNING, TaskStatus.SUCCESS, TaskStatus.FAILED]):
-            task = TaskInfo(task_id=f"task-{i}", backend="quafu", status=status)
+            task = TaskInfo(task_id=f"task-{i}", backend="quark", status=status)
             save_task(task, temp_cache_dir)
 
         running_tasks = list_tasks(status=TaskStatus.RUNNING, cache_dir=temp_cache_dir)
@@ -170,18 +170,18 @@ class TestCacheManagement:
 
     def test_list_tasks_filter_by_backend(self, temp_cache_dir: Path):
         """Test list_tasks filtered by backend."""
-        for i, backend in enumerate(["quafu", "originq", "quafu"]):
+        for i, backend in enumerate(["quark", "originq", "quark"]):
             task = TaskInfo(task_id=f"task-{i}", backend=backend)
             save_task(task, temp_cache_dir)
 
-        quafu_tasks = list_tasks(backend="quafu", cache_dir=temp_cache_dir)
-        assert len(quafu_tasks) == 2
+        quark_tasks = list_tasks(backend="quark", cache_dir=temp_cache_dir)
+        assert len(quark_tasks) == 2
 
     def test_clear_completed_tasks(self, temp_cache_dir: Path):
         """Test clear_completed_tasks."""
         # Add tasks with different statuses
         for i, status in enumerate([TaskStatus.RUNNING, TaskStatus.SUCCESS, TaskStatus.FAILED]):
-            task = TaskInfo(task_id=f"task-{i}", backend="quafu", status=status)
+            task = TaskInfo(task_id=f"task-{i}", backend="quark", status=status)
             save_task(task, temp_cache_dir)
 
         removed = clear_completed_tasks(temp_cache_dir)
@@ -193,7 +193,7 @@ class TestCacheManagement:
 
     def test_clear_cache(self, temp_cache_dir: Path):
         """Test clear_cache removes all tasks."""
-        task = TaskInfo(task_id="task-1", backend="quafu")
+        task = TaskInfo(task_id="task-1", backend="quark")
         save_task(task, temp_cache_dir)
 
         clear_cache(temp_cache_dir)
@@ -212,7 +212,7 @@ class TestErrorMapping:
     def test_map_authentication_error(self):
         """Test mapping authentication errors."""
         error = Exception("Unauthorized: invalid token")
-        mapped = _map_adapter_error(error, "quafu")
+        mapped = _map_adapter_error(error, "quark")
         assert isinstance(mapped, AuthenticationError)
 
     def test_map_insufficient_credits_error(self):
@@ -230,13 +230,13 @@ class TestErrorMapping:
     def test_map_network_error(self):
         """Test mapping network errors."""
         error = Exception("Connection timeout")
-        mapped = _map_adapter_error(error, "quafu")
+        mapped = _map_adapter_error(error, "quark")
         assert isinstance(mapped, NetworkError)
 
     def test_map_unknown_error(self):
         """Test that unknown errors are returned as-is."""
         error = Exception("Some unknown error")
-        mapped = _map_adapter_error(error, "quafu")
+        mapped = _map_adapter_error(error, "quark")
         assert mapped is error
 
 
@@ -250,7 +250,7 @@ class TestAdapterMapping:
 
     def test_get_adapter_valid_backend(self):
         """Test getting adapter for valid backend."""
-        for backend in ("originq", "quafu", "quark", "ibm"):
+        for backend in ("originq", "quark", "ibm"):
             adapter = _get_adapter(backend)
             assert adapter is not None
 
@@ -283,7 +283,7 @@ class TestTaskManager:
 
     def test_task_manager_clear_completed(self, temp_cache_dir: Path):
         """Test TaskManager.clear_completed."""
-        task = TaskInfo(task_id="task-1", backend="quafu", status=TaskStatus.SUCCESS)
+        task = TaskInfo(task_id="task-1", backend="quark", status=TaskStatus.SUCCESS)
         save_task(task, temp_cache_dir)
 
         manager = TaskManager(cache_dir=temp_cache_dir)
@@ -451,7 +451,7 @@ class TestSubmitBatch:
     def test_submit_batch_uses_get_adapter(self):
         """Test that submit_batch would use correct adapter."""
         # Verify adapter exists for valid backends
-        adapter = _get_adapter("quafu")
+        adapter = _get_adapter("quark")
         assert adapter is not None
 
         adapter = _get_adapter("originq")

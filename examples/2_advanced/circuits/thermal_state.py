@@ -8,7 +8,6 @@ Usage:
     python thermal_state.py [--n-qubits N] [--beta BETA] [--shots N]
 
 [doc-require: ]
-[doc-warning-ignore: DeprecationWarning]
 """
 
 import argparse
@@ -27,7 +26,7 @@ from uniqc import thermal_state_circuit
 def run_thermal(n_qubits, beta, shots):
     """Run thermal state preparation and print probability distribution."""
     c = Circuit(n_qubits)
-    thermal_state_circuit(c, beta=beta)
+    c.add_circuit(thermal_state_circuit(n_qubits, beta=beta))
     c.measure(list(range(n_qubits)))
 
     sim = Simulator()

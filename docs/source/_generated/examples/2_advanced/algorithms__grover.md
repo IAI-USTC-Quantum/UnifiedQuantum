@@ -31,12 +31,12 @@ References:
  Search space: 8 states
 
  Results (top 5 most probable states):
-   |110⟩   25.8%
-   |011⟩   25.3%
-   |101⟩   24.6% ← TARGET
-   |000⟩   24.3%
+   |110⟩   25.4%
+   |101⟩   25.3% ← TARGET
+   |000⟩   24.7%
+   |011⟩   24.6%
 
- Target probability: 24.6%
+ Target probability: 25.3%
  Expected (ideal): ~95.0% (after optimal iterations)
 
   ✓ Run complete.

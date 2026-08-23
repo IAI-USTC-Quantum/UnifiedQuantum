@@ -1,7 +1,7 @@
 ### 02 — RegionSelector: pick a high-fidelity sub-region of a chip
 
 *Source*: ``examples/2_advanced/02_region_selector.py``  
-*Status*: **skip** — missing requirements: originq (pyqpanda3 + originq token configured)
+*Status*: **not-executed**
 
 ``RegionSelector`` 在芯片标定数据（拓扑 + 单/双比特保真度）上为你挑选一段
 **高保真度连续子区域**（链或子区域），用于把小线路放到芯片上"最好的部分"。它接受
@@ -17,6 +17,6 @@
 ```
 
 :::{note}
-Example skipped during pre-doc-execution: missing requirements: originq (pyqpanda3 + originq token configured)
+Listed for reference; not executed during the docs build (``[doc-skip-execute]``).
 :::
 

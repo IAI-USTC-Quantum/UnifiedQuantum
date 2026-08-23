@@ -25,7 +25,7 @@ MPS 引擎是一个线性拓扑、无噪声、能扩展到上百比特的模拟�
   max bond dim:  2
 
 == dummy:local:mps-linear-32 backend (chi=8, forces truncation) ==
-  result: UnifiedResult(counts={'11111111111111111111111111111111': 194, '00000000000000000000000000000000': 206}, probabilities={'11111111111111111111111111111111': 0.485, '00000000000000000000000000000000': 0.515}, shots=400, platform='dummy', task_id='uqt_123038d717a54b1281f08ef261f3d0c5', backend_name='dummy:local:mps-linear-32:chi=8:cutoff=1e-10', execution_time=None, error_message=None)
+  result: UnifiedResult(counts={'11111111111111111111111111111111': 186, '00000000000000000000000000000000': 214}, probabilities={'11111111111111111111111111111111': 0.465, '00000000000000000000000000000000': 0.535}, shots=400, platform='dummy', task_id='uqt_<task-id>', backend_name='dummy:local:mps-linear-32:chi=8:cutoff=1e-10:seed=2024', execution_time=None, error_message=None)
 
 == Parameter parsing ==
   identifier:        dummy:local:mps-linear-8:chi=16:cutoff=1e-8:seed=7

@@ -64,9 +64,9 @@ def _microseconds(value: Any) -> float | None:
     result = _number(value)
     if result is None:
         return None
-    # Quafu cache entries can arrive in seconds, while BackendInfo documents
-    # microseconds.  Values this small are not plausible microsecond coherence
-    # times, so treat them as seconds.
+    # Some provider cache entries can arrive in seconds, while BackendInfo
+    # documents microseconds.  Values this small are not plausible microsecond
+    # coherence times, so treat them as seconds.
     if 0 < abs(result) < 0.01:
         result *= 1_000_000
     return result if result >= 0 else None
@@ -384,7 +384,6 @@ def refresh_backends(platform: str | None = None) -> dict[str, Any]:
     else:
         targets = [
             Platform.ORIGINQ,
-            Platform.QUAFU,
             Platform.QUARK,
             Platform.IBM,
             Platform.TIANYAN,

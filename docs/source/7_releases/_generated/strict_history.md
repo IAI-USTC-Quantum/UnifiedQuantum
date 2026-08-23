@@ -7,6 +7,8 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.0.17.post1` | `2026-08-16` | ci: allow post-release tags in release validation |
+| `v0.0.17` | `2026-08-15` | docs: finalize the v0.0.17 changelog for release |
 | `v0.0.16` | `2026-07-19` | chore(release): remove stale 0.0.15 report; make root artifacts a release gate |
 | `v0.0.15` | `2026-06-04` | Release v0.0.15 |
 | `v0.0.14.post1` | `2026-06-03` | Merge pull request #114 from IAI-USTC-Quantum/fix/two-qubit-depolarizing-opcode |
@@ -30,32 +32,163 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.16..HEAD`
-- 提交数：23
-- 变更文件数：468
+- 对比区间：`v0.0.17.post1..HEAD`
+- 提交数：36
+- 变更文件数：512
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
+| `feat` | 11 |
+| `merge` | 8 |
+| `docs` | 5 |
+| `fix` | 5 |
+| `build` | 2 |
+| `ci` | 2 |
+| `test` | 2 |
+| `refactor` | 1 |
+
+### 变更区域
+
+- `UniqcCpp`: 233 个文件
+- `docs`: 71 个文件
+- `example-exec-logs`: 66 个文件
+- `uniqc/test`: 44 个文件
+- `uniqc/backend_adapter`: 21 个文件
+- `uniqc/algorithms`: 12 个文件
+- `examples`: 11 个文件
+- `uniqc/cli`: 11 个文件
+- `.github`: 7 个文件
+- `.agents`: 5 个文件
+- `scripts`: 4 个文件
+- `uniqc/gateway`: 4 个文件
+- `uniqc/simulator`: 3 个文件
+- `uniqc/compile`: 2 个文件
+- `.gitignore`: 1 个文件
+- `.gitmodules`: 1 个文件
+- `AGENTS.md`: 1 个文件
+- `CHANGELOG.md`: 1 个文件
+- `CMakeLists.txt`: 1 个文件
+- `CONTRIBUTING.md`: 1 个文件
+- `README.md`: 1 个文件
+- `README_en.md`: 1 个文件
+- `codecov.yml`: 1 个文件
+- `conftest.py`: 1 个文件
+- `frontend`: 1 个文件
+- `pyproject.toml`: 1 个文件
+- `pytest.ini`: 1 个文件
+- `setup.py`: 1 个文件
+- `uniqc/__init__.py`: 1 个文件
+- `uniqc/_deprecation.py`: 1 个文件
+- `uniqc/_error_hints.py`: 1 个文件
+- `uniqc/config.py`: 1 个文件
+
+### 提交列表
+
+- `e927ce3` ci: remove the cross-repository contract parity workflow
+- `bac813d` Merge pull request #123 from IAI-USTC-Quantum/ci/fix-parity-workflow-ref
+- `bcb2e9f` docs: fix remaining documentation audit findings (#111)
+- `b5ddf98` test: assert optional-deps message with a real extra (#111)
+- `56975b7` ci: drop fix/** push triggers to stop duplicate workflow runs
+- `a243fb1` Merge pull request #121 from IAI-USTC-Quantum/fix/issue-111-docs-audit
+- `797d4e6` fix(gateway): redact sensitive fields in task metadata/result API responses
+- `f220a4b` fix(cpp): validate uu15 parameter count and harden the RNG
+- `b6feb07` fix(cpp): expose max_qubit_num as read-only in the pybind module
+- `b43639e` build(cmake): harden Release builds and tidy subdirectory lists
+- `078b599` Merge pull request #125 from IAI-USTC-Quantum/ci/dedupe-fix-branch-triggers
+- `8171090` Merge pull request #122 from IAI-USTC-Quantum/fix/issue-109-gateway-metadata
+- `ebe6687` Merge pull request #120 from IAI-USTC-Quantum/fix/issue-110-cpp-audit
+- `db37aba` feat: add `uniqc sync upload` and config schema versioning
+- `b0cc5b3` test: expect config_version in sync backup round-trip assertion
+- `93bb9a9` Merge pull request #124 from IAI-USTC-Quantum/worktree-config-upload
+- `27ff4d8` feat(platforms): add Tianyan and LogicalQubit cloud platform support
+- `8f9e4a4` docs: use {ref} roles for platform_conventions anchors
+- `6b48007` fix(scripts): parse titled Sphinx references in check_local_links
+- `9467ed4` Merge pull request #126 from IAI-USTC-Quantum/feat/tianyan-logicalqubit-platforms
+- `2dd75c4` refactor!: split the C++ simulator into the uniqc-cppsimulator package
+- `80b7f65` docs: refresh example-exec-logs for 1_basic_usage after example edits
+- `07c2cef` Merge pull request #127 from IAI-USTC-Quantum/refactor/split-cpp-repo
+- `69858c1` docs(agents): migrate agent skills to portable .agents/skills format
+- `5a5f8e6` feat(quark): ungate [quark] extra, add chip characterization, fix result wrapping
+- `1fc8ce6` feat(platforms): add tianyan/logicalqubit chip characterization and fix submission paths
+- `61cf809` feat!: remove Quafu platform support
+- `fdc9bfa` build(deps): require uniqc-cppsimulator >=1.0.1
+- `045dd7e` feat!: remove deprecated uniqc.simulator.get_backend()
+- `1f216a2` feat!: remove deprecated IBMAdapter delegate shim
+- `032fbc5` feat!: remove platform task-id lookup fallback
+- `0203cb7` feat!: remove in-place form of algorithm circuit builders
+- `74861f5` fix(tianyan): report live qubit counts in backend discovery
+- `6231726` feat(adapters): dry-run validates circuit qubits against chip data
+- `35d5196` feat(docs): make example execution deterministic across doc builds
+- `a49d106` docs: refresh example-exec-logs and generated pages
+
+## v0.0.17.post1
+
+- 发布日期：`2026-08-16`
+- 发布标题：ci: allow post-release tags in release validation
+- 补充说明：vMAJOR.MINOR.PATCH.postN tags (e.g. v0.0.17.post1) were rejected by scripts/check_release.py even though hotfix post-releases are an established practice (v0.0.7.post1, v0.0.14.post1), which would block the PyPI publish workflow for the 0.0.17.post1 hotfix.
+- 对比区间：`v0.0.17..v0.0.17.post1`
+- 提交数：4
+- 变更文件数：19
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `ci` | 1 |
+| `docs` | 1 |
+| `feat` | 1 |
+| `fix` | 1 |
+
+### 变更区域
+
+- `docs`: 6 个文件
+- `uniqc/test`: 5 个文件
+- `uniqc/cli`: 3 个文件
+- `uniqc/backend_adapter`: 2 个文件
+- `CHANGELOG.md`: 1 个文件
+- `scripts`: 1 个文件
+- `uniqc/config.py`: 1 个文件
+
+### 提交列表
+
+- `91ac984` feat(cli): add `uniqc sync` to sync platform credentials with Infisical
+- `0c2f4e8` fix(task): recover empty OriginQ WK_C180 results via probCount fallback
+- `8ba449b` docs: prepare the v0.0.17.post1 hotfix release
+- `51847bf` ci: allow post-release tags in release validation
+
+## v0.0.17
+
+- 发布日期：`2026-08-15`
+- 发布标题：docs: finalize the v0.0.17 changelog for release
+- 对比区间：`v0.0.16..v0.0.17`
+- 提交数：28
+- 变更文件数：471
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `docs` | 7 |
 | `fix` | 7 |
 | `ci` | 6 |
-| `docs` | 4 |
 | `build` | 2 |
-| `chore` | 1 |
+| `chore` | 2 |
+| `other` | 1 |
 | `refactor` | 1 |
 | `security` | 1 |
 | `test` | 1 |
 
 ### 变更区域
 
-- `docs`: 229 个文件
+- `docs`: 232 个文件
 - `example-exec-logs`: 67 个文件
 - `uniqc/test`: 40 个文件
 - `uniqc/algorithms`: 17 个文件
 - `uniqc/backend_adapter`: 17 个文件
 - `examples`: 15 个文件
-- `uniqc/circuit_builder`: 10 个文件
+- `uniqc/circuit_builder`: 11 个文件
 - `uniqc/compile`: 9 个文件
 - `UniqcCpp`: 8 个文件
 - `scripts`: 8 个文件
@@ -72,7 +205,6 @@
 - `README.md`: 1 个文件
 - `README_en.md`: 1 个文件
 - `RELEASE_EXECUTION_PLAN_0.0.16.md`: 1 个文件
-- `RISK_REPORT_ROUND_2.md`: 1 个文件
 - `conftest.py`: 1 个文件
 - `frontend`: 1 个文件
 - `pyproject.toml`: 1 个文件
@@ -108,6 +240,11 @@
 - `880f3f4` ci: install PyTorch extra for API docs
 - `465203d` ci: expose cross-platform pytest failures
 - `8b3f554` fix: tolerate legacy Windows CLI encodings
+- `a07d716` docs: record the v0.0.17 release candidate
+- `07f8c33` chore: drop RISK_REPORT_ROUND_2.md
+- `d6e7ad2` update
+- `2ec12ff` docs: restructure OriginIR-ext spec into base-plus-extensions and fix broken anchors
+- `a02fe4e` docs: finalize the v0.0.17 changelog for release
 
 ## v0.0.16
 

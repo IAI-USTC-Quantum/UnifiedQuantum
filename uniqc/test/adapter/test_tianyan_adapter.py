@@ -299,7 +299,9 @@ class TestTianyanBackends:
         hw = by_name["tianyan176"]
         assert hw["available"] is True
         assert hw["is_simulator"] is False
+        # download_config not staged -> falls back to the machine-name digits.
         assert hw["num_qubits"] == 176
+        assert hw["num_qubits_source"] == "machine_name"
 
         offline = by_name["tianyan504"]
         assert offline["available"] is False
@@ -307,6 +309,26 @@ class TestTianyanBackends:
         # Simulators are always present, even when the API omits them.
         assert by_name["tianyan_sw"]["is_simulator"] is True
         assert by_name["tianyan_sw"]["available"] is True
+
+    def test_list_backends_prefers_live_config_qubit_count(self, adapter, fake_cqlib):
+        fake_cqlib.STATE["download_config"] = _FAKE_MACHINE_CONFIG
+        backends = adapter.list_backends()
+        by_name = {b["name"]: b for b in backends}
+
+        hw = by_name["tianyan176"]
+        assert hw["num_qubits"] == 3  # len(_FAKE_MACHINE_CONFIG overview qubits)
+        assert hw["num_qubits_source"] == "live_config"
+
+        # Offline machines never attempt the live lookup.
+        assert by_name["tianyan504"]["num_qubits"] == 504
+        assert by_name["tianyan504"]["num_qubits_source"] == "machine_name"
+
+    def test_list_backends_falls_back_when_live_config_unusable(self, adapter, fake_cqlib):
+        fake_cqlib.STATE["download_config"] = {"unexpected": "shape"}
+        backends = adapter.list_backends()
+        by_name = {b["name"]: b for b in backends}
+        assert by_name["tianyan176"]["num_qubits"] == 176
+        assert by_name["tianyan176"]["num_qubits_source"] == "machine_name"
 
     def test_is_available_with_sdk_and_credentials(self, adapter):
         assert adapter.is_available() is True
@@ -358,6 +380,30 @@ class TestTianyanDryRun:
     def test_dry_run_rejects_nonpositive_shots(self, adapter):
         result = adapter.dry_run(ORIGINIR_BELL, shots=0)
         assert result.success is False
+
+    def test_dry_run_fails_when_circuit_exceeds_cached_chip(self, adapter, monkeypatch):
+        from uniqc.backend_adapter.backend_info import Platform
+        from uniqc.cli.chip_info import ChipCharacterization
+
+        chip = ChipCharacterization(
+            platform=Platform.TIANYAN,
+            chip_name="tianyan176",
+            full_id="tianyan:tianyan176",
+            available_qubits=(0, 1),
+        )
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: chip)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, machine_name="tianyan176")
+        assert result.success is False
+        assert "[2]" in result.error
+
+    def test_dry_run_skips_qubit_validation_without_chip_cache(self, adapter, monkeypatch):
+        monkeypatch.setattr("uniqc.cli.chip_cache.get_chip", lambda platform, name: None)
+
+        ir = "QINIT 3\nCREG 3\nH q[0]\nCNOT q[1], q[2]"
+        result = adapter.dry_run(ir, shots=100, machine_name="tianyan176")
+        assert result.success is True
 
 
 # ---------------------------------------------------------------------------

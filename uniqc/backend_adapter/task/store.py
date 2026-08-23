@@ -82,8 +82,8 @@ TERMINAL_STATUSES: tuple[str, ...] = ("success", "failed", "cancelled")
 
 # uniqc-managed task ID format. ``uqt_`` followed by a UUID4 hex
 # (32 chars). Recognisable, opaque, and trivially distinguishable from any
-# platform-issued task ID format we know of (OriginQ MD5, IBM job, Quafu,
-# Quark, dummy uuid).
+# platform-issued task ID format we know of (OriginQ MD5, IBM job, Quark,
+# dummy uuid).
 UNIQC_TASK_ID_PREFIX: str = "uqt_"
 
 
@@ -318,7 +318,7 @@ def _apply_v4(conn: sqlite3.Connection) -> None:
     mapping that lets uniqc present a single opaque task id to users
     while internally fanning out across one or more platform jobs
     (auto-sharding when a batch exceeds the adapter's native batch size,
-    or "max_native_batch_size = 1" platforms like Quafu/Quark/Dummy that
+    or "max_native_batch_size = 1" platforms like Quark/Dummy that
     need one platform job per circuit).
     """
     conn.execute(_TASK_SHARDS_DDL)

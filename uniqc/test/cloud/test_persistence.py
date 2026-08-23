@@ -60,7 +60,7 @@ class TestTaskPersistence:
 
     def test_update_task(self, persistence):
         """Test updating an existing task."""
-        persistence.save("task-1", "quafu", "running")
+        persistence.save("task-1", "quark", "running")
 
         success = persistence.update("task-1", status="success", result={"counts": {}})
 
@@ -93,7 +93,7 @@ class TestTaskPersistence:
     def test_list_all(self, persistence):
         """Test listing all tasks."""
         persistence.save("task-1", "originq", "success")
-        persistence.save("task-2", "quafu", "running")
+        persistence.save("task-2", "quark", "running")
         persistence.save("task-3", "ibm", "success")
 
         all_tasks = persistence.list_all()
@@ -103,7 +103,7 @@ class TestTaskPersistence:
     def test_list_all_filter_by_platform(self, persistence):
         """Test filtering tasks by platform."""
         persistence.save("task-1", "originq", "success")
-        persistence.save("task-2", "quafu", "success")
+        persistence.save("task-2", "quark", "success")
 
         tasks = persistence.list_all(platform="originq")
 
@@ -132,7 +132,7 @@ class TestTaskPersistence:
     def test_list_by_platform(self, persistence):
         """Test list_by_platform convenience method."""
         persistence.save("task-1", "originq", "success")
-        persistence.save("task-2", "quafu", "success")
+        persistence.save("task-2", "quark", "success")
 
         tasks = persistence.list_by_platform("originq")
 
@@ -142,7 +142,7 @@ class TestTaskPersistence:
         """Test listing pending/running tasks."""
         persistence.save("task-1", "originq", "success")
         persistence.save("task-2", "originq", "running")
-        persistence.save("task-3", "quafu", "pending")
+        persistence.save("task-3", "quark", "pending")
 
         pending = persistence.list_pending()
 
@@ -152,7 +152,7 @@ class TestTaskPersistence:
         """Test clearing completed tasks."""
         persistence.save("task-1", "originq", "success")
         persistence.save("task-2", "originq", "failed")
-        persistence.save("task-3", "quafu", "running")
+        persistence.save("task-3", "quark", "running")
 
         removed = persistence.clear_completed()
 
@@ -180,7 +180,7 @@ class TestTaskPersistence:
         """Test counting tasks."""
         persistence.save("task-1", "originq", "success")
         persistence.save("task-2", "originq", "running")
-        persistence.save("task-3", "quafu", "success")
+        persistence.save("task-3", "quark", "success")
 
         total = persistence.count()
         originq = persistence.count(platform="originq")

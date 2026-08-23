@@ -25,14 +25,14 @@ Pauli terms: 15
 Ansatz: HEA depth=2, params=16
 Exact FCI energy: -1.137274 Ha
 
-  Iter   20 | Energy: -0.204432
-  Iter   40 | Energy: -0.453499
-  Iter   60 | Energy: -0.857957
-  Iter   80 | Energy: -0.868904
-  Iter  100 | Energy: -0.873922
+  Iter   20 | Energy: -0.088256
+  Iter   40 | Energy: -0.422964
+  Iter   60 | Energy: -0.602616
+  Iter   80 | Energy: -0.849158
+  Iter  100 | Energy: -0.873256
 
-Final energy: -0.873922 Ha
-Optimal params: [0.1613229513168335, 1.5576759576797485, 0.23028449714183807, -1.2020018100738525] ...
+Final energy: -0.873256 Ha
+Optimal params: [0.24899430572986603, 1.5495481491088867, 0.5918601155281067, -1.380683183670044] ...
 
 Expected: ~-1.10 Ha (simplified Hamiltonian)
 ```

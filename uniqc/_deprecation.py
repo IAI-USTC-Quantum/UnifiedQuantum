@@ -51,12 +51,12 @@ def warn_removed_in_0_1_0(
 
     Args:
         name: The qualified, user-facing name of the deprecated API
-            (e.g. ``"IBMAdapter"`` or ``"qft_circuit(circuit, ...)"``).
+            (e.g. ``"SomeBackend"`` or ``"some_function(old_arg=...)"``).
             This appears at the start of the message verbatim.
         replacement: Optional one-line replacement hint. When provided,
             it is rendered as ``"; use ``<replacement>`` instead."``.
         detail: Optional extra sentence appended before the trailer
-            (use for context like "the [quafu] extra has been removed").
+            (use for context like "the [quark] extra requires Python >= 3.12").
         stacklevel: Forwarded to :func:`warnings.warn`. The default of 2
             attributes the warning to the caller of the deprecated API.
             Pass ``3`` from a helper that itself wraps the deprecated API.

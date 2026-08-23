@@ -33,7 +33,6 @@ def fake_caches(monkeypatch):
                 is_hardware=True,
             ),
         ],
-        Platform.QUAFU: [],
         Platform.QUARK: [],
     }
 
@@ -135,7 +134,7 @@ def test_refresh_backends_aggregates(fastapi_client, monkeypatch):
         calls.append((plat.value, force_refresh))
         if plat.value == "ibm":
             raise RuntimeError("ibm down")
-        return ([], True) if plat.value == "quafu" else ([1, 2], True)
+        return ([], True) if plat.value == "quark" else ([1, 2], True)
 
     monkeypatch.setattr("uniqc.gateway.api.backends.fetch_platform_backends", _fetch)
 
