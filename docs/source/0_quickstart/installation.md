@@ -221,7 +221,6 @@ v0.0.15 建立了明确的弃用时间线：**所有在 `0.0.x` 中触发 `Depre
 
 当前已弃用的 API 包括：
 
-- `uniqc.simulator.get_backend()` — 改用 `get_simulator()` / `create_simulator()`
 - `IBMAdapter` 类 — 改用 `QiskitAdapter`
 - 所有 `*_circuit(circuit, ...)` in-place 形式 — 改用 fragment 形式
 

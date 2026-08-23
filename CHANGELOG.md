@@ -68,6 +68,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency. BAQIS ScQ chips are now served by the Quark platform —
   migrate to ``pip install unified-quantum[quark]`` and use
   ``quark:<chip>`` backend identifiers.
+- **`uniqc.simulator.get_backend()` removed**, as announced in the
+  deprecation policy. Use ``uniqc.simulator.get_simulator()`` or
+  ``uniqc.simulator.create_simulator()`` instead (same arguments). The
+  cloud-backend factory ``uniqc.get_backend()`` is unaffected.
 
 ### Fixed
 

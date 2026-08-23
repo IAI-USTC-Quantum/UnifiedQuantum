@@ -58,8 +58,8 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 
 ### 模拟器
 
-- `uniqc.simulator.get_backend()` —— 改用
-  {func}`uniqc.simulator.get_simulator` 或 {func}`uniqc.simulator.create_simulator`。
+- ~~`uniqc.simulator.get_backend()`~~ —— 已在 0.1.0 移除，见下方
+  “已在 0.1.0 移除的 API”。
 
 ### 后端 / 适配器
 
@@ -94,6 +94,11 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 
 下列条目在 `0.0.x` 期间触发 `DeprecationWarning`，并已在 `0.1.0`
 按本政策移除：
+
+- **`uniqc.simulator.get_backend()`** —— 改用
+  {func}`uniqc.simulator.get_simulator` 或
+  {func}`uniqc.simulator.create_simulator`（参数相同）。顶层
+  `uniqc.get_backend()`（云后端工厂）不受影响。
 
 - **Quafu 平台支持整体移除**：`quafu_adapter` 模块、`QuafuBackend`、
   `QuafuCircuitAdapter`、`QuafuOptions`、`normalize_quafu`、`Platform.QUAFU`、

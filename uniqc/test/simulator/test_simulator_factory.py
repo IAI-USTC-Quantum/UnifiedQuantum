@@ -1,6 +1,5 @@
 """Tests for simulator factory helpers."""
 
-import warnings
 
 import pytest
 
@@ -20,15 +19,6 @@ def test_create_simulator_qasm_density_alias():
 
 def test_get_simulator_delegates_to_create_simulator():
     sim = get_simulator(program_type="originir", backend_type="statevector")
-    assert isinstance(sim, Simulator)
-
-
-def test_get_backend_deprecated():
-    from uniqc.simulator import get_backend
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("always")
-        sim = get_backend(program_type="originir", backend_type="statevector")
     assert isinstance(sim, Simulator)
 
 

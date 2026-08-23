@@ -77,7 +77,6 @@ try:
     # without it (the extension-dependent names degrade to None; tests that
     # need them are gated by the ``requires_cpp`` marker).
     from .get_backend import create_simulator as create_simulator
-    from .get_backend import get_backend as get_backend
     from .get_backend import get_simulator as get_simulator
     from .opcode_simulator import OpcodeSimulator as OpcodeSimulator
     from .opcode_simulator import backend_alias as backend_alias
@@ -87,7 +86,6 @@ try:
     from .simulator import Simulator as Simulator
 except ImportError:
     create_simulator = None  # type: ignore[assignment]
-    get_backend = None  # type: ignore[assignment]
     get_simulator = None  # type: ignore[assignment]
     OpcodeSimulator = None  # type: ignore[assignment]
     backend_alias = None  # type: ignore[assignment]
@@ -106,7 +104,6 @@ __all__ = [
     # factories
     "create_simulator",
     "get_simulator",
-    "get_backend",
     # concrete simulators
     "Simulator",
     "NoisySimulator",
