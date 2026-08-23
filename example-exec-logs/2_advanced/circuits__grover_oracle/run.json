@@ -8,7 +8,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   94.1% ← TARGET\n    |100⟩    1.0%\n    |001⟩    0.9%\n    |110⟩    0.9%\n    |010⟩    0.9%\n\n  Target probability: 94.1%\n  ✓ Done.\n",
+  "stdout": "  Grover's Search — 3 data qubits\n  Marked state: 5 (101)\n  Search space: 8 states\n\n  Iterations: 2\n  Results (top 5):\n    |101⟩   95.1% ← TARGET\n    |010⟩    0.9%\n    |111⟩    0.9%\n    |110⟩    0.7%\n    |100⟩    0.7%\n\n  Target probability: 95.1%\n  ✓ Done.\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

@@ -38,11 +38,11 @@ MEASURE q[1], c[1]
 
 
 == 直接用 OriginIR_ext_Simulator 采样（per-shot）==
-  counts (c1c0): {'00': 985, '11': 1015}
+  counts (c1c0): {'00': 984, '11': 1016}
   只出现 '00'/'11' -> True
 
 == 通过统一任务接口在 dummy backend 上运行 ==
-  result: {'11': 997, '00': 1003}
+  result: {'11': 1004, '00': 996}
 
 == 经典 bit 指令：c2 = c0 XOR c1 ==
   final CREG value: 5 -> bits c2c1c0 = 101

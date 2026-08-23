@@ -28,16 +28,16 @@
   description:     Unconstrained noiseless local simulator
   topology:        None
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_39ad706b6df6411591ec51c9105d06e8', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_<task-id>', backend_name='dummy:local:simulator', execution_time=None, error_message=None)
 == dummy:local:virtual-line-3 ==
   description:     Noiseless virtual 3-qubit line topology
   topology:        [[0, 1], [1, 2]]
   simulator_kwargs: None
-  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_16e282a4e1564c93965541375e4de9b4', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
-== dummy:local:mps-linear-3:chi=8 ==
+  counts:          UnifiedResult(counts={'000': 128, '111': 128}, probabilities={'000': 0.5, '111': 0.5}, shots=256, platform='dummy', task_id='uqt_<task-id>', backend_name='dummy:local:virtual-line-3', execution_time=None, error_message=None)
+== dummy:local:mps-linear-3:chi=8:seed=2024 ==
   description:     Noiseless MPS simulator on a 3-qubit linear chain, chi=8
   topology:        [[0, 1], [1, 2]]
-  simulator_kwargs: {'chi_max': 8}
-  counts:          UnifiedResult(counts={'000': 127, '111': 129}, probabilities={'000': 0.49609375, '111': 0.50390625}, shots=256, platform='dummy', task_id='uqt_0a211c57ddee4422b21000b5600a8371', backend_name='dummy:local:mps-linear-3:chi=8', execution_time=None, error_message=None)
+  simulator_kwargs: {'chi_max': 8, 'seed': 2024}
+  counts:          UnifiedResult(counts={'111': 127, '000': 129}, probabilities={'111': 0.49609375, '000': 0.50390625}, shots=256, platform='dummy', task_id='uqt_<task-id>', backend_name='dummy:local:mps-linear-3:chi=8:seed=2024', execution_time=None, error_message=None)
 ```
 

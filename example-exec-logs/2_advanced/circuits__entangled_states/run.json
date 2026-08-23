@@ -8,7 +8,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.4907 ████████████████████████\n   |1111⟩: 0.5093 █████████████████████████\n\n Dominant basis states (2):\n   |1111⟩: 0.5093\n   |0000⟩: 0.4907\n",
+  "stdout": " GHZ State — 4 qubits\n\n Probability distribution:\n   |0000⟩: 0.4932 ████████████████████████\n   |1111⟩: 0.5068 █████████████████████████\n\n Dominant basis states (2):\n   |1111⟩: 0.5068\n   |0000⟩: 0.4932\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],

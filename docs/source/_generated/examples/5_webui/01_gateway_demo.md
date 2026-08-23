@@ -21,14 +21,14 @@
 
 ```text
 == Gateway ASGI app ==
-FastAPI with 26 routes
+FastAPI with 8 routes
 
 == Configured host/port ==
 host: 127.0.0.1
 port: 18765
 
 == Triggering one dummy task so the UI has something to show ==
-task_id: uqt_a8ecb2eeaf7b4b0fb047436e598844db
+task_id: uqt_<task-id>
 
 Launch the UI with:
     uniqc gateway start --host 127.0.0.1 --port 18765

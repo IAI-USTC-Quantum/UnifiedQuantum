@@ -10,12 +10,12 @@
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nQAOA for MaxCut — TorchQuantum Backend\n============================================================\n\nGraph: Triangle (3 nodes, 3 edges)\nEdges: [(0, 1), (1, 2), (0, 2)]\nQAOA depth p=2\nMax cut value (exact): 2.0\n\n  Iter   20 | Cut value: 1.976446\n  Iter   40 | Cut value: 1.995023\n  Iter   60 | Cut value: 1.999523\n  Iter   80 | Cut value: 1.999922\n  Iter  100 | Cut value: 1.999980\n\nFinal cut value: 1.999980\nOptimal gammas: [-0.07336180657148361, 1.2970815896987915]\nOptimal betas:  [0.20722956955432892, 0.24868912994861603]\nApproximation ratio: 1.0000\n",
+  "stdout": "============================================================\nQAOA for MaxCut — TorchQuantum Backend\n============================================================\n\nGraph: Triangle (3 nodes, 3 edges)\nEdges: [(0, 1), (1, 2), (0, 2)]\nQAOA depth p=2\nMax cut value (exact): 2.0\n\n  Iter   20 | Cut value: 1.923277\n  Iter   40 | Cut value: 1.989362\n  Iter   60 | Cut value: 1.999433\n  Iter   80 | Cut value: 1.999974\n  Iter  100 | Cut value: 1.999997\n\nFinal cut value: 1.999997\nOptimal gammas: [-0.00888873916119337, 1.2550137042999268]\nOptimal betas:  [-0.9653720855712891, 0.3027988076210022]\nApproximation ratio: 1.0000\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 1.181
+  "duration_seconds": 4.272
 }

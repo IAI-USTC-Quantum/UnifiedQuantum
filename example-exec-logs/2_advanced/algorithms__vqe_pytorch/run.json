@@ -10,12 +10,12 @@
     "torchquantum"
   ],
   "ignored_warning_patterns": [],
-  "stdout": "============================================================\nVQE for H2 Molecule — TorchQuantum Backend\n============================================================\n\nMolecule: H2 (STO-3G, 4 qubits)\nNuclear repulsion: 0.7149\nPauli terms: 15\nAnsatz: HEA depth=2, params=16\nExact FCI energy: -1.137274 Ha\n\n  Iter   20 | Energy: -0.204432\n  Iter   40 | Energy: -0.453499\n  Iter   60 | Energy: -0.857957\n  Iter   80 | Energy: -0.868904\n  Iter  100 | Energy: -0.873922\n\nFinal energy: -0.873922 Ha\nOptimal params: [0.1613229513168335, 1.5576759576797485, 0.23028449714183807, -1.2020018100738525] ...\n\nExpected: ~-1.10 Ha (simplified Hamiltonian)\n",
+  "stdout": "============================================================\nVQE for H2 Molecule — TorchQuantum Backend\n============================================================\n\nMolecule: H2 (STO-3G, 4 qubits)\nNuclear repulsion: 0.7149\nPauli terms: 15\nAnsatz: HEA depth=2, params=16\nExact FCI energy: -1.137274 Ha\n\n  Iter   20 | Energy: -0.088256\n  Iter   40 | Energy: -0.422964\n  Iter   60 | Energy: -0.602616\n  Iter   80 | Energy: -0.849158\n  Iter  100 | Energy: -0.873256\n\nFinal energy: -0.873256 Ha\nOptimal params: [0.24899430572986603, 1.5495481491088867, 0.5918601155281067, -1.380683183670044] ...\n\nExpected: ~-1.10 Ha (simplified Hamiltonian)\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
   "offending_lines": [],
   "ignored_lines": [],
   "exception": null,
-  "duration_seconds": 4.626
+  "duration_seconds": 22.644
 }

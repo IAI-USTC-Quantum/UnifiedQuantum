@@ -18,7 +18,7 @@
 **Stdout**
 
 ```text
-task_id: uqt_68e1369f42464316876d4023bbf97194
+task_id: uqt_<task-id>
 counts: {'001': 0, '011': 500, '101': 0, '111': 500}
 probabilities: {'001': 0.0, '011': 0.5, '101': 0.0, '111': 0.5}
 status: success

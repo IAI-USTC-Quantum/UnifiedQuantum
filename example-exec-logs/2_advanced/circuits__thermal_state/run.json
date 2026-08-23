@@ -8,7 +8,7 @@
   "skip_reason": null,
   "require": [],
   "ignored_warning_patterns": [],
-  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.673828   0.683325\n  |001⟩    0.103516   0.092478\n  |010⟩    0.092896   0.092478\n  |011⟩    0.010864   0.012516\n  |100⟩    0.091553   0.092478\n  |101⟩    0.011108   0.012516\n  |110⟩    0.014893   0.012516\n  |111⟩    0.001343   0.001694\n",
+  "stdout": "Thermal State Preparation — 3 qubits, β = 1.0\nSingle-qubit probabilities: p₀ = 0.880797, p₁ = 0.119203\n\nMeasured probability distribution (shots=8192):\n  State          Measured     Theory\n  ------------ ---------- ----------\n  |000⟩    0.672241   0.683325\n  |001⟩    0.096680   0.092478\n  |010⟩    0.091064   0.092478\n  |011⟩    0.011963   0.012516\n  |100⟩    0.098145   0.092478\n  |101⟩    0.014771   0.012516\n  |110⟩    0.012695   0.012516\n  |111⟩    0.002441   0.001694\n",
   "stderr": "",
   "warnings": [],
   "figure_files": [],
