@@ -59,7 +59,12 @@ format, readable by Kimi Code / Codex / Copilot / Cursor): `uniqc-build-docs`,
   `example-exec-logs/`; then Sphinx builds HTML. **If you change user-visible code
   or examples, run `make html` and commit any `example-exec-logs/` diff** — a diff
   is the signal that example behavior changed. `make html-fast` skips example
-  re-execution.
+  re-execution. Example execution is deterministic by construction: the runner
+  seeds `random`/NumPy/torch (`DOC_EXAMPLE_SEED`), normalizes task ids and
+  timestamps in captured output, and fixes matplotlib SVG ids/dates — so a
+  content diff beyond `duration_seconds`/`generated_at` means real behavior
+  change. New examples must not introduce unseeded RNG (e.g.
+  `np.random.default_rng()` without a seed).
 
 ## Architecture (the big picture)
 

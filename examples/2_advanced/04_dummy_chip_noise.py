@@ -33,7 +33,7 @@ def main() -> None:
     for backend in (
         "dummy:local:simulator",
         "dummy:local:virtual-line-3",
-        "dummy:local:mps-linear-3:chi=8",
+        "dummy:local:mps-linear-3:chi=8:seed=2024",
     ):
         spec = resolve_dummy_backend(backend)
         print(f"== {backend} ==")

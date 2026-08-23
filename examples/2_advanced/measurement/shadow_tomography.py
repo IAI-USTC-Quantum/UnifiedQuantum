@@ -48,7 +48,7 @@ def run_shadow_demo(n_shots=1000, n_shadow=100):
 
     # 1. Perform classical shadow measurement
     print(f"\nPerforming {n_shadow} shadow measurements...")
-    shadows = classical_shadow(c, qubits=[0, 1], shots=n_shots, n_shadow=n_shadow)
+    shadows = classical_shadow(c, qubits=[0, 1], shots=n_shots, n_shadow=n_shadow, seed=2024)
     print(f"  Collected {len(shadows)} shadow snapshots")
 
     # 2. Estimate ⟨Z₀⟩ (Z on qubit 0, identity on qubit 1)
