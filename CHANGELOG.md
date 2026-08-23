@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-23
+
+The deprecation-cliff release: every public API marked with
+`DeprecationWarning` throughout `0.0.x` is now removed, per the
+[deprecation policy](docs/source/7_releases/deprecation_policy.md)
+(migration guide: `docs/source/7_releases/migration_0.1.0.md`). The C++
+simulator kernel moved to the standalone `uniqc-cppsimulator` package,
+making `unified-quantum` a pure-Python wheel. Validation is documented in
+`RELEASE_REPORT_0.1.0.md` (verdict: RELEASE WITH KNOWN GAPS — gaps are
+external: an upstream `pyqpanda3` 0.4.1 OriginQ discovery failure with a
+working stale-cache fallback, and an invalid IBM token in the validation
+environment).
+
 ### Changed
 
 - **C++ simulator split into a standalone package**: the `UniqcCpp` kernel
@@ -25,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python 3.12–3.13 gating (and the ``uv sync`` universal-resolver failure it
   caused) is gone. The extra now only requires ``python_version >= '3.12'``
   and is silently skipped on Python 3.10/3.11.
+- **Deterministic documentation example execution**: ``scripts/build_docs.py``
+  seeds ``random``/NumPy/torch before each example and normalizes task ids,
+  timestamps, and matplotlib SVG ids/dates in captured output, so committed
+  ``example-exec-logs/`` no longer jitter between doc builds — a content diff
+  now reliably signals a real behavior change.
 
 ### Added
 
@@ -44,6 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chip cache (``~/.uniqc/backend/chips/``). The Quark adapter unit tests
   moved out of the network-gated ``uniqc/test/cloud/`` directory and now run
   in the default test suite.
+- **``classical_shadow()`` accepts a ``seed`` parameter** for reproducible
+  shadow snapshots (``uniqc.algorithms.core.measurement.classical_shadow``);
+  the default ``None`` keeps the previous OS-entropy behavior.
 - **TianYan and LogicalQubit chip characterization**:
   ``TianyanAdapter.get_chip_characterization`` maps cqlib's authenticated
   ``download_config`` payload (per-qubit T1/T2, gate/readout errors, coupler

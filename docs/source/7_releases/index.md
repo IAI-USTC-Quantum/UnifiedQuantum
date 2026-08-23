@@ -4,28 +4,25 @@
 
 ## 先看什么
 
-如果你在跟随当前开发版，先看 ``v0.0.17.post1``（`uniqc sync` 凭据同步 + OriginQ 空结果修复）；
+如果你在跟随当前开发版，先看 ``v0.1.0``（**弃用政策落地**：全部 `0.0.x` 弃用 API 移除；
+C++ 模拟器拆分为独立 ``uniqc-cppsimulator`` 包，主包变为纯 Python wheel）；
 如果你是从较早的正式版本直接升级，
-**先看 ``v0.0.16``**——这一版新增**用户自定义含噪虚拟机**（``dummy:virtual:<name>``），
-并把后端发现缓存与芯片缓存统一收拢到 ``~/.uniqc/backend/``。
+**先看 ``v0.1.0`` 的迁移部分**——逐项迁移对照见
+[0.1.0 迁移指南](migration_0.1.0.md)。
 
-升级到 ``v0.0.16`` 时最值得先确认的是：
+升级到 ``v0.1.0`` 时最值得先确认的是：
 
-- 你是否有脚本直接读写旧的缓存路径。后端发现缓存从 ``~/.uniqc/cache/backends.json``
-  迁到 ``~/.uniqc/backend/backends.json``，芯片缓存从 ``~/.uniqc/backend-cache/``
-  迁到 ``~/.uniqc/backend/chips/``。首次访问会**自动迁移**，正常使用无感；但如果
-  你在脚本里硬编码了旧路径，请改读新路径。
-- 你是否需要"自定义拓扑 + 自定义噪声模型"的本地含噪测试。新写法：
-  ``uniqc backend virtual init <name>`` 在 ``~/.uniqc/backend/virtual/<name>.yaml``
-  生成配置模板，编辑后用 ``uniqc backend virtual validate <name>`` 校验，之后任何
-  接受 backend id 的地方都能写 ``dummy:virtual:<name>``（例如
-  ``uniqc submit ... --backend dummy:virtual:<name>``）。配置好的机器在
-  ``uniqc backend list`` 和 WebUI 中显示为 ``virtual:<name>``。
-- 沿用 ``v0.0.13``–``v0.0.15`` 的升级检查仍然适用：``uniqc submit`` 只用
-  ``--backend <provider>:<chip>``（无 ``--platform``，缺省 ``dummy:local:simulator``）；
-  ``pip install unified-quantum[all]`` 不含 ``[quark]``；
-  ``qiskit`` 已是核心依赖；所有在 ``0.0.x`` 触发 ``DeprecationWarning`` 的公共 API
-  将在 ``0.1.0`` 移除；环境自检用 ``uv run uniqc doctor``。
+- **你是否在用已弃用的 API。** 所有在 ``0.0.x`` 中触发 ``DeprecationWarning``
+  的公共 API 已在本版移除：Quafu 平台（改用 ``quark:<chip>``）、
+  ``uniqc.simulator.get_backend()``（改用 ``get_simulator()`` /
+  ``create_simulator()``）、``IBMAdapter``（改用 ``QiskitAdapter``）、
+  平台 task-id 回退查询，以及 12 个算法 building block 的 in-place 形式
+  （改用 ``circuit.add_circuit(fragment)`` 组合）。
+- **你是否从源码构建。** 主包现在是纯 Python wheel，不再需要 CMake /
+  C++ 工具链；C++ 内核以 PyPI 依赖 ``uniqc-cppsimulator>=1.0.1,<2`` 自动安装。
+- **你是否在使用 ``[quark]``。** 上游已发布全平台 wheel（含 cp314），
+  ``[quark]`` 解除此前的平台/Python 版本限制并回归 ``[all]``，仅需
+  Python ≥ 3.12。
 
 ## 弃用政策（0.1.0 兼容性悬崖）
 
@@ -46,6 +43,7 @@ migration_0.1.0
 ```{toctree}
 :maxdepth: 1
 
+reports/0.1.0
 reports/0.0.17.post1
 reports/0.0.17
 reports/0.0.16
@@ -65,6 +63,47 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.1.0`（弃用政策落地 + 纯 Python 打包）
+
+这是一个**破坏性变更版本**，核心主题是**弃用政策落地**与**C++ 模拟器独立打包**。
+
+本版主要变更：
+
+- **移除全部 `0.0.x` 弃用 API**（逐项对照见 [0.1.0 迁移指南](migration_0.1.0.md)）：
+  Quafu 平台（BAQIS 芯片改用 ``quark:<chip>``）、``uniqc.simulator.get_backend()``
+  （改用 ``get_simulator()`` / ``create_simulator()``）、``IBMAdapter``
+  （改用 ``QiskitAdapter``）、平台 task-id 回退查询、12 个算法 building block
+  的 in-place 形式（改用 ``circuit.add_circuit(fragment)``）。
+- **C++ 模拟器拆分为独立包** ``uniqc-cppsimulator>=1.0.1,<2``：主包变为纯
+  Python wheel，源码构建不再需要 CMake / C++ 工具链；import 名 ``uniqc_cpp``
+  不变，Python 侧用法无感。
+- **``[quark]`` 回归 ``[all]``**：上游 ``quarkstudio`` / ``quarkcircuit`` /
+  ``srpc`` 已发布 Linux/macOS/Windows wheel（含 cp314），仅要求 Python ≥ 3.12。
+- **新增**：``~/.uniqc/config.yaml`` schema 版本化（``config_version`` 自动迁移）；
+  ``uniqc sync upload``（confsync 凭据同步）；Quark / TianYan / LogicalQubit
+  chip characterization（``uniqc backend chip-display`` 全平台打通）；
+  ``classical_shadow()`` 新增 ``seed`` 参数。
+- **修复**：dry-run 校验线路比特对芯片（Quark 离线、TianYan/LogicalQubit 走
+  芯片缓存）；TianYan 发现的比特数不再取型号名；Quark ``wait_for_result``
+  解包嵌套 histogram；TianYan 平台 task id 解包；LogicalQubit 发现状态归一化；
+  提交编译在发现缓存缺少拓扑时回退芯片缓存。
+- **文档基建**：示例执行全面确定化（固定种子 + task id/时间戳归一化 +
+  确定性 SVG），``example-exec-logs/`` 的内容性 diff 现在可靠地代表真实行为变化。
+
+已知缺口（不阻塞发布，维护者已确认接受）：
+
+- OriginQ 实时后端发现在上游 ``pyqpanda3`` 0.4.1（PyPI 最新）中失败
+  （``QCloudService.backends()`` 抛 ``RuntimeError``）；本地自动回退 stale
+  缓存，后端列表 / dry-run / chip-display（有缓存时）均不受影响；
+- 验证环境的 IBM token 被 IBM Quantum 拒绝（凭据问题，非代码缺陷）；
+- 本轮未提交真实量子任务（未获配额授权），以全平台发现 + dry-run 覆盖。
+
+**发布验证结果**：见 [0.1.0 发布验证报告](reports/0.1.0.md) —— 结论
+**RELEASE WITH KNOWN GAPS**。默认测试套件 2488 passed / 0 failed；
+best-practices 示例 12/12 通过；Sphinx 0 警告；CLI 17 组 help 与文档一致；
+Gateway 前端构建 + API 全通；Quark / TianYan / LogicalQubit 实时发现与
+dry-run 通过。
 
 ### `v0.0.17.post1`（快速修复）
 

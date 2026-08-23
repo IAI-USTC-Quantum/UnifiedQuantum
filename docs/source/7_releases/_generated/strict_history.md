@@ -33,17 +33,17 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.0.17.post1..HEAD`
-- 提交数：34
-- 变更文件数：422
+- 提交数：36
+- 变更文件数：512
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `feat` | 10 |
+| `feat` | 11 |
 | `merge` | 8 |
+| `docs` | 5 |
 | `fix` | 5 |
-| `docs` | 4 |
 | `build` | 2 |
 | `ci` | 2 |
 | `test` | 2 |
@@ -52,13 +52,13 @@
 ### 变更区域
 
 - `UniqcCpp`: 233 个文件
+- `docs`: 71 个文件
+- `example-exec-logs`: 66 个文件
 - `uniqc/test`: 44 个文件
-- `docs`: 37 个文件
 - `uniqc/backend_adapter`: 21 个文件
-- `example-exec-logs`: 14 个文件
-- `uniqc/algorithms`: 11 个文件
+- `uniqc/algorithms`: 12 个文件
+- `examples`: 11 个文件
 - `uniqc/cli`: 11 个文件
-- `examples`: 8 个文件
 - `.github`: 7 个文件
 - `.agents`: 5 个文件
 - `scripts`: 4 个文件
@@ -120,6 +120,8 @@
 - `0203cb7` feat!: remove in-place form of algorithm circuit builders
 - `74861f5` fix(tianyan): report live qubit counts in backend discovery
 - `6231726` feat(adapters): dry-run validates circuit qubits against chip data
+- `35d5196` feat(docs): make example execution deterministic across doc builds
+- `a49d106` docs: refresh example-exec-logs and generated pages
 
 ## v0.0.17.post1
 
