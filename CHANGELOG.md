@@ -77,6 +77,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ``proxy=`` constructor signature, same functionality via
   ``qiskit-ibm-runtime``). The ``ibm_adapter`` module itself stays — its
   calibration helper functions are still used by ``QiskitAdapter``.
+- **Platform task-id lookup fallback removed**, as announced in the
+  deprecation policy. Query interfaces (``query_task``,
+  ``get_platform_task_ids``, …) no longer resolve a raw platform task id
+  to its ``uqt_*`` parent via the shard index — use the uniqc task id
+  returned at submission time. The explicit ``backend=`` legacy
+  direct-query path is unaffected, and the shard index itself
+  (``TaskStore.find_uniqc_id_by_platform_id``) stays. The task-id
+  indirection tests moved out of the network-gated ``uniqc/test/cloud/``
+  directory and now run in the default test suite.
 
 ### Fixed
 

@@ -1785,33 +1785,6 @@ def _submit_batch_dummy(
 # -----------------------------------------------------------------------------
 
 
-def _resolve_to_uniqc_id(task_id: str) -> tuple[str, bool]:
-    """Resolve ``task_id`` to a uniqc parent id.
-
-    Returns ``(uniqc_id, is_legacy_alias)``. When the input was a
-    platform task id discovered via the shard index, ``is_legacy_alias``
-    is ``True`` and a one-shot ``DeprecationWarning`` is emitted.
-
-    Raises ``TaskNotFoundError`` if neither path resolves.
-    """
-    if is_uniqc_task_id(task_id):
-        return task_id, False
-    # Try platform-id lookup via the shard index.
-    found = _store().find_uniqc_id_by_platform_id(task_id)
-    if found is not None:
-        from uniqc._deprecation import warn_removed_in_0_1_0
-
-        warn_removed_in_0_1_0(
-            f"Task lookup via platform id {task_id!r}",
-            replacement=f"the uniqc id {found!r}",
-            detail=("The platform id still resolves via the shard index but this fallback is removed in uniqc 0.1.0"),
-            stacklevel=3,
-        )
-        return found, True
-    # Fall through to legacy direct path — caller's job to handle missing.
-    return task_id, False
-
-
 def get_platform_task_ids(task_id: str) -> list[TaskShard]:
     """Return the shard mapping for a uniqc task id.
 
@@ -1825,17 +1798,14 @@ def get_platform_task_ids(task_id: str) -> list[TaskShard]:
     * ``status`` / ``error_message`` — per-shard liveness
 
     Args:
-        task_id: A uniqc task id (``uqt_*``). For backwards compatibility
-            this will also accept a platform task id and emit a
-            :class:`DeprecationWarning` while resolving the parent.
+        task_id: A uniqc task id (``uqt_*``).
 
     Returns:
         Shards in submission order. Empty list when the task has no
         shards yet (e.g. submission failed before any shard was
         persisted) or when ``task_id`` is unknown.
     """
-    uniqc_id, _ = _resolve_to_uniqc_id(task_id)
-    return _store().get_shards(uniqc_id)
+    return _store().get_shards(task_id)
 
 
 def _extract_error_message(query_result: dict) -> str | None:
@@ -1946,7 +1916,7 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
 
     Args:
         task_id: The task identifier. Accepts a uniqc id (``uqt_*``)
-            or, with a deprecation warning, a raw platform id.
+            or a raw platform id for the legacy direct-query path.
         backend: Ignored when the task is found in cache (the backend
             is resolved from the stored shards). Only used for legacy
             direct-query fallback.
@@ -1986,12 +1956,8 @@ def query_task(task_id: str, backend: str | None = None) -> TaskInfo:
         if backend.startswith("dummy:"):
             return cached_task
 
-    # Path C: not in cache. Try resolving via platform-id alias first
-    # (legacy support — emits DeprecationWarning).
-    if cached_task is None and not is_uniqc_task_id(task_id):
-        uniqc_id, was_alias = _resolve_to_uniqc_id(task_id)
-        if was_alias:
-            return query_task(uniqc_id, backend=backend)
+    # Path C: not in cache. Fall through to the legacy direct query path
+    # below (requires an explicit ``backend``).
 
     if backend is None:
         raise TaskNotFoundError(f"Task '{task_id}' not found in local cache. Please provide the backend parameter.")

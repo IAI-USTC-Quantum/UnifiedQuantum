@@ -65,8 +65,9 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 
 - ~~`uniqc.backend_adapter.task.adapters.ibm_adapter.IBMAdapter`~~
   —— 已在 0.1.0 移除，见下方“已在 0.1.0 移除的 API”。
-- 通过平台原生 task id（非 `uqt_*`）查询任务的回退路径
-  （位于 `uniqc.backend_adapter.task_manager`）—— 改用 uniqc 内部 task id。
+- ~~通过平台原生 task id（非 `uqt_*`）查询任务的回退路径
+  （位于 `uniqc.backend_adapter.task_manager`）~~ —— 已在 0.1.0 移除，
+  见下方“已在 0.1.0 移除的 API”。
 
 ### 算法构件（in-place 旧形式）
 
@@ -103,6 +104,12 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
   —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`，构造签名
   `proxy=` 一致）。`ibm_adapter` 模块本身保留（其中的标定数据辅助
   函数仍被 `QiskitAdapter` 使用）。
+- **平台原生 task id 查询回退**（`uniqc.backend_adapter.task_manager`）
+  —— 查询接口（`query_task` / `get_platform_task_ids` 等）不再把平台
+  原生 id 经 shard 索引隐式解析到 `uqt_*` 父任务；请改用提交时返回的
+  uniqc 内部 task id。显式传入 `backend=` 的 legacy 直连查询路径不受
+  影响。shard 索引本身（`TaskStore.find_uniqc_id_by_platform_id`）
+  保留。
 
 - **Quafu 平台支持整体移除**：`quafu_adapter` 模块、`QuafuBackend`、
   `QuafuCircuitAdapter`、`QuafuOptions`、`normalize_quafu`、`Platform.QUAFU`、
