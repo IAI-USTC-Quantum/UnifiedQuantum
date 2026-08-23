@@ -63,8 +63,8 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 
 ### 后端 / 适配器
 
-- `uniqc.backend_adapter.task.adapters.ibm_adapter.IBMAdapter`
-  —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`）。
+- ~~`uniqc.backend_adapter.task.adapters.ibm_adapter.IBMAdapter`~~
+  —— 已在 0.1.0 移除，见下方“已在 0.1.0 移除的 API”。
 - 通过平台原生 task id（非 `uqt_*`）查询任务的回退路径
   （位于 `uniqc.backend_adapter.task_manager`）—— 改用 uniqc 内部 task id。
 
@@ -99,6 +99,10 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
   {func}`uniqc.simulator.get_simulator` 或
   {func}`uniqc.simulator.create_simulator`（参数相同）。顶层
   `uniqc.get_backend()`（云后端工厂）不受影响。
+- **`IBMAdapter`**（`uniqc.backend_adapter.task.adapters.ibm_adapter`）
+  —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`，构造签名
+  `proxy=` 一致）。`ibm_adapter` 模块本身保留（其中的标定数据辅助
+  函数仍被 `QiskitAdapter` 使用）。
 
 - **Quafu 平台支持整体移除**：`quafu_adapter` 模块、`QuafuBackend`、
   `QuafuCircuitAdapter`、`QuafuOptions`、`normalize_quafu`、`Platform.QUAFU`、

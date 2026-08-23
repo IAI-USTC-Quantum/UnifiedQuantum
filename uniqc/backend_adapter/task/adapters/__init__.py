@@ -23,7 +23,6 @@ __all__ = [
     "OriginQAdapter",
     "QuarkAdapter",
     "QiskitAdapter",
-    "IBMAdapter",
     "DummyAdapter",
     "TianyanAdapter",
     "LogicalQubitAdapter",
@@ -40,7 +39,6 @@ from uniqc.backend_adapter.task.adapters.base import (
     DryRunResult,
     QuantumAdapter,
 )
-from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
 from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter

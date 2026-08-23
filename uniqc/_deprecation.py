@@ -51,7 +51,7 @@ def warn_removed_in_0_1_0(
 
     Args:
         name: The qualified, user-facing name of the deprecated API
-            (e.g. ``"IBMAdapter"`` or ``"qft_circuit(circuit, ...)"``).
+            (e.g. ``"SomeBackend"`` or ``"some_function(old_arg=...)"``).
             This appears at the start of the message verbatim.
         replacement: Optional one-line replacement hint. When provided,
             it is rendered as ``"; use ``<replacement>`` instead."``.

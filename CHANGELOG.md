@@ -72,6 +72,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deprecation policy. Use ``uniqc.simulator.get_simulator()`` or
   ``uniqc.simulator.create_simulator()`` instead (same arguments). The
   cloud-backend factory ``uniqc.get_backend()`` is unaffected.
+- **`IBMAdapter` removed**, as announced in the deprecation policy. The
+  class was a pure delegate shim; use ``QiskitAdapter`` directly (same
+  ``proxy=`` constructor signature, same functionality via
+  ``qiskit-ibm-runtime``). The ``ibm_adapter`` module itself stays — its
+  calibration helper functions are still used by ``QiskitAdapter``.
 
 ### Fixed
 

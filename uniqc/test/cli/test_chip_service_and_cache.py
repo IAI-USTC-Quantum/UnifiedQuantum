@@ -248,10 +248,10 @@ def test_internal_fetcher_handles_adapter_unavailable(monkeypatch, fetcher):
             fake_module,
         )
     else:
-        fake_module.IBMAdapter = _Unavailable
+        fake_module.QiskitAdapter = _Unavailable
         monkeypatch.setitem(
             sys.modules,
-            "uniqc.backend_adapter.task.adapters.ibm_adapter",
+            "uniqc.backend_adapter.task.adapters.qiskit_adapter",
             fake_module,
         )
 

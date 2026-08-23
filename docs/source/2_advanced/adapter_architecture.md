@@ -32,8 +32,8 @@ UnifiedQuantum 的云平台适配器采用 **适配器模式（Adapter Pattern�
                     │  (本地模拟)    │
 
 ```{note}
-IBMAdapter 已废弃（DeprecationWarning），请使用 QiskitAdapter。
-backend_registry 内部已将 IBM 路由到 QiskitAdapter。
+IBM 平台由 QiskitAdapter（基于 qiskit-ibm-runtime）承接；旧的 IBMAdapter
+委托 shim 已于 0.1.0 移除。
 ```
                     └───────────────┘
                            │

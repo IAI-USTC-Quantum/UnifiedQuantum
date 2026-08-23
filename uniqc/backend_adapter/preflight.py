@@ -388,14 +388,14 @@ def _refresh_chip(provider: str, chip_name: str) -> Any:
 
     if provider == "ibm":
         try:
-            from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+            from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
             from uniqc.cli.chip_cache import save_chip
         except Exception as exc:
             raise BackendPreflightError(
                 f"IBM SDK import failed while refreshing chip characterization for {chip_name!r}: {exc}"
             ) from exc
         try:
-            adapter = IBMAdapter()
+            adapter = QiskitAdapter()
             chip = adapter.get_chip_characterization(chip_name)
         except Exception as exc:
             raise BackendPreflightError(

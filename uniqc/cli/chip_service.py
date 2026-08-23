@@ -174,12 +174,12 @@ def _fetch_logicalqubit(backend_name: str):
 def _fetch_ibm(backend_name: str):
     """Fetch chip characterization from IBM Quantum."""
     try:
-        from uniqc.backend_adapter.task.adapters.ibm_adapter import IBMAdapter
+        from uniqc.backend_adapter.task.adapters.qiskit_adapter import QiskitAdapter
     except (ImportError, Exception):
         return None
 
     try:
-        adapter = IBMAdapter()
+        adapter = QiskitAdapter()
     except (ImportError, Exception):
         return None
 

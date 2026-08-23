@@ -221,7 +221,6 @@ v0.0.15 建立了明确的弃用时间线：**所有在 `0.0.x` 中触发 `Depre
 
 当前已弃用的 API 包括：
 
-- `IBMAdapter` 类 — 改用 `QiskitAdapter`
 - 所有 `*_circuit(circuit, ...)` in-place 形式 — 改用 fragment 形式
 
 详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。

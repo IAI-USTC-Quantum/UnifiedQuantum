@@ -186,7 +186,7 @@ class RunTestOriginQAdapterIntegration:
 
 @pytest.mark.cloud
 @pytest.mark.requires_qiskit
-class RunTestIBMAdapterIntegration:
+class RunTestQiskitAdapterIntegration:
     """Integration tests for IBM adapter with real qiskit and credentials."""
 
     def run_test_translate_circuit(self):
