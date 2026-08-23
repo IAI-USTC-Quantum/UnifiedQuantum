@@ -16,7 +16,6 @@
 | 天衍量子计算云平台 | `tianyan` | `unified-quantum[tianyan]` | `tianyan.login_key` | 中电信量子，真机 + 多种仿真机 |
 | 逻辑比特超导量子云平台 | `logicalqubit` | `unified-quantum[logicalqubit]` | `logicalqubit.api_key`（+ 可选 `logicalqubit.url`） | AGate 系列超导芯片 |
 | Dummy 本地模拟 | `dummy` | 无需 extra | 无需凭证 | 本地无噪/含噪模拟 |
-| Quafu（已废弃） | `quafu` | 已移除 | `quafu.token` | 0.0.x 保留兼容，0.1.0 移除 |
 
 想给 UnifiedQuantum 接入一个新云平台？见
 [添加一个新云平台](../2_advanced/adding_a_platform.md)。

@@ -31,7 +31,7 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 
 ┌─────────────────────────────────────────────────────────────┐
 │                  OpenQASM 2.0 (跨平台)                       │
-│        IBM / Quafu / Quark 平台的提交格式                     │
+│        IBM / Quark 平台的提交格式                            │
 │        与 OriginIR 有部分重叠，但非超集关系                     │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -42,7 +42,7 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 |------|------|---------|
 | **OriginIR-ext** | UnifiedQuantum 默认本地语言 | 本地编程、模拟、开发调试。`circuit.originir` 输出此格式 |
 | **OriginIR** (官方) | 本源量子云服务接受的语言 | 提交到 OriginQ 云平台时自动转换为此格式 |
-| **OpenQASM 2.0** | 跨平台标准 | 提交到 IBM、Quafu、Quark 平台 |
+| **OpenQASM 2.0** | 跨平台标准 | 提交到 IBM、Quark 平台 |
 
 ## OriginIR-ext 相对 OriginIR 的扩展
 
@@ -129,7 +129,7 @@ result = compile(circuit, output_format="auto")
 
 - **日常开发**: 使用 OriginIR-ext。通过 `Circuit` API 构建线路，`circuit.originir` 即为 OriginIR-ext 格式
 - **提交到 OriginQ 云**: 使用 `circuit.originir_official` 或 `compile(output_format="originir")`，扩展会自动分解
-- **提交到 IBM/Quafu/Quark**: 使用 QASM 格式，`compile(output_format="qasm")` 或 `circuit.qasm`
+- **提交到 IBM/Quark**: 使用 QASM 格式，`compile(output_format="qasm")` 或 `circuit.qasm`
 - **本地模拟**: 接受 OriginIR-ext 格式，无需转换；QRAM 仅在支持该指令的本地 statevector / density-matrix 模拟器中执行
 
 如果线路包含 QRAM，必须保留 OriginIR-ext 格式并在本地运行；不要调用官方 OriginIR/QASM 导出，也不能提交到上述云平台。

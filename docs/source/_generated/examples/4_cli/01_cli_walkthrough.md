@@ -89,7 +89,6 @@
 
 Cache:
     originq: 7 backends, updated 3d ago (stale)
-    quafu: 16 backends, updated 84d ago (stale)
     ibm: 3 backends, updated 48d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==

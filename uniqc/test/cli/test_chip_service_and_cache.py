@@ -215,16 +215,16 @@ def test_fetch_chip_characterization_dispatches_per_platform(monkeypatch):
 
     monkeypatch.setattr(chip_service, "get_chip", lambda platform, name: None)
     monkeypatch.setattr(chip_service, "_fetch_originq", _factory("originq"))
-    monkeypatch.setattr(chip_service, "_fetch_quafu", _factory("quafu"))
+    monkeypatch.setattr(chip_service, "_fetch_quark", _factory("quark"))
     monkeypatch.setattr(chip_service, "_fetch_ibm", _factory("ibm"))
 
     chip_service.fetch_chip_characterization("a", Platform.ORIGINQ)
-    chip_service.fetch_chip_characterization("b", Platform.QUAFU)
+    chip_service.fetch_chip_characterization("b", Platform.QUARK)
     chip_service.fetch_chip_characterization("c", Platform.IBM)
-    assert calls == [("originq", "a"), ("quafu", "b"), ("ibm", "c")]
+    assert calls == [("originq", "a"), ("quark", "b"), ("ibm", "c")]
 
 
-@pytest.mark.parametrize("fetcher", ["_fetch_originq", "_fetch_quafu", "_fetch_ibm"])
+@pytest.mark.parametrize("fetcher", ["_fetch_originq", "_fetch_ibm"])
 def test_internal_fetcher_handles_adapter_unavailable(monkeypatch, fetcher):
     """When the adapter is unavailable / not configured, the fetcher returns None."""
 
@@ -245,13 +245,6 @@ def test_internal_fetcher_handles_adapter_unavailable(monkeypatch, fetcher):
         monkeypatch.setitem(
             sys.modules,
             "uniqc.backend_adapter.task.adapters.originq_adapter",
-            fake_module,
-        )
-    elif fetcher == "_fetch_quafu":
-        fake_module.QuafuAdapter = _Unavailable
-        monkeypatch.setitem(
-            sys.modules,
-            "uniqc.backend_adapter.task.adapters.quafu_adapter",
             fake_module,
         )
     else:

@@ -6,7 +6,6 @@ from uniqc.backend_adapter.circuit_adapter import (
     CircuitAdapter,
     IBMCircuitAdapter,
     OriginQCircuitAdapter,
-    QuafuCircuitAdapter,
     QuarkCircuitAdapter,
 )
 from uniqc.circuit_builder import Circuit
@@ -130,90 +129,6 @@ class TestOriginQCircuitAdapterIntegration:
         assert "RZ" in result
 
 
-class TestQuafuCircuitAdapter:
-    """Test QuafuCircuitAdapter."""
-
-    def test_get_supported_gates(self):
-        """Test that supported gates are returned."""
-        adapter = QuafuCircuitAdapter()
-        gates = adapter.get_supported_gates()
-        assert isinstance(gates, list)
-        assert "H" in gates
-        assert "CNOT" in gates
-        assert "MEASURE" in gates
-
-
-@pytest.mark.requires_quafu
-class TestQuafuCircuitAdapterIntegration:
-    """Integration tests for QuafuCircuitAdapter with real quafu."""
-
-    @pytest.fixture(autouse=True)
-    def check_quafu(self):
-        """Require quafu in the default development environment."""
-        import quafu  # noqa: F401
-
-    def test_adapt_simple_circuit(self):
-        """Test adapt with real quafu."""
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.cnot(0, 1)
-        circuit.measure(0, 1)
-
-        result = adapter.adapt(circuit)
-        # Verify result is a quafu.QuantumCircuit
-        assert result is not None
-        assert hasattr(result, "h")
-        assert hasattr(result, "cnot")
-
-    def test_adapt_rotation_gates(self):
-        """Test adapt with rotation gates."""
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.rx(0, 0.5)
-        circuit.ry(1, 0.3)
-        circuit.rz(2, 0.1)
-        circuit.measure(0, 1, 2)
-
-        result = adapter.adapt(circuit)
-        assert result is not None
-
-    def test_adapt_two_qubit_gates(self):
-        """Test adapt with two-qubit gates."""
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.cnot(0, 1)
-        circuit.cz(1, 2)
-        circuit.measure(0, 1, 2)
-
-        result = adapter.adapt(circuit)
-        assert result is not None
-
-    def test_adapt_with_dagger_block(self):
-        """Test adapt with DAGGER block."""
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.s(0)
-        circuit.t(1)
-        with circuit.dagger():
-            circuit.h(0)
-        circuit.measure(0, 1)
-
-        result = adapter.adapt(circuit)
-        assert result is not None
-
-    def test_adapt_with_barrier(self):
-        """Test adapt with BARRIER."""
-        adapter = QuafuCircuitAdapter()
-        circuit = Circuit()
-        circuit.h(0)
-        circuit.barrier(0)
-        circuit.measure(0)
-
-        result = adapter.adapt(circuit)
-        assert result is not None
-
-
 class TestIBMCircuitAdapter:
     """Test IBMCircuitAdapter."""
 
@@ -304,14 +219,6 @@ class TestGateCoverage:
 
         qasm_gates = {"H", "X", "Y", "Z", "CNOT", "CX", "CZ"}
         assert qasm_gates.issubset(gates)
-
-    def test_quafu_covers_basic_gates(self):
-        """Test that Quafu adapter covers basic gates."""
-        adapter = QuafuCircuitAdapter()
-        gates = set(adapter.get_supported_gates())
-
-        basic_gates = {"H", "X", "Y", "Z", "RX", "RY", "RZ", "CNOT"}
-        assert basic_gates.issubset(gates)
 
     def test_quark_covers_qasm_gates(self):
         """Test that Quark adapter covers standard QASM gates."""

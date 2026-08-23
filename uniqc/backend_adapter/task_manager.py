@@ -17,12 +17,12 @@ Usage::
     circuit.measure(0, 1)
 
     # Dry-run: validate circuit offline before submitting
-    result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+    result = dry_run_task(circuit, backend='originq:WK_C180', shots=1000)
     if not result.success:
         print(f"Validation failed: {result.error}")
 
     # Submit task
-    task_id = submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+    task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 
     # Wait for result (backend is auto-resolved from the cached TaskInfo)
     result = wait_for_result(task_id, timeout=300)
@@ -128,9 +128,8 @@ from uniqc.exceptions import (
 # Circuit Adapter Mapping
 # -----------------------------------------------------------------------------
 
-ADAPTER_MAP: dict[str, type[CircuitAdapter] | None] = {
+ADAPTER_MAP: dict[str, type[CircuitAdapter]] = {
     "originq": OriginQCircuitAdapter,
-    "quafu": None,
     "quark": QuarkCircuitAdapter,
     "ibm": IBMCircuitAdapter,
     "tianyan": TianyanCircuitAdapter,
@@ -176,10 +175,6 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
             f"No circuit adapter for backend '{backend_name}'. Available adapters: {available}.{hint}"
         )
     adapter_class = ADAPTER_MAP[platform_key]
-    if adapter_class is None:
-        from uniqc.backend_adapter.circuit_adapter import QuafuCircuitAdapter
-
-        adapter_class = QuafuCircuitAdapter
     return adapter_class()
 
 
@@ -189,7 +184,6 @@ def _get_adapter(backend_name: str) -> CircuitAdapter:
 # legacy bare ``backend='originq'`` form together with a chip kwarg.
 _PLATFORM_CHIP_KWARG: dict[str, str] = {
     "originq": "backend_name",
-    "quafu": "chip_id",
     "quark": "chip_id",
     "ibm": "chip_id",
     "tianyan": "machine_name",
@@ -325,7 +319,7 @@ def dry_run_task(
             :func:`submit_task`, including ``'<platform>:<chip>'``
             (e.g. ``'originq:WK_C180'``, ``'dummy:originq:WK_C180'``).
         shots: Number of measurement shots for validation.
-        **kwargs: Additional backend-specific parameters. IBM and Quafu use
+        **kwargs: Additional backend-specific parameters. IBM and Quark use
             ``chip_id`` for full validation. OriginQ uses ``backend_name``
             (for example ``"WK_C180"``); when ``backend`` already contains
             the chip suffix, it is extracted and forwarded automatically.
@@ -338,7 +332,7 @@ def dry_run_task(
         >>> circuit = Circuit()
         >>> circuit.h(0)
         >>> circuit.measure(0)
-        >>> result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+        >>> result = dry_run_task(circuit, backend='originq:WK_C180', shots=1000)
         >>> if result.success:
         ...     print("Circuit is valid for submission")
         >>> else:
@@ -409,15 +403,10 @@ def dry_run_task(
                 details=str(e),
                 error=str(e),
                 error_kind="unknown_backend",
-                warnings=("Known backends: originq, quafu, quark, ibm, dummy",),
+                warnings=("Known backends: originq, quark, ibm, dummy",),
             )
         except (ImportError, ModuleNotFoundError) as e:
-            if str(platform) == "quafu":
-                hint = (
-                    "The Quafu adapter is deprecated; install pyquafu directly "
-                    "if you still need it: `pip install pyquafu` (pulls numpy<2)."
-                )
-            elif str(platform) in ("qiskit", "ibm"):
+            if str(platform) in ("qiskit", "ibm"):
                 hint = (
                     "Qiskit is a core dependency of unified-quantum; the install "
                     "appears broken. Reinstall with `pip install --upgrade unified-quantum`."
@@ -1035,7 +1024,7 @@ def submit_task(
     Args:
         circuit: The UnifiedQuantum Circuit to submit.
         backend: Backend identifier in the canonical ``'provider:chip-name'``
-            format (e.g. ``'originq:WK_C180'``, ``'quafu:ScQ-P10'``,
+            format (e.g. ``'originq:WK_C180'``, ``'quark:Baihua'``,
             ``'ibm:ibm_brisbane'``). Cloud submissions reject the bare
             ``'provider'`` form (e.g. ``'originq'``) and surface the list
             of cached chips for that provider — call
@@ -1072,7 +1061,7 @@ def submit_task(
             directly.
         backend_name: OriginQ chip name (e.g. ``'WK_C180'``). Optional when
             ``backend`` already encodes the chip as ``'originq:<chip>'``.
-        chip_id: Quafu / IBM chip ID. Required for full validation on those
+        chip_id: Quark / IBM chip ID. Required for full validation on those
             platforms.
         **kwargs: Additional backend-specific parameters passed through to
             the underlying adapter. Common implicit / hidden defaults:
@@ -1080,7 +1069,7 @@ def submit_task(
             - ``skip_validation`` (default ``False``): bypass the offline
               IR-language compatibility check. Use sparingly — most
               validation failures are real bugs.
-            - For Quafu: ``chip_id``, ``auto_mapping``
+            - For Quark: ``chip_id``, ``compile``
             - For OriginQ: ``backend_name`` (e.g. ``'WK_C180'``),
               ``measurement_amend``
             - For dummy: ``chip_characterization``, ``noise_model``,
@@ -1417,7 +1406,7 @@ def submit_batch(
       into one platform job per shard. uniqc auto-shards if the batch
       exceeds the adapter's :attr:`max_native_batch_size` (e.g. OriginQ
       ``task_group_size`` 200, IBM 100).
-    * For platforms without native batch (Quafu, Quark, Dummy) —
+    * For platforms without native batch (Quark, Dummy) —
       ``max_native_batch_size = 1``: uniqc loops one platform job per
       circuit, but the user still receives a single ``uqt_*`` id and
       :func:`wait_for_result` returns the per-circuit results in
@@ -1434,7 +1423,7 @@ def submit_batch(
             :func:`submit_task`. Default ``1``.
         backend_name: OriginQ chip name (optional when ``backend`` already
             encodes the chip).
-        chip_id: Quafu / IBM chip ID.
+        chip_id: Quark / IBM chip ID.
         native_batch: When ``True`` (default), shards use the platform's
             native grouped-submission API (one platform job per shard).
             When ``False``, every circuit is submitted as a separate
@@ -2122,8 +2111,8 @@ def _wrap_as_unified_result(
     else:
         counts = {}
 
-    # Some adapters nest the histogram one level deeper, e.g. Quark/Quafu
-    # return ``{"counts": {...}, "raw_result": ...}`` as the result payload.
+    # Some adapters nest the histogram one level deeper, e.g. Quark
+    # returns ``{"counts": {...}, "raw_result": ...}`` as the result payload.
     # Bitstring keys never collide with the literal "counts" wrapper key.
     if isinstance(counts.get("counts") if isinstance(counts, dict) else None, dict):
         counts = counts["counts"]
@@ -2367,7 +2356,7 @@ class TaskManager:
 
     Example:
         >>> manager = TaskManager()
-        >>> task_id = manager.submit(circuit, backend='quafu:ScQ-P18', shots=1000)
+        >>> task_id = manager.submit(circuit, backend='originq:WK_C180', shots=1000)
         >>> result = manager.wait_for_result(task_id)
         >>> print(result)
     """

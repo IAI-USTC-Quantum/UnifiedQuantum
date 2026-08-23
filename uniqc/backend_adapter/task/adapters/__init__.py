@@ -21,7 +21,6 @@ __all__ = [
     "QuantumAdapter",
     "DryRunResult",
     "OriginQAdapter",
-    "QuafuAdapter",
     "QuarkAdapter",
     "QiskitAdapter",
     "IBMAdapter",
@@ -55,10 +54,6 @@ except ImportError:
 
 
 def __getattr__(name: str):
-    if name == "QuafuAdapter":
-        value = import_module("uniqc.backend_adapter.task.adapters.quafu_adapter").QuafuAdapter
-        globals()[name] = value
-        return value
     if name == "TianyanAdapter":
         value = import_module("uniqc.backend_adapter.task.adapters.tianyan_adapter").TianyanAdapter
         globals()[name] = value

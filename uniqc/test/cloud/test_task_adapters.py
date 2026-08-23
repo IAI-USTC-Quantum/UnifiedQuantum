@@ -65,16 +65,6 @@ class RunTestConfigYaml:
         assert config["api_key"] == "test_key_123"
         assert config["task_group_size"] == 100
 
-    def run_test_quafu_config_from_yaml(self, monkeypatch, tmp_path):
-        """Quafu config is read from ~/.uniqc/config.yaml."""
-        write_uniqc_config(tmp_path, {"quafu": {"token": "quafu_secret_token"}})
-        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
-
-        from uniqc.config import load_quafu_config
-
-        config = load_quafu_config()
-        assert config["api_token"] == "quafu_secret_token"
-
     def run_test_quark_config_from_yaml(self, monkeypatch, tmp_path):
         """QuarkStudio config is read from ~/.uniqc/config.yaml."""
         write_uniqc_config(tmp_path, {"quark": {"token": "quark_secret_token"}})
@@ -190,47 +180,6 @@ class RunTestOriginQAdapterIntegration:
 
 
 # ---------------------------------------------------------------------------
-# Quafu adapter tests (require credentials)
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.cloud
-@pytest.mark.requires_quafu
-class RunTestQuafuAdapterIntegration:
-    """Integration tests for Quafu adapter with real quafu and credentials."""
-
-    def run_test_translate_simple_gates(self):
-        """Test circuit translation with real quafu."""
-        originir = """
-QINIT 2
-H q[0]
-CNOT q[0], q[1]
-MEASURE q[0], c[0]
-""".strip()
-
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        result = adapter.translate_circuit(originir)
-        assert result is not None
-
-    @pytest.mark.real_cloud_execution
-    def run_test_submit_and_query(self):
-        """Test submit and query with real service."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-
-        # Translate circuit first
-        circuit = adapter.translate_circuit(ORIGINIR_BELL)
-        task_id = adapter.submit(circuit, shots=1000, chip_id="ScQ-P10")
-        assert task_id is not None
-
-        result = adapter.query(task_id)
-        assert "status" in result
-
-
-# ---------------------------------------------------------------------------
 # IBM adapter tests (require credentials)
 # ---------------------------------------------------------------------------
 
@@ -277,17 +226,6 @@ class RunTestAdapterAvailability:
 
         adapter = OriginQAdapter()
         assert adapter.is_available() is True
-
-    @pytest.mark.requires_quafu
-    def run_test_quafu_adapter_available_with_config(self, monkeypatch, tmp_path):
-        """Test Quafu adapter availability with config."""
-        write_uniqc_config(tmp_path, {"quafu": {"token": "test_token"}})
-        monkeypatch.setattr("uniqc.config.CONFIG_FILE", tmp_path / ".uniqc" / "config.yaml")
-
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        assert isinstance(adapter.is_available(), bool)
 
     def run_test_ibm_adapter_available_with_config(self, monkeypatch, tmp_path):
         """Test IBM adapter availability with config."""

@@ -90,7 +90,7 @@ def list_backends(
         None,
         "--platform",
         "-p",
-        help="Only show backends for this platform (originq/quafu/quark/ibm)",
+        help="Only show backends for this platform (originq/quark/ibm/tianyan/logicalqubit)",
     ),
     status_filter: str | None = typer.Option(
         None,
@@ -267,7 +267,7 @@ def update(
         None,
         "--platform",
         "-p",
-        help="Only update backends for this platform (originq/quafu/quark/ibm/tianyan/logicalqubit)",
+        help="Only update backends for this platform (originq/quark/ibm/tianyan/logicalqubit)",
     ),
     clear: bool = typer.Option(
         False,
@@ -289,11 +289,7 @@ def update(
         invalidate_all()
         print_info("Cache cleared.")
 
-    targets = (
-        [Platform(platform.lower())]
-        if platform
-        else [candidate for candidate in Platform if candidate != Platform.QUAFU]
-    )
+    targets = [Platform(platform.lower())] if platform else list(Platform)
     updated_platforms: list[str] = []
     warnings_list: list[str] = []
 
@@ -422,7 +418,7 @@ def _print_backend_detail(b: BackendInfo) -> None:
 def chip_display(
     identifier: str = typer.Argument(
         ...,
-        help="Backend identifier in the form 'platform/chip_name' (e.g. originq/wuyuan:d5, ibm/sherbrooke, quafu/ScQ-P18)",
+        help="Backend identifier in the form 'platform/chip_name' (e.g. originq/wuyuan:d5, ibm/sherbrooke, quark/Baihua)",
     ),
     update: bool = typer.Option(
         False,

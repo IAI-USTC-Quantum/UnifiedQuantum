@@ -4,7 +4,7 @@ This package provides a unified interface for submitting and querying
 quantum computing tasks across multiple backend platforms:
 
 - ``originq`` — Origin Quantum Cloud (本源量子云) via pyqpanda3.
-- ``quafu`` — BAQIS ScQ quantum cloud platform (Quafu).
+- ``quark`` — QuarkStudio (BAQIS ScQ) quantum cloud platform.
 - ``ibm`` — IBM Quantum via Qiskit Runtime.
 - ``dummy`` — Local C++ simulator (no network, no credentials needed).
 
@@ -23,7 +23,7 @@ Public API (from ``uniqc.backend_adapter.task_manager``):
 
 CLI shortcut::
 
-    uniqc submit circuit.originir --backend quafu:ScQ-P18 --dry-run
+    uniqc submit circuit.originir --backend originq:WK_C180 --dry-run
 
 Python example::
 
@@ -35,7 +35,7 @@ Python example::
     circuit.measure(0)
 
     # Validate before submitting
-    result = dry_run_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+    result = dry_run_task(circuit, backend='originq:WK_C180', shots=1000)
     if result.success:
-        task_id = submit_task(circuit, backend='quafu:ScQ-P18', shots=1000)
+        task_id = submit_task(circuit, backend='originq:WK_C180', shots=1000)
 """

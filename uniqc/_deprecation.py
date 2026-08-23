@@ -56,7 +56,7 @@ def warn_removed_in_0_1_0(
         replacement: Optional one-line replacement hint. When provided,
             it is rendered as ``"; use ``<replacement>`` instead."``.
         detail: Optional extra sentence appended before the trailer
-            (use for context like "the [quafu] extra has been removed").
+            (use for context like "the [quark] extra requires Python >= 3.12").
         stacklevel: Forwarded to :func:`warnings.warn`. The default of 2
             attributes the warning to the caller of the deprecated API.
             Pass ``3`` from a helper that itself wraps the deprecated API.

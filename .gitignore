@@ -173,19 +173,15 @@ cython_debug/
 
 # output path
 origin_online_info_verify/
-quafu_online_info_verify/
 ibm_online_info_verify/
 originq_online_config.json
-quafu_online_config.json
 ibm_online_config.json
 qcloud_config_template/originq_template.py
-qcloud_config_template/quafu_template.py
 qcloud_config_template/ibm_template.py
 test/make_online_config/
 history/
 online_info/
 dummy_server/
-test/quafu_test
 originq_cloud_config.json
 good_circuits.txt
 bad_circuits.txt

@@ -15,7 +15,7 @@ Usage::
     # Create from counts
     result = UnifiedResult.from_counts(
         counts={"00": 512, "11": 488},
-        platform="quafu",
+        platform="quark",
         task_id="abc123"
     )
 
@@ -49,7 +49,7 @@ class UnifiedResult:
         probabilities: Measurement probabilities as dict mapping bitstrings to probs.
             Example: {"00": 0.512, "11": 0.488}
         shots: Total number of shots executed.
-        platform: Platform identifier ('originq', 'quafu', 'ibm', 'dummy').
+        platform: Platform identifier ('originq', 'quark', 'ibm', 'dummy').
         task_id: Unique task identifier from the platform.
         backend_name: Name of the quantum backend/hardware used (optional).
         execution_time: Execution time in seconds (optional).
@@ -59,7 +59,7 @@ class UnifiedResult:
     Example:
         >>> result = UnifiedResult.from_counts(
         ...     counts={"00": 512, "11": 488},
-        ...     platform="quafu",
+        ...     platform="quark",
         ...     task_id="task-123"
         ... )
         >>> print(result.probabilities)
@@ -99,7 +99,7 @@ class UnifiedResult:
 
         Example:
             >>> result = UnifiedResult.from_counts(
-            ...     {"00": 512, "11": 488}, "quafu", "task-1"
+            ...     {"00": 512, "11": 488}, "quark", "task-1"
             ... )
         """
         total = sum(counts.values())

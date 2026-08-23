@@ -163,7 +163,7 @@ def extract_counts_and_probs(
     Task results arrive in several different shapes depending on the adapter:
 
     - :class:`UnifiedResult` (single circuit) or ``list[UnifiedResult]`` (batch)
-    - ``{"counts": {...}, "probabilities": {...}}`` (dummy / quafu)
+    - ``{"counts": {...}, "probabilities": {...}}`` (dummy / quark)
     - ``{"counts": {...}}`` or ``{"probabilities": {...}}`` alone
     - ``[{"key": "0x..", "value": prob}, ...]`` (originq single task)
     - ``[{"0x..": int, ...}, ...]`` (IBM: list of per-circuit count dicts)

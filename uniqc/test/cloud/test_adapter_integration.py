@@ -1,10 +1,9 @@
-"""End-to-end integration tests for Quafu and IBM adapters.
+"""End-to-end integration tests for the IBM adapter.
 
 These tests require real API credentials and network access.
 They are skipped unless the active ``~/.uniqc/config.yaml`` profile has tokens.
 
 Run locally:
-    uniqc config set quafu.token xxx
     uniqc config set ibm.token xxx
     pytest uniqc/test/cloud/test_adapter_integration.py -v -m cloud
     pytest uniqc/test/cloud/test_adapter_integration.py -v --real-cloud-test
@@ -40,128 +39,6 @@ MEASURE q[0], c[0]
 MEASURE q[1], c[1]
 MEASURE q[2], c[2]
 """.strip()
-
-
-# =============================================================================
-# Quafu Integration Tests
-# =============================================================================
-
-
-@pytest.mark.cloud
-@pytest.mark.requires_quafu
-class RunTestQuafuAdapterReal:
-    """End-to-end tests for QuafuAdapter with real credentials."""
-
-    def run_test_translate_bell_pair(self):
-        """Translate Bell pair circuit and verify Quafu circuit is valid."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        qc = adapter.translate_circuit(ORIGINIR_BELL)
-        assert qc is not None
-        assert hasattr(qc, "h")
-        assert hasattr(qc, "cnot")
-
-    def run_test_translate_with_all_gates(self):
-        """Test translation of circuit using Y, Z, S, SX, T, SWAP, ISWAP gates.
-
-        This validates that QuafuAdapter._reconstruct_qasm supports the
-        full gate set (Y, Z, S, SX, T, SWAP, ISWAP, BARRIER).
-        """
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        # Should not raise RuntimeError
-        qc = adapter.translate_circuit(ORIGINIR_GATES)
-        assert qc is not None
-        assert hasattr(qc, "y")
-        assert hasattr(qc, "z")
-        assert hasattr(qc, "s")
-        assert hasattr(qc, "sx")
-        assert hasattr(qc, "t")
-        assert hasattr(qc, "swap")
-        assert hasattr(qc, "iswap")
-        assert hasattr(qc, "cz")
-        assert hasattr(qc, "cnot")
-
-    @pytest.mark.real_cloud_execution
-    def run_test_submit_sync(self):
-        """Submit with wait=True and verify immediate completion."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        qc = adapter.translate_circuit(ORIGINIR_BELL)
-        # Use a simulator chip if available, otherwise any valid chip
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=True)
-        assert isinstance(task_id, str) and len(task_id) > 0
-
-        result = adapter.query(task_id)
-        assert "status" in result
-        assert result["status"] in ("success", "failed", "running")
-
-    @pytest.mark.real_cloud_execution
-    def run_test_submit_async_then_query_sync(self):
-        """Submit async, poll with query_sync, verify result shape."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        qc = adapter.translate_circuit(ORIGINIR_BELL)
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=False)
-        assert isinstance(task_id, str)
-
-        # Poll until done (or timeout after 60s)
-        results = adapter.query_sync(task_id, interval=5.0, timeout=60.0)
-        assert isinstance(results, list)
-        assert len(results) == 1
-        # query_sync returns inner result dicts from query_batch — for Quafu
-        # each is now a flat counts dict: {"0000": N, "1111": M}, no "status" key
-        assert isinstance(results[0], dict), f"Expected flat dict, got {type(results[0])}"
-        assert all(isinstance(v, int) for v in results[0].values()), f"Count values must be int, got {results[0]}"
-
-    @pytest.mark.real_cloud_execution
-    def run_test_submit_batch_sync(self):
-        """Batch submit 3 circuits with wait=True."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        qc = adapter.translate_circuit(ORIGINIR_BELL)
-        task_ids = adapter.submit_batch([qc, qc, qc], shots=100, chip_id="ScQ-Sim10", wait=True)
-        assert isinstance(task_ids, list)
-        assert len(task_ids) == 3
-        assert all(isinstance(tid, str) for tid in task_ids)
-
-    @pytest.mark.real_cloud_execution
-    def run_test_result_shape(self):
-        """Verify result has {"status": "success", "result": {bitstring: shots}}."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        qc = adapter.translate_circuit(ORIGINIR_BELL)
-        task_id = adapter.submit(qc, shots=100, chip_id="ScQ-Sim10", wait=True)
-        result = adapter.query(task_id)
-
-        assert result["status"] == "success", f"Expected success, got {result}"
-        assert "result" in result
-        counts = result["result"]
-        # Unified format: flat {bitstring: int} dict — no nested counts/probabilities
-        assert isinstance(counts, dict), f"Result must be flat dict, got {type(counts)}"
-        assert all(isinstance(k, str) for k in counts), f"Count keys must be str, got {counts}"
-        assert all(isinstance(v, int) and v >= 0 for v in counts.values()), (
-            f"Count values must be non-neg int, got {counts}"
-        )
-
-    def run_test_list_backends(self):
-        """Call list_backends and verify expected chip names appear."""
-        from uniqc.backend_adapter.task.adapters import QuafuAdapter
-
-        adapter = QuafuAdapter()
-        backends = adapter.list_backends()
-        assert isinstance(backends, list)
-        assert len(backends) > 0
-        names = [b["name"] for b in backends]
-        # At least one of the known chips should appear
-        known_chips = {"ScQ-Sim10", "ScQ-P18", "ScQ-P136", "ScQ-Sim10C", "Dongling"}
-        assert any(c in names for c in known_chips), f"Expected known chips in {names}"
 
 
 # =============================================================================

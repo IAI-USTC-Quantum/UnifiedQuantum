@@ -54,10 +54,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the network-gated ``uniqc/test/cloud/`` directory into the default
   test suite.
 
+### Removed
+
+- **Quafu platform support removed**, as announced in the deprecation
+  policy (deprecated throughout `0.0.x`, scheduled for removal in `0.1.0`).
+  This drops the ``quafu_adapter`` module, ``QuafuBackend``,
+  ``QuafuCircuitAdapter``, ``QuafuOptions``, ``normalize_quafu``,
+  ``Platform.QUAFU``, the quafu branches in the CLI / gateway / backend
+  discovery / chip services, the ``quafu.*`` config keys, the
+  ``requires_quafu*`` pytest markers, and any reference to the ``pyquafu``
+  dependency. BAQIS ScQ chips are now served by the Quark platform —
+  migrate to ``pip install unified-quantum[quark]`` and use
+  ``quark:<chip>`` backend identifiers.
+
 ### Fixed
 
 - **`wait_for_result` crashed on Quark task completion** with
-  ``int() argument must be ... not 'dict'``: Quark (like Quafu/dummy) nests
+  ``int() argument must be ... not 'dict'``: Quark (like dummy) nests
   its histogram as ``{"counts": {...}, "raw_result": ...}``, which the
   ``UnifiedResult`` wrapper did not unwrap. Verified end-to-end with a live
   1024-shot Bell task on ``quark:Baihua``.

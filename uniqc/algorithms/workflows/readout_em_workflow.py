@@ -37,10 +37,6 @@ def _get_adapter(backend: str, **kwargs) -> Any:
         # Extract chip name: "originq:PQPUMESH8" → "PQPUMESH8"
         chip = backend.split(":", 1)[1] if ":" in backend else backend
         return OriginQAdapter(backend_name=chip, **kwargs)
-    elif backend.startswith("quafu"):
-        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
-
-        return QuafuAdapter(**kwargs)
     else:
         return DummyAdapter(**kwargs)
 

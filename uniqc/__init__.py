@@ -95,7 +95,6 @@ from .backend_adapter.task.normalizers import (
     normalize_ibm,
     normalize_logicalqubit,
     normalize_originq,
-    normalize_quafu,
     normalize_tianyan,
 )
 from .backend_adapter.task.options import (
@@ -230,9 +229,6 @@ except ImportError:
 from . import algorithms, calibration, config, qem  # noqa: E402,F401
 
 _LAZY_EXPORTS = {
-    "QuafuBackend": ("uniqc.backend_adapter.backend", "QuafuBackend"),
-    "QuafuCircuitAdapter": ("uniqc.backend_adapter.circuit_adapter", "QuafuCircuitAdapter"),
-    "QuafuOptions": ("uniqc.backend_adapter.task.options", "QuafuOptions"),
     "expectation": ("uniqc.torch_adapter", "expectation"),
     "QuantumLayer": ("uniqc.torch_adapter", "QuantumLayer"),
     "TorchQuantumLayer": ("uniqc.torch_adapter", "TorchQuantumLayer"),
@@ -320,9 +316,6 @@ __all__ = [
     "Qubit",
     "QubitTopology",
     "QuotaExceededError",
-    "QuafuBackend",
-    "QuafuCircuitAdapter",
-    "QuafuOptions",
     "QuarkBackend",
     "QuarkCircuitAdapter",
     "QuarkOptions",
@@ -420,7 +413,6 @@ __all__ = [
     "normalize_ibm",
     "normalize_logicalqubit",
     "normalize_originq",
-    "normalize_quafu",
     "normalize_tianyan",
     "parameter_shift_gradient",
     "pauli_expectation",

@@ -22,7 +22,7 @@ HELP = f"Query task results from quantum cloud platforms\n  {build_ref_str('resu
 def result(
     task_id: str = typer.Argument(..., help="Task ID to query"),
     platform: str | None = typer.Option(
-        None, "--platform", "-p", help="Platform: originq/quafu/quark/ibm/tianyan/logicalqubit"
+        None, "--platform", "-p", help="Platform: originq/quark/ibm/tianyan/logicalqubit"
     ),
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for task completion"),
     timeout: float = typer.Option(300.0, "--timeout", help="Timeout in seconds"),

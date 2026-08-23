@@ -1,6 +1,6 @@
-"""QuarkStudio / Quafu-SQC backend adapter.
+"""QuarkStudio (BAQIS ScQ cloud) backend adapter.
 
-QuarkStudio replaces the deprecated pyquafu client for the BAQIS Quafu-SQC
+QuarkStudio is the official SDK for the BAQIS superconducting quantum cloud
 platform. Its public SDK accepts OpenQASM 2.0 text inside a task dictionary:
 
     {"chip": "Baihua", "name": "...", "circuit": qasm2, "shots": 1024, ...}
@@ -249,7 +249,7 @@ def _normalise_backend_status(value: Any) -> str:
 
 
 class QuarkAdapter(QuantumAdapter):
-    """Adapter for QuarkStudio's Quafu-SQC ``Task`` API."""
+    """Adapter for QuarkStudio's ``Task`` API."""
 
     name = "quark"
 

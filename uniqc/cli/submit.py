@@ -214,7 +214,7 @@ def _normalize_backend_id(backend: str) -> str:
         ``'originq:WK_C180'``, …) pass through unchanged.
       - Bare topology/MPS names (``'virtual-line-3'``, ``'mps-linear-32'``)
         get the ``'dummy:local:'`` prefix.
-      - Bare platform names (``'originq'``, ``'quafu'``, …) are rejected
+      - Bare platform names (``'originq'``, ``'quark'``, …) are rejected
         with a helpful error message.
     """
     if backend == "dummy":
@@ -227,7 +227,7 @@ def _normalize_backend_id(backend: str) -> str:
     if backend.startswith(("virtual-line-", "virtual-grid-", "mps-linear-")):
         return f"dummy:local:{backend}"
     # Bare platform names are not allowed — guide users to the full identifier.
-    if backend in ("originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"):
+    if backend in ("originq", "quark", "ibm", "tianyan", "logicalqubit"):
         raise typer.BadParameter(
             f"Bare platform name {backend!r} is not a valid backend identifier. "
             f"Use '{backend}:<chip>' (e.g. '{backend}:WK_C180'). "

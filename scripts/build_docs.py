@@ -111,7 +111,6 @@ _RUNTIME_OPTIONS: dict[str, Any] = {"real_cloud": False}
 REQUIREMENT_REGISTRY: dict[str, tuple[str, Any]] = {
     # SDK-only (no credentials):
     "originq-sdk": ("pyqpanda3 installed", lambda: _have_module("pyqpanda3")),
-    "quafu-sdk": ("pyquafu installed", lambda: _have_module("quafu")),
     "ibm-sdk": ("qiskit_ibm_runtime installed", lambda: _have_module("qiskit_ibm_runtime")),
     "quark-sdk": (
         "quarkstudio installed",
@@ -132,10 +131,6 @@ REQUIREMENT_REGISTRY: dict[str, tuple[str, Any]] = {
     "originq": (
         "pyqpanda3 + originq token configured",
         lambda: _have_module("pyqpanda3") and _have_credentials("originq"),
-    ),
-    "quafu": (
-        "pyquafu + quafu token configured",
-        lambda: _have_module("quafu") and _have_credentials("quafu"),
     ),
     "ibm": (
         "qiskit_ibm_runtime + ibm token configured",

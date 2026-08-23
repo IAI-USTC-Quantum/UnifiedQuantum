@@ -4,7 +4,7 @@ Two decomposition targets share the same helper infrastructure:
 
 **QASM 2.0 target** (:func:`decompose_for_qasm2`)
     Rewrites ``RPhi``, ``RPhi90``, ``RPhi180``, ``PHASE2Q``, ``UU15``
-    into gates in ``qelib1.inc`` so that cloud parsers (Quafu / QuarkStudio /
+    into gates in ``qelib1.inc`` so that cloud parsers (QuarkStudio /
     IBM) accept the output without custom ``gate ... { ... }`` blocks.
 
 **Official OriginIR target** (:func:`decompose_for_originir`)

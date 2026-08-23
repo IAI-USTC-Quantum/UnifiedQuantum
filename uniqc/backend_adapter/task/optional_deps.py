@@ -7,13 +7,13 @@ users receive clear instructions on how to install it.
 Usage::
 
     # Check if dependency is available
-    from uniqc.backend_adapter.task.optional_deps import QUAFU_AVAILABLE
-    if QUAFU_AVAILABLE:
-        from uniqc.backend_adapter.task.adapters.quafu_adapter import QuafuAdapter
+    from uniqc.backend_adapter.task.optional_deps import QUARK_AVAILABLE
+    if QUARK_AVAILABLE:
+        from uniqc.backend_adapter.task.adapters.quark_adapter import QuarkAdapter
 
     # Require dependency with error message
     from uniqc.backend_adapter.task.optional_deps import require
-    quafu = require("quafu", "quafu")  # Raises MissingDependencyError if not installed
+    quark = require("quark", "quark")  # Raises MissingDependencyError if not installed
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from uniqc.exceptions import MissingDependencyError  # noqa: F401 — re-export
 __all__ = [
     "MissingDependencyError",
     "require",
-    "check_quafu",
     "check_quark",
     "check_quarkcircuit",
     "check_qiskit",
@@ -35,7 +34,6 @@ __all__ = [
     "check_uniqc_cpp",
     "check_qutip",
     "check_simulation",
-    "QUAFU_AVAILABLE",
     "QUARK_AVAILABLE",
     "QUARKCIRCUIT_AVAILABLE",
     "QISKIT_AVAILABLE",
@@ -52,14 +50,12 @@ def require(name: str, extra: str, install_hint: str | None = None):
     """Import an optional module with a clear error message if missing.
 
     Args:
-        name: The module name to import (e.g., 'quafu', 'qiskit').
+        name: The module name to import (e.g., 'qiskit', 'cqlib').
         extra: The pip extras name for installation (e.g., 'qiskit').
             Note: as of the current release, ``qiskit`` is a core dependency
-            (no extra) and ``quafu`` no longer has an extra — see
-            ``install_hint``.
+            (no extra).
         install_hint: Optional explicit install / recovery hint that overrides
-            the default ``unified-quantum[{extra}]`` message. Used for
-            deprecated paths (e.g., quafu) where there is no extras name.
+            the default ``unified-quantum[{extra}]`` message.
 
     Returns:
         The imported module.
@@ -67,13 +63,6 @@ def require(name: str, extra: str, install_hint: str | None = None):
     Raises:
         MissingDependencyError: If the module cannot be imported.
     """
-    # Hard-coded deprecated path: there's no [quafu] extra anymore.
-    if install_hint is None and extra == "quafu":
-        install_hint = (
-            "The Quafu adapter is deprecated and is no longer installable via "
-            "a `[quafu]` extra. Install pyquafu directly if you still need it: "
-            "`pip install pyquafu` (warning: pulls numpy<2)."
-        )
     try:
         return importlib.import_module(name)
     except ImportError as e:
@@ -104,15 +93,6 @@ def _can_import(*names: str) -> bool:
         return True
     except Exception:
         return False
-
-
-def check_quafu() -> bool:
-    """Check if the quafu package is available.
-
-    Returns:
-        True if quafu can be imported, False otherwise.
-    """
-    return _can_import("quafu")
 
 
 def check_quark() -> bool:
@@ -213,7 +193,6 @@ def check_simulation(target: str = "cpp") -> bool:
 
 
 # Pre-computed availability flags (evaluated at module load time)
-QUAFU_AVAILABLE = check_quafu()
 QUARK_AVAILABLE = check_quark()
 QUARKCIRCUIT_AVAILABLE = check_quarkcircuit()
 QISKIT_AVAILABLE = check_qiskit()

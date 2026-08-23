@@ -153,7 +153,7 @@ CNOT q[0], q[1]
 
 
 def test_task_show_tolerates_nested_result(monkeypatch):
-    """Dummy / quafu write result={'counts': ..., 'probabilities': ...}.
+    """Dummy / quark write result={'counts': ..., 'probabilities': ...}.
 
     Before the fix, CLI did sum(result.values()) which raised TypeError.
     """

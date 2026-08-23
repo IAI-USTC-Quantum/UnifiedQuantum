@@ -27,7 +27,6 @@ HELP = f"Run diagnostics to verify your uniqc installation\n  {build_ref_str('do
 # ---------------------------------------------------------------------------
 _DEPENDENCY_GROUPS: list[tuple[str, list[str]]] = [
     ("originq", ["pyqpanda3"]),
-    ("quafu", ["pyquafu"]),
     ("quark", ["quarkstudio", "quarkcircuit"]),
     ("tianyan", ["cqlib"]),
     ("logicalqubit", ["lqcloud"]),
@@ -240,9 +239,7 @@ def _check_platform_connectivity() -> None:
     from uniqc.cli.chip_service import fetch_chip_characterization
     from uniqc.config import SUPPORTED_PLATFORMS, has_platform_credentials
 
-    configured_platforms = [
-        p for p in SUPPORTED_PLATFORMS if p != Platform.QUAFU.value and has_platform_credentials(p)
-    ]
+    configured_platforms = [p for p in SUPPORTED_PLATFORMS if has_platform_credentials(p)]
 
     if not configured_platforms:
         console.print("[yellow]⚠[/yellow] No platform credentials configured — skipping connectivity check")

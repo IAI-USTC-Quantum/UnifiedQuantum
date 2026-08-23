@@ -195,8 +195,6 @@ pip install -e .
 | PyTorch 集成 | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | 安装所有可选依赖 | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
 
-> **Quafu 兼容性说明（deprecated）**：0.0.x 保留显式 Quafu 路径的兼容支持，并在使用时发出弃用警告；该支持将在 0.1.0 移除。`[quafu]` extra 已移除，如确需使用请手动安装 `pyquafu`（要求 `numpy<2`）。
->
 > Qiskit 已是核心依赖（随 `unified-quantum` 默认安装），无需单独的 `[qiskit]` extra。
 
 `[pytorch]` 同时安装 `torch` 与 PyPI 上维护的 `torchquantum-ng`

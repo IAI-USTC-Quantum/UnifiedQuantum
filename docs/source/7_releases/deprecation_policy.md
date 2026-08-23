@@ -65,8 +65,6 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 
 - `uniqc.backend_adapter.task.adapters.ibm_adapter.IBMAdapter`
   —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`）。
-- 整个 `uniqc.backend_adapter.task.adapters.quafu_adapter` 模块
-  —— Quafu 平台支持已停止维护，`[quafu]` 安装 extra 已被移除。
 - 通过平台原生 task id（非 `uqt_*`）查询任务的回退路径
   （位于 `uniqc.backend_adapter.task_manager`）—— 改用 uniqc 内部 task id。
 
@@ -91,6 +89,17 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 以及关键字参数：
 
 - `grover_diffusion(..., ancilla=...)` —— 该参数无效果，请直接删掉。
+
+## 已在 0.1.0 移除的 API
+
+下列条目在 `0.0.x` 期间触发 `DeprecationWarning`，并已在 `0.1.0`
+按本政策移除：
+
+- **Quafu 平台支持整体移除**：`quafu_adapter` 模块、`QuafuBackend`、
+  `QuafuCircuitAdapter`、`QuafuOptions`、`normalize_quafu`、`Platform.QUAFU`、
+  CLI / 网关 / 后端发现中的 quafu 分支、`quafu.*` 配置键，以及 `pyquafu`
+  依赖。BAQIS ScQ 芯片的后续支持由 Quark 平台（`unified-quantum[quark]`）
+  承接，请迁移到 `quark:<chip>` 后端标识符。
 
 ## 弃用流程（针对维护者）
 

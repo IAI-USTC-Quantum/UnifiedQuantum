@@ -10,7 +10,6 @@ import pytest
 from uniqc.backend_adapter.task.optional_deps import (
     PYQPANDA3_AVAILABLE,
     QISKIT_AVAILABLE,
-    QUAFU_AVAILABLE,
     QUARK_AVAILABLE,
     QUTIP_AVAILABLE,
     SIMULATION_AVAILABLE,
@@ -18,7 +17,6 @@ from uniqc.backend_adapter.task.optional_deps import (
     MissingDependencyError,
     check_pyqpanda3,
     check_qiskit,
-    check_quafu,
     check_quark,
     check_qutip,
     check_simulation,
@@ -39,11 +37,11 @@ class TestMissingDependencyError:
     def test_error_message_with_install_hint(self):
         """Test that explicit install_hint overrides the default extras message."""
         error = MissingDependencyError(
-            "quafu",
-            install_hint="quafu is deprecated; install pyquafu directly: pip install pyquafu",
+            "quarkstudio",
+            install_hint="QuarkStudio is on a private index; install it directly: pip install quarkstudio",
         )
-        assert "pyquafu" in str(error)
-        assert "deprecated" in str(error)
+        assert "quarkstudio" in str(error)
+        assert "private index" in str(error)
 
     def test_error_attributes(self):
         """Test error attributes are set correctly."""
@@ -76,11 +74,6 @@ class TestRequireFunction:
 
 class TestCheckFunctions:
     """Tests for availability check functions."""
-
-    def test_check_quafu_returns_bool(self):
-        """Test check_quafu returns boolean."""
-        result = check_quafu()
-        assert isinstance(result, bool)
 
     def test_check_quark_returns_bool(self):
         """Test check_quark returns boolean."""
@@ -125,10 +118,6 @@ class TestCheckFunctions:
 
 class TestAvailabilityFlags:
     """Tests for pre-computed availability flags."""
-
-    def test_quafu_available_is_bool(self):
-        """Test QUAFU_AVAILABLE is boolean."""
-        assert isinstance(QUAFU_AVAILABLE, bool)
 
     def test_quark_available_is_bool(self):
         """Test QUARK_AVAILABLE is boolean."""

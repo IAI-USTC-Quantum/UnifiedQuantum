@@ -4,8 +4,6 @@ This package owns cloud backend configuration, backend discovery, circuit
 input/output adapters, task submission/querying, and the local dummy backend.
 """
 
-from importlib import import_module
-
 from .backend import (
     BACKENDS,
     DummyBackend,
@@ -60,8 +58,6 @@ __all__ = [
     "Platform",
     "QuantumBackend",
     "QubitTopology",
-    "QuafuBackend",
-    "QuafuCircuitAdapter",
     "QuarkBackend",
     "QuarkCircuitAdapter",
     "RegionSearchResult",
@@ -85,17 +81,3 @@ __all__ = [
     "submit_task",
     "wait_for_result",
 ]
-
-_LAZY_EXPORTS = {
-    "QuafuBackend": ("uniqc.backend_adapter.backend", "QuafuBackend"),
-    "QuafuCircuitAdapter": ("uniqc.backend_adapter.circuit_adapter", "QuafuCircuitAdapter"),
-}
-
-
-def __getattr__(name: str):
-    if name in _LAZY_EXPORTS:
-        module_name, attr_name = _LAZY_EXPORTS[name]
-        value = getattr(import_module(module_name), attr_name)
-        globals()[name] = value
-        return value
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -201,7 +201,7 @@ pip install unified-quantum[pytorch]
 ### 安装所有可选依赖
 
 `[all]` 安装跨平台兼容的可选功能依赖（`[simulation]` + `[visualization]` +
-`[pytorch]` + `[originq]` 等；Quafu 已弃用，不再提供 `[quafu]` extra）。
+`[pytorch]` + `[originq]` 等）。
 
 > **v0.0.15 Breaking Change**：`[all]` **不再包含** `[quark]`。之前 `[all]`
 > 因为 `quarkcircuit` 在 `win32` 和 Python 3.14 上缺少 wheel，导致跨平台
@@ -223,7 +223,6 @@ v0.0.15 建立了明确的弃用时间线：**所有在 `0.0.x` 中触发 `Depre
 
 - `uniqc.simulator.get_backend()` — 改用 `get_simulator()` / `create_simulator()`
 - `IBMAdapter` 类 — 改用 `QiskitAdapter`
-- `quafu_adapter` 模块 — Quafu 平台已停止维护
 - 所有 `*_circuit(circuit, ...)` in-place 形式 — 改用 fragment 形式
 
 详见 [弃用政策（0.1.0 兼容性悬崖）](../7_releases/deprecation_policy.md)。

@@ -142,10 +142,9 @@ CLI、Gateway 全部以该枚举为准。
   测试。详见 {ref}`平台约定的 2.6 节 <platform-bit-endianness>`。
   实例：tianyan 的结果按测量比特标签序归一、logicalqubit 原生为 qiskit
   风格大端 bitstring，两者都在各自的 `normalize_<p>()` 里完成改写。
-- **废弃平台的 special-case**：参考 quafu 的做法——保留枚举与 adapter 以兼容
-  存量代码，但在 `fetch_all_backends_with_status()` 中跳过、`optional_deps.require()`
-  里给硬编码安装提示、使用时发 `DeprecationWarning`。新平台**不要**复制这些分支，
-  它们只是历史包袱的隔离层。
+- **废弃平台的处理**：平台下线时按 [弃用政策](../7_releases/deprecation_policy.md)
+  先在 `0.0.x` 标记 `DeprecationWarning`，再在下一个 minor 版本整体移除
+  （枚举、adapter、CLI 分支、配置项一并删除），不要留兼容分支成为历史包袱。
 - **`is_available()` ≠ 网络探活**：只做本地可判定检查（SDK 可导入、凭证存在），
   网络故障交给提交/查询路径报错。
 

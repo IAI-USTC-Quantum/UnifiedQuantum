@@ -182,8 +182,6 @@ Core dependencies (including `scipy`) are included by default.
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
 | All optional deps | `uv pip install unified-quantum[all]` | `pip install unified-quantum[all]` |
 
-> **Deprecated Quafu compatibility**: explicit Quafu paths remain compatible throughout 0.0.x and emit a deprecation warning when used; they will be removed in 0.1.0. The `[quafu]` extra is gone, so install `pyquafu` manually if required (`numpy<2`).
->
 > Qiskit is a core dependency (installed by default with `unified-quantum`); the `[qiskit]` extra has been removed.
 
 `[pytorch]` installs both `torch` and the maintained `torchquantum-ng`

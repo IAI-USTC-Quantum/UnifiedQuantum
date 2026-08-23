@@ -23,7 +23,7 @@
   ``uniqc backend list`` 和 WebUI 中显示为 ``virtual:<name>``。
 - 沿用 ``v0.0.13``–``v0.0.15`` 的升级检查仍然适用：``uniqc submit`` 只用
   ``--backend <provider>:<chip>``（无 ``--platform``，缺省 ``dummy:local:simulator``）；
-  ``pip install unified-quantum[all]`` 不含 ``[quark]``，也不再有 ``[quafu]`` extra；
+  ``pip install unified-quantum[all]`` 不含 ``[quark]``；
   ``qiskit`` 已是核心依赖；所有在 ``0.0.x`` 触发 ``DeprecationWarning`` 的公共 API
   将在 ``0.1.0`` 移除；环境自检用 ``uv run uniqc doctor``。
 
@@ -138,7 +138,7 @@ v0.0.15 重点更新：**原生 PyTorch 参数集成**、**OriginIR-ext 超集�
   对应 SDK。详见 [安装说明 - Python 3.14 注意事项](../0_quickstart/installation.md)。
 - **你是否在用已弃用的 API。** 本版建立了项目级弃用政策：所有在 `0.0.x` 中触发
   `DeprecationWarning` 的公共 API **将在 `0.1.0` 中移除**。当前弃用清单包括：
-  `simulator.get_backend()`、`IBMAdapter`、`quafu_adapter`、以及所有
+  `simulator.get_backend()`、`IBMAdapter`、以及所有
   `*_circuit(circuit, ...)` in-place 形式。所有弃用警告消息现在都包含
   字面量 `"uniqc 0.1.0"`，方便 `grep` 和 `pytest.warns` 过滤。
   详见 [弃用政策（0.1.0 兼容性悬崖）](deprecation_policy.md)。

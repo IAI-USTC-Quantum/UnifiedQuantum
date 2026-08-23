@@ -1,7 +1,7 @@
 """Platform-specific result normalizers.
 
 This module provides functions to convert platform-specific result formats
-into the unified UnifiedResult format. Each platform (OriginQ, Quafu, IBM)
+into the unified UnifiedResult format. Each platform (OriginQ, Quark, IBM)
 has its own normalizer that handles the unique output format of that platform.
 
 The normalizers are used by the adapter classes to ensure consistent
@@ -9,18 +9,17 @@ result handling across all platforms.
 
 Usage::
 
-    from uniqc.backend_adapter.task.normalizers import normalize_quafu
+    from uniqc.backend_adapter.task.normalizers import normalize_originq
     from uniqc.backend_adapter.task.result_types import UnifiedResult
 
-    # Convert Quafu result to unified format
-    unified = normalize_quafu(quafu_result, task_id="abc123")
+    # Convert OriginQ result to unified format
+    unified = normalize_originq(originq_result, task_id="abc123")
 """
 
 from __future__ import annotations
 
 __all__ = [
     "normalize_originq",
-    "normalize_quafu",
     "normalize_ibm",
     "normalize_dummy",
     "normalize_tianyan",
@@ -163,55 +162,6 @@ def normalize_originq(
         platform="originq",
         task_id=task_id,
         raw_result=raw,
-    )
-
-
-def normalize_quafu(
-    result_obj: Any,
-    task_id: str,
-    backend_name: str | None = None,
-) -> UnifiedResult:
-    """Normalize Quafu ExecResult format.
-
-    Quafu returns an ExecResult object with attributes:
-        - counts: Dict[str, int] measurement counts
-        - probabilities: Dict[str, float] measurement probabilities
-        - task_status: Status string
-
-    Args:
-        result_obj: Quafu ExecResult object.
-        task_id: Task identifier.
-        backend_name: Optional backend name override.
-
-    Returns:
-        UnifiedResult with counts and probabilities.
-
-    Example:
-        >>> # result_obj is a quafu ExecResult
-        >>> unified = normalize_quafu(result_obj, "task-2")
-        >>> print(unified.counts)
-        {'00': 512, '11': 488}
-    """
-    # Extract counts from ExecResult
-    counts: dict[str, int] = {}
-    if hasattr(result_obj, "counts") and result_obj.counts is not None:
-        # Quafu uses q[0]/c[0] as the LEFTMOST bitstring character. uniqc
-        # convention (docs/source/guide/platform_conventions.md §2.6) puts
-        # c[0] on the RIGHT. Reverse each key here.
-        counts = {str(k)[::-1]: int(v) for k, v in dict(result_obj.counts).items()}
-
-    # Try to get backend name from result object
-    if backend_name is None and hasattr(result_obj, "task"):
-        task_info = getattr(result_obj, "task", {})
-        if isinstance(task_info, dict):
-            backend_name = task_info.get("backend")
-
-    return UnifiedResult.from_counts(
-        counts=counts,
-        platform="quafu",
-        task_id=task_id,
-        backend_name=backend_name,
-        raw_result=result_obj,
     )
 
 

@@ -81,13 +81,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
 }
 
-SUPPORTED_PLATFORMS = ["originq", "quafu", "quark", "ibm", "tianyan", "logicalqubit"]
+SUPPORTED_PLATFORMS = ["originq", "quark", "ibm", "tianyan", "logicalqubit"]
 
 META_KEYS = frozenset({"active_profile", "always_ai_hints", "sync", CONFIG_VERSION_KEY})
 
 PLATFORM_REQUIRED_FIELDS = {
     "originq": ["token"],
-    "quafu": ["token"],
     "quark": ["QUARK_API_KEY"],
     "ibm": ["token"],
     "tianyan": ["login_key"],
@@ -96,7 +95,6 @@ PLATFORM_REQUIRED_FIELDS = {
 
 PLATFORM_KNOWN_FIELDS = {
     "originq": {"token", "task_group_size", "available_qubits"},
-    "quafu": {"token", "chip_id", "auto_mapping", "task_name", "group_name", "wait", "shots"},
     "quark": {"QUARK_API_KEY", "token"},
     "ibm": {"token", "proxy", "chip_id", "auto_mapping", "circuit_optimize", "task_name", "shots"},
     "tianyan": {"login_key", "chip_id", "auto_mapping", "task_name", "shots"},
@@ -434,12 +432,6 @@ def get_originq_config(profile: str | None = None) -> dict[str, Any]:
     return get_platform_config("originq", profile)
 
 
-def get_quafu_config(profile: str | None = None) -> dict[str, Any]:
-    if profile is None:
-        profile = get_active_profile()
-    return get_platform_config("quafu", profile)
-
-
 def get_quark_config(profile: str | None = None) -> dict[str, Any]:
     if profile is None:
         profile = get_active_profile()
@@ -477,21 +469,6 @@ def load_originq_config() -> dict[str, Any]:
         format_enriched_message(
             "OriginQ Cloud config not found. "
             "Run `uniqc config set originq.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
-            "config",
-        )
-    )
-
-
-def load_quafu_config() -> dict[str, Any]:
-    config = _load_platform_config("quafu")
-    api_token = config.get("token", "") or None
-
-    if api_token:
-        return {"api_token": api_token}
-
-    raise ImportError(
-        format_enriched_message(
-            "Quafu config not found. Run `uniqc config set quafu.token <TOKEN>` or edit ~/.uniqc/config.yaml.",
             "config",
         )
     )

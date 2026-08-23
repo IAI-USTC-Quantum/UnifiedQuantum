@@ -6,8 +6,8 @@
 
 UnifiedQuantum is a lightweight Python framework that gives quantum circuit
 construction, local simulation, and multi-platform cloud execution (OriginQ,
-Quark, IBM, Tianyan, LogicalQubit; Quafu is deprecated and scheduled for
-removal in 0.1.0) a single unified API, plus a CLI-first workflow and a
+Quark, IBM, Tianyan, LogicalQubit) a single unified API, plus a CLI-first
+workflow and a
 calibration/QEM toolchain. The Python package is `uniqc`; the compiled C++
 simulator (`uniqc_cpp`) lives in the separate
 [`uniqc-cppsimulator`](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)
@@ -31,8 +31,7 @@ format, readable by Kimi Code / Codex / Copilot / Cursor): `uniqc-build-docs`,
 - `pyproject.toml` intentionally does **not** pin third-party versions and `main`
   does **not** commit `uv.lock`; dev/CI resolve latest deps to surface upstream
   breakage.
-- Optional extras: the `[quafu]` extra has been removed entirely (`pyquafu`
-  is unmaintained and pins `numpy<2`). `[quark]` (`quarkstudio`/`quarkcircuit`)
+- Optional extras: `[quark]` (`quarkstudio`/`quarkcircuit`)
   requires Python ≥ 3.12 (upstream ships Linux/macOS/Windows wheels including
   cp314) and is included in `[all]` on supported interpreters; on Python
   3.10/3.11 it is silently skipped. `[all]` is the broadly-installable
@@ -75,7 +74,7 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
   hardware vs. local execution.
 - **`uniqc/backend_adapter/`** — the unification layer. `QuantumBackend` ABC +
   `get_backend()` factory; concrete `OriginQ/Quark/Tianyan/LogicalQubit/IBM/
-  Dummy` backends plus deprecated lazy-loaded `Quafu`. `task/adapters/`
+  Dummy` backends. `task/adapters/`
   translate a circuit per platform; `task/normalizers.py` normalize raw results
   into a `UnifiedResult`. Submission is **async**: `submit_task()` returns a
   `task_id`; `poll_result()` is non-blocking, `get_result()`/`wait_for_result()`
@@ -115,9 +114,7 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
 - **Flat public API:** import common symbols directly from `uniqc`
   (`Circuit`, `get_backend`, `submit_task`, `compile`, `hea`, …). Torch-heavy
   symbols are lazily loaded via module `__getattr__`; keep optional deps out of
-  import-time paths. Deprecated symbols (e.g. the Quafu trio) are lazy-loaded
-  through `_LAZY_EXPORTS` so that `import uniqc` never triggers their
-  deprecation warnings.
+  import-time paths.
 - **All user state lives under `~/.uniqc/`** (`config.yaml`, `cache/`,
   `backend/` (backend discovery cache `backends.json`, chip cache `chips/`,
   user-defined noisy virtual machines `virtual/*.yaml` used as
@@ -126,9 +123,8 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
 - **Ruff ignores** `E501`, `N801`, `N803`, `N806` on purpose (physics-notation
   variable names like `U`, `H`, `K`, `E`; CapWords loader classes).
 - **Deprecation policy:** public APIs marked with `DeprecationWarning` in `0.0.x`
-  are removed in `0.1.0` (see `docs/source/7_releases/deprecation_policy.md`);
-  this includes the entire Quafu platform path. Run
-  `pytest -W error::DeprecationWarning` before upgrading.
+  are removed in `0.1.0` (see `docs/source/7_releases/deprecation_policy.md`).
+  Run `pytest -W error::DeprecationWarning` before upgrading.
 - Branch prefixes `feat/ fix/ ci/ docs/ refactor/`; commits follow Conventional
   Commits. Examples live **directly under** `examples/<chapter>/` and use
   docstring directives (`[doc-require: ...]`, `[doc-skip-execute]`,
