@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     from .parameter import Parameters
     from .qubit import QReg, QRegSlice, Qubit
 
+    import numpy as np
+
     try:
         import qiskit
 
@@ -662,6 +664,26 @@ class Circuit:
                 "pyqpanda3 is required for to_pyqpanda3_circuit(). Install it with: pip install pyqpanda3"
             ) from None
         return convert_originir_string_to_qprog(self.originir)
+
+    def to_matrix(self) -> np.ndarray:
+        """Return the full unitary matrix of this circuit.
+
+        The matrix uses the convention ``state_out = U @ state_in`` with
+        qubit 0 as the least-significant bit of the statevector index, and
+        gates are applied in the same order as ``opcode_list``.
+
+        Returns:
+            numpy.ndarray of shape ``(2**n, 2**n)`` with complex dtype,
+            where ``n`` is the number of qubits touched by the circuit.
+
+        Raises:
+            NotMatrixableError: If the circuit contains measurements or
+                opcodes without a unitary matrix representation (e.g.
+                QRAM calls).
+        """
+        from uniqc.circuit_builder.matrix import get_matrix
+
+        return get_matrix(self)
 
     def record_qubit(self, qubits: int | list[int]) -> None:
         """Record the qubits used in the circuit."""
