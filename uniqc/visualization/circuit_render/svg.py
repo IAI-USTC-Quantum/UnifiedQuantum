@@ -402,7 +402,9 @@ def build_primitives(draw: DrawCircuit, opts: RenderOptions) -> tuple[list, floa
     n_q, n_c = draw.n_qubits, draw.n_cbits if need_clanes else 0
     asc = opts.qubit_order != "desc"
     label_w, top = 54.0, 44.0
-    hatch_id = f"hp{id(opts) & 0xFFFFFF:x}"
+    # Deterministic per-render id: pattern contents are identical everywhere,
+    # so a fixed id is safe even when several SVGs share one HTML page.
+    hatch_id = "hp0"
 
     def yq(i):
         return top + (i if asc else n_q - 1 - i) * st.wire_gap

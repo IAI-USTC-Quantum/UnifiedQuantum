@@ -344,6 +344,21 @@ def test_smart_default_mode():
     assert isinstance(art, str) and "q[0]" in art
 
 
+def test_lenient_fallback_for_irregular_ir():
+    """Backend-stored IR with bare (unparenthesized) params must still render.
+
+    Regression: gateway /api/circuits/<id>/svg stored ``RX q[0], 1.5707963``
+    (no parens) and the old timeline renderer skipped such lines silently.
+    """
+    irregular = "QINIT 2\nCREG 2\nRX q[0], 1.5707963\nCNOT q[0], q[1]\nMEASURE q[0], c[0]\n"
+    art = render(irregular, "text")
+    assert "RX(pi/2)" in art
+    svg = render(irregular, "svg")
+    assert svg.startswith("<svg")
+    tex = render(irregular, "latex")
+    assert "R_X" in tex
+
+
 def test_module_level_equivalence():
     c = _basic()
     assert circuit_render.render(c, "text") == c.draw("text")

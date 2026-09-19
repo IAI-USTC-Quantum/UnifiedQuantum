@@ -116,7 +116,7 @@
 |-----|------------------------|
 | {py:func}`uniqc.plot_time_line` | [主路径走读 · 5. 可视化](visualize) · [编译选项 · API 速查](../2_advanced/compiler_options_region.md) |
 | {py:func}`uniqc.circuit_to_html` | [主路径走读 · 5. 可视化](visualize) |
-| `Circuit.draw` / {py:func}`uniqc.compile.draw.draw` | [构造电路 · 可视化](circuit.md) |
+| `Circuit.draw` / {py:func}`uniqc.visualization.render` | [构造电路 · 可视化](circuit.md) · [线路分析](../2_advanced/circuit_analysis.md) |
 | {py:func}`uniqc.compile.compute_gate_depth` | [构造电路 · 线路信息](circuit.md) |
 
 ## 异常类型

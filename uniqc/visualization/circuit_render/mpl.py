@@ -150,4 +150,9 @@ def render_png_bytes(draw: DrawCircuit, opts: RenderOptions) -> bytes:
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
+    # Close the internal figure: png mode must not leak a pyplot figure
+    # (docs runner captures all open figures; a leaked one shows up as junk).
+    from matplotlib import pyplot as plt
+
+    plt.close(fig)
     return buf.getvalue()

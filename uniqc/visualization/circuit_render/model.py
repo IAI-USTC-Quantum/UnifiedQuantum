@@ -286,6 +286,97 @@ def _from_jsonable(items: list | dict) -> DrawCircuit:
     return DrawCircuit(n_qubits=_max_qubit(ops) + 1, n_cbits=_max_cbit(ops) + 1, ops=ops)
 
 
+def _from_originir_lenient(text: str) -> DrawCircuit:
+    """Tolerant line-by-line OriginIR-ext parse; unparseable lines are skipped.
+
+    Used as a fallback when the strict ``Circuit.from_originir`` parse fails —
+    e.g. backend-stored IR with bare (unparenthesized) parameters like
+    ``RX q[0], 1.5707963``.  Visualization must never crash on slightly
+    irregular IR (gateway serves whatever was stored at submit time).
+    """
+    import re
+
+    from uniqc.compile.originir.originir_line_parser import OriginIR_LineParser
+
+    n_qubits = 0
+    n_cbits = 0
+    ops: list[DrawOp] = []
+    qram_names: set[str] = set()
+    qram_sizes: dict[str, tuple[int, int]] = {}
+    bare_param_re = re.compile(r"^([A-Za-z][A-Za-z0-9_]*)(\s+q\[[\d,\s]*\]),\s*([-+0-9.eE,\s]+?)\s*$")
+
+    def parse_gate_line(line: str) -> None:
+        m = bare_param_re.match(line)
+        candidates = [line]
+        if m:
+            candidates.append(f"{m.group(1)}{m.group(2)}, ({m.group(3)})")
+        for cand in candidates:
+            try:
+                operation, qubits, cbit, params, dagger, controls = OriginIR_LineParser.parse_line(cand)
+            except Exception:
+                continue
+            if operation is None or operation in ("QINIT", "CREG", "CONTROL", "ENDCONTROL", "DAGGER", "ENDDAGGER"):
+                return
+            ops.append(
+                _from_opcode_tuple((operation, qubits, cbit, params, dagger, controls), qram_names=qram_names, raw=line)
+            )
+            return
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        head = line.split(None, 1)[0].upper()
+        if head == "QINIT":
+            n_qubits = int(line.split()[1])
+            continue
+        if head == "CREG":
+            n_cbits = int(line.split()[1])
+            continue
+        if head == "PARAM":
+            continue
+        if head == "QRAMDECL":
+            parts = line.split()
+            if len(parts) >= 3:
+                name = parts[1]
+                nums = re.findall(r"\d+", parts[2])
+                addr, data = (int(nums[0]), int(nums[1])) if len(nums) >= 2 else (1, 1)
+                qram_names.add(name)
+                qram_sizes[name] = (addr, data)
+            continue
+        m = re.match(r"^MEASURE\s+q\[(\d+)\]\s*,\s*c\[(\d+)\]", line)
+        if m:
+            ops.append(DrawOp(op="MEASURE", qubits=(int(m.group(1)),), cbits=(int(m.group(2)),), raw=line))
+            continue
+        m = re.match(r"^RESET\s+q\[(\d+)\]", line)
+        if m:
+            ops.append(DrawOp(op="RESET", qubits=(int(m.group(1)),), raw=line))
+            continue
+        m = re.match(r"^(AND|OR|XOR|MOV|NOT)\s+c\[(\d+)\]\s*,\s*(.+)$", line)
+        if m:
+            srcs = [int(x) for x in re.findall(r"c\[(\d+)\]", m.group(3))]
+            ops.append(DrawOp(op="COP", name=m.group(1), cbits=(int(m.group(2)), *srcs), raw=line))
+            continue
+        if head in ("QIF", "QWHILE"):
+            ops.append(DrawOp(op=head, cond=line.split(None, 1)[1] if " " in line else "", raw=line))
+            continue
+        if head in ("QELSE",):
+            ops.append(DrawOp(op="QELSE", raw=line))
+            continue
+        if head in ("ENDQIF", "ENDIF"):
+            ops.append(DrawOp(op="ENDIF", raw=line))
+            continue
+        if head in ("ENDQWHILE", "ENDWHILE"):
+            ops.append(DrawOp(op="ENDWHILE", raw=line))
+            continue
+        parse_gate_line(line)
+
+    for op in ops:
+        if op.op == "QRAM" and op.name in qram_sizes:
+            op.addr, op.data = qram_sizes[op.name]
+    return DrawCircuit(n_qubits=n_qubits, n_cbits=n_cbits, ops=ops)
+
+
 def to_draw_circuit(circuit: Any) -> DrawCircuit:
     """Normalize a circuit-like object into a :class:`DrawCircuit`.
 
@@ -307,8 +398,16 @@ def to_draw_circuit(circuit: Any) -> DrawCircuit:
 
             return _from_jsonable(json.loads(text))
         if text.upper().startswith("OPENQASM"):
-            return _from_circuit(Circuit.from_qasm(text))
-        return _from_circuit(Circuit.from_originir(text))
+            try:
+                return _from_circuit(Circuit.from_qasm(text))
+            except Exception:
+                from uniqc.compile.converter import convert_qasm_to_oir
+
+                return _from_originir_lenient(convert_qasm_to_oir(text))
+        try:
+            return _from_circuit(Circuit.from_originir(text))
+        except Exception:
+            return _from_originir_lenient(text)
     if isinstance(circuit, (list, tuple)):
         return _from_jsonable(list(circuit))
     raise TypeError(

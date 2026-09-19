@@ -47,6 +47,13 @@ UnifiedQuantum 把 token、proxy、profile 等配置统一存放在 ``~/.uniqc/c
 ```{include} ../_generated/examples/1_basic_usage/05_visualize.md
 ```
 
+### 线路图绘制
+
+线路本身的绘制（七种模式、四种皮肤、折叠/方向/主题/参数显示）走 `Circuit.draw()`：
+
+```{include} ../_generated/examples/1_basic_usage/06_circuit_drawing.md
+```
+
 ## 真机提交模板
 
 ```python

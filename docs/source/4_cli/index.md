@@ -27,6 +27,7 @@ simulate
 submit
 result
 circuit
+draw
 ```
 
 ## 配置与任务

@@ -62,6 +62,18 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 `DeprecationWarning`，其移除版本将随弃用条目明确给出（不再默认
 0.1.0）。政策框架（公共 API 定义、弃用流程）继续有效。
 
+## 当前进入 0.2.0 悬崖的 API 清单
+
+以下 API 自新线路可视化引擎（`uniqc/visualization/circuit_render/`）落地起
+进入弃用轨道，**将在 0.2.0 移除**：
+
+- `uniqc.visualization.draw()`（旧行为：委托 pyqpanda3 的 `draw_qprog` 输出
+  字符画）→ 迁移：`uniqc.visualization.render(circuit, mode="text")` 或
+  `Circuit.draw("text")`。
+- `uniqc.visualization.draw_html()`（旧行为：timeline 风格静态 HTML）→
+  迁移：`render(circuit, mode="html")` / `Circuit.draw("html")`。
+- `uniqc.compile.draw`（上述 `draw` 的再导出）→ 迁移：同上。
+
 ## 已在 0.1.0 移除的 API
 
 下列条目在 `0.0.x` 期间触发 `DeprecationWarning`，并已在 `0.1.0`
@@ -163,4 +175,8 @@ Python versions are announced via the `CHANGELOG.md` only — they are not
 
 The full list of APIs removed in `0.1.0` is the bulleted list above
 (`已在 0.1.0 移除的 API`); the `0.1.0` cliff list itself is now empty, and
-post-`0.1.0` releases follow normal SemVer guarantees.
+post-`0.1.0` releases follow normal SemVer guarantees. Newly deprecated in
+`0.1.x` and scheduled for removal in **`0.2.0`** (see `当前进入 0.2.0 悬崖的
+API 清单`): `uniqc.visualization.draw()`, `uniqc.visualization.draw_html()`,
+and the `uniqc.compile.draw` re-export — superseded by
+`uniqc.visualization.render()` / `Circuit.draw()`.

@@ -34,27 +34,33 @@
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
 - 对比区间：`v0.1.0..HEAD`
-- 提交数：3
-- 变更文件数：4
+- 提交数：4
+- 变更文件数：35
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `docs` | 2 |
-| `feat` | 1 |
+| `feat` | 2 |
 
 ### 变更区域
 
+- `docs`: 13 个文件
+- `uniqc/visualization`: 13 个文件
 - `design`: 2 个文件
+- `uniqc/cli`: 2 个文件
+- `uniqc/test`: 2 个文件
+- `CHANGELOG.md`: 1 个文件
+- `uniqc/_deprecation.py`: 1 个文件
 - `uniqc/circuit_builder`: 1 个文件
-- `uniqc/test`: 1 个文件
 
 ### 提交列表
 
 - `57756ed` feat(circuit-builder): add Circuit.to_matrix full-unitary export
 - `5fd8951` docs(design): add circuit visualization redesign proposals
 - `dcf683c` docs(design): overhaul viz redesign mockup after review
+- `9d41fda` feat(visualization): new circuit rendering engine with 7 output modes
 
 ## v0.1.0
 
