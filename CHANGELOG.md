@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-19
+
+The circuit-visualization release: a self-developed rendering engine replaces
+the pyqpanda3-delegated text drawing and adds six more output modes behind one
+layout core. Release validation (2026-09-19, commit `ab3e401`): default test
+suite 2520 passed / 0 failed, best-practices docs gate 55/55, CLI ↔ docs
+alignment exact, gateway frontend build + API healthy — verdict RELEASE WITH
+KNOWN GAPS, all gaps external (OriginQ token rejected upstream with a working
+stale-cache fallback; IBM account blocked upstream; no real quantum task
+submitted, quota not authorized).
+
 ### Added
 
 - **New circuit visualization engine** (`uniqc/visualization/circuit_render/`):

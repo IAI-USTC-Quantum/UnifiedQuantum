@@ -147,6 +147,7 @@ circuit.opcode_list  # 属性：门操作列表
 remapped = circuit.remapping({0: 3, 1: 5})
 ```
 
+(circuit-visualization)=
 ## 可视化
 
 ``Circuit.draw()`` 是统一入口（等价于 {func}`uniqc.visualization.render`），一个方法覆盖

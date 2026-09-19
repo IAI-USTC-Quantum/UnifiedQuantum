@@ -4,25 +4,19 @@
 
 ## 先看什么
 
-如果你在跟随当前开发版，先看 ``v0.1.0``（**弃用政策落地**：全部 `0.0.x` 弃用 API 移除；
-C++ 模拟器拆分为独立 ``uniqc-cppsimulator`` 包，主包变为纯 Python wheel）；
-如果你是从较早的正式版本直接升级，
-**先看 ``v0.1.0`` 的迁移部分**——逐项迁移对照见
+如果你在跟随当前开发版，先看 ``v0.1.1``（**电路可视化引擎**：自研渲染内核
++ 7 种输出模式 + ``uniqc draw`` CLI；``visualization.draw/draw_html`` 弃用）；
+如果你是从 ``0.0.x`` 直接升级，**先看 ``v0.1.0`` 的迁移部分**——逐项迁移对照见
 [0.1.0 迁移指南](migration_0.1.0.md)。
 
-升级到 ``v0.1.0`` 时最值得先确认的是：
+升级到 ``v0.1.1`` 时最值得先确认的是：
 
-- **你是否在用已弃用的 API。** 所有在 ``0.0.x`` 中触发 ``DeprecationWarning``
-  的公共 API 已在本版移除：Quafu 平台（改用 ``quark:<chip>``）、
-  ``uniqc.simulator.get_backend()``（改用 ``get_simulator()`` /
-  ``create_simulator()``）、``IBMAdapter``（改用 ``QiskitAdapter``）、
-  平台 task-id 回退查询，以及 12 个算法 building block 的 in-place 形式
-  （改用 ``circuit.add_circuit(fragment)`` 组合）。
-- **你是否从源码构建。** 主包现在是纯 Python wheel，不再需要 CMake /
-  C++ 工具链；C++ 内核以 PyPI 依赖 ``uniqc-cppsimulator>=1.0.1,<2`` 自动安装。
-- **你是否在使用 ``[quark]``。** 上游已发布全平台 wheel（含 cp314），
-  ``[quark]`` 解除此前的平台/Python 版本限制并回归 ``[all]``，仅需
-  Python ≥ 3.12。
+- **你是否在用旧的绘图入口。** ``uniqc.visualization.draw()`` / ``draw_html()``
+  已弃用（``0.2.0`` 移除），改用 ``Circuit.draw(...)``、
+  ``uniqc.visualization.render(...)`` 或 ``uniqc draw`` CLI；新的 ``text``
+  模式由自研渲染器输出，不再委托 pyqpanda3（Python 3.14 可用）。
+- **其余变更对用户透明**：新渲染引擎是纯增量能力，旧 OriginIR / QASM /
+  提交工作流不受影响。
 
 ## 弃用政策（0.1.0 兼容性悬崖）
 
@@ -52,7 +46,7 @@ reports/0.0.16
 ## 发布前可验证路径检查
 
 在创建新的 ``v*`` tag 前，维护者必须完成一次人工可验证路径检查，确认用户主路径没有失效。
-具体清单见 ``.claude/skills/uniqc-test-before-release/SKILL.md``。文档系统里这条路径
+具体清单见 ``.agents/skills/uniqc-test-before-release/SKILL.md``。文档系统里这条路径
 对应的是：
 
 ```bash
@@ -63,6 +57,48 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.1.1`（电路可视化引擎）
+
+这是一个**功能增强版本**，核心主题是**自研电路可视化引擎**：一个布局内核
+驱动 7 种输出模式，取代此前委托 pyqpanda3 的字符画绘制。
+
+本版主要变更：
+
+- **新渲染引擎**（``uniqc/visualization/circuit_render/``）：``text``
+  （ASCII/Unicode 字符画，自研、不依赖 pyqpanda3、Python 3.14 可用）、
+  ``svg``、``png``、``mpl``、``latex``（quantikz 源码）、``html`` 与
+  ``interactive``（点击查看门详情）7 种模式；4 套皮肤（默认 ``quantikz``、
+  ``qiskit``、``modern``、``print``）、明暗主题、按行折叠、横竖排布、
+  比特序翻转、π 分数/小数/符号/隐藏参数显示，以及完整 OriginIR-ext 覆盖
+  （扩展门、``dagger``、``controlled_by``、符号参数、QRAM、错误信道、
+  DEF 子例程、中途 MEASURE/RESET、经典指令、QIF/QWHILE 括号）。
+- **入口**：``Circuit.draw(mode, ...)``、Jupyter ``_repr_svg_`` 富显示、
+  ``print(circuit)`` 字符画、模块级 ``uniqc.visualization.render(...)``、
+  以及新 CLI 子命令 ``uniqc draw <file>``。
+- **弃用**：``uniqc.visualization.draw()`` / ``draw_html()``（含
+  ``uniqc.compile.draw`` re-export）改为发出 ``DeprecationWarning`` 的包装，
+  **0.2.0 移除**；改用 ``uniqc.visualization.render()`` 或 ``Circuit.draw()``。
+
+如果你正在从 ``v0.1.0`` 迁移，主要变更对用户透明（除非你在用旧绘图入口，
+见上文迁移说明）。
+
+已知缺口（不阻塞发布，维护者已确认接受）：
+
+- OriginQ 实时后端发现因配置的 token 被上游拒绝（``Unauthorized``）失败；
+  stale 缓存回退可用，后端列表 / ``backend show`` / dry-run / chip-display
+  （缓存模式）不受影响；
+- 验证环境的 IBM 账号被 IBM Quantum 上游封锁（凭据问题，非代码缺陷）；
+- 本轮未提交真实量子任务（未获配额授权），以全平台发现 + dry-run 覆盖；
+- Gateway 前端仅经 HTTP / 构建产物验证（验证机无浏览器自动化）。
+
+**发布验证结果**（2026-09-19，commit ``ab3e401``）：结论
+**RELEASE WITH KNOWN GAPS**。默认测试套件 2520 passed / 0 failed；
+best-practices 文档门禁 12/12、全量示例 55/55；Sphinx 构建成功（新增
+1 条 ``draw.md`` myst 锚点警告，非阻塞）；CLI 17 组 help 与文档精确一致；
+Gateway 前端构建 + API 全通；Quark / TianYan / LogicalQubit 实时发现
+通过。发布验证工件（``RELEASE_REPORT_0.1.1.md`` /
+``RELEASE_EXECUTION_PLAN_0.1.1.md``）自本版起为本地文件，不再入库。
 
 ### `v0.1.0`（弃用政策落地 + 纯 Python 打包）
 
