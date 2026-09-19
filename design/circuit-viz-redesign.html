@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uniqc · 线路可视化重设计 — 候选设计稿</title>
+<!--
+  UnifiedQuantum 量子线路可视化重设计 · 候选设计稿
+  branch : feat/circuit-viz-redesign
+  date   : 2026-09-19
+  用途   : 设计评审专用（活渲染 / 可调参数 / 四种候选风格 / API 设计 / 决策清单）
+  依赖   : 无 —— 零网络请求、零外部库，离线双击即可打开
+-->
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1c2430; --muted:#5b6472; --faint:#8a93a3;
+  --line:#e3e7ec; --accent:#4f46e5; --accent-soft:#eef2ff; --ok:#0f7b4f; --warn:#b45309;
+  --code-bg:#0f172a; --code-ink:#dbe4f3;
+  --mono:ui-monospace,'SF Mono','Cascadia Code','JetBrains Mono',Consolas,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;}
+header.hero{background:linear-gradient(135deg,#111827 0%,#1e2a4a 55%,#312e81 100%);color:#fff;padding:44px 24px 36px}
+header.hero .inner{max-width:1220px;margin:0 auto}
+header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:.5px}
+header.hero p{margin:4px 0;color:#c7d0e4;max-width:900px}
+header.hero .meta{margin-top:14px;font:12.5px var(--mono);color:#8f9cc0}
+header.hero .meta b{color:#c7d0e4;font-weight:600}
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+nav.toc .inner{max-width:1220px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:0 12px}
+nav.toc a{padding:11px 13px;font-size:13.5px;color:var(--muted);text-decoration:none;white-space:nowrap;border-bottom:2.5px solid transparent}
+nav.toc a:hover{color:var(--accent)}
+nav.toc a.act{color:var(--accent);border-color:var(--accent)}
+main{max-width:1220px;margin:0 auto;padding:26px 20px 90px}
+section{margin:38px 0}
+h2{font-size:21px;margin:0 0 4px;letter-spacing:.3px}
+h2 .no{color:var(--accent);font-family:var(--mono);font-size:16px;margin-right:8px}
+h3{font-size:16px;margin:26px 0 8px}
+.lead{color:var(--muted);margin:0 0 16px;max-width:920px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0;
+  box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card>h4{margin:0 0 10px;font-size:15px}
+.card.dim{background:#fbfcfe}
+.tag{display:inline-block;font:12px var(--mono);border-radius:99px;padding:2px 10px;margin-left:8px;vertical-align:2px}
+.tag.new{background:#ecfdf5;color:var(--ok);border:1px solid #a7f3d0}
+.tag.bad{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:980px){.grid2,.grid3{grid-template-columns:1fr}}
+ul.tight{margin:8px 0;padding-left:20px}
+ul.tight li{margin:4px 0}
+ul.tight li code, p code{background:#eef1f6;border:1px solid var(--e,--line);border-radius:5px;padding:1px 6px;font:12.5px var(--mono)}
+code{font-family:var(--mono)}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:14px 16px;overflow:auto;
+  font:12.8px/1.62 var(--mono);margin:10px 0}
+pre.light{background:#f4f6fa;color:#243044;border:1px solid var(--line)}
+pre .c{color:#7e8ba3}pre .k{color:#7dd3fc}pre .s{color:#fbbf24}pre .n{color:#c4b5fd}pre .bs{color:#6ee7b7}
+table{border-collapse:collapse;width:100%;font-size:13.8px;margin:10px 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#f1f4f8;font-weight:600}
+td code, th code{font:12.3px var(--mono);background:#eef1f6;padding:1px 5px;border-radius:4px}
+.scrollbox{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 6px}
+.center{text-align:center}
+.small{font-size:12.8px;color:var(--faint)}
+hr.sep{border:0;border-top:1px dashed var(--line);margin:22px 0}
+
+/* ===== 控制条 ===== */
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;background:#fbfcfe;
+  border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:14px 0}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl label{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.ctl select,.ctl input[type=number]{font:13.5px var(--mono);padding:5px 8px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);min-width:86px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.seg button{border:0;background:transparent;padding:6px 13px;font-size:13px;color:var(--muted);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:#fff}
+.seg.small button{padding:4px 10px;font-size:12.5px}
+
+/* ===== 风格选择卡 ===== */
+.stylecards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+@media(max-width:1100px){.stylecards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.stylecards{grid-template-columns:1fr}}
+.stylecard{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff;
+  transition:border-color .15s, box-shadow .15s}
+.stylecard:hover{border-color:#b9c3d6}
+.stylecard.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.stylecard .ttl{font-weight:700;font-size:14px;margin-bottom:3px}
+.stylecard .sub{font-size:12px;color:var(--muted);line-height:1.5}
+.stylecard .sw{display:flex;gap:4px;margin:8px 0 6px}
+.stylecard .sw i{width:18px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.15)}
+.stylecard.legacy{opacity:.92}.stylecard.legacy .ttl{color:var(--muted)}
+
+/* ===== 渲染画布 ===== */
+.stage{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:16px 12px;overflow:auto;min-height:120px}
+.stage.darkbg{background:#0b1220;border-color:#1e293b}
+.stage .hint{position:absolute;top:8px;right:12px;font:11.5px var(--mono);color:var(--faint)}
+.stagewrap{display:grid;grid-template-columns:1fr 300px;gap:12px}
+@media(max-width:1100px){.stagewrap{grid-template-columns:1fr}}
+.detail{background:#fbfcfe;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13px}
+.detail h5{margin:0 0 8px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.detail pre{margin:0;padding:10px 12px;font-size:12px;background:#0f172a;color:#c9d5ea}
+.detail .none{color:var(--faint);font-size:12.5px}
+.legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin:10px 0;font-size:12.8px;color:var(--muted)}
+.legend svg{vertical-align:-4px;margin-right:5px}
+.compare .stagewrap{margin-bottom:14px}
+.compare h4{margin:14px 0 6px;font-size:14.5px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.badge{font:11.5px var(--mono);border-radius:6px;padding:2px 8px;background:#f1f4f8;border:1px solid var(--line);color:#43506b}
+.badge.hit{background:#ecfdf5;border-color:#a7f3d0;color:var(--ok)}
+.badge.miss{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+
+/* ===== checklist ===== */
+.qgroup{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:12px 0;background:#fff}
+.qgroup .q{font-weight:600;margin-bottom:8px}
+.qgroup .opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--line);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:13.5px;user-select:none}
+.opt:hover{border-color:#b9c3d6}
+.opt.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.opt input{display:none}
+#decisionOut{min-height:120px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;
+  padding:12px 16px;margin:14px 0;font-size:14px}
+.callout.warn{border-color:var(--warn);background:#fffbeb}
+footer{color:var(--faint);font-size:12.5px;text-align:center;padding:30px 0 40px}
+.ascii{font:13px/1.45 var(--mono);white-space:pre}
+.ascii b{color:#1d4ed8;font-weight:600}
+details>summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted)}
+details{margin:10px 0}
+kbd{font:11.5px var(--mono);background:#eef1f6;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <h1>uniqc 线路可视化重设计 · 候选设计稿</h1>
+    <p>四种候选视觉风格（活渲染、可调参数）＋ 自研字符画 ＋ quantikz/LaTeX 导出 ＋ 用户调用 API 设计 ＋ 决策清单。
+       本稿<b>只做设计</b>，不动 <code>uniqc/</code> 生产代码；你逐项决策后，实现另行开工。</p>
+    <p>目标质量线：至少对齐 <b>qiskit</b>（<code>QuantumCircuit.draw('mpl')</code>）与 <b>LaTeX quantikz</b> 的语义清晰度与美观度——
+       首要修复：<b>CNOT 必须一眼看出谁是 control</b>（● 控制点 / ⊕ 目标），参数不再藏进悬停提示。</p>
+    <div class="meta">repo&nbsp;<b>UnifiedQuantum</b> · branch&nbsp;<b>feat/circuit-viz-redesign</b> · file&nbsp;<b>design/circuit-viz-redesign.html</b> · 2026-09-19 · 离线自包含，无任何网络依赖</div>
+  </div>
+</header>
+
+<nav class="toc"><div class="inner">
+  <a href="#sec0">§0 现状诊断</a>
+  <a href="#sec1">§1 演示线路</a>
+  <a href="#sec2">§2 候选风格对比</a>
+  <a href="#sec4">§3 字符画 / LaTeX</a>
+  <a href="#sec5">§4 调用 API 设计</a>
+  <a href="#sec6">§5 决策清单</a>
+  <a href="#sec7">§6 实现路线图</a>
+</div></nav>
+
+<main>
+
+<!-- ================================================================ §0 -->
+<section id="sec0">
+  <h2><span class="no">§0</span>现状诊断 —— 为什么需要重做</h2>
+  <p class="lead">当前实现有两套入口，各有硬伤。§2 的「现状复刻」风格可在同一演示线路上与新方案并排对比。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>① 字符画 <code>uniqc.visualization.draw()</code> <span class="tag bad">委托外部</span></h4>
+      <ul class="tight">
+        <li>整体委托 <b>pyqpanda3</b> 的 <code>draw_qprog</code>（<code>visualization/circuit.py:25</code>）——
+            pyqpanda3 无 cp314 wheel，<b>Python 3.14 上字符画直接不可用</b>。</li>
+        <li>入参是 <b>IR 字符串</b>而不是 <code>Circuit</code> 对象，与 flat API 的使用习惯脱节。</li>
+        <li>风格、折叠、每行 gate 数等完全不可控；OriginIR-ext 独有构造（QRAM / QIF / error channel）无法表达。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>② HTML/SVG <code>draw_html()</code> → <code>_schedule_to_svg</code> <span class="tag bad">语义缺失</span></h4>
+      <ul class="tight">
+        <li>所有门都画成<b>写名字的矩形</b>，多 qubit 门只是一条普通竖线连接——
+            <b>CNOT 分不清 control / target</b>（这正是本次重设计的直接动因）。</li>
+        <li><b>参数只存在于悬停 tooltip</b>（<code>&lt;title&gt;</code>），打印/截图后信息丢失；门名截断为 8 字符。</li>
+        <li>层宽固定 88px：短门浪费空间，长参数门溢出；<b>无折叠换行</b>，宽线路只能横向滚动。</li>
+        <li>经典线 / dagger † / controlled_by / error channel / DEF 子程序 / QIF·QWHILE 基本没有视觉表达。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    结论：两套入口都保留不了「内核」——本轮重设计提出<b>统一渲染内核</b>（一次布局，多风格皮肤，多格式输出），
+    字符画改为<b>自研</b>（摆脱 pyqpanda3 依赖，风格与其余模式统一），详见 §2 与 §4。
+  </div>
+</section>
+
+<!-- ================================================================ §1 -->
+<section id="sec1">
+  <h2><span class="no">§1</span>演示线路 —— 覆盖全量 OriginIR-ext</h2>
+  <p class="lead">三套演示线路：<b>basic</b>（检验控制类门语义）、<b>full_ext</b>（全量覆盖 OriginIR-ext 的每一个特性）、
+     <b>long</b>（检验每行 gate 数折叠换行）。§2 / §3 的所有渲染共用你在这里选中的线路。</p>
+
+  <div class="controls" id="demoPicker">
+    <div class="ctl"><label>演示线路</label>
+      <select id="demoSel">
+        <option value="basic">basic · 4 qubit 语义探针</option>
+        <option value="full_ext" selected>full_ext · 全量 OriginIR-ext</option>
+        <option value="long">long · 45 op 折叠检验</option>
+      </select>
+    </div>
+    <div class="ctl"><label>OriginIR-ext 源码</label>
+      <div class="seg small"><button id="btnShowIR">查看 / 隐藏</button></div>
+    </div>
+  </div>
+
+  <div class="card dim" id="irBox" style="display:none">
+    <h4>当前演示线路的 OriginIR-ext 源码（与图形一一对应）</h4>
+    <pre class="light ascii" id="irView"></pre>
+  </div>
+
+  <div class="card">
+    <h4>full_ext 覆盖清单 <span class="tag new">要求：全面覆盖 OriginIR-ext</span></h4>
+    <div id="coverList"></div>
+  </div>
+</section>
+
+<!-- ================================================================ §2 -->
+<section id="sec2">
+  <h2><span class="no">§2</span>候选风格对比（活渲染）</h2>
+  <p class="lead">同一个渲染内核、五套皮肤（含「现状复刻」作对照）。所有风格共享一套<b>核心视觉语义</b>——
+     这套语义就是本次重设计最重要的部分；先读下面的语义约定，再看风格差异。</p>
+
+  <div class="card">
+    <h4>统一视觉语义（所有风格一致；现状态不具备）</h4>
+    <div class="legend" id="legendBar"></div>
+    <table>
+      <tr><th>构造</th><th>视觉方案</th><th>构造</th><th>视觉方案</th></tr>
+      <tr><td><code>CNOT / CCX</code></td><td>控制线 <b>●</b> 实心点，目标线 <b>⊕</b> 圆+十字（TOFFOLI 为 ●●→⊕）</td>
+          <td><code>MEASURE</code></td><td>仪表弧符号，虚线箭头 → 双线经典线 <code>c[k]</code></td></tr>
+      <tr><td><code>CZ / CP / CU</code></td><td>控制 <b>●</b> + 目标端 ●（相位类）；CU/受控旋转为目标<b>方框</b>+控制点</td>
+          <td><code>RESET</code></td><td><b>|0⟩</b> 方框</td></tr>
+      <tr><td><code>SWAP</code></td><td><b>×—×</b> 交叉符号</td>
+          <td><code>BARRIER</code></td><td>竖直<b>虚线</b>+端帽</td></tr>
+      <tr><td><code>ISWAP/ECR/XX/YY/ZZ/XY/PHASE2Q/UU15</code></td><td>跨双线<b>高盒</b>（qiskit RZZ 风格）＋参数内嵌</td>
+          <td><code>dagger</code></td><td>门名右上角 <b>†</b></td></tr>
+      <tr><td><code>controlled_by</code></td><td>在原有符号上<b>追加控制点</b>（不改门本体画法）</td>
+          <td><code>error channel</code></td><td><b>虚线幽灵盒</b>＋通道名/强度（印刷风为斜线填充）</td></tr>
+      <tr><td><code>QRAM</code></td><td>跨 addr+data 线高盒，内部虚线分隔地址/数据段</td>
+          <td><code>DEF/ENDDEF</code></td><td>跨线<b>双线边框盒</b>（折叠态），显示子程序名</td></tr>
+      <tr><td><code>QIF/QELSE/QWHILE</code></td><td>顶部<b>方括号区域</b>＋条件表达式标签（现代风附背景着色）</td>
+          <td><code>经典指令 AND/OR/XOR/MOV/NOT</code></td><td>经典线上的小方盒（dest←srcs）</td></tr>
+      <tr><td><code>符号参数</code></td><td>直接显示 <code>θ</code> / <code>α₂</code> / <code>2θ+φ/3</code>（π 倍数可切换为 π/4 形式）</td>
+          <td><code>多参数门</code></td><td>参数换行内嵌；UU15 等超长参数折叠为 <code>UU15(15p)</code>，悬停/点击看全量</td></tr>
+    </table>
+  </div>
+
+  <div class="stylecards" id="styleCards"></div>
+
+  <div class="controls">
+    <div class="ctl"><label>每行 gate 数 fold</label><select id="foldSel">
+      <option value="auto" selected>auto（按宽度自动）</option>
+      <option value="8">8</option><option value="12">12</option><option value="16">16</option>
+      <option value="24">24</option><option value="0">不限（单行超宽）</option></select></div>
+    <div class="ctl"><label>方向</label><div class="seg" id="segOri">
+      <button data-v="h" class="on">横向 时间→</button><button data-v="v">纵向 时间↓</button></div></div>
+    <div class="ctl"><label>qubit 顺序</label><div class="seg" id="segQord">
+      <button data-v="asc" class="on">q0 在上</button><button data-v="desc">q0 在下</button></div></div>
+    <div class="ctl"><label>主题</label><div class="seg" id="segTheme">
+      <button data-v="light" class="on">浅色</button><button data-v="dark">深色</button></div></div>
+    <div class="ctl"><label>参数显示</label><div class="seg" id="segParam">
+      <button data-v="pi" class="on">π 分数</button><button data-v="full">小数</button>
+      <button data-v="symbol">符号</button><button data-v="hidden">隐藏</button></div></div>
+    <div class="ctl"><label>经典线</label><div class="seg" id="segClbit">
+      <button data-v="on" class="on">显示</button><button data-v="off">隐藏</button></div></div>
+    <div class="ctl"><label>缩放</label><input type="number" id="zoomSel" value="100" min="40" max="220" step="10" style="width:76px"></div>
+  </div>
+
+  <div class="stagewrap">
+    <div>
+      <div class="stage" id="stageMain"><span class="hint">点击任意门 → 右侧看详情（交互模式雏形）</span></div>
+      <div class="small" id="stageNote" style="margin-top:6px"></div>
+    </div>
+    <div class="detail">
+      <h5>门详情（interactive 模式雏形）</h5>
+      <div class="none" id="detailNone">尚未选中任何门。<br><br>任何风格下点击图中门/指令，这里都会显示其 opcode 细节——这就是未来
+        <code>c.draw("interactive")</code> 的核心交互：悬停高亮、点击看参数与原文。</div>
+      <pre id="detailBody" style="display:none"></pre>
+    </div>
+  </div>
+
+  <h3>同一 basic 线路 · 五风格静态对照</h3>
+  <p class="lead">免去切换的并排对比（fold/方向等仅作用于上方主视图）。</p>
+  <div class="compare" id="compareAll"></div>
+</section>
+
+<!-- ================================================================ §3 -->
+<section id="sec4">
+  <h2><span class="no">§3</span>自研字符画 &amp; quantikz/LaTeX 导出</h2>
+  <p class="lead">字符画将<b>摆脱 pyqpanda3</b>（py3.14 可用），与图形模式共用同一布局逻辑与语义符号；LaTeX 模式输出
+     quantikz 源码，与风格 A（Quantikz 学术风）一一对应。两者都是活渲染——跟随 §1 选择的演示线路。</p>
+
+  <div class="controls">
+    <div class="ctl"><label>字符画符号集</label><div class="seg" id="segCharset">
+      <button data-v="unicode" class="on">Unicode（● ⊕ ─）</button><button data-v="ascii">纯 ASCII（* (+) -）</button></div></div>
+    <div class="ctl"><label>字符画折叠</label><div class="seg" id="segAfold">
+      <button data-v="0" class="on">不限宽</button><button data-v="14">每行 ~14 门</button></div></div>
+  </div>
+
+  <div class="card">
+    <h4>① 自研字符画 <span class="tag new">新</span></h4>
+    <div class="scrollbox"><pre class="ascii" id="asciiView"></pre></div>
+    <table>
+      <tr><th>构造</th><th>Unicode</th><th>纯 ASCII 回退</th><th>构造</th><th>Unicode</th><th>纯 ASCII 回退</th></tr>
+      <tr><td>控制点</td><td><code>●</code></td><td><code>*</code></td>
+          <td>CNOT 目标</td><td><code>⊕</code></td><td><code>(+)</code></td></tr>
+      <tr><td>量子线</td><td><code>──</code></td><td><code>--</code></td>
+          <td>经典线</td><td><code>══</code></td><td><code>==</code></td></tr>
+      <tr><td>竖直连接</td><td><code>│</code></td><td><code>|</code></td>
+          <td>SWAP</td><td><code>×</code></td><td><code>x</code></td></tr>
+      <tr><td>barrier</td><td><code>┊</code></td><td><code>:</code></td>
+          <td>测量落线</td><td><code>║ ↘</code></td><td><code>||</code></td></tr>
+      <tr><td>门盒</td><td><code>┤RX(θ)├</code></td><td><code>|RX(t)|</code></td>
+          <td>噪声通道</td><td><code>~┤Dep(0.01)├</code></td><td><code>~|Dep(.01)|</code></td></tr>
+    </table>
+    <p class="small">终端默认 Unicode（现代终端均支持），CI / 老 shell / 邮件场景可切纯 ASCII。终端宽度自适应：
+       <code>shutil.get_terminal_size()</code> 决定默认折叠宽度。</p>
+  </div>
+
+  <div class="card">
+    <h4>② quantikz LaTeX 源码 <span class="tag new">新</span></h4>
+    <p class="small">对应未来 <code>c.draw("latex")</code>：返回可直接 <code>\input</code> 的 quantikz 源码；风格 A 即此源码的 WYSIWYG 预览。</p>
+    <div class="scrollbox"><pre class="ascii" id="latexView"></pre></div>
+    <p class="small">quantikz 没有原生的 QIF/QWHILE/经典指令/部分噪声通道——导出时这些构造退化为 <code>% 注释</code> +
+       占位门，保证编译永不失败（设计原则：<b>导出永远合法</b>，表达力受限处显式标注）。</p>
+  </div>
+</section>
+
+<!-- ================================================================ §4 -->
+<section id="sec5">
+  <h2><span class="no">§4</span>用户调用 API 设计稿</h2>
+  <p class="lead">一个入口 <code>Circuit.draw()</code>，十种输出形态；旧的 <code>uniqc.visualization.draw / draw_html</code> 映射为兼容包装。
+     以下是<b>设计稿</b>——命名与默认值都在 §5 决策清单里留给你定夺。</p>
+
+  <div class="card">
+    <h4>调用形态总览</h4>
+    <pre id="apiMain"></pre>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>返回值与显示行为约定</h4>
+      <table>
+        <tr><th>模式</th><th>返回</th><th>终端</th><th>Jupyter</th></tr>
+        <tr><td><code>text</code></td><td><code>str</code></td><td>直接打印</td><td>等宽显示</td></tr>
+        <tr><td><code>svg</code></td><td><code>str</code>（SVG）</td><td>写文件或 <code>filename</code></td><td><b>富显示</b>（SVG 内联）</td></tr>
+        <tr><td><code>png</code></td><td><code>bytes</code></td><td>写文件</td><td>富显示（图片）</td></tr>
+        <tr><td><code>mpl</code></td><td><code>Figure</code></td><td>—</td><td>富显示（可再编辑）</td></tr>
+        <tr><td><code>latex</code></td><td><code>str</code>（quantikz 源码）</td><td>打印/写文件</td><td>代码块</td></tr>
+        <tr><td><code>html</code></td><td><code>str</code>（自包含 HTML）</td><td>写文件</td><td>iframe 富显示</td></tr>
+        <tr><td><code>interactive</code></td><td>同 <code>html</code> + JS</td><td>写文件（浏览器打开）</td><td>iframe 富显示</td></tr>
+      </table>
+      <p class="small"><code>Circuit</code> 同时新增 <code>_repr_svg_</code>（Jupyter 里 <code>c</code> 回车即出图）与
+        <code>__str__</code>（终端里 <code>print(c)</code> 即字符画）——与 qiskit 的体验对齐。</p>
+    </div>
+    <div class="card">
+      <h4>依赖策略（不新增硬依赖）</h4>
+      <table>
+        <tr><th>能力</th><th>依赖</th><th>说明</th></tr>
+        <tr><td>text / svg / html / interactive</td><td><b>纯 stdlib</b></td><td>核心卖点：默认安装即可视化，含 py3.14</td></tr>
+        <tr><td>png</td><td>可选：matplotlib <i>或</i> cairosvg</td><td>自动探测；都没有则提示安装其一</td></tr>
+        <tr><td>mpl</td><td>matplotlib（已有 <code>[visualization]</code> extra）</td><td>复用现有 extra</td></tr>
+        <tr><td>latex</td><td>无（返回源码）</td><td>编译为图片属可选增强（需本地 LaTeX）</td></tr>
+        <tr><td>旧 <code>draw</code>（pyqpanda3 文本）</td><td>pyqpanda3</td><td>降级为 opt-in：<code>style="qpanda"</code>，缺失时回退自研</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>旧 API → 新 API 映射（兼容策略）</h4>
+    <table>
+      <tr><th>现状</th><th>问题</th><th>新设计</th></tr>
+      <tr><td><code>uniqc.visualization.draw(ir_str, language=)</code></td><td>入参是 IR 字符串；委托 pyqpanda3</td>
+          <td>接受 <code>Circuit | IR 字符串 | JSON</code>；默认自研字符画；pyqpanda3 风格 <code>style="qpanda"</code> opt-in</td></tr>
+      <tr><td><code>uniqc.visualization.draw_html(...)</code></td><td>无样式/无折叠/语义缺失</td>
+          <td><code>c.draw("html", style=...)</code>；旧函数保留为薄包装并按 0.0.x 弃用政策加 <code>DeprecationWarning</code></td></tr>
+      <tr><td><code>uniqc.compile.draw</code> / <code>timeline.circuit_to_html</code></td><td>重复出口</td>
+          <td>统一收敛到 <code>uniqc.visualization.render(circuit, mode=..., style=...)</code>；旧出口转兼容 wrapper</td></tr>
+    </table>
+    <p class="small">CLI 同步：<code>uniqc circuit draw &lt;file&gt; --mode svg|text|png|html --style quantikz|qiskit|modern|print --fold 20 -o out.svg</code></p>
+  </div>
+</section>
+
+<!-- ================================================================ §5 -->
+<section id="sec6">
+  <h2><span class="no">§5</span>决策清单 —— 请逐项拍板</h2>
+  <p class="lead">点选后下方会实时生成一份决策摘要，<b>全选完复制发我</b>即可进入实现阶段。</p>
+  <div id="checklist"></div>
+  <div class="card">
+    <h4>决策摘要（复制回复给我）</h4>
+    <pre class="light ascii" id="decisionOut">（尚未选择）</pre>
+  </div>
+</section>
+
+<!-- ================================================================ §6 -->
+<section id="sec7">
+  <h2><span class="no">§6</span>实现路线图（决策后开工，本轮不动代码）</h2>
+  <div class="card">
+    <table>
+      <tr><th>阶段</th><th>内容</th><th>验收</th></tr>
+      <tr><td>P1 内核</td><td><code>uniqc/visualization/renderer/</code>：布局引擎（分层/列宽/折叠）+ SVG 原语序列化 + 语义分类（●/⊕/跨线盒/…）</td>
+          <td>全量 OriginIR-ext 构造 × 4 风格渲染快照测试</td></tr>
+      <tr><td>P2 文本</td><td>自研字符画（unicode/ascii 双符号集、终端宽度自适应折叠）</td><td><code>test_endianness_convention</code> 风格的单测；py3.14 可用</td></tr>
+      <tr><td>P3 导出</td><td>quantikz 源码 / html / interactive；png（matplotlib·cairosvg 自动探测）</td><td>quantikz 源码编译冒烟（CI 可选）</td></tr>
+      <tr><td>P4 接线</td><td><code>Circuit.draw()</code> + <code>_repr_svg_</code> / <code>__str__</code> + CLI <code>circuit draw</code> + 旧 API 兼容包装</td>
+          <td>全测试套件 + 文档 <code>make html</code>（example-exec-logs 同步）</td></tr>
+      <tr><td>P5 文档</td><td>新示例 <code>examples/1_basic_usage/</code>（含确定性种子）+ API 文档</td><td>docs 构建无警告</td></tr>
+    </table>
+    <p class="small">每阶段独立 PR；P1 确定后风格皮肤（§2 决策）为纯数据配置，可并行迭代。</p>
+  </div>
+</section>
+
+<footer>
+  UnifiedQuantum · design/circuit-viz-redesign.html · 本文件自包含（离线可用），仅评审用，不进入包构建 · 2026-09-19
+</footer>
+</main>
+
+<script>
+'use strict';
+/* =====================================================================
+ * uniqc 线路可视化设计稿 · 渲染内核（评审用原型，纯函数，可迁移到 Python 实现）
+ * 结构：utils → 演示线路 IR → 布局引擎 → SVG 原语/序列化 → 风格定义 →
+ *       语义绘制 → 主渲染器(含现状复刻) → 字符画 → quantikz → 页面接线
+ * ===================================================================== */
+
+/* ---------------- 0. utils ---------------- */
+const $$ = (s)=>document.querySelectorAll(s);
+const $  = (s)=>document.getElementById(s);
+function escStr(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtNum(x){
+  if (typeof x==='string') return x;
+  if (!isFinite(x)) return String(x);
+  const r = Math.abs(x) >= 1000 ? Math.round(x) : Math.round(x*1000)/1000;
+  return String(r);
+}
+/* π 分数近似：k = x/π ∈ {±n/d}, d∈{1,2,3,4,6,8,12}, |n|≤24 */
+function toPi(x){
+  if (typeof x!=='number' || !isFinite(x)) return null;
+  const k = x/Math.PI;
+  for (const d of [1,2,3,4,6,8,12,24]){
+    const n = k*d;
+    if (Math.abs(n-Math.round(n)) < 1e-9 && Math.abs(Math.round(n))<=24){
+      const nn = Math.round(n);
+      if (nn===0) continue;
+      const G=(a,b)=>b?G(b,a%b):a, g=G(Math.abs(nn),d), N=nn/g, D=d/g;
+      if (N===1 && D===1) return 'π';
+      if (N===-1 && D===1) return '-π';
+      if (N===1) return 'π/'+D;
+      if (D===1) return N+'π';
+      return N+'π/'+D;
+    }
+  }
+  return null;
+}
+function gcdOf(a,b){return b?gcdOf(b,a%b):a;}
+/* 参数显示：mode = pi | full | symbol | hidden */
+function paramStrs(op, mode){
+  if (mode==='hidden' || !op.p || !op.p.length) return [];
+  return op.p.map(p=>{
+    if (typeof p==='string') return p;               // 符号参数原样
+    if (mode==='pi'){ const s=toPi(p); if (s) return s; }
+    return fmtNum(p);
+  });
+}
+function opName(op){ return op.op + (op.dagger ? '†' : ''); }
+function textW(s, size){ let w=0; for (const ch of String(s)){ const cp=ch.codePointAt(0); w += (cp>0x2000 && cp<0x3300)? size*0.95 : size*0.62; } return w; }
+
+/* ---------------- 1. 演示线路 IR ----------------
+ * op 字段：op 名称 / q qubits / p 参数(数字或符号串) / c cbits /
+ *         dagger / ctrl 控制qubits / 特殊: MEASURE RESET BARRIER CHANNEL QRAM DEF COP QIF QELSE ENDIF QWHILE ENDWHILE
+ */
+const CIRCUITS = {
+basic: {
+  title:'basic · 控制语义探针（4q / 2c）', qubits:4, cbits:2, params:[],
+  ops:[
+    {op:'H', q:[0]},
+    {op:'CNOT', q:[0,1]},
+    {op:'CZ', q:[0,2]},
+    {op:'RX', q:[2], p:[Math.PI/2]},
+    {op:'SWAP', q:[1,3]},
+    {op:'T', q:[3], dagger:true},
+    {op:'MEASURE', q:[0], c:[0]},
+    {op:'MEASURE', q:[1], c:[1]},
+  ],
+},
+full_ext: {
+  title:'full_ext · 全量 OriginIR-ext（7q / 3c / 含符号参数）', qubits:7, cbits:3,
+  params:['theta','phi','alpha[4]'],
+  ops:[
+    /* — 1Q 无参（含 dagger 变体）— */
+    {op:'H', q:[0]}, {op:'X', q:[0]}, {op:'Y', q:[1]}, {op:'Z', q:[1]},
+    {op:'S', q:[0]}, {op:'SX', q:[1]}, {op:'T', q:[0]}, {op:'I', q:[1]},
+    {op:'S', q:[0], dagger:true}, {op:'T', q:[1], dagger:true},
+    /* — 1Q 带参 — */
+    {op:'RX', q:[0], p:[Math.PI/2]}, {op:'RY', q:[1], p:[Math.PI/3]},
+    {op:'RZ', q:[0], p:[0.7]}, {op:'U1', q:[1], p:[0.5]},
+    {op:'RPhi90', q:[0], p:[0.4]}, {op:'RPhi180', q:[1], p:[0.6]},
+    {op:'RPhi', q:[0], p:[0.3, 0.7]}, {op:'U2', q:[1], p:[0.2, -0.3]},
+    {op:'U3', q:[0], p:[0.1, 0.2, 0.3]},
+    /* — 2Q 官方+扩展 — */
+    {op:'CNOT', q:[0,1]}, {op:'CZ', q:[1,2]}, {op:'SWAP', q:[2,3]},
+    {op:'ECR', q:[1,2]}, {op:'ISWAP', q:[2,3], dagger:true},
+    /* — 2Q1p 耦合 — */
+    {op:'XX', q:[1,2], p:[Math.PI/4]}, {op:'YY', q:[2,3], p:[0.9]},
+    {op:'ZZ', q:[1,3], p:[Math.PI/6]}, {op:'XY', q:[2,3], p:[0.55]},
+    /* — 多参 2Q — */
+    {op:'PHASE2Q', q:[1,2], p:[0.5, 0.3, 0.2]},
+    {op:'UU15', q:[2,3], p:[0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.11,0.12,0.13,0.14,0.15]},
+    /* — 3Q — */
+    {op:'TOFFOLI', q:[0,1,2]}, {op:'CSWAP', q:[0,1,2]},
+    /* — controlled_by / 多控制 — */
+    {op:'RY', q:[2], p:[Math.PI/3], ctrl:[0]},
+    {op:'X', q:[2], ctrl:[0,1]},
+    /* — barrier — */
+    {op:'BARRIER', q:[0,1,2,3]},
+    /* — 符号参数 — */
+    {op:'RX', q:[0], p:['θ']}, {op:'RY', q:[1], p:['α₂']}, {op:'RZ', q:[0], p:['2θ+φ/3']},
+    /* — 中路测量 / 复位 — */
+    {op:'MEASURE', q:[0], c:[0]}, {op:'RESET', q:[0]}, {op:'H', q:[0]},
+    {op:'MEASURE', q:[1], c:[1]}, {op:'MEASURE', q:[2], c:[2]},
+    /* — 经典指令 — */
+    {op:'COP', name:'XOR', c:[0,1,2]}, {op:'COP', name:'AND', c:[1,0,2]},
+    {op:'COP', name:'MOV', c:[2,0]}, {op:'COP', name:'NOT', c:[0,0]},
+    /* — 经典控制流 — */
+    {op:'QIF', cond:'c[0] & c[1]'},
+    {op:'H', q:[3]}, {op:'X', q:[3]},
+    {op:'QELSE'},
+    {op:'T', q:[3]},
+    {op:'ENDIF'},
+    {op:'QWHILE', cond:'c[0] ^ c[1]'},
+    {op:'RZ', q:[3], p:[Math.PI/6]},
+    {op:'ENDWHILE'},
+    /* — QRAM：地址 q3,q4；数据 q5,q6 — */
+    {op:'QRAM', name:'qr0', q:[3,4,5,6], addr:2, data:2},
+    /* — 误差通道（8 种全量）— */
+    {op:'CHANNEL', name:'Depolarizing', q:[0], p:[0.01]},
+    {op:'CHANNEL', name:'BitFlip', q:[1], p:[0.02]},
+    {op:'CHANNEL', name:'PhaseFlip', q:[2], p:[0.03]},
+    {op:'CHANNEL', name:'AmplitudeDamping', q:[3], p:[0.05]},
+    {op:'CHANNEL', name:'PauliError1Q', q:[4], p:[0.1, 0.2, 0.3]},
+    {op:'CHANNEL', name:'Kraus1Q', q:[5], p:['K₁‥K₄']},
+    {op:'CHANNEL', name:'TwoQubitDepolarizing', q:[5,6], p:[0.01]},
+    {op:'CHANNEL', name:'PauliError2Q', q:[5,6], p:[0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.11,0.12,0.13,0.14,0.15]},
+    /* — DEF 子程序（折叠态）— */
+    {op:'DEF', name:'bell', q:[0,1], note:'H q0; CNOT q0,q1'},
+  ],
+},
+long: (()=>{ /* 45 op 确定性生成：折叠检验 */
+  const ops=[]; const pick=(i,q)=>({
+    0:{op:'H',q:[q]}, 1:{op:'RX',q:[q],p:[Math.PI/4]}, 2:{op:'RZ',q:[q],p:[0.6]},
+    3:{op:'CNOT',q:[q,(q+1)%3]}, 4:{op:'CZ',q:[q,(q+2)%3]}, 5:{op:'SWAP',q:[q,(q+1)%3]},
+  })[i%6];
+  for(let i=0;i<45;i++){
+    if (i>0 && i%8===0){ ops.push({op:'BARRIER', q:[0,1,2]}); continue; }
+    ops.push(pick(i, i%3));
+  }
+  return {title:'long · 45 op 折叠检验（3q）', qubits:3, cbits:0, params:[], ops};
+})(),
+};
+
+/* ---------------- 2. 布局引擎（ASAP 分层，与 Python 端同思路） ---------------- */
+const FLOW_OPS = new Set(['QIF','QELSE','ENDIF','QWHILE','ENDWHILE']);
+function laneKeys(op, nQ, nC){
+  const ks=[];
+  if (op.op==='COP'){ (op.c||[]).forEach(c=>ks.push('c:'+c)); return ks; }
+  if (FLOW_OPS.has(op.op)){
+    /* 控制流括号横跨全部线路：必须占满所有 q/c 通道，才能排在已有操作之后 */
+    for(let q=0;q<nQ;q++) ks.push('q:'+q);
+    for(let c=0;c<nC;c++) ks.push('c:'+c);
+    return ks;
+  }
+  (op.q||[]).forEach(q=>ks.push('q:'+q));
+  if (op.op==='MEASURE' && op.c!=null) (Array.isArray(op.c)?op.c:[op.c]).forEach(c=>ks.push('c:'+c));
+  if (op.ctrl) op.ctrl.forEach(q=>ks.push('q:'+q));
+  return ks;
+}
+function layoutCircuit(circ){
+  const ops = circ.ops.map(o=>Object.assign({},o));
+  const next={}; let nCols=0;
+  ops.forEach(op=>{
+    const ks=laneKeys(op, circ.qubits, circ.cbits||0); let L=0;
+    ks.forEach(k=>{ L=Math.max(L, next[k]||0); });
+    op.col=L; ks.forEach(k=>{ next[k]=L+1; });
+    if (L+1>nCols) nCols=L+1;
+  });
+  const stack=[], spans=[];
+  ops.forEach(op=>{
+    if (op.op==='QIF'||op.op==='QWHILE') stack.push(op);
+    else if (op.op==='ENDIF'||op.op==='ENDWHILE'){ const b=stack.pop(); if(b) spans.push({begin:b, end:op, kind:b.op, cond:b.cond}); }
+  });
+  return {ops, nCols, spans};
+}
+/* 每列宽度（依据风格几何 + 标签长度） */
+function colWidths(lay, st, opts){
+  const ws=[];
+  lay.ops.forEach(op=>{
+    let w = st.minCol;
+    if (op.op==='BARRIER') w = 22;
+    else if (FLOW_OPS.has(op.op)) w = 14;
+    else if (op.op==='MEASURE') w = Math.max(48, st.minCol);
+    else if (op.op==='COP'){ w = textW(copLabel(op), st.fs) + 18; }
+    else if (['CNOT','CZ','SWAP','TOFFOLI','CSWAP'].includes(op.op) && !(op.ctrl||[]).length){
+      w = Math.min(52, Math.max(38, st.minCol*0.8));     /* 符号门不需要文字宽度 */
+    } else {
+      const nm = opName(op);
+      const ps = paramStrs(op, opts.param);
+      let pl = ps.length? ps.join(',') : '';
+      if (ps.length>6) pl = ps.length+'p';
+      w = Math.max(textW(nm, st.fs), pl? textW(pl, st.pfs):0) + st.pad;
+      if (op.op==='QRAM') w = textW('QRAM', st.fs)+34;
+      if (op.op==='DEF') w = Math.max(w, textW('DEF '+op.name, st.fs)+22);
+    }
+    if (op.col>=ws.length){ for(let i=ws.length;i<=op.col;i++) ws.push(st.minCol); }
+    if (w>ws[op.col]) ws[op.col]=w;
+  });
+  return ws;
+}
+function copLabel(op){
+  const c=op.c;
+  if (op.name==='NOT') return 'NOT c'+c[0]+'←c'+c[1];
+  if (op.name==='MOV') return 'MOV c'+c[0]+'←c'+c[1];
+  return op.name+' c'+c[0]+'←c'+c[1]+',c'+c[2];
+}
+/* 折叠分带：按列数，优先在 barrier 处断开 */
+function foldBands(nCols, ws, fold){
+  if (!fold || fold<=0 || nCols<=fold) return [{start:0, end:nCols-1}];
+  const barriers=[]; /* 由调用方填充 */
+  const bands=[]; let s=0;
+  while (s<nCols){
+    let e = Math.min(s+fold, nCols) - 1;
+    bands.push({start:s, end:e});
+    s = e+1;
+  }
+  return bands;
+}
+
+/* ---------------- 3. SVG 原语 + 序列化 ----------------
+ * 原语用"逻辑坐标"存储（x=时间轴，y=wire 轴），序列化时统一处理：
+ * 纵向模式（时间向下）= 坐标转置；文本自动旋转 -90°；缩放统一乘 scale。
+ */
+function P_line(x1,y1,x2,y2,o){return Object.assign({t:'line',x1,y1,x2,y2},o||{});}
+function P_rect(x,y,w,h,o){return Object.assign({t:'rect',x,y,w,h},o||{});}
+function P_circ(cx,cy,r,o){return Object.assign({t:'circle',cx,cy,r},o||{});}
+function P_text(x,y,txt,o){return Object.assign({t:'text',x,y,txt:String(txt)},o||{});}
+function P_tri(pts,o){return Object.assign({t:'tri',pts},o||{});}
+function P_arc(cx,cy,r,a1,a2,o){return Object.assign({t:'arc',cx,cy,r,a1,a2},o||{});}
+function P_gbegin(o){return Object.assign({t:'g'},o||{});}
+const P_GEND = {t:'/g'};
+
+let _svgUid = 0;
+function serializeSvg(prims, W, H, opts){
+  const V = opts.vertical, sc = (opts.scale||100)/100;
+  const M = (x,y)=> V? [y*sc, x*sc] : [x*sc, y*sc];
+  const n = (v)=> Math.round(v*100)/100;
+  let out = [];
+  const uid = 'u'+(++_svgUid);
+  out.push('<svg class="uniqc-viz '+uid+'" xmlns="http://www.w3.org/2000/svg" '+
+    'width="'+n((V?H:W)*sc)+'" height="'+n((V?W:H)*sc)+'" viewBox="0 0 '+n((V?H:W)*sc)+' '+n((V?W:H)*sc)+'" role="img">');
+  if (opts.defs) out.push('<defs>'+opts.defs+'</defs>');
+  if (opts.css) out.push('<style>'+opts.css+'</style>');
+  for (const p of prims){
+    switch(p.t){
+      case 'g': { let a=' class="'+(p.cls||'')+'"';
+        if (p.data) a += ' '+p.data;
+        if (p.tip) a += '><title>'+escStr(p.tip); out.push('<g'+a.split('><title')[0]+'>'); if (p.tip) out.push('<title>'+escStr(p.tip)+'</title>');
+        break; }
+      case '/g': out.push('</g>'); break;
+      case 'line': { const [x1,y1]=M(p.x1,p.y1),[x2,y2]=M(p.x2,p.y2);
+        out.push('<line x1="'+n(x1)+'" y1="'+n(y1)+'" x2="'+n(x2)+'" y2="'+n(y2)+'"'+attr(p,['stroke','stroke-width','stroke-dasharray','stroke-linecap','opacity','class'])+'/>'); break; }
+      case 'rect': { const [x,y]=M(p.x,p.y); const w=(V?p.h:p.w)*sc, h=(V?p.w:p.h)*sc;
+        out.push('<rect x="'+n(x)+'" y="'+n(y)+'" width="'+n(Math.max(0,w))+'" height="'+n(Math.max(0,h))+'"'+attr(p,['fill','stroke','stroke-width','rx','stroke-dasharray','opacity','class'])+'/>'); break; }
+      case 'circle': { const [cx,cy]=M(p.cx,p.cy);
+        out.push('<circle cx="'+n(cx)+'" cy="'+n(cy)+'" r="'+n(p.r*sc)+'"'+attr(p,['fill','stroke','stroke-width','opacity','class'])+'/>'); break; }
+      case 'text': { const [x,y]=M(p.x,p.y); let rot='';
+        if (V || p.rotate) rot = ' transform="rotate('+(V?-90:0)+(V?','+n(x)+','+n(y):'')+')"';
+        const dy = V? (p.vdy||0) : (p.dy||0), dx = V? (p.dy||0)*-1 : (p.dx||0);
+        out.push('<text x="'+n(x)+'" y="'+n(y)+'"'+(dx||dy?' dx="'+n(dx)+'" dy="'+n(dy)+'"':'')+
+          ' font-size="'+n((p.fs||12)*sc)+'"'+attr(p,['fill','font-family','font-style','font-weight','letter-spacing','opacity','class'])+
+          ' text-anchor="'+(p.anchor||'middle')+'"'+rot+'>'+escStr(p.txt)+'</text>'); break; }
+      case 'tri': { const q=p.pts.map(([a,b])=>M(a,b).map(n).join(',')).join(' ');
+        out.push('<polygon points="'+q+'"'+attr(p,['fill','stroke','stroke-width','opacity','class'])+'/>'); break; }
+      case 'arc': { const r=p.r*sc;
+        const pt=(a)=>{const [x,y]=M(p.cx+p.r*Math.cos(a*Math.PI/180), p.cy+p.r*Math.sin(a*Math.PI/180)); return [x,y];};
+        const [x1,y1]=pt(p.a1),[x2,y2]=pt(p.a2);
+        const large = Math.abs(p.a2-p.a1)>180?1:0, sweep = V?0:1;
+        out.push('<path d="M '+n(x1)+' '+n(y1)+' A '+n(r)+' '+n(r)+' 0 '+large+' '+sweep+' '+n(x2)+' '+n(y2)+'"'+
+          attr(p,['fill','stroke','stroke-width','stroke-dasharray','opacity','class'])+'/>'); break; }
+    }
+  }
+  out.push('</svg>');
+  return out.join('\n');
+  function attr(p, keys){ let s=''; for (const k of keys){ const v=p[k==='' ?'':k]; if (v===undefined||v===null) continue;
+    if (k==='class') s+=' class="'+v+'"'; else s+=' '+k+'="'+v+'"'; } return s; }
+}
+
+/* ---------------- 4. 风格定义 ---------------- */
+function family(op){
+  if (op.op==='CHANNEL') return 'channel';
+  if (op.op==='QRAM') return 'qram';
+  if (op.op==='DEF') return 'def';
+  if (op.op==='COP') return 'cop';
+  if (op.op==='MEASURE') return 'measure';
+  if (op.op==='RESET') return 'reset';
+  if (op.op==='BARRIER' || FLOW_OPS.has(op.op)) return 'meta';
+  if ((op.p&&op.p.length)) return 'grot';
+  if ((op.q&&op.q.length>1) || (op.ctrl&&op.ctrl.length)) return 'g2';
+  return 'g1';
+}
+const STYLES = {
+quantikz:{
+  key:'quantikz', name:'A · Quantikz 学术风', short:'A Quantikz',
+  desc:'黑白细线、方角盒、●/⊕ 符号，排版克制；quantikz LaTeX 导出的 WYSIWYG 预览，论文友好',
+  font:"Georgia,'Times New Roman',serif", mono:false,
+  fs:13.5, pfs:10.5, wireGap:46, boxH:34, minCol:46, pad:22, ctrlR:4.2, targR:9.5, rx:0, sw:1.4, wireW:1.4,
+  themes:{
+    light:{bg:'#ffffff', wire:'#181b21', ink:'#101319', dim:'#5c6673', hint:'#98a0ad', clane:'#3c424d', bracket:'#454c57', band:'#8d94a0'},
+    dark: {bg:'#14171d', wire:'#e9e7e2', ink:'#edebt6', ink2:'', dim:'#9aa2b0', hint:'#6e7684', clane:'#d3d7de', bracket:'#aab1bd', band:'#6e7684'},
+  },
+  look(th, fam){ return {fill:'#00000000', stroke:th.wire, ink:th.ink}; },
+  swatches:['#ffffff','#181b21','#5c6673'],
+},
+qiskit:{
+  key:'qiskit', name:'B · Qiskit-mpl 经典风', short:'B Qiskit',
+  desc:'对标 QuantumCircuit.draw("mpl")：分类淡彩方框、参数内嵌、符号语义成熟耐看，Jupyter 场景默认之选',
+  font:"'Helvetica Neue',Arial,sans-serif", mono:false,
+  fs:13, pfs:10.5, wireGap:46, boxH:36, minCol:48, pad:22, ctrlR:4.5, targR:10, rx:2, sw:1.4, wireW:1.4,
+  themes:{
+    light:{bg:'#ffffff', wire:'#3b4252', ink:'#1a1f2b', dim:'#5b6472', hint:'#9aa2af', clane:'#3c424d', bracket:'#7c66d9', band:'#9aa2af'},
+    dark: {bg:'#10141b', wire:'#c7cedb', ink:'#e6eaf2', dim:'#9aa2b0', hint:'#6e7684', clane:'#c3c9d6', bracket:'#a99af0', band:'#6e7684'},
+  },
+  PAL:{ g1:['#dae8fc','#6c8ebf'], grot:['#dae8fc','#6c8ebf'], g2:['#ffe6cc','#d79b00'],
+       measure:['#f5f5f5','#7f7f7f'], reset:['#e1d5e7','#9673a6'], channel:['#f8cecc','#b85450'],
+       qram:['#d5e8d4','#82b366'], def:['#fff2cc','#d6b656'], cop:['#f5f5f5','#8a8f99'], meta:['#00000000','#8a8f99'] },
+  look(th, fam){ const p=this.PAL[fam]||this.PAL.g1; return {fill:p[0], stroke:p[1], ink:th.ink}; },
+  swatches:['#dae8fc','#ffe6cc','#d5e8d4','#f8cecc'],
+},
+modern:{
+  key:'modern', name:'C · 现代 Web·IDE 风', short:'C Modern',
+  desc:'门族语义配色、圆角、深浅双主题、悬停高亮、点击详情 —— Gateway WebUI / 交互模式的皮肤',
+  font:"'Inter','Segoe UI',system-ui,sans-serif", mono:false,
+  fs:13, pfs:10.5, wireGap:48, boxH:36, minCol:50, pad:24, ctrlR:5, targR:10.5, rx:9, sw:1.6, wireW:1.5,
+  themes:{
+    light:{bg:'#ffffff', wire:'#94a3b8', ink:'#0f172a', dim:'#64748b', hint:'#94a3b8', clane:'#64748b', bracket:'#8b5cf6', band:'#94a3b8'},
+    dark: {bg:'#0b1220', wire:'#3f4b63', ink:'#e2e8f0', dim:'#94a3b8', hint:'#4b5771', clane:'#8fa0bd', bracket:'#a78bfa', band:'#4b5771'},
+  },
+  PAL:{ g1:['#e0e7ff','#6366f1'], grot:['#e0f2fe','#0284c7'], g2:['#d1fae5','#059669'],
+        measure:['#fef9c3','#ca8a04'], reset:['#fce7f3','#db2777'], channel:['#fee2e2','#dc2626'],
+        qram:['#f3e8ff','#9333ea'], def:['#cffafe','#0891b2'], cop:['#f1f5f9','#64748b'], meta:['#00000000','#94a3b8'] },
+  DPAL:{g1:['#312e81cc','#818cf8'], grot:['#0c4a6ecc','#38bdf8'], g2:['#064e3bcc','#34d399'],
+        measure:['#713f12cc','#fbbf24'], reset:['#831843cc','#f472b6'], channel:['#7f1d1dcc','#f87171'],
+        qram:['#581c87cc','#c084fc'], def:['#164e63cc','#22d3ee'], cop:['#1e293bcc','#94a3b8'], meta:['#00000000','#4b5771']},
+  look(th, fam){ const p=(th===this.themes.dark? this.DPAL:this.PAL)[fam]||this.PAL.g1;
+    return {fill:p[0], stroke:p[1], ink: th===this.themes.dark? '#eef2ff': '#0f172a'}; },
+  swatches:['#e0e7ff','#d1fae5','#fef9c3','#f3e8ff'],
+},
+print:{
+  key:'print', name:'D · 印刷·灰度风', short:'D Print',
+  desc:'灰度打印安全：紧凑间距、以填充深浅+线型区分门族，噪声通道用斜线填充；文档/PDF 场景',
+  font:"'Segoe UI',Arial,sans-serif", mono:false,
+  fs:12, pfs:10, wireGap:42, boxH:30, minCol:42, pad:18, ctrlR:4, targR:8.5, rx:0, sw:1.2, wireW:1.2,
+  themes:{
+    light:{bg:'#ffffff', wire:'#222', ink:'#111', dim:'#555', hint:'#999', clane:'#333', bracket:'#555', band:'#999'},
+    dark: {bg:'#191919', wire:'#ddd', ink:'#eee', dim:'#aaa', hint:'#777', clane:'#ccc', bracket:'#aaa', band:'#777'},
+  },
+  PAL:{ g1:['#ffffff','#111'], grot:['#efefef','#111'], g2:['#d4d4d4','#111'],
+        measure:['#f7f7f7','#333'], reset:['#e3e3e3','#111'], channel:['hatch','#111'],
+        qram:['#9a9a9a','#111'], def:['#ffffff','#111'], cop:['#ffffff','#555'], meta:['#00000000','#666'] },
+  look(th, fam){ const p=this.PAL[fam]||this.PAL.g1; return {fill:p[0], stroke:p[1], ink:fam==='qram'?'#fff':th.ink}; },
+  swatches:['#ffffff','#efefef','#d4d4d4','#9a9a9a'],
+},
+legacy:{
+  key:'legacy', name:'对照 · 现状复刻', short:'现状',
+  desc:'复刻 draw_html/_schedule_to_svg：固定 88px 列、名字方框+普通竖线、参数仅悬停、门名截 8 字符 —— 仅作对照',
+  font:"Arial,sans-serif", mono:false,
+  fs:12, pfs:10, wireGap:54, boxH:30, minCol:88, pad:10, ctrlR:4, targR:9, rx:5, sw:1.1, wireW:1.4,
+  themes:{ light:{bg:'#ffffff', wire:'#677083', ink:'#111827', dim:'#64748b', hint:'#9aa2af', clane:'#677083', bracket:'#7a3e00', band:'#9aa2af'} },
+  look(th, fam){ return {fill:'#dbeafe', stroke:'#243047', ink:'#111827'}; },
+  swatches:['#dbeafe','#fee2e2','#d1d5db'],
+},
+};
+STYLES.quantikz.themes.dark.ink = '#ece9e2';
+const STYLE_ORDER = ['quantikz','qiskit','modern','print','legacy'];
+
+/* ---------------- 5. 语义绘制（核心视觉语义的落地） ---------------- */
+function classify(op){
+  const u = op.op.toUpperCase();
+  const ctrl = (op.ctrl&&op.ctrl.length)? op.ctrl : [];
+  if (op.op==='MEASURE') return 'measure';
+  if (op.op==='RESET') return 'reset';
+  if (op.op==='BARRIER') return 'barrier';
+  if (op.op==='CHANNEL') return 'channel';
+  if (op.op==='QRAM') return 'qram';
+  if (op.op==='DEF') return 'def';
+  if (FLOW_OPS.has(op.op)) return 'flow';
+  if (op.op==='COP') return 'cop';
+  if ((u==='CNOT'||u==='CX') && !ctrl.length) return 'cx';
+  if ((u==='CZ'||u==='CP'||u==='CU1'||u==='P') && !ctrl.length) return 'cz';
+  if ((u==='TOFFOLI'||u==='CCX'||u==='CCNOT') && !ctrl.length) return 'ccx';
+  if ((u==='CSWAP'||u==='FREDKIN') && !ctrl.length) return 'cswap';
+  if (u==='SWAP' && !ctrl.length) return 'swap';
+  if (u==='X' && ctrl.length) return 'mcx';
+  if (ctrl.length) return 'cbox';
+  if (op.q && op.q.length>1) return 'span';
+  return 'box1';
+}
+function tipText(op){
+  const seg=[op.op==='CHANNEL'? op.name : opName(op)];
+  if (op.q&&op.q.length) seg.push('q['+op.q.join('],q[')+']');
+  if (op.c!=null) seg.push('c['+(Array.isArray(op.c)?op.c.join('],c['):op.c)+']');
+  if (op.p&&op.p.length) seg.push('('+(op.p.length>6? op.p.length+' params': op.p.map(fmtNum).join(', '))+')');
+  if (op.ctrl&&op.ctrl.length) seg.push('controlled_by q['+op.ctrl.join('],q[')+']');
+  if (op.cond) seg.push('cond: '+op.cond);
+  if (op.note) seg.push(op.note);
+  return seg.join(' · ');
+}
+function ctrlDot(pr, x, y, st, th){ pr.push(P_circ(x, y, st.ctrlR, {fill:th.ink})); }
+function targetCirc(pr, x, y, r, st, th){
+  pr.push(P_circ(x, y, r, {fill:'#00000000', stroke:th.ink, 'stroke-width':st.sw+0.2}));
+  const e=r+3;
+  pr.push(P_line(x-e, y, x+e, y, {stroke:th.ink,'stroke-width':st.sw+0.2}));
+  pr.push(P_line(x, y-e, x, y+e, {stroke:th.ink,'stroke-width':st.sw+0.2}));
+}
+function swapCross(pr, x, y, st, th, s){
+  s = s||6;
+  pr.push(P_line(x-s, y-s, x+s, y+s, {stroke:th.ink,'stroke-width':st.sw+0.3}));
+  pr.push(P_line(x-s, y+s, x+s, y-s, {stroke:th.ink,'stroke-width':st.sw+0.3}));
+}
+function gateTextLines(op, opts){
+  const ps = paramStrs(op, opts.param);
+  let pl = ps.length? ps.join(',') : '';
+  if (ps.length>6) pl = ps.length+'p';
+  return {name:opName(op), params:pl};
+}
+function drawGateBox(pr, cx, cyTop, cyBot, op, st, th, opts, o){
+  o = o||{};
+  const L = gateTextLines(op, opts);
+  const fam = family(op);
+  const lk = st.look(th, o.famOverride||fam);
+  const fs=o.fs||st.fs, pfs=o.pfs||st.pfs;
+  const w = Math.max(textW(L.name, fs), L.params? textW(L.params, pfs):0) + st.pad;
+  const x0=cx-w/2, x1=cx+w/2;
+  let fill=lk.fill;
+  if (fill==='hatch') fill='url(#'+o.hatchId+')';
+  const single = cyBot===cyTop;
+  const y0 = single? cyTop-st.boxH/2 : cyTop-st.boxH*0.5;
+  const y1 = single? cyTop+st.boxH/2 : cyBot+st.boxH*0.5;
+  pr.push(P_rect(x0, y0, w, y1-y0, {fill:fill, stroke:lk.stroke, 'stroke-width':st.sw, rx:st.rx,
+    dash:o.dash? '5 3':'', 'class':'gbox'}));
+  const hasP = !!L.params;
+  const ny = single? (hasP? cyTop-4 : cyTop+0.5) : (cyTop+cyBot)/2 - (hasP?5:0);
+  pr.push(P_text(cx, ny, L.name, {fs:fs, fill:lk.ink||th.ink, 'font-family':st.font, dy:4, 'class':'gtext'}));
+  if (hasP) pr.push(P_text(cx, (single? cyTop: (cyTop+cyBot)/2)+11, L.params,
+    {fs:pfs, fill:lk.ink||th.ink, 'font-family':st.font, 'class':'gtext', opacity:.92}));
+  return w;
+}
+function connector(pr, x, ys, st, th, dash){
+  const mn=Math.min.apply(null,ys), mx=Math.max.apply(null,ys);
+  pr.push(P_line(x, mn, x, mx, {stroke:th.ink, 'stroke-width':st.sw+0.1, dash: dash? '3 3':''}));
+}
+function drawOp(pr, op, x, geom, st, th, opts){
+  const yq=geom.yq, yc=geom.yc;
+  const kind = classify(op);
+  pr.push(P_gbegin({cls:'op', data:'data-i="'+(op._i!=null?op._i:0)+'"', tip:tipText(op)}));
+  const ys = (op.q||[]).map(yq);
+  const yAll = ys.concat((op.ctrl||[]).map(yq));
+  switch(kind){
+    case 'box1': case 'span': {
+      if (ys.length) drawGateBox(pr, x, Math.min.apply(null,ys), Math.max.apply(null,ys), op, st, th, opts, {hatchId:geom.hatchId});
+      break; }
+    case 'cx': case 'mcx': {
+      const ctrls = kind==='cx'? [op.q[0]] : op.ctrl;
+      const targ = kind==='cx'? op.q[1] : op.q[0];
+      connector(pr, x, [yq(targ)].concat(ctrls.map(yq)), st, th);
+      ctrls.forEach(q=>ctrlDot(pr, x, yq(q), st, th));
+      targetCirc(pr, x, yq(targ), st.targR, st, th);
+      break; }
+    case 'ccx': {
+      connector(pr, x, ys, st, th);
+      ctrlDot(pr, x, yq(op.q[0]), st, th); ctrlDot(pr, x, yq(op.q[1]), st, th);
+      targetCirc(pr, x, yq(op.q[2]), st.targR, st, th);
+      break; }
+    case 'cz': {
+      connector(pr, x, ys, st, th);
+      ctrlDot(pr, x, yq(op.q[0]), st, th); ctrlDot(pr, x, yq(op.q[1]), st, th);
+      const ps = paramStrs(op, opts.param);
+      if (ps.length) pr.push(P_text(x, Math.min.apply(null,ys)-8, ps.join(','), {fs:st.pfs, fill:th.dim, 'font-family':st.font}));
+      break; }
+    case 'cswap': {
+      connector(pr, x, ys, st, th);
+      ctrlDot(pr, x, yq(op.q[0]), st, th);
+      swapCross(pr, x, yq(op.q[1]), st, th); swapCross(pr, x, yq(op.q[2]), st, th);
+      break; }
+    case 'swap': {
+      connector(pr, x, ys, st, th);
+      swapCross(pr, x, yq(op.q[0]), st, th); swapCross(pr, x, yq(op.q[1]), st, th);
+      break; }
+    case 'cbox': {
+      connector(pr, x, yAll, st, th);
+      op.ctrl.forEach(q=>ctrlDot(pr, x, yq(q), st, th));
+      drawGateBox(pr, x, Math.min.apply(null,ys), Math.max.apply(null,ys), op, st, th, opts, {hatchId:geom.hatchId});
+      break; }
+    case 'measure': {
+      /* 仪表弧 + 指针 */
+      const y=yq(op.q[0]);
+      pr.push(P_arc(x, y+2, 11.5, 180, 360, {stroke:th.ink, 'stroke-width':st.sw+0.2, fill:'#00000000'}));
+      pr.push(P_line(x-13, y+2, x+13, y+2, {stroke:th.ink, 'stroke-width':st.sw}));
+      const na=-45*Math.PI/180;
+      pr.push(P_line(x, y+2, x+9*Math.cos(na), y+2+9*Math.sin(na), {stroke:th.ink, 'stroke-width':st.sw-0.2}));
+      const cj = Array.isArray(op.c)? op.c[0] : op.c;
+      if (opts.showClbits && cj!=null && geom.cExists(cj)){
+        const ycj=yc(cj);
+        pr.push(P_line(x, y+16, x, ycj-9, {stroke:th.dim, 'stroke-width':1.2, dash:'4 3'}));
+        pr.push(P_tri([[x-3.5, ycj-9],[x+3.5, ycj-9],[x, ycj-3]], {fill:th.dim}));
+      }
+      break; }
+    case 'reset': {
+      drawGateBox(pr, x, yq(op.q[0]), yq(op.q[0]), {op:'|0⟩', q:op.q}, st, th, opts, {famOverride:'reset'});
+      break; }
+    case 'barrier': {
+      const mn=Math.min.apply(null,ys)-13, mx=Math.max.apply(null,ys)+13;
+      pr.push(P_line(x, mn, x, mx, {stroke:th.dim, 'stroke-width':2, dash:'6 4'}));
+      ys.forEach(y=>pr.push(P_rect(x-2.6, y-2.6, 5.2, 5.2, {fill:th.dim})));
+      break; }
+    case 'channel': {
+      const span = ys.length>1;
+      drawGateBox(pr, x, Math.min.apply(null,ys), Math.max.apply(null,ys),
+        {op:op.name, q:op.q, p:op.p}, st, th, opts, {dash:true, hatchId:geom.hatchId,
+        famOverride:'channel'});
+      /* 波浪下划线示意"噪声" */
+      const cy = span? (Math.min.apply(null,ys)+Math.max.apply(null,ys))/2 : ys[0];
+      pr.push(P_text(x, cy+(span? 26: st.boxH/2+9), '≈', {fs:11, fill:th.dim, opacity:.8}));
+      break; }
+    case 'qram': {
+      const yTop=Math.min.apply(null,ys)-14, yBot=Math.max.apply(null,ys)+14;
+      const w=Math.max(64, textW('QRAM '+op.name, st.fs)+16), x0=x-w/2;
+      const lk=st.look(th,'qram');
+      pr.push(P_rect(x0, yTop, w, yBot-yTop, {fill:lk.fill, stroke:lk.stroke, 'stroke-width':st.sw+0.3, rx:st.rx||3, 'class':'gbox'}));
+      const nAddr=op.addr||Math.floor(op.q.length/2);
+      const yDiv=(yq(op.q[nAddr-1])+yq(op.q[nAddr]))/2;
+      pr.push(P_line(x0, yDiv, x0+w, yDiv, {stroke:lk.stroke, 'stroke-width':1.1, dash:'4 3'}));
+      const yMid=(yTop+yBot)/2;
+      pr.push(P_text(x, yMid-6, 'QRAM', {fs:st.fs, fill:lk.ink||th.ink, 'font-family':st.font, dy:4}));
+      pr.push(P_text(x, yMid+10, op.name, {fs:st.pfs, fill:lk.ink||th.ink, 'font-family':st.font, opacity:.85}));
+      pr.push(P_text(x0+w+4, yq(op.q[0])+3, 'addr', {fs:8.5, fill:th.dim, anchor:'start', 'font-family':st.font}));
+      pr.push(P_text(x0+w+4, yq(op.q[op.q.length-1])+3, 'data', {fs:8.5, fill:th.dim, anchor:'start', 'font-family':st.font}));
+      break; }
+    case 'def': {
+      const yTop=Math.min.apply(null,ys)-16, yBot=Math.max.apply(null,ys)+16;
+      const w=Math.max(58, textW('DEF '+op.name, st.fs)+18), x0=x-w/2;
+      const lk=st.look(th,'def');
+      pr.push(P_rect(x0, yTop, w, yBot-yTop, {fill:lk.fill, stroke:lk.stroke, 'stroke-width':st.sw, rx:st.rx||2, 'class':'gbox'}));
+      pr.push(P_rect(x0+3, yTop+3, w-6, yBot-yTop-6, {fill:'#00000000', stroke:lk.stroke, 'stroke-width':0.9, rx:Math.max(0,(st.rx||2)-2)}));
+      const yMid=(yTop+yBot)/2;
+      pr.push(P_text(x, yMid-5, 'DEF '+op.name, {fs:st.fs, fill:lk.ink||th.ink, 'font-family':st.font, dy:4}));
+      if (op.note) pr.push(P_text(x, yMid+11, op.note, {fs:st.pfs-1, fill:th.dim, 'font-family':st.font}));
+      break; }
+    case 'cop': {
+      const y=yc(op.c[0]);
+      const lbl=copLabel(op);
+      const w=textW(lbl, 11)+14;
+      pr.push(P_rect(x-w/2, y-12, w, 24, {fill:st.look(th,'cop').fill, stroke:st.look(th,'cop').stroke, 'stroke-width':1.2, rx:4, 'class':'gbox'}));
+      pr.push(P_text(x, y+3.5, lbl, {fs:11, fill:th.ink, 'font-family':st.font}));
+      break; }
+    case 'flow': break; /* 由 bracket 统一绘制 */
+  }
+  pr.push(P_GEND);
+}
+
+/* ---------------- 6. 主渲染器 ---------------- */
+function renderCircuitSVG(circ, styleKey, opts){
+  opts = Object.assign({fold:'auto', vertical:false, qubitOrder:'asc', theme:'light', param:'pi', showClbits:true, scale:100}, opts||{});
+  const st=STYLES[styleKey], th=st.themes[opts.theme]||st.themes.light;
+  const lay=layoutCircuit(circ);
+  lay.ops.forEach((o,i)=>o._i=i);
+  const ws=colWidths(lay, st, opts);
+  const nQ=circ.qubits, nC=opts.showClbits? (circ.cbits||0):0;
+  let fold = opts.fold==='auto'? (lay.nCols>18? 16: 0) : (opts.fold|0);
+  const bands=foldBands(lay.nCols, ws, fold);
+  const asc = opts.qubitOrder!=='desc';
+  const labelW=54, top=44;
+  const hatchId='hp'+(++_svgUid);
+  const geom={
+    yq:(i)=> top + (asc? i : nQ-1-i)*st.wireGap,
+    yc:(j)=> top + nQ*st.wireGap + 22 + j*28,
+    cExists:(j)=> j < nC,
+    hatchId:hatchId,
+  };
+  const prims=[]; let W=0;
+  bands.forEach((band, bi)=>{
+    const bx0=12+labelW;
+    const sumW=ws.slice(band.start, band.end+1).reduce((a,b)=>a+b,0);
+    const bandW=bx0+sumW+18;
+    W=Math.max(W, bandW);
+    const colX=(c)=> bx0 + ws.slice(band.start, c).reduce((a,b)=>a+b,0) + ws[c]/2;
+    const yBotQ = top + (nQ-1)*st.wireGap;
+    const bandH = (nC? geom.yc(nC-1)+16 : yBotQ+18);
+    /* 量子线 + 标签 */
+    for(let q=0;q<nQ;q++){
+      const y=geom.yq(q);
+      prims.push(P_text(10, y, 'q['+q+']', {fs:12, fill:th.dim, anchor:'start', 'font-family':st.font}));
+      prims.push(P_line(bx0-10, y, bandW-10, y, {stroke:th.wire, 'stroke-width':st.wireW}));
+    }
+    /* 经典线（双线）+ 标签 */
+    for(let c=0;c<nC;c++){
+      const y=geom.yc(c);
+      prims.push(P_text(10, y, 'c['+c+']', {fs:11, fill:th.dim, anchor:'start', 'font-family':st.font}));
+      prims.push(P_line(bx0-10, y-2.4, bandW-10, y-2.4, {stroke:th.clane, 'stroke-width':1.2}));
+      prims.push(P_line(bx0-10, y+2.4, bandW-10, y+2.4, {stroke:th.clane, 'stroke-width':1.2}));
+    }
+    /* 续行标题 */
+    if (bi>0) prims.push(P_text(bx0, 14, '↳ 续 '+ (bi+1) +'/'+bands.length+'（折叠自上一行末尾）', {fs:10.5, fill:th.hint, anchor:'start', 'font-family':st.font}));
+    /* 控制流括号 */
+    lay.spans.forEach(sp=>{
+      const c1=Math.max(sp.begin.col, band.start), c2=Math.min(sp.end.col, band.end);
+      if (c1>c2) return;
+      const x1=colX(c1)-6, x2=colX(c2)+6, yB=top-16;
+      if (styleKey==='modern')
+        prims.push(P_rect(x1, top-8, x2-x1, yBotQ-top+16, {fill:th.bracket, opacity:.05}));
+      prims.push(P_line(x1, yB, x2, yB, {stroke:th.bracket, 'stroke-width':1.4}));
+      prims.push(P_line(x1, yB, x1, yB+6, {stroke:th.bracket, 'stroke-width':1.4}));
+      prims.push(P_line(x2, yB, x2, yB+6, {stroke:th.bracket, 'stroke-width':1.4}));
+      prims.push(P_text((x1+x2)/2, yB-4, sp.kind+' '+sp.cond, {fs:10.5, fill:th.bracket, 'font-family':st.font}));
+    });
+    /* QELSE 小标 */
+    lay.ops.forEach(o=>{ if(o.op==='QELSE' && o.col>=band.start && o.col<=band.end){
+      prims.push(P_text(colX(o.col), top-26, 'else', {fs:9.5, fill:th.dim, 'font-family':st.font, italic:'italic'}));
+    }});
+    /* 门 */
+    lay.ops.forEach(op=>{ if(op.col>=band.start && op.col<=band.end) drawOp(prims, op, colX(op.col), geom, st, th, opts); });
+    /* 带间位移 */
+    const usedH = bandH + 34;
+    if (bi<bands.length-1) prims.push({t:'_shift', h:usedH});
+  });
+  /* 处理带间位移：把后续原语整体下移 */
+  let shift=0;
+  for (const p of prims){ if (p.t==='_shift'){ shift+=p.h; continue; }
+    for (const k of ['x','x1','x2','cx','r']) if (p[k]!=null) p[k]+=0;
+    for (const k of ['y','y1','y2','cy']) if (p[k]!=null) p[k]+=shift;
+    if (p.pts) p.pts=p.pts.map(([a,b])=>[a, b+shift]);
+  }
+  const totalH = (nC? geom.yc(nC-1)+16 : top+(nQ-1)*st.wireGap+18) + shift + 6;
+  const H = Math.max(totalH, 60);
+  const defs='<pattern id="'+hatchId+'" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'+
+    '<line x1="0" y1="0" x2="0" y2="6" stroke="#888" stroke-width="1.1"/></pattern>';
+  const css='.op{cursor:pointer}'+
+    '.op:hover .gbox{stroke-width:2.6}'+
+    (styleKey==='modern'? '.op:hover .gbox{filter:drop-shadow(0 0 4px rgba(99,102,241,.65))}':'')+
+    '.op:hover .gtext{font-weight:600}';
+  const svg=serializeSvg(prims.filter(p=>p.t!=='_shift'), W, H, {vertical:opts.vertical, scale:opts.scale, defs:defs, css:css});
+  return {svg:svg, meta:{style:styleKey, nCols:lay.nCols, bands:bands.length}};
+}
+
+/* 现状复刻（timeline._schedule_to_svg 的忠实模仿：固定列宽/名字盒/无参数显示） */
+function renderLegacySVG(circ, opts){
+  opts=Object.assign({scale:100}, opts||{});
+  const lay=layoutCircuit(circ);
+  lay.ops.forEach((o,i)=>o._i=i);
+  const nQ=circ.qubits;
+  const left=76, lane=54, gateH=30, minW=34, colW=88, top=48;
+  const yq=(i)=>top+i*lane;
+  const prims=[];
+  const maxCol=Math.max(lay.nCols-1,0);
+  const W=left+(maxCol+1)*colW+36+minW, H=top+(nQ-1)*lane+58;
+  for(let q=0;q<nQ;q++){
+    prims.push(P_text(12, yq(q)+4, 'q['+q+']', {fs:13, fill:'#1f2937', anchor:'start', 'font-family':'ui-monospace,monospace'}));
+    prims.push(P_line(left-8, yq(q), W-36, yq(q), {stroke:'#677083', 'stroke-width':1.4}));
+  }
+  lay.ops.forEach(op=>{
+    const x=left+op.col*colW, cx=x+minW/2;
+    const qs=op.q||[]; const ys=qs.map(yq); if(!ys.length) return;
+    prims.push(P_gbegin({cls:'op', data:'data-i="'+(op._i||0)+'"', tip:tipText(op)}));
+    if (op.op==='BARRIER'){
+      ys.forEach(y=>prims.push(P_line(cx, y-20, cx, y+20, {stroke:'#7a3e00','stroke-width':1.5,dash:'4 4'})));
+      prims.push(P_GEND); return;
+    }
+    const lbl = op.op==='MEASURE'? 'M' : (op.op==='CHANNEL'? op.name : op.op).slice(0,8);
+    const fill = op.op==='MEASURE'? '#d1d5db' : op.op==='QRAM'? '#e0e7ff' : qs.length>=2? '#fee2e2':'#dbeafe';
+    if (op.op==='QRAM'){
+      const yT=Math.min.apply(null,ys)-gateH/2, yB=Math.max.apply(null,ys)+gateH/2;
+      prims.push(P_rect(x, yT, minW, yB-yT, {fill:fill, stroke:'#374151','stroke-width':1.6}));
+      prims.push(P_text(cx, (Math.min.apply(null,ys)+Math.max.apply(null,ys))/2+1, lbl.slice(0,8), {fs:12, fill:'#111827','font-family':'Arial,sans-serif'}));
+      prims.push(P_GEND); return;
+    }
+    if (ys.length>1) prims.push(P_line(cx, Math.min.apply(null,ys), cx, Math.max.apply(null,ys), {stroke:'#384152','stroke-width':1.2}));
+    ys.forEach(y=>{
+      prims.push(P_rect(x, y-gateH/2, minW, gateH, {fill:fill, stroke:'#243047','stroke-width':1.1}));
+      prims.push(P_text(cx, y+1, lbl, {fs:12, fill:'#111827','font-family':'Arial,sans-serif'}));
+    });
+    prims.push(P_GEND);
+  });
+  const svg=serializeSvg(prims, W, H, {vertical:false, scale:opts.scale});
+  return {svg:svg, meta:{style:'legacy', nCols:lay.nCols, bands:1}};
+}
+
+/* ---------------- 7. 自研字符画（原型） ---------------- */
+function renderAscii(circ, o){
+  o=o||{};
+  const U = o.charset!=='ascii';
+  const fold = o.fold|0;
+  const H=U?'─':'-', V=U?'│':'|', CTL=U?'●':'*', SWP=U?'×':'x', BAR=U?'┊':':',
+        QW=U?'═':'=', QV=U?'║':'||', MEAS='M', LB=U?'┤':'|', RB=U?'├':'|';
+  const TGT = U? '⊕' : '(+)';
+  const lay=layoutCircuit(circ);
+  const nQ=circ.qubits, nC=circ.cbits||0;
+  const bands = fold>0? foldBands(lay.nCols, null, fold) : [{start:0,end:lay.nCols-1}];
+  const outLines=[];
+  const maxLabel=(op)=>{
+    if (op.op==='MEASURE') return 1;
+    if (op.op==='BARRIER') return 1;
+    if (FLOW_OPS.has(op.op)) return 1;
+    if (op.op==='COP') return copLabel(op).length+4;
+    let nm=(op.op==='CHANNEL'? op.name : opName(op));
+    const ps=paramStrs(op, o.param||'pi');
+    let pl=ps.length? '('+(ps.length>6? ps.length+'p':ps.join(','))+')':'';
+    if (op.op==='QRAM') return ('QRAM:'+op.name).length+4;
+    if (op.op==='DEF') return ('DEF '+op.name+'{…}').length+4;
+    return (nm+pl).length+4;
+  };
+  bands.forEach((band, bi)=>{
+    if (bands.length>1) outLines.push('── part '+(bi+1)+'/'+bands.length+' '+(U?'─':'-').repeat(24));
+    const cols=[]; for(let c=band.start;c<=band.end;c++) cols.push(c);
+    if(!cols.length) return;
+    /* 每列宽度 */
+    const w={}; cols.forEach(c=>w[c]=3);
+    lay.ops.forEach(op=>{ if(op.col>=band.start&&op.col<=band.end){ w[op.col]=Math.max(w[op.col], maxLabel(op)); }});
+    const colStart={}; let acc=0; cols.forEach(c=>{colStart[c]=acc; acc+=w[c]+1;});
+    const totalW=acc;
+    /* 行集合：qubit 行 + 分隔行 + clane 行 */
+    const rows=[];
+    for(let q=0;q<nQ;q++) rows.push({kind:'q', i:q});
+    if (nC){ rows.push({kind:'sep'}); for(let c=0;c<nC;c++) rows.push({kind:'c', i:c}); }
+    const rowIdx={}; rows.forEach((r,ri)=>rowIdx[r.kind+(r.i!=null?r.i:'')]=ri);
+    const grid = rows.map(()=> cols.map(()=>[])); /* 每格 overlay 列表 */
+    const put=(ri, c, item)=>{ if(ri<0||ri>=rows.length) return; const ci=cols.indexOf(c); if(ci<0) return; grid[ri][ci].push(item); };
+    lay.ops.forEach(op=>{
+      if(op.col<band.start||op.col>band.end) return;
+      const c=op.col, kind=classify(op);
+      const qs=op.q||[];
+      const ri=(q)=>rowIdx['q'+q];
+      if (kind==='box1'||kind==='span'||kind==='reset'||kind==='channel'||kind==='qram'||kind==='def'){
+        const label = kind==='reset'? (U?'|0⟩':'|0>') :
+          kind==='qram'? 'QRAM:'+op.name :
+          kind==='def'? 'DEF '+op.name+'{…}' :
+          kind==='channel'? '~'+(op.name.length>10? op.name.slice(0,3)+'.':op.name)+'('+(op.p&&op.p.length? (op.p.length>6? op.p.length+'p':paramStrs(op,o.param||'pi').join(',')) :'')+')' :
+          (op.op==='CHANNEL'? op.name:opName(op)) + (()=>{const ps=paramStrs(op,o.param||'pi'); return ps.length? '('+(ps.length>6?ps.length+'p':ps.join(','))+')':'';})();
+        qs.forEach((q,k)=>put(ri(q), c, {label: k===0? label:'', box:true}));
+      } else if (kind==='measure'){
+        put(ri(op.q[0]), c, {label:MEAS, box:true});
+        const cj=Array.isArray(op.c)? op.c[0]:op.c;
+        if (cj!=null && rowIdx['c'+cj]!=null){
+          for(let r2=ri(op.q[0])+1; r2<=rowIdx['c'+cj]; r2++) put(r2, c, {vert:QV});
+          put(rowIdx['c'+cj], c, {label:U?'╪':'#', claneMark:true});
+        }
+      } else if (kind==='barrier'){
+        const mn=Math.min.apply(null,qs.map(ri)), mx=Math.max.apply(null,qs.map(ri));
+        for(let r2=mn;r2<=mx;r2++) put(r2, c, {bar:true});
+      } else if (kind==='flow'){ /* 括号行处理，见下 */
+      } else if (kind==='cop'){
+        put(rowIdx['c'+op.c[0]], c, {label: U? copLabel(op) : copLabel(op).replace(/←/g,'<-'), box:true, clane:true});
+      } else {
+        /* 符号门：cx ccx cz swap cswap cbox mcx */
+        const ysAll=qs.map(ri).concat((op.ctrl||[]).map(ri));
+        const mn=Math.min.apply(null,ysAll), mx=Math.max.apply(null,ysAll);
+        for(let r2=mn;r2<=mx;r2++) put(r2, c, {vert:V});
+        (op.ctrl||[]).forEach(q=>put(ri(q), c, {label:CTL}));
+        if (kind==='cx'){ put(ri(op.q[0]),c,{label:CTL}); put(ri(op.q[1]),c,{label:TGT}); }
+        else if (kind==='mcx'){ put(ri(op.q[0]),c,{label:TGT}); }
+        else if (kind==='ccx'){ put(ri(op.q[0]),c,{label:CTL}); put(ri(op.q[1]),c,{label:CTL}); put(ri(op.q[2]),c,{label:TGT}); }
+        else if (kind==='cz'){ put(ri(op.q[0]),c,{label:CTL}); put(ri(op.q[1]),c,{label:CTL});
+          const ps=paramStrs(op,o.param||'pi'); if(ps.length) put(ri(op.q[0])-1<0?ri(op.q[0]):mn, c, {label:'', box:false}); }
+        else if (kind==='swap'){ put(ri(op.q[0]),c,{label:SWP}); put(ri(op.q[1]),c,{label:SWP}); }
+        else if (kind==='cswap'){ put(ri(op.q[1]),c,{label:SWP}); put(ri(op.q[2]),c,{label:SWP}); }
+        else if (kind==='cbox'){ qs.forEach((q,k)=>put(ri(q), c, {label:k===0? opName(op)+(()=>{const ps=paramStrs(op,o.param||'pi');return ps.length?'('+ps.join(',')+')':''})() : '', box:true})); }
+      }
+    });
+    /* 材料化行 */
+    const bandStartIdx=outLines.length;
+    const head=(r)=> r.kind==='q'? 'q['+r.i+'] ' : r.kind==='c'? 'c['+r.i+'] ' : '    ';
+    rows.forEach((r, ri)=>{
+      let s=head(r);
+      cols.forEach((c,ci)=>{
+        const wdt=w[c];
+        const fill = r.kind==='q'? H : r.kind==='c'? QW : ' ';
+        let cell = fill.repeat(wdt);
+        const ov=grid[ri][ci];
+        /* 两遍：先画竖直连接/barrier，再画标签/盒 —— 标签优先，不被连接线穿破 */
+        const pass1=ov.filter(it=>it.vert||it.bar), pass2=ov.filter(it=>!(it.vert||it.bar));
+        [pass1,pass2].forEach(pass=>pass.forEach(it=>{
+          const A=(t)=> U? t : String(t).replace(/π/g,'pi').replace(/θ/g,'th').replace(/φ/g,'ph')
+            .replace(/α/g,'a').replace(/†/g,"'").replace(/‥|…/g,'..').replace(/₂/g,'2').replace(/≈/g,'~');
+          if (it.vert){
+            const pos=Math.floor((wdt-it.vert.length)/2);
+            cell = cell.slice(0,pos)+it.vert+cell.slice(pos+it.vert.length);
+          } else if (it.bar){
+            const pos=Math.floor(wdt/2); cell=cell.slice(0,pos)+BAR+cell.slice(pos+1);
+          } else if (it.label!=null && it.label!==''){
+            const t=A(it.label);
+            if (it.box||it.claneMark){
+              const txt=LB+t+RB;
+              const pos=Math.max(0,Math.floor((wdt-txt.length)/2));
+              cell = cell.slice(0,pos)+txt+cell.slice(pos+txt.length);
+            } else {
+              const pos=Math.max(0,Math.floor((wdt-t.length)/2));
+              cell = cell.slice(0,pos)+t+cell.slice(pos+t.length);
+            }
+          } else if (it.box){ /* 无标签的续行盒 */
+            cell=LB+fill.repeat(wdt-2)+RB;
+          }
+        }));
+        s+=cell+(ci<cols.length-1? (r.kind==='q'? H : r.kind==='c'? QW : ' ') : '');
+      });
+      outLines.push(s.replace(/\s+$/,''));
+    });
+    /* 控制流括号行（band 内） */
+    lay.spans.forEach(sp=>{
+      const c1=Math.max(sp.begin.col,band.start), c2=Math.min(sp.end.col,band.end);
+      if(c1>c2) return;
+      const x1=colStart[c1]+1, x2=colStart[c2]+w[c2]-1;
+      const label='─ '+sp.kind+' '+sp.cond+' ';
+      const line=(new Array(totalW)).fill(' ');
+      for(let x=x1;x<=x2;x++) if(line[x]!==undefined) line[x]=' ';
+      let s='     '+line.join('');
+      s = s.slice(0,x1)+'└'+s.slice(x1+1);
+      s = s.slice(0,x2)+'┘'+s.slice(x2+1);
+      const lx=Math.floor((x1+x2)/2-label.length/2);
+      s = s.slice(0,Math.max(5,lx))+label+s.slice(Math.max(5,lx)+label.length);
+      outLines.splice(bandStartIdx, 0, s.replace(/\s+$/,''));
+    });
+  });
+  return outLines.join('\n');
+}
+
+/* ---------------- 8. quantikz LaTeX 生成器 ---------------- */
+function renderQuantikz(circ, o){
+  o=o||{};
+  const lay=layoutCircuit(circ);
+  const nQ=circ.qubits, nC=circ.cbits||0;
+  const comments=[];
+  if (circ.params&&circ.params.length) comments.push('% PARAM '+circ.params.join(', '));
+  const TEXSYM={'α₂':'\\alpha_2','θ':'\\theta','φ':'\\phi','π':'\\pi','α':'\\alpha','₂':'_2'};
+  const texP=(p)=>{ if(typeof p==='string'){ let s=p; for(const k in TEXSYM) s=s.split(k).join(TEXSYM[k]); return s; }
+    const pi=toPi(p); if(pi) return pi.split('π').join('\\pi'); return fmtNum(p); };
+  const TEXNAME={RX:'R_X',RY:'R_Y',RZ:'R_Z',U1:'U_1',U2:'U_2',U3:'U_3',RPhi:'R_\\Phi',RPhi90:'R_{\\Phi 90}',RPhi180:'R_{\\Phi 180}',
+    CNOT:'X',CX:'X',TOFFOLI:'X',CCX:'X'};
+  const gridQ=[]; for(let q=0;q<nQ;q++){ gridQ.push(new Array(lay.nCols).fill(null)); }
+  const skip=new Array(nQ); for(let q=0;q<nQ;q++) skip[q]=new Array(lay.nCols).fill(false);
+  const R=(q,c,tok)=>{ if(q>=0&&q<nQ&&c>=0&&c<lay.nCols) gridQ[q][c]=tok; };
+  lay.ops.forEach(op=>{
+    const c=op.col, kind=classify(op), qs=op.q||[], u=op.op.toUpperCase();
+    if (kind==='box1'){
+      const ps=paramStrs(op,o.param||'pi');
+      const nm=(TEXNAME[op.op]||op.op)+(op.dagger? '^{\\dag}':'');
+      R(qs[0], c, ps.length? '\\gate{'+nm+'('+ps.map(texP).join(',')+')}' : '\\gate{'+nm+'}');
+    } else if (kind==='span'||kind==='channel'){
+      const ps=paramStrs(op,o.param||'pi');
+      const nm=(kind==='channel'? op.name : ((TEXNAME[op.op]||op.op)+(op.dagger? '^{\\dag}':'')));
+      const inner=nm+(ps.length? '('+(ps.length>6? '\\times'+ps.length: ps.map(texP).join(','))+')':'');
+      const n=qs.length, q0=Math.min.apply(null,qs);
+      R(q0, c, (kind==='channel'? '\\gate['+n+',style={dashed}]':'\\gate['+n+']')+'{'+inner+'}');
+      for(let k=1;k<n;k++) skip[qs[k]][c]=true;
+    } else if (kind==='cx'||kind==='mcx'){
+      const ctrls=kind==='cx'? [qs[0]] : op.ctrl, targ=kind==='cx'? qs[1]: qs[0];
+      ctrls.forEach(q=>R(q,c,'\\ctrl{'+(targ-q)+'}'));
+      R(targ,c,'\\targ{}');
+    } else if (kind==='ccx'){
+      R(qs[0],c,'\\ctrl{'+(qs[2]-qs[0])+'}'); R(qs[1],c,'\\ctrl{'+(qs[2]-qs[1])+'}'); R(qs[2],c,'\\targ{}');
+    } else if (kind==='cz'){
+      R(qs[0],c,'\\ctrl{'+(qs[1]-qs[0])+'}'); R(qs[1],c,'\\control{}');
+      const ps=paramStrs(op,o.param||'pi'); if(ps.length) comments.push('% '+op.op+' 参数: '+ps.map(texP).join(', ')+'（受控相位角）');
+    } else if (kind==='swap'){ R(qs[0],c,'\\swap'); R(qs[1],c,'\\qswap'); }
+    else if (kind==='cswap'){
+      R(qs[0],c,'\\ctrl{'+(qs[1]-qs[0])+'}'); R(qs[1],c,'\\swap'); R(qs[2],c,'\\qswap');
+    } else if (kind==='cbox'){
+      const ps=paramStrs(op,o.param||'pi');
+      op.ctrl.forEach(q=>R(q,c,'\\ctrl{'+(qs[0]-q)+'}'));
+      R(qs[0],c,'\\gate{'+(TEXNAME[op.op]||op.op)+(op.dagger? '^{\\dag}':'')+(ps.length?'('+ps.map(texP).join(',')+')':'')+'}');
+    } else if (kind==='measure'){
+      R(qs[0],c,'\\meter{}');
+      const cj=Array.isArray(op.c)? op.c[0]:op.c;
+      if(cj!=null) comments.push('% MEASURE q['+qs[0]+'] -> c['+cj+']（quantikz 经典线略）');
+    } else if (kind==='reset'){ R(qs[0],c,'\\gate{|0\\rangle} % RESET'); }
+    else if (kind==='barrier'){
+      const q0=Math.min.apply(null,qs), n=qs.length;
+      R(q0,c,'\\barrier['+(n-1+0.3)+']{}');
+    } else if (kind==='qram'){
+      R(qs[0],c,'\\gate['+qs.length+']{\\text{QRAM }'+op.name+'}');
+      for(let k=1;k<qs.length;k++) skip[qs[k]][c]=true;
+      comments.push('% QRAM '+op.name+': addr q['+qs.slice(0,op.addr||2).join('],q[')+'] / data q['+qs.slice(op.addr||2).join('],q[')+']');
+    } else if (kind==='def'){
+      R(qs[0],c,'\\gate['+qs.length+',style={double}]{\\text{DEF: }'+op.name+'}');
+      for(let k=1;k<qs.length;k++) skip[qs[k]][c]=true;
+    } else if (kind==='cop'){ comments.push('% classical: '+copLabel(op)+'（quantikz 无经典指令，退化为注释）'); }
+    else if (kind==='flow'){ comments.push('% '+op.op+(op.cond? ' '+op.cond:'')+'（OriginIR-ext 控制流，quantikz 不支持）'); }
+  });
+  const lines=[];
+  comments.forEach(cm=>lines.push(cm));
+  lines.push('\\begin{quantikz}[column sep=0.9em, row sep=0.5em]');
+  for(let q=0;q<nQ;q++){
+    let s='  q['+q+']';
+    for(let c2=0;c2<lay.nCols;c2++){
+      if (skip[q][c2]) continue;
+      s+=' & '+(gridQ[q][c2]||'\\qw');
+    }
+    s+=' \\\\';
+    lines.push(s);
+  }
+  lines.push('\\end{quantikz}');
+  return lines.join('\n');
+}
+
+/* ---------------- 9. 页面接线 ---------------- */
+const state={demo:'full_ext', style:'quantikz', fold:'auto', vertical:false, qubitOrder:'asc',
+  theme:'light', param:'pi', showClbits:true, scale:100, charset:'unicode', afold:0};
+function optsNow(){ return {fold:state.fold==='auto'? 'auto': +state.fold, vertical:state.vertical,
+  qubitOrder:state.qubitOrder, theme:state.theme, param:state.param, showClbits:state.showClbits, scale:state.scale}; }
+
+function latexHighlight(src){
+  let s=escStr(src);
+  s=s.replace(/(%[^\n]*)/g,'<span class="c">$1</span>');
+  s=s.replace(/(\\[a-zA-Z]+)/g,'<span class="bs">$1</span>');
+  return s;
+}
+function buildOriginIR(circ){
+  const L=[];
+  L.push('QINIT '+circ.qubits);
+  L.push('CREG '+(circ.cbits||0));
+  if (circ.params&&circ.params.length) L.push('PARAM '+circ.params.join(', '));
+  let indent=0;
+  circ.ops.forEach(op=>{
+    if (op.op==='QELSE'){ L.push('  '.repeat(indent)+'QELSE'); return; }
+    if (op.op==='ENDIF'){ indent=Math.max(0,indent-1); L.push('  '.repeat(indent)+'ENDQIF'); return; }
+    if (op.op==='ENDWHILE'){ indent=Math.max(0,indent-1); L.push('  '.repeat(indent)+'ENDQWHILE'); return; }
+    const pad='  '.repeat(indent);
+    if (op.op==='QIF'){ L.push(pad+'QIF '+op.cond); indent++; return; }
+    if (op.op==='QWHILE'){ L.push(pad+'QWHILE '+op.cond+'  // max_iterations'); indent++; return; }
+    if (op.op==='QRAM'){ L.push(pad+'QRAMDECL '+op.name+' '+op.addr+' '+op.data);
+      L.push(pad+op.name+' q['+op.q.join('], q[')+']'); return; }
+    if (op.op==='DEF'){ L.push(pad+'DEF '+op.name+' q['+op.q.join('], q[')+']');
+      L.push(pad+'  '+(op.note||'…')); L.push(pad+'ENDDEF'); return; }
+    if (op.op==='COP'){ L.push(pad+op.name+' c['+op.c.join('], c[')+']'); return; }
+    let s=pad;
+    if (op.op==='MEASURE'){ L.push(pad+'MEASURE q['+op.q[0]+'], c['+(Array.isArray(op.c)?op.c[0]:op.c)+']'); return; }
+    if (op.op==='RESET'){ L.push(pad+'RESET q['+op.q[0]+']'); return; }
+    if (op.op==='BARRIER'){ L.push(pad+'BARRIER q['+op.q.join('], q[')+']'); return; }
+    if (op.op==='CHANNEL'){ L.push(pad+op.name+' q['+op.q.join('], q[')+']'+(op.p&&op.p.length? ', ('+paramStrs(op,'pi').join(', ')+')':'')); return; }
+    s+=op.op+' q['+op.q.join('], q[')+']';
+    if (op.p&&op.p.length) s+=', ('+paramStrs(op,'pi').join(', ')+')';
+    if (op.dagger) s+=' dagger';
+    if (op.ctrl&&op.ctrl.length) s+=' controlled_by (q['+op.ctrl.join('], q[')+'])';
+    L.push(s);
+  });
+  return L.join('\n');
+}
+
+const FEATURES=[
+  ['H X Y Z S SX T I', o=>['H','X','Y','Z','S','SX','T','I'].includes(o.op)],
+  ['dagger（S† T† ISWAP†）', o=>o.dagger],
+  ['1Q 参数门 RX RY RZ U1 RPhi90/180 RPhi U2 U3', o=>['RX','RY','RZ','U1','RPhi90','RPhi180','RPhi','U2','U3'].includes(o.op)],
+  ['CNOT / CZ', o=>['CNOT','CZ'].includes(o.op)],
+  ['SWAP / ECR / ISWAP', o=>['SWAP','ECR','ISWAP'].includes(o.op)],
+  ['XX / YY / ZZ / XY', o=>['XX','YY','ZZ','XY'].includes(o.op)],
+  ['PHASE2Q / UU15', o=>['PHASE2Q','UU15'].includes(o.op)],
+  ['TOFFOLI / CSWAP', o=>['TOFFOLI','CSWAP'].includes(o.op)],
+  ['controlled_by / 多控制', o=>o.ctrl&&o.ctrl.length],
+  ['BARRIER', o=>o.op==='BARRIER'],
+  ['符号参数 θ φ α[·]', o=>o.p&&o.p.some(p=>typeof p==='string')],
+  ['MEASURE（mid+终端）/ RESET', o=>o.op==='MEASURE'||o.op==='RESET'],
+  ['经典指令 AND/OR/XOR/MOV/NOT', o=>o.op==='COP'],
+  ['QIF/QELSE / QWHILE', o=>FLOW_OPS.has(o.op)],
+  ['QRAM', o=>o.op==='QRAM'],
+  ['误差通道 ×8', o=>o.op==='CHANNEL'],
+  ['DEF/ENDDEF 子程序', o=>o.op==='DEF'],
+];
+
+const API_PY = `import uniqc
+from uniqc import Circuit
+
+c = Circuit(4)
+c.h(0); c.cnot(0, 1); c.rx(2, 3.1415926/2)
+c.measure(0, 1)
+
+# ── 1) 多种输出形态，一个入口 ──────────────────────────────
+c.draw()                     # 智能默认：终端→字符画；Jupyter→SVG 富显示
+c.draw("text")               # 自研字符画（不依赖 pyqpanda3，py3.14 可用）
+c.draw("svg")                # 矢量图：返回 SVG 字符串
+c.draw("png", scale=2)       # 位图：matplotlib / cairosvg 自动探测
+c.draw("mpl")                # matplotlib Figure（可继续二次加工）
+c.draw("latex")              # quantikz 源码字符串
+c.draw("html")               # 自包含静态 HTML（悬停提示）
+c.draw("interactive")        # 自包含交互 HTML（缩放/平移/点击详情）
+
+# ── 2) 通用选项（所有模式共享） ────────────────────────────
+c.draw("svg",
+    style="quantikz",        # quantikz | qiskit | modern | print
+    fold=20,                 # 每行 gate 数：int | None=自动 | 0=不限
+    orientation="h",         # "h" 时间→ | "v" 时间↓
+    qubit_order="asc",       # asc: q0 在上 / desc: q0 在下
+    theme="light",           # light | dark
+    param_mode="pi",         # pi | decimal | symbol | hidden
+    show_clbits=True,        # 经典线显隐
+    filename="circuit.svg",  # 提供则同时写文件
+)
+
+# ── 3) 富显示集成 ──────────────────────────────────────────
+c                           # Jupyter：_repr_svg_ 直接出图
+print(c)                    # 终端：__str__ 输出字符画
+
+# ── 4) 模块级 / CLI 入口（接受 Circuit 或 IR 字符串） ───────
+uniqc.visualization.draw(c, mode="svg", style="qiskit")
+uniqc.visualization.render(c, mode="html", fold=16)
+uniqc circuit draw bell.originir --mode svg --style quantikz --fold 20 -o bell.svg`;
+
+const CHECKS=[
+ {key:'style', q:'① 主视觉风格（未来 svg/png/html/interactive 的默认皮肤）',
+  opts:[{v:'A quantikz 学术风',d:'论文/报告优先'},{v:'B qiskit 经典风',d:'Jupyter 日常优先'},{v:'C modern Web 风',d:'Gateway/交互优先'},{v:'D print 灰度风',d:'文档打印优先'},{v:'A 为默认 + 可切换',d:'学术默认、全风格可选'},{v:'B 为默认 + 可切换',d:'qiskit 默认、全风格可选'},{v:'C 为默认 + 可切换',d:'现代默认、全风格可选'}]},
+ {key:'mode', q:'② c.draw() 无参时的默认模式',
+  opts:[{v:'text（终端智能探测）',d:'终端→text，Jupyter→svg'},{v:'svg',d:'总是矢量'},{v:'text 总是字符画',d:'最保守'}]},
+ {key:'charset', q:'③ 字符画默认符号集',
+  opts:[{v:'unicode',d:'● ⊕ ─（现代终端）'},{v:'ascii',d:'* (+) -（CI/老终端）'}]},
+ {key:'czsym', q:'④ CZ / CP / CPhase 的目标端画法',
+  opts:[{v:'●（双点，qiskit/quantikz 惯例）',d:'两端口都实心点'},{v:'⊞（方框内加号，更醒目）',d:'目标端更易辨认'}]},
+ {key:'param', q:'⑤ 参数默认显示方式',
+  opts:[{v:'pi（π/4 形式）',d:'可读性最好'},{v:'decimal',d:'精确数值'},{v:'symbol',d:'符号 θ 优先'},{v:'hidden',d:'默认藏起，悬停可见'}]},
+ {key:'fold', q:'⑥ 每行 gate 数 fold 默认值',
+  opts:[{v:'auto',d:'按输出宽度自动'},{v:'20',d:'固定 20'},{v:'16',d:'固定 16'},{v:'0 不折叠',d:'超宽不换行'}]},
+ {key:'ori', q:'⑦ 默认方向',
+  opts:[{v:'横向（时间→）',d:'惯例'},{v:'纵向（时间↓）',d:'长线路更友好'}]},
+ {key:'qord', q:'⑧ 默认 qubit 顺序',
+  opts:[{v:'q0 在上',d:'与 OriginIR 下标直觉一致'},{v:'q0 在下',d:'qiskit 惯例（高位在上）'}]},
+ {key:'clbit', q:'⑨ 经典线（cbit）默认',
+  opts:[{v:'显示',d:'有测量就画双线'},{v:'隐藏',d:'只画量子部分'}]},
+ {key:'compat', q:'⑩ 旧 API 兼容策略',
+  opts:[{v:'wrapper + DeprecationWarning',d:'按 0.0.x 弃用政策，0.1.0 移除'},{v:'直接替换',d:'0.1.0 尚未广泛使用，干净切换'}]},
+ {key:'png', q:'⑪ PNG 后端依赖',
+  opts:[{v:'自动探测 mpl/cairosvg',d:'零新增硬依赖'},{v:'仅 matplotlib',d:'复用 [visualization] extra'},{v:'仅 cairosvg',d:'更轻量'}]},
+ {key:'inter', q:'⑫ interactive 模式的功能范围',
+  opts:[{v:'悬停 + 点击详情',d:'够用就好'},{v:'悬停 + 详情 + 缩放平移',d:'推荐'},{v:'再加列高亮/层级标注',d:'调试向'}]},
+ {key:'name', q:'⑬ 入口命名',
+  opts:[{v:'Circuit.draw() 为主入口',d:'对齐 qiskit'},{v:'uniqc.visualization.render() 为主',d:'函数式'},{v:'两者等价',d:'薄互转'}]},
+];
+const chosen={};
+
+function initUI(){
+  /* 风格卡 */
+  const cards=$('styleCards');
+  cards.innerHTML=STYLE_ORDER.map(k=>{
+    const s=STYLES[k];
+    return '<div class="stylecard'+(k==='legacy'?' legacy':'')+(k===state.style?' on':'')+'" data-style="'+k+'">'+
+      '<div class="ttl">'+s.name+'</div><div class="sub">'+s.desc+'</div>'+
+      '<div class="sw">'+s.swatches.map(c=>'<i style="background:'+c+'"></i>').join('')+'</div></div>';
+  }).join('');
+  cards.addEventListener('click', e=>{
+    const el=e.target.closest('.stylecard'); if(!el) return;
+    state.style=el.dataset.style;
+    cards.querySelectorAll('.stylecard').forEach(x=>x.classList.toggle('on', x===el));
+    renderMain();
+  });
+  /* 分段控件 */
+  const seg=(id, fn)=>{ const el=$(id); el.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    el.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+    fn(b.dataset.v); renderMain(); renderSide();
+  }); };
+  seg('segOri', v=>state.vertical=v==='v');
+  seg('segQord', v=>state.qubitOrder=v);
+  seg('segTheme', v=>state.theme=v);
+  seg('segParam', v=>state.param=v);
+  seg('segClbit', v=>state.showClbits=v==='on');
+  seg('segCharset', v=>{state.charset=v; renderSide();});
+  seg('segAfold', v=>{state.afold=+v; renderSide();});
+  $('foldSel').addEventListener('change', e=>{state.fold=e.target.value; renderMain();});
+  $('demoSel').addEventListener('change', e=>{state.demo=e.target.value; renderMain(); renderSide(); renderIR(); renderCover();});
+  $('zoomSel').addEventListener('input', e=>{state.scale=+e.target.value||100; renderMain();});
+  $('btnShowIR').addEventListener('click', ()=>{const b=$('irBox'); b.style.display=b.style.display==='none'?'block':'none'; renderIR();});
+  /* 详情面板（事件委托：主图 + 对照图） */
+  document.addEventListener('click', e=>{
+    const g=e.target.closest && e.target.closest('g.op'); if(!g) return;
+    const host=g.closest('[data-circ]'); if(!host) return;
+    const circ=CIRCUITS[host.dataset.circ];
+    const i=+g.getAttribute('data-i');
+    const op=circ && circ.ops[i]; if(!op) return;
+    $('detailNone').style.display='none';
+    const body=$('detailBody'); body.style.display='block';
+    body.textContent=JSON.stringify(op, null, 2).replace(/"/g,'');
+  });
+  /* 图例 */
+  $('legendBar').innerHTML=['● 控制点','⊕ CNOT/多控目标','× SWAP','▭ 带参门盒','▭▭ 跨线耦合盒',
+    '⌒ 测量仪表','⇢ 双线＝经典线','╌ 通道/barrier','⟨ ⟩ 控制流括号'].map(s=>'<span>'+s+'</span>').join('');
+  /* API 示例 */
+  $('apiMain').textContent=API_PY;
+  /* checklist */
+  const cl=$('checklist');
+  cl.innerHTML=CHECKS.map(c=>'<div class="qgroup" data-key="'+c.key+'"><div class="q">'+c.q+'</div><div class="opts">'+
+    c.opts.map(o=>'<span class="opt" data-v="'+escStr(o.v)+'" title="'+escStr(o.d||'')+'">'+escStr(o.v)+'</span>').join('')+
+    '</div></div>').join('');
+  cl.addEventListener('click', e=>{
+    const el=e.target.closest('.opt'); if(!el) return;
+    const grp=el.closest('.qgroup');
+    grp.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on', x===el));
+    chosen[grp.dataset.key]=el.dataset.v;
+    updateDecision();
+  });
+  renderMain(); renderSide(); renderIR(); renderCover(); renderCompare(); spyTOC();
+}
+function updateDecision(){
+  const miss=CHECKS.filter(c=>!chosen[c.key]);
+  if (miss.length){ $('decisionOut').textContent='（还剩 '+miss.length+' 项未选：'+miss.map(m=>m.q.replace(/^[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬]/,'').slice(0,12)+'…').join('、')+'）'; return; }
+  $('decisionOut').textContent='```\n'+CHECKS.map(c=>{
+    const o=(c.opts.find(x=>x.v===chosen[c.key])||{});
+    return c.q.replace(/^[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬]\s*/,'')+'：'+chosen[c.key]+(o.d? '（'+o.d+'）':'');
+  }).join('\n')+'\n```';
+}
+function renderMain(){
+  const stage=$('stageMain'); const c=CIRCUITS[state.demo];
+  const r = state.style==='legacy'? renderLegacySVG(c,{scale:state.scale}) :
+    renderCircuitSVG(c, state.style, optsNow());
+  stage.dataset.circ=state.demo;
+  stage.classList.toggle('darkbg', state.theme==='dark');
+  stage.innerHTML=r.svg+'<span class="hint" style="color:'+(state.theme==='dark'?'#64748b':'')+'">点击任意门 → 右侧看详情</span>';
+  const st=STYLES[state.style];
+  $('stageNote').textContent=c.title+' · '+st.name+' · '+r.meta.nCols+' 层 → 折叠为 '+r.meta.bands+' 行 · fold='+
+    (state.fold==='auto'?'auto':state.fold)+' · '+({h:'横向',v:'纵向'})[state.vertical?'v':'h']+' · '+state.theme+' · 参数 '+state.param;
+}
+function renderSide(){
+  const c=CIRCUITS[state.demo];
+  $('asciiView').textContent=renderAscii(c,{charset:state.charset, fold:state.afold, param:state.param});
+  $('latexView').innerHTML=latexHighlight(renderQuantikz(c,{param:state.param}));
+}
+function renderIR(){ const c=CIRCUITS[state.demo]; $('irView').textContent=buildOriginIR(c); }
+function renderCover(){
+  const c=CIRCUITS.full_ext;
+  $('coverList').innerHTML='<div class="badges">'+FEATURES.map(f=>{
+    const hit=c.ops.some(f[1]);
+    return '<span class="badge '+(hit?'hit':'miss')+'">'+(hit?'✓ ':'✗ ')+f[0]+'</span>';
+  }).join('')+'</div><p class="small">✓=full_ext 演示线路包含该特性（本页所有渲染均已覆盖；✗ 不应出现）。</p>';
+}
+function renderCompare(){
+  const host=$('compareAll');
+  host.innerHTML=STYLE_ORDER.map(k=>{
+    const st=STYLES[k];
+    const r = k==='legacy'? renderLegacySVG(CIRCUITS.basic,{scale:92}) :
+      renderCircuitSVG(CIRCUITS.basic, k, {scale:92, fold:0, theme:'light', param:'pi', showClbits:true});
+    return '<div class="stagewrap" data-circ="basic"><div class="stage'+(k==='legacy'?'':'')+'" style="padding:12px 8px">'+r.svg+'</div>'+
+      '<div class="detail" style="display:none"></div></div>'.replace('<div class="detail" style="display:none"></div>','')+
+      '<h4>'+st.name+'<span class="small"> —— basic 线路</span></h4>';
+  }).join('');
+  /* 重排：标题在图上方 */
+  host.querySelectorAll('.stagewrap').forEach((el,i)=>{
+    const h4=host.querySelectorAll('h4')[i];
+    host.insertBefore(h4, el);
+  });
+}
+function spyTOC(){
+  const links=document.querySelectorAll('nav.toc a');
+  const secs=[...document.querySelectorAll('section')];
+  window.addEventListener('scroll', ()=>{
+    let cur=secs[0];
+    secs.forEach(s=>{ if (s.getBoundingClientRect().top<80) cur=s; });
+    links.forEach(a=>a.classList.toggle('act', a.getAttribute('href')==='#'+cur.id));
+  }, {passive:true});
+}
+
+/* node 冒烟测试钩子 / 浏览器启动 */
+if (typeof document!=='undefined' && typeof module==='undefined'){
+  initUI();
+}
+if (typeof module!=='undefined' && module.exports){
+  module.exports={CIRCUITS, STYLES, STYLE_ORDER, layoutCircuit, renderCircuitSVG, renderLegacySVG,
+    renderAscii, renderQuantikz, classify, paramStrs, toPi};
+}
+</script>
+</body>
+</html>
