@@ -1,78 +1,60 @@
 """Quantum circuit visualization tools.
 
-This module provides text-based circuit drawing capabilities for
-quantum programs in OriginIR or QASM format.
+.. deprecated::
+    The module-level ``draw`` / ``draw_html`` wrappers are deprecated in favor
+    of :func:`uniqc.visualization.render` (or equivalently
+    ``Circuit.draw(...)``), which offer self-developed text art (no pyqpanda3
+    dependency), SVG/PNG/LaTeX/HTML/interactive modes, styles, folding, and
+    full OriginIR-ext coverage.  The wrappers will be removed in uniqc 0.2.0.
 """
 
 __all__ = ["draw", "draw_html"]
-from pyqpanda3.core import PIC_TYPE, draw_qprog
-from pyqpanda3.intermediate_compiler import convert_originir_string_to_qprog
 
-from uniqc.compile.converter import convert_qasm_to_oir
-
-
-def _from_originir(originir_str):
-    qprog = convert_originir_string_to_qprog(originir_str)
-    return qprog
-
-
-def _from_qasm(qasm_str):
-    oir_str = convert_qasm_to_oir(qasm_str)
-    qprog = _from_originir(oir_str)
-    return qprog
+from uniqc._deprecation import warn_removed_in_0_2_0
 
 
 def draw(ir_str, language="OriginIR"):
-    """
-    Draw the circuit in text format.
+    """Draw the circuit in text format.  Deprecated — use ``render(mode="text")``.
 
     Args:
         ir_str (str): The input circuit in OriginIR or QASM format.
-        language (str): The language of the input circuit. Default is 'OriginIR'.
+        language (str): Deprecated. The language is now auto-detected from
+            the content (``QINIT``/``OPENQASM`` headers).
 
     Returns:
-        qprog (QProg): The QProg object of the input circuit.
-
+        TextDrawing: The rendered ASCII drawing (also printed for
+        backwards compatibility).
     """
+    warn_removed_in_0_2_0(
+        "uniqc.visualization.draw()",
+        replacement="uniqc.visualization.render(circuit, mode='text')",
+        detail="The pyqpanda3 delegate is gone: text art is now self-developed, "
+        "the input language is auto-detected, and the drawing string is returned "
+        "instead of a pyqpanda3 QProg.",
+    )
+    from .circuit_render import render
 
-    if language == "OriginIR":
-        qprog = _from_originir(ir_str)
-    elif language == "QASM":
-        qprog = _from_qasm(ir_str)
-    else:
-        raise ValueError(f"Unsupported language: {language}. \n")
-
-    print(draw_qprog(qprog, PIC_TYPE.TEXT, {}, param_show=True))
-    return qprog
+    art = render(ir_str, mode="text")
+    print(art)
+    return art
 
 
 def draw_html(ir_str, language="OriginIR", output_path=None, *, title="Quantum circuit"):
-    """Render a static HTML/SVG circuit diagram.
+    """Render a static HTML/SVG circuit diagram.  Deprecated — use ``render(mode="html")``.
 
-    The HTML output is intentionally static: gates expose parameters and raw
-    operation data through native SVG hover tooltips, with no editable state or
-    JavaScript dependency.
+    Args:
+        ir_str (str): The input circuit in OriginIR or QASM format.
+        language (str): Deprecated. Auto-detected from content.
+        output_path: Optional path to write the HTML document to.
+        title: Ignored (kept for signature compatibility).
+
+    Returns:
+        str: The self-contained HTML document.
     """
-    if language == "OriginIR":
-        circuit_text = ir_str
-    elif language == "QASM":
-        circuit_text = convert_qasm_to_oir(ir_str)
-    else:
-        raise ValueError(f"Unsupported language: {language}. \n")
+    warn_removed_in_0_2_0(
+        "uniqc.visualization.draw_html()",
+        replacement="uniqc.visualization.render(circuit, mode='html')",
+    )
+    from .circuit_render import render
 
-    from uniqc.visualization.timeline import circuit_to_html
-
-    return circuit_to_html(circuit_text, output_path=output_path, title=title)
-
-
-if __name__ == "__main__":
-    from uniqc.circuit_builder import generate_sub_gateset_originir, random_originir
-
-    # small set
-    gate_set = ["H", "X", "Y", "Z", "RX", "RY", "RZ", "RPhi", "U3"]
-
-    gate_set = generate_sub_gateset_originir(gate_set)
-
-    originir_str = random_originir(n_qubits=5, n_gates=10, instruction_set=gate_set)
-
-    qprog = draw(originir_str)
+    return render(ir_str, mode="html", filename=output_path)

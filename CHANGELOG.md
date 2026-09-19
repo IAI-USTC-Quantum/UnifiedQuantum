@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **New circuit visualization engine** (`uniqc/visualization/circuit_render/`):
+  one layout core feeding seven output modes — self-developed `text`
+  ASCII/Unicode art (no pyqpanda3 dependency; works on Python 3.14),
+  `svg`, `png`, `mpl`, `latex` (quantikz source), `html`, and `interactive`
+  (click-to-inspect). Four skins (`quantikz` default, `qiskit`, `modern`,
+  `print`), light/dark themes, folding (gates per row), horizontal/vertical
+  orientation, qubit-order flip, π-fraction/decimal/symbol/hidden parameter
+  display, and full OriginIR-ext coverage (extended gates, `dagger`,
+  `controlled_by`, symbolic params, QRAM, error channels, DEF subroutines,
+  mid-circuit MEASURE/RESET, classical instructions, QIF/QWHILE brackets).
+  Entry points: `Circuit.draw(mode, ...)`, Jupyter `_repr_svg_` rich display,
+  `print(circuit)` text art, module-level `uniqc.visualization.render(...)`,
+  and the CLI `uniqc draw <file>`.
+
+### Deprecated
+
+- `uniqc.visualization.draw()` / `draw_html()` (and the `uniqc.compile.draw`
+  re-export) are deprecated wrappers emitting `DeprecationWarning`; they will
+  be removed in **uniqc 0.2.0**. Use `uniqc.visualization.render(circuit,
+  mode="text"/"html")` or `Circuit.draw(...)` instead. The old text output
+  (delegated to pyqpanda3) is replaced by the self-developed renderer.
+
+
 ## [0.1.0] - 2026-08-23
 
 The deprecation-cliff release: every public API marked with

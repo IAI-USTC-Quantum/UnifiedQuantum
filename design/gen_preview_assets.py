@@ -10,6 +10,7 @@ Produces, from the page's own live renderer (no duplicated logic):
 Idempotent: replaces either the {{PLACEHOLDER}} or a previously injected base64 payload,
 keyed on the <img alt="..."> name. Requires: node, google-chrome, pdflatex (quantikz), pdftoppm.
 """
+
 import base64
 import re
 import subprocess
@@ -68,36 +69,45 @@ def main():
 
         b64 = {}
         # --- PNG rasters via headless Chrome (2x device scale) ---
-        for alt, style, theme in PNG_SPECS:
+        for alt, _style, theme in PNG_SPECS:
             svg = (tdp / f"{alt}.svg").read_text(encoding="utf-8")
             dims = re.search(r'width="([\d.]+)" height="([\d.]+)"', svg)
             w, h = int(float(dims.group(1))), int(float(dims.group(2)))
             bg = "#0b1220" if theme == "dark" else "#ffffff"
             page = tdp / f"{alt}.html"
             page.write_text(
-                f'<!doctype html><html><head><style>'
-                f'html,body{{margin:0;padding:0;background:{bg};overflow:hidden}}'
-                f'::-webkit-scrollbar{{display:none}}</style></head>'
-                f'<body>{svg}</body></html>',
-                encoding="utf-8")
+                f"<!doctype html><html><head><style>"
+                f"html,body{{margin:0;padding:0;background:{bg};overflow:hidden}}"
+                f"::-webkit-scrollbar{{display:none}}</style></head>"
+                f"<body>{svg}</body></html>",
+                encoding="utf-8",
+            )
             out_png = tdp / f"{alt}.png"
-            run(["google-chrome", "--headless=new", "--disable-gpu", "--no-sandbox",
-                 "--force-device-scale-factor=2", f"--window-size={w},{h}",
-                 "--hide-scrollbars",
-                 f"--screenshot={out_png}", f"file://{page}"])
+            run(
+                [
+                    "google-chrome",
+                    "--headless=new",
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--force-device-scale-factor=2",
+                    f"--window-size={w},{h}",
+                    "--hide-scrollbars",
+                    f"--screenshot={out_png}",
+                    f"file://{page}",
+                ]
+            )
             b64[alt] = base64.b64encode(out_png.read_bytes()).decode()
 
         # --- real quantikz compile ---
         tex = tdp / "quantikz_basic.tex"
         run(["pdflatex", "-interaction=nonstopmode", tex.name], cwd=tdp)
-        run(["pdftoppm", "-png", "-r", "170", "-singlefile",
-             "quantikz_basic.pdf", "quantikz_basic"], cwd=tdp)
+        run(["pdftoppm", "-png", "-r", "170", "-singlefile", "quantikz_basic.pdf", "quantikz_basic"], cwd=tdp)
         b64["quantikz-compiled"] = base64.b64encode((tdp / "quantikz_basic.png").read_bytes()).decode()
 
     replaced = 0
     for alt, payload in b64.items():
         pat = re.compile(r'(<img alt="' + re.escape(alt) + r'" src="data:image/png;base64,)[^"]*(")')
-        src, n = pat.subn(lambda mm: mm.group(1) + payload + mm.group(2), src)
+        src, n = pat.subn(lambda mm, p=payload: mm.group(1) + p + mm.group(2), src)
         assert n == 1, f"placeholder for {alt} not found ({n} matches)"
         replaced += 1
     HTML.write_text(src, encoding="utf-8")
