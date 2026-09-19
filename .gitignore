@@ -190,3 +190,8 @@ bad_circuits.txt
 
 # setuptools_scm generated version file
 uniqc/_version.py
+
+# Local release-validation artifacts (never tracked; only the current
+# release's plan/report lives on disk at tag time)
+RELEASE_REPORT*.md
+RELEASE_EXECUTION_PLAN*.md
