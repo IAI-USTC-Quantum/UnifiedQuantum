@@ -149,15 +149,42 @@ remapped = circuit.remapping({0: 3, 1: 5})
 
 ## 可视化
 
-{func}`uniqc.compile.draw.draw` 用于绘制线路图：
+``Circuit.draw()`` 是统一入口（等价于 {func}`uniqc.visualization.render`），一个方法覆盖
+七种输出形态：
 
 ```python
-from uniqc.compile.draw import draw
-
-draw(circuit.originir)
+circuit.draw()                    # 智能默认：终端 → 字符画；Jupyter → SVG 富显示
+circuit.draw("text")              # 自研字符画（无第三方依赖，Python 3.14 可用）
+circuit.draw("svg")               # 矢量图（返回 SVG 字符串）
+circuit.draw("png", scale=2)      # 位图（自动探测 cairosvg / matplotlib）
+circuit.draw("mpl")               # matplotlib Figure（可继续二次加工）
+circuit.draw("latex")             # quantikz 源码（可直接 \input 进论文）
+circuit.draw("html")              # 自包含静态 HTML
+circuit.draw("interactive")       # 自包含交互 HTML（点击门查看 opcode 详情）
 ```
 
-> 可视化功能详见 [线路分析](../2_advanced/circuit_analysis.md)。
+控制类门的语义一眼可辨：CNOT 为 ●（控制）→ ⊕（目标），CZ 为 ●—●，SWAP 为 ×—×，
+耦合门（XX/YY/ZZ/XY/ECR/ISWAP/PHASE2Q…）画跨双线高盒，测量画仪表并落到双线经典线上。
+全量覆盖 OriginIR-ext（dagger、controlled_by、符号参数、QRAM、误差通道、DEF 子程序、
+经典指令与 QIF/QWHILE 控制流）。
+
+```python
+circuit.draw("svg",
+             style="quantikz",     # quantikz(默认) | qiskit | modern | print
+             fold=20,              # 每行门数：int | "auto"(默认) | 0(不折叠)
+             orientation="h",      # "h" 时间→ | "v" 时间↓
+             qubit_order="asc",    # q0 在上(默认) | "desc"
+             theme="light",        # light | dark
+             param_mode="pi",      # pi(默认, π/4 形式) | decimal | symbol | hidden
+             show_clbits=True,     # 经典线默认隐藏；含经典指令时自动显示
+             filename="c.svg")     # 提供则同时写文件
+```
+
+在 Jupyter 里对线路直接 ``回车`` 即出图（``_repr_svg_``），在终端 ``print(circuit)``
+即字符画。命令行对应物为 ``uniqc draw <file>``（见 [CLI · draw](../4_cli/draw.md)）。
+
+> 更多细节见 [线路分析](../2_advanced/circuit_analysis.md) 与可执行示例
+> ``examples/1_basic_usage/06_circuit_drawing.py``。
 
 (guide-circuit-unitary-matrix)=
 ## 提取酉矩阵

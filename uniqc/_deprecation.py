@@ -73,3 +73,29 @@ def warn_removed_in_0_1_0(
     parts.append(_trailer(replacement))
     message = " ".join(parts)
     warnings.warn(message, DeprecationWarning, stacklevel=stacklevel)
+
+
+def warn_removed_in_0_2_0(
+    name: str,
+    *,
+    replacement: str | None = None,
+    detail: str | None = None,
+    stacklevel: int = 2,
+) -> None:
+    """Emit a :class:`DeprecationWarning` for an API removed in uniqc 0.2.0.
+
+    Same contract as :func:`warn_removed_in_0_1_0`, for APIs deprecated after
+    the 0.1.0 release.  The message contains the literal phrase
+    ``"uniqc 0.2.0"`` so downstream tooling can detect the cliff version.
+
+    Example
+    -------
+    >>> warn_removed_in_0_2_0("uniqc.visualization.draw()", replacement="uniqc.visualization.render()")
+    # → DeprecationWarning: "uniqc.visualization.draw() is deprecated. It will
+    #    be removed in uniqc 0.2.0; use `uniqc.visualization.render()` instead."
+    """
+    parts = [f"{name} is deprecated."]
+    if detail:
+        parts.append(detail.rstrip("."))
+    parts.append(f"It will be removed in uniqc 0.2.0{f'; use `{replacement}` instead.' if replacement else '.'}")
+    warnings.warn(" ".join(parts), DeprecationWarning, stacklevel=stacklevel)

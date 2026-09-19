@@ -1,6 +1,14 @@
 uniqc.visualization package
 ===========================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   uniqc.visualization.circuit_render
+
 Submodules
 ----------
 

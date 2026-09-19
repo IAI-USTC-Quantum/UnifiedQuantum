@@ -94,12 +94,17 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
   ZNE). Calibration writes `~/.uniqc/calibration_cache/`; QEM reads it and
   enforces TTL freshness.
 - **`uniqc/cli/`** — Typer app, entry point `uniqc.cli.main:app` (console script
-  `uniqc`). Subcommands: `circuit`, `simulate`, `submit`, `result`, `config`,
-  `task`, `backend`, `calibrate`, `gateway`, `sync`, `doctor`.
+  `uniqc`). Subcommands: `circuit`, `draw`, `simulate`, `submit`, `result`,
+  `config`, `task`, `backend`, `calibrate`, `gateway`, `sync`, `doctor`.
   **`uniqc/gateway/`** — FastAPI + websocket management server; the `frontend/`
   React + Vite + Tailwind app is its Web UI.
-- **`uniqc/visualization/`** — circuit/result/timeline plotting (HTML +
-  matplotlib). **`uniqc/utils/`** — expectation values and result adapters.
+- **`uniqc/visualization/`** — `circuit_render/` is the circuit-drawing
+  engine (`Circuit.draw()` / `render()`; text/svg/png/mpl/latex/html/
+  interactive modes, skins `quantikz`/`qiskit`/`modern`/`print`, full
+  OriginIR-ext coverage; pure stdlib core, mpl/png via matplotlib or
+  cairosvg); plus result/timeline plotting (HTML + matplotlib). The legacy
+  `visualization.draw`/`draw_html` are deprecated wrappers (removal 0.2.0).
+  **`uniqc/utils/`** — expectation values and result adapters.
   **`uniqc/config.py`** — user config (`~/.uniqc/config.yaml`) and AI-hint
   settings; **`uniqc/exceptions.py`** — the shared exception hierarchy;
   **`uniqc/_deprecation.py`** — the central deprecation-warning helper.

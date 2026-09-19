@@ -52,6 +52,7 @@
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
 │ circuit    Circuit format conversion (OriginIR <-> QASM)                     │
 │            CLI Docs  |  GitHub                                               │
+│ draw       Draw a circuit (text/svg/png/latex/html/interactive)              │
 │ simulate   Local circuit simulation                                          │
 │            CLI Docs  |  GitHub                                               │
 │ submit     Submit circuits to quantum cloud platforms                        │
@@ -91,12 +92,12 @@
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
 
 Cache:
-    originq: 7 backends, updated 8d ago (stale)
-    quafu: 16 backends, updated 116d ago (stale)
-    ibm: 3 backends, updated 80d ago (stale)
-    quark: 5 backends, updated 10h ago
-    tianyan: 15 backends, updated 3h ago
-    logicalqubit: 5 backends, updated 9h ago
+    originq: 7 backends, updated 35d ago (stale)
+    quafu: 16 backends, updated 143d ago (stale)
+    ibm: 3 backends, updated 106d ago (stale)
+    quark: 5 backends, updated 27d ago (stale)
+    tianyan: 15 backends, updated 27d ago (stale)
+    logicalqubit: 5 backends, updated 27d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       

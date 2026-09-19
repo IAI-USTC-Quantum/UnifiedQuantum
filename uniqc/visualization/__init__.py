@@ -1,5 +1,6 @@
 """Circuit and result visualization helpers."""
 
+from .circuit_render import render
 from .result import plot_distribution, plot_histogram
 from .timeline import (
     TimelineDurationError,
@@ -26,6 +27,7 @@ __all__ = [
     "plot_histogram",
     "plot_time_line",
     "plot_time_line_html",
+    "render",
     "schedule_circuit",
 ]
 

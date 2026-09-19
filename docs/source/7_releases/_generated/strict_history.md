@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.1.0` | `2026-08-24` | Release v0.1.0 |
 | `v0.0.17.post1` | `2026-08-16` | ci: allow post-release tags in release validation |
 | `v0.0.17` | `2026-08-15` | docs: finalize the v0.0.17 changelog for release |
 | `v0.0.16` | `2026-07-19` | chore(release): remove stale 0.0.15 report; make root artifacts a release gate |
@@ -32,17 +33,51 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.0.17.post1..HEAD`
-- 提交数：36
-- 变更文件数：512
+- 对比区间：`v0.1.0..HEAD`
+- 提交数：4
+- 变更文件数：35
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `docs` | 2 |
+| `feat` | 2 |
+
+### 变更区域
+
+- `docs`: 13 个文件
+- `uniqc/visualization`: 13 个文件
+- `design`: 2 个文件
+- `uniqc/cli`: 2 个文件
+- `uniqc/test`: 2 个文件
+- `CHANGELOG.md`: 1 个文件
+- `uniqc/_deprecation.py`: 1 个文件
+- `uniqc/circuit_builder`: 1 个文件
+
+### 提交列表
+
+- `57756ed` feat(circuit-builder): add Circuit.to_matrix full-unitary export
+- `5fd8951` docs(design): add circuit visualization redesign proposals
+- `dcf683c` docs(design): overhaul viz redesign mockup after review
+- `9d41fda` feat(visualization): new circuit rendering engine with 7 output modes
+
+## v0.1.0
+
+- 发布日期：`2026-08-24`
+- 发布标题：Release v0.1.0
+- 补充说明：Release v0.1.0
+- 对比区间：`v0.0.17.post1..v0.1.0`
+- 提交数：38
+- 变更文件数：515
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `feat` | 11 |
-| `merge` | 8 |
-| `docs` | 5 |
+| `merge` | 9 |
+| `docs` | 6 |
 | `fix` | 5 |
 | `build` | 2 |
 | `ci` | 2 |
@@ -52,7 +87,7 @@
 ### 变更区域
 
 - `UniqcCpp`: 233 个文件
-- `docs`: 71 个文件
+- `docs`: 72 个文件
 - `example-exec-logs`: 66 个文件
 - `uniqc/test`: 44 个文件
 - `uniqc/backend_adapter`: 21 个文件
@@ -73,6 +108,8 @@
 - `CONTRIBUTING.md`: 1 个文件
 - `README.md`: 1 个文件
 - `README_en.md`: 1 个文件
+- `RELEASE_EXECUTION_PLAN_0.1.0.md`: 1 个文件
+- `RELEASE_REPORT_0.1.0.md`: 1 个文件
 - `codecov.yml`: 1 个文件
 - `conftest.py`: 1 个文件
 - `frontend`: 1 个文件
@@ -122,6 +159,8 @@
 - `6231726` feat(adapters): dry-run validates circuit qubits against chip data
 - `35d5196` feat(docs): make example execution deterministic across doc builds
 - `a49d106` docs: refresh example-exec-logs and generated pages
+- `d90efac` docs(release): prepare v0.1.0 release
+- `7d724a1` Merge pull request #128 from IAI-USTC-Quantum/release/v0.1.0
 
 ## v0.0.17.post1
 

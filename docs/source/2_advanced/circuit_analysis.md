@@ -29,12 +29,25 @@ remapped = circuit.remapping({0: 3, 1: 5})
 ## 可视化
 
 ```python
-from uniqc.compile import draw
+# 终端：字符画（自研，无第三方依赖；Python 3.14 可用）
+print(circuit.draw("text"))
 
-draw(circuit.originir)
+# Jupyter / 文档：矢量图（风格可选 quantikz/qiskit/modern/print）
+circuit.draw("svg", style="quantikz", filename="circuit.svg")
+
+# 论文：quantikz LaTeX 源码
+print(circuit.draw("latex"))
 ```
 
-> 注意：可视化功能需要安装 `pyqpanda3` 依赖。
+七种模式：``text``（字符画）、``svg``、``png``、``mpl``（matplotlib Figure）、
+``latex``（quantikz 源码）、``html``（静态）、``interactive``（点击门看详情）。
+统一选项：``style`` / ``fold``（每行门数）/ ``orientation`` / ``qubit_order`` /
+``theme`` / ``param_mode`` / ``show_clbits`` / ``filename``，详见
+{func}`uniqc.visualization.render`。覆盖 OriginIR-ext 全特性（含误差通道、QRAM、
+经典控制流）。
+
+> 时序（timeline）可视化见 `uniqc.visualization.schedule_circuit` 与
+> `plot_time_line`；结果分布见 `plot_histogram` / `plot_distribution`。
 
 ## 线路转译
 

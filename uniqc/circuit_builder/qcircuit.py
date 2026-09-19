@@ -27,10 +27,10 @@ from .opcode import (
 )
 
 if TYPE_CHECKING:
+    import numpy as np
+
     from .parameter import Parameters
     from .qubit import QReg, QRegSlice, Qubit
-
-    import numpy as np
 
     try:
         import qiskit
@@ -2085,3 +2085,49 @@ class Circuit:
         c.cbit_num = len(c.measure_list)
 
         return c
+
+    # ─────────────────── Visualization ───────────────────
+
+    def draw(self, mode: str | None = None, **kwargs):
+        """Draw the circuit — see :func:`uniqc.visualization.render` for all options.
+
+        Args:
+            mode: ``None`` (smart default: terminal→``text``, Jupyter→``svg``),
+                or ``text`` / ``svg`` / ``png`` / ``mpl`` / ``latex`` / ``html`` /
+                ``interactive``.
+            **kwargs: ``style``, ``fold``, ``orientation``, ``qubit_order``,
+                ``theme``, ``param_mode``, ``show_clbits``, ``charset``,
+                ``scale``, ``filename``.
+
+        Returns:
+            ``str`` for text/svg/latex/html/interactive (``text`` returns a
+            printable ``TextDrawing``), ``bytes`` for png, ``Figure`` for mpl.
+
+        Examples:
+            >>> c = Circuit(2)
+            >>> c.h(0); c.cnot(0, 1); c.measure(0, 1)
+            >>> print(c.draw("text"))                      # ASCII art
+            >>> svg = c.draw("svg", style="quantikz")      # vector graphics
+            >>> c.draw("png", filename="bell.png")         # raster image
+        """
+        from uniqc.visualization.circuit_render import render
+
+        return render(self, mode, **kwargs)
+
+    def _repr_svg_(self) -> str | None:
+        """Jupyter rich display: render the circuit as inline SVG."""
+        try:
+            from uniqc.visualization.circuit_render import render
+
+            return render(self, "svg")
+        except Exception:
+            return None
+
+    def __str__(self) -> str:
+        """Terminal-friendly text drawing (``print(circuit)``)."""
+        try:
+            from uniqc.visualization.circuit_render import render
+
+            return str(render(self, "text"))
+        except Exception:
+            return object.__repr__(self)
