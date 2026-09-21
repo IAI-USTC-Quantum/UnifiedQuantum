@@ -737,7 +737,12 @@ class DensityOperatorSimulatorQutip:
             q2: Second qubit index.
             parameters: List of Kraus operator matrix elements (flattened 4x4).
         """
-        kraus_ops = [Qobj(np.array(k).reshape(4, 4)) for k in parameters]
+        # dims must declare the operator as two qubits, otherwise the Qobj is
+        # shaped [[4], [4]] (a single 4-level system) and qutip's
+        # expand_operator rejects mapping it onto two target qubits.
+        kraus_ops = [
+            Qobj(np.array(k).reshape(4, 4), dims=[[2, 2], [2, 2]]) for k in parameters
+        ]
         self._apply_kraus(kraus_ops, [q1, q2])
 
     def pauli_error_2q(self, q1: int, q2: int, parameters: list[float] | tuple[float, ...]) -> None:
