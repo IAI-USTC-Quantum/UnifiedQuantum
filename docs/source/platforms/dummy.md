@@ -3,7 +3,8 @@
 
 ## 简介
 
-`dummy` 是 uniqc 内置的本地模拟器后端，**无需安装 extra、无需凭证、无需
+`dummy` 是 uniqc 内置的
+{py:class}`本地模拟器后端 <uniqc.backend_adapter.backend.DummyBackend>`，**无需安装 extra、无需凭证、无需
 网络**。它既可以做无噪声的快速验证，也可以复用真实芯片的拓扑与标定数据
 做本地含噪模拟。
 
@@ -25,7 +26,7 @@ uniqc backend list -p dummy
 | `dummy:local:simulator` | 无约束、无噪声本地模拟 |
 | `dummy:local:virtual-line-N` | N 比特线性拓扑，无噪声 |
 | `dummy:local:virtual-grid-RxC` | R×C 比特网格拓扑，无噪声 |
-| `dummy:virtual:<name>` | 使用 `~/.uniqc/backend/virtual/<name>.yaml` 中的自定义拓扑与噪声模型 |
+| [`dummy:virtual:<name>`](../2_advanced/virtual_backends.md) | 使用 `~/.uniqc/backend/virtual/<name>.yaml` 中的自定义拓扑与噪声模型 |
 | `dummy:<platform>:<chip>` | 复用真实 backend 的拓扑与标定数据，先 compile/transpile，再本地含噪执行 |
 
 `dummy:<platform>:<chip>` 是规则型写法，不需要提前注册；运行时会解析真实

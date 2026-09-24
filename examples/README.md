@@ -6,11 +6,11 @@
 
 | 目录 | 说明 |
 |------|------|
-| [0_quickstart/](0_quickstart/) | 一文上手：本地模拟 + dummy 提交 + 真机模板（`01_quickstart.py`） |
-| [1_basic_usage/](1_basic_usage/) | 基础 API：电路构建、本地模拟、提交与后处理、配置、可视化 |
-| [2_advanced/](2_advanced/) | 进阶专题：编译选项、Region 选择器、变分 QAOA、dummy 含噪、XEB 标定、QEM-M3、MPS 模拟器，以及 `algorithms/` `circuits/` `measurement/` `state_preparation/` `wk180/` 五个分类子目录 |
+| [0_quickstart/](0_quickstart/) | [一文上手](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/0_quickstart/index.html)：本地模拟 + dummy 提交 + 真机模板（`01_quickstart.py`） |
+| [1_basic_usage/](1_basic_usage/) | 基础 API：[电路构建](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/circuit.html)、[本地模拟](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html)、[提交与后处理](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/submit_task.html)、配置、可视化 |
+| [2_advanced/](2_advanced/) | 进阶专题：编译选项、Region 选择器、变分 QAOA、dummy 含噪、[XEB 标定](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/calibration.html)、QEM-M3、[MPS 模拟器](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/mps_simulator.html)，以及 `algorithms/` `circuits/` `measurement/` `state_preparation/` `wk180/` 五个分类子目录 |
 | [3_best_practices/](3_best_practices/) | 发布前可验证路径检查脚本（11 个 `XX_*.py`，配合 `scripts/build_docs.py` 使用） |
-| [4_cli/](4_cli/) | CLI 走查（`01_cli_walkthrough.py`）与 `cli_example/` 详细配方 |
+| [4_cli/](4_cli/) | [CLI 走查](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/index.html)（`01_cli_walkthrough.py`）与 `cli_example/` 详细配方 |
 | [5_webui/](5_webui/) | Gateway / WebUI 演示（`01_gateway_demo.py`） |
 
 ## 快速导航

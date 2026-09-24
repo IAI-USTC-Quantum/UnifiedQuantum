@@ -46,7 +46,7 @@ The amplitude on $|w\rangle$ grows as $\sin((2R+1)\theta)$ where $\sin\theta = 1
 
 ## Code Walkthrough
 
-### `build_oracle`
+### [`build_oracle`](grover.py)
 
 ```python
 def build_oracle(n_qubits, marked_state):
@@ -59,7 +59,7 @@ Builds the phase-flip oracle for the given marked state:
 3. **Phase kickback**: Apply multi-controlled Z (CCZ) from data qubits to ancilla
 4. **Uncompute**: Restore the flipped qubits
 
-### `build_diffusion`
+### [`build_diffusion`](grover.py)
 
 Implements $D = H^{\otimes n} \cdot Z^{\otimes n} \cdot H^{\otimes n}$:
 
@@ -67,7 +67,7 @@ Implements $D = H^{\otimes n} \cdot Z^{\otimes n} \cdot H^{\otimes n}$:
 2. Apply $Z^{\otimes n}$ to flip the phase of $|0\rangle^{\otimes n}$
 3. Apply $H^{\otimes n}$ again — net effect is reflection about $|s\rangle$
 
-### `run_grover`
+### [`run_grover`](grover.py)
 
 End-to-end Grover search:
 
@@ -118,7 +118,7 @@ Expected output:
 - **Multi-target Grover**: Replace single target with $M$ marked states;
   optimal iterations become $\frac{\pi}{4}\sqrt{N/M}$
 - **Inhomogeneous Grover**: Different oracle strengths per state
-- **Amplitude estimation**: Use `state_tomography` to characterise the
+- **[Amplitude estimation](../circuits/amplitude_estimation.py)**: Use `state_tomography` to characterise the
   pre-measurement state and estimate success probability analytically
 
 ## References

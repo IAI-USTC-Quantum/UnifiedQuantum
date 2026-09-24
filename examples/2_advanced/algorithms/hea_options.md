@@ -2,7 +2,7 @@
 
 ## Background and Theory
 
-The Hardware-Efficient Ansatz (HEA) is a parameterised quantum circuit designed for near-term quantum devices. Unlike problem-specific ansätze (like UCCSD), HEA is hardware-adapted: gates and topology are chosen to match the native operations of the target device.
+The Hardware-Efficient Ansatz (HEA) is a parameterised quantum circuit designed for near-term quantum devices. Unlike problem-specific ansätze (like [UCCSD](vqe.md)), HEA is hardware-adapted: gates and topology are chosen to match the native operations of the target device.
 
 The HEA structure consists of $L$ repeated layers, where each layer contains:
 
@@ -13,7 +13,7 @@ The variational parameters are the rotation angles and (for parametric entangler
 
 ## Configurable Dimensions
 
-The enhanced `hea()` function exposes three key dimensions:
+The enhanced [`hea()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) function exposes three key dimensions:
 
 ### Rotation Gates
 

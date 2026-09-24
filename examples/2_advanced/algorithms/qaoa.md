@@ -39,8 +39,8 @@ Initialise |+⟩⊗n → Apply e^{-iγ₁ Hc} → Apply e^{-iβ₁ Hm} → ... �
 
 | Component | Module | Role |
 |-----------|--------|------|
-| `qaoa_ansatz` | `algorithmics.ansatz` | Parameterised QAOA circuit |
-| `Simulator` | `simulator` | Statevector simulation |
+| [`qaoa_ansatz`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) | `algorithmics.ansatz` | Parameterised QAOA circuit |
+| [`Simulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html) | `simulator` | Statevector simulation |
 
 ## Running the Example
 
@@ -96,7 +96,7 @@ For a triangle graph (3 edges):
 - **Weighted MaxCut**: Add edge weights to the Hamiltonian.
 - **Different graphs**: Try random graphs, planar graphs, etc.
 - **Higher $p$**: More layers improve approximation ratio toward 1.0.
-- **Shot-based**: Use `Simulator` for realistic noisy measurement.
+- **Shot-based**: Use [`Simulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html) for realistic noisy measurement.
 
 ## References
 

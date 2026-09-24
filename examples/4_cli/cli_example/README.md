@@ -4,8 +4,8 @@
 
 | 文件 | 格式 | 适用平台 |
 |------|------|---------|
-| `circuit.originir` | OriginIR | OriginQ、QuarkStudio、Dummy |
-| `circuit.qasm` | OpenQASM 2.0 | IBM |
+| [`circuit.originir`](circuit.originir) | [OriginIR](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/originir.html) | [OriginQ](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/originq.html)、[QuarkStudio](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/quark.html)、[Dummy](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/dummy.html) |
+| [`circuit.qasm`](circuit.qasm) | [OpenQASM 2.0](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/qasm.html) | [IBM](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/ibm.html) |
 
 ## 前置条件
 
@@ -158,7 +158,7 @@ python -m uniqc.cli submit circuit1.originir circuit2.originir --backend originq
 
 ## 第四步：查询结果
 
-提交成功后，用返回的 `task_id` 查询结果：
+提交成功后，用返回的 `task_id` [查询结果](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/result.html)：
 
 ```bash
 # 查询结果（异步轮询，最久等 300 秒）
@@ -219,7 +219,7 @@ python -m uniqc.cli submit circuit.qasm --backend ibm:ibm_fez -s 1000 --wait --t
 
 ## 结果格式说明
 
-所有平台的 `wait_for_result()` / `result` 命令返回统一格式：**扁平 `{bitstring: shots}` 字典**，无需按平台分别适配。
+所有平台的 [`wait_for_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/task_manager.html) / [`result`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/result.html) 命令返回统一格式：**扁平 `{bitstring: shots}` 字典**，无需按平台分别适配。
 
 | 平台 | `result["result"]` 结构 | 示例 |
 |------|------------------------|------|

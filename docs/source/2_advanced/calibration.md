@@ -111,7 +111,7 @@ m3 = M3Mitigator(
 
 ## 3. 统一读出误差缓解（ReadoutEM）
 
-`ReadoutEM` 自动调用 1q/2q 校准器，并提供统一接口：
+{py:class}`ReadoutEM <uniqc.qem.readout_em.ReadoutEM>` 自动调用 1q/2q 校准器，并提供统一接口：
 
 ```python
 from uniqc.qem import ReadoutEM
@@ -281,7 +281,7 @@ results_parallel = xeb_workflow.run_parallel_xeb_workflow(
 
 ### 读出 EM 工作流
 
-校准并返回可直接使用的 `ReadoutEM` 实例：
+校准并返回可直接使用的 {py:class}`ReadoutEM <uniqc.qem.readout_em.ReadoutEM>` 实例：
 
 ```python
 from uniqc import readout_em_workflow
@@ -354,9 +354,9 @@ save_calibration_result(result, type_prefix="readout_1q", cache_dir="/tmp/calibr
 
 ## 关键设计原则
 
-1. **TTL 由 QEM 层强制执行** — 校准模块只写缓存，从不删除；QEM 模块在读取时检查 `calibrated_at` 时间戳，超出 `max_age_hours` 则抛出 `StaleCalibrationError`
+1. **TTL 由 QEM 层强制执行** — 校准模块只写缓存，从不删除；QEM 模块在读取时检查 `calibrated_at` 时间戳，超出 `max_age_hours` 则抛出 {py:mod}`StaleCalibrationError <uniqc.exceptions>`
 2. **XEB 使用 ReadoutEM** — 所有 XEB 基准测试在计算 normalized linear XEB 之前先应用读出误差修正
-3. **工作流与芯片无关** — `algorithm/` 下的工作流接受任意 `QuantumAdapter`，WK180 示例仅用于演示真实硬件集成
+3. **工作流与芯片无关** — `algorithm/` 下的工作流接受任意 {py:class}`QuantumAdapter <uniqc.backend_adapter.task.adapters.base.QuantumAdapter>`，WK180 示例仅用于演示真实硬件集成
 
 ---
 
@@ -364,7 +364,7 @@ save_calibration_result(result, type_prefix="readout_1q", cache_dir="/tmp/calibr
 
 ### `Circuit.measure()` 的正确用法
 
-`Circuit.measure()` API 将**所有位置参数**视为量子比特索引：
+{py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`.measure() API 将**所有位置参数**视为量子比特索引：
 
 ```python
 c = Circuit(4)
@@ -399,7 +399,7 @@ task_id = submit_task(
 )
 ```
 
-底层测试或自定义噪声模型仍可直接使用 `DummyAdapter`：
+底层测试或自定义噪声模型仍可直接使用 {py:class}`DummyAdapter <uniqc.backend_adapter.task.adapters.dummy_adapter.DummyAdapter>`：
 
 ```python
 from uniqc.backend_adapter.task.adapters import DummyAdapter

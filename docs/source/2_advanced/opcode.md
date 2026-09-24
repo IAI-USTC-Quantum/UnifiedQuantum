@@ -8,7 +8,7 @@
 
 > 如果你还未完成基础线路构建与本地模拟，建议先阅读 [本地模拟](../1_basic_usage/simulation.md)。
 
-OpcodeSimulator 是 UnifiedQuantum 的底层模拟器，直接操作 opcode 列表进行量子线路模拟。它通过 C++ 扩展（pybind11）实现高性能计算。
+{py:class}`OpcodeSimulator <uniqc.simulator.opcode_simulator.OpcodeSimulator>` 是 UnifiedQuantum 的底层模拟器，直接操作 opcode 列表进行量子线路模拟。它通过 C++ 扩展（pybind11）实现高性能计算。
 
 ## 创建模拟器
 

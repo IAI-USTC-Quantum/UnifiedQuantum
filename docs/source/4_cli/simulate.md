@@ -1,6 +1,6 @@
 # 本地模拟 (`uniqc simulate`)
 
-在本地运行量子电路模拟。
+在本地运行[量子电路模拟](../1_basic_usage/simulation.md)。
 
 ## 基本用法
 
@@ -45,5 +45,5 @@ uniqc simulate circuit.ir --output result.json
 
 | 后端 | 说明 |
 |------|------|
-| `statevector` | 状态向量模拟器，返回精确概率分布 |
-| `density` | 密度矩阵模拟器，支持噪声模拟 |
+| `statevector` | 状态向量模拟器（{py:class}`Simulator <uniqc.simulator.simulator.Simulator>`），返回精确概率分布 |
+| `density` | 密度矩阵模拟器，支持[噪声模拟](../2_advanced/noise_simulation.md) |

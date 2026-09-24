@@ -11,7 +11,7 @@ computing、重复直到成功 (repeat-until-success) 等。
 ```{note}
 这套扩展是 **OriginIR-ext 专属**、**仅本地模拟**的特性：动态电路不能导出成 OpenQASM
 或官方 OriginIR，也不能提交到 cloud backend（相关导出/提交会抛
-`CircuitTranslationError`）。
+{py:exc}`CircuitTranslationError <uniqc.exceptions.CircuitTranslationError>`）。
 ```
 
 ## 1. 设计逻辑与分层架构
@@ -38,9 +38,9 @@ C++ backend (uniqc_cpp)       # 只管量子态（statevector / density matrix�
 * **C++ backend 不碰经典部分。** 它只维护量子态并提供 `measure_qubit` /
   `reset_qubit` 原语。CREG 完全活在 Python 侧，因此加这套功能**不需要重新编译**
   C++ 扩展。
-* **经典指令按 opcode 处理，放在 `OpcodeSimulator` 里。** CREG 是一块随电路执行
+* **经典指令按 opcode 处理，放在 {py:class}`OpcodeSimulator <uniqc.simulator.opcode_simulator.OpcodeSimulator>` 里。** CREG 是一块随电路执行
   实时更新的存储区，`MEASURE`、`AND`/`OR`/`XOR`/`MOV`/`NOT` 都在这里落地。
-* **控制流是「非 opcode」的结构，放在更高层的 `OriginIR_ext_Simulator`。**
+* **控制流是「非 opcode」的结构，放在更高层的 {py:class}`OriginIR_ext_Simulator <uniqc.simulator.originir_ext_simulator.OriginIR_ext_Simulator>`。**
   它遍历程序树，遇到 `QIF`/`QWHILE` 就读 `OpcodeSimulator` 的 CREG 求值，再决定
   走哪个分支或是否继续循环。
 * **结果靠 per-shot 采样得到。** mid-circuit measurement 会塌缩量子态、经典反馈会
@@ -128,7 +128,7 @@ XOR c[2], c[0], c[1]
 
 ## 4. Circuit builder API
 
-用 `Circuit` 直接搭建等价的动态电路：
+用 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 直接搭建等价的动态电路：
 
 ```python
 from uniqc import Circuit
@@ -199,7 +199,7 @@ one   = sim.simulate_single_shot(c)           # 单个 shot 的 CREG 整数值
 
 ### 5.2 通过统一任务接口（dummy backend）
 
-`submit_task` / `wait_for_result` 会自动识别动态电路并路由到 CREG 模拟器：
+{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` 会自动识别动态电路并路由到 CREG 模拟器：
 
 ```python
 from uniqc.backend_adapter.task_manager import submit_task, wait_for_result
@@ -219,7 +219,7 @@ uniqc simulate circuit.originir --backend statevector --shots 2000
 ## 6. `QWHILE` 看门狗
 
 `QWHILE` 的表层语法不带迭代上限。为避免写错条件导致的死循环，模拟器内置一个
-**iteration watchdog**：单次循环超过上限即抛 `LoopWatchdogError`。
+**iteration watchdog**：单次循环超过上限即抛 {py:class}`LoopWatchdogError <uniqc.simulator.originir_ext_simulator.LoopWatchdogError>`。
 
 * 逐个 `QWHILE` 覆盖：`c.qwhile("~c[0]", max_iterations=1000)`；
 * 全局覆盖：`OriginIR_ext_Simulator(max_while_iterations=10_000)`；

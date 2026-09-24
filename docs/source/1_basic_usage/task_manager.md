@@ -17,7 +17,7 @@
 (guide-task-manager-overview)=
 ## 概述
 
-`task_manager` 模块提供了高层次的 API 来管理量子计算任务：
+{py:mod}`uniqc.backend_adapter.task_manager` 模块提供了高层次的 API 来管理量子计算任务：
 
 - **统一接口**：支持 OriginQ、IBM Quantum 和本地 Dummy 模拟器
 - **本地缓存**：自动保存任务状态和结果，支持离线查询
@@ -108,7 +108,7 @@ task_id = submit_task(
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `circuit` | Circuit \| str \| qiskit.QuantumCircuit | 量子线路（自动检测并转换为内部 Circuit） |
+| `circuit` | {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` \| str \| qiskit.QuantumCircuit | 量子线路（自动检测并转换为内部 Circuit） |
 | `backend` | str | 平台标识：`'originq:WK_C180'`, `'ibm:ibm_brisbane'`, `'dummy:local:simulator'` |
 | `shots` | int | 测量次数，默认 1000 |
 | `chip_id` | str | 目标芯片 ID（可选） |
@@ -156,7 +156,7 @@ result = wait_for_result(
 
 #### get_result()
 
-阻塞获取结果（`wait_for_result` 的别名，强调"我要结果"的语义）：
+阻塞获取结果（{py:func}`get_result() <uniqc.backend_adapter.task_manager.get_result>`，{py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` 的别名，强调"我要结果"的语义）：
 
 ```python
 from uniqc import get_result
@@ -238,7 +238,7 @@ task_id = submit_task(circuit, backend='dummy:originq:WK_C180')
 
 ### 使用 DummyBackend
 
-新代码推荐通过 `submit_task(..., backend=...)` 选择 dummy backend id：
+新代码推荐通过 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>`(..., backend=...) 选择 dummy backend id：
 
 ```python
 from uniqc import submit_task, wait_for_result
@@ -257,7 +257,7 @@ result = wait_for_result(task_id)
 
 `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 出现在后端列表或 Gateway WebUI 中。
 
-底层测试仍可直接使用 `DummyAdapter` 进行本地模拟：
+底层测试仍可直接使用 {py:class}`DummyAdapter <uniqc.backend_adapter.task.adapters.dummy_adapter.DummyAdapter>` 进行本地模拟：
 
 ```python
 from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
@@ -279,7 +279,7 @@ result = adapter.query(task_id)
 
 ### TaskPersistence 类
 
-使用 `TaskPersistence` 进行更细粒度的任务存储管理：
+使用 {py:class}`TaskPersistence <uniqc.backend_adapter.task.persistence.TaskPersistence>` 进行更细粒度的任务存储管理：
 
 ```python
 from uniqc.backend_adapter.task.persistence import TaskPersistence
@@ -315,14 +315,14 @@ persistence.clear_completed()
 任务数据默认存储在 `~/.uniqc/cache/tasks.sqlite` 单一 SQLite 数据库中。数据库使用
 `PRAGMA application_id`（常量值 `"UNIC"`）校验文件归属，并通过 `PRAGMA user_version`
 维护 schema 版本；打开时如发现新版本会自动按 `uniqc.backend_adapter.task.store.MIGRATIONS` 顺序迁移。
-可通过向 `TaskPersistence(cache_dir=...)` 或 `TaskStore(cache_dir=...)` 传入其他路径覆盖默认位置。
+可通过向 `TaskPersistence(cache_dir=...)` 或 {py:class}`TaskStore <uniqc.backend_adapter.task.store.TaskStore>`(cache_dir=...) 传入其他路径覆盖默认位置。
 
 (guide-task-manager-error-handling)=
 ## 错误处理
 
 ### MissingDependencyError
 
-当缺少平台依赖时抛出：
+当缺少平台依赖时抛出 {py:class}`MissingDependencyError <uniqc.exceptions.MissingDependencyError>`：
 
 ```python
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError
@@ -364,4 +364,4 @@ except MissingDependencyError as e:
 
 - 了解 [云平台适配器架构](../2_advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)
-- 参考 API 文档：{mod}`uniqc.backend_adapter.task_manager`
+- 参考 API 文档：{py:mod}`uniqc.backend_adapter.task_manager`

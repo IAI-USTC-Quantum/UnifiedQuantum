@@ -4,7 +4,9 @@
 ## 简介
 
 QuarkStudio 提供 Quark 系列量子计算后端，uniqc 通过 `quarkstudio` /
-`quarkcircuit` SDK 接入，线路经 `QuarkCircuitAdapter` 转换后提交。
+`quarkcircuit` SDK 接入，线路经
+{py:class}`QuarkCircuitAdapter <uniqc.backend_adapter.circuit_adapter.QuarkCircuitAdapter>`
+转换后提交。
 
 ## 安装
 
@@ -53,11 +55,13 @@ task_id = submit_task(c, backend="quark:<chip>", shots=1000)
 print(wait_for_result(task_id))
 ```
 
-其中 `<chip>` 为 `uniqc backend list -p quark` 列出的后端名。
+其中 `<chip>` 为 [`uniqc backend list -p quark`](../4_cli/backend.md) 列出的后端名。
 
 ## 平台约定与限制
 
-- 提交语言为 QASM 2.0，由 CircuitAdapter 自动转换。
+- 提交语言为 [QASM 2.0](../1_basic_usage/qasm.md)，由
+  {py:class}`CircuitAdapter <uniqc.backend_adapter.circuit_adapter.CircuitAdapter>`
+  自动转换。
 - 提交前校验按 `cz + sx + rz` 基础门集进行，详见
   {ref}`平台约定 <platform-precheck>`。
 - 结果为扁平 `{bitstring: shots}` counts，bitstring 序遵循

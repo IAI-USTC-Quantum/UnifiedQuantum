@@ -1,6 +1,6 @@
 # 电路格式转换 (`uniqc circuit`)
 
-在 OriginIR 和 OpenQASM 2.0 格式之间转换电路。
+在 [OriginIR](../1_basic_usage/originir.md) 和 [OpenQASM 2.0](../1_basic_usage/qasm.md) 格式之间转换电路。
 
 ## 基本用法
 

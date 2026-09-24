@@ -28,7 +28,7 @@
 阅读本页前，默认你已经完成以下至少一项：
 
 - 已经完成 [快速上手](../0_quickstart/quickstart.md) 中的最小示例
-- 已经会使用 `Circuit` 构建线路，并能导出 `originir` 或 `qasm`
+- 已经会使用 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 构建线路，并能导出 [`originir`](originir.md) 或 [`qasm`](qasm.md)
 - 已经通过 [本地模拟](simulation.md) 对线路做过基本验证
 
 如果你还不确定线路是否正确、输出是否合理，建议先留在本地模拟路径，不要直接进入远端提交。
@@ -38,11 +38,11 @@
 
 无论选择哪个平台，远端任务提交通常都遵循以下流程：
 
-1. **准备线路** —— 确认你已经有可提交的 `Circuit` 对象
+1. **准备线路** —— 确认你已经有可提交的 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 对象
 2. **选择平台** —— 根据目标平台、依赖、成熟度与接入条件决定使用哪个后端
 3. **准备配置** —— 通过环境变量配置 Token
-4. **提交任务** —— 调用 `submit_task()` 提交任务
-5. **查询结果** —— 通过 `wait_for_result()` 或 `query_task()` 获取结果
+4. **提交任务** —— 调用 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 提交任务
+5. **查询结果** —— 通过 {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` 或 {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>` 获取结果
 
 与本地模拟相比，这条路径多出了平台账号、配置文件、网络访问、任务排队与远端状态查询等因素。
 
@@ -76,7 +76,7 @@ default:
 
 ### 基本用法
 
-> 完整 API 文档与所有可选参数（`local_compile`、`cloud_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](#guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
+> 完整 API 文档与所有可选参数（`local_compile`、`cloud_compile`、`skip_validation`、`options=`、`backend_name=`、`chip_id=` 等）见 [`uniqc.backend_adapter.task_manager.submit_task`](guide-submit-task-api-reference)。同时也可以在交互环境中执行 `help(submit_task)` 查看完整 docstring。
 
 ```python
 from uniqc import Circuit, submit_task, wait_for_result, query_task, poll_result, get_result
@@ -113,8 +113,8 @@ print(info.status)  # TaskStatus.RUNNING / SUCCESS / FAILED
 > `submit_batch()` 要求 `backend` 满足 `provider:chip-name` 规范格式
 > （如 `originq:WK_C180`、`ibm:ibm_brisbane`）。仅传裸平台名
 > （`'originq'`）会被拒绝，错误信息会列出本地缓存里能用的 chip。需要先
-> 通过 `uniqc auth login` / `uniqc config set <provider>.token …` 配好 API key，
-> 然后用 `uniqc backend list -p originq` 拉一遍 backend 列表，再选一个
+> 通过 `uniqc auth login` / [`uniqc config set`](../4_cli/config.md) `<provider>.token …` 配好 API key，
+> 然后用 [`uniqc backend list`](../4_cli/backend.md) `-p originq` 拉一遍 backend 列表，再选一个
 > chip 提交。
 >
 > 旧的 `submit_task(circuit, backend='originq', backend_name='WK_C180')`
@@ -178,7 +178,7 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 (guide-submit-task-backend-naming)=
 ## 后端命名规则
 
-`submit_task()` 和 CLI 的 `--backend` 参数均使用统一的后端标识符格式。
+{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 和 CLI 的 `--backend` 参数均使用统一的后端标识符格式。
 
 ### 格式说明
 
@@ -198,7 +198,7 @@ print(f"OriginQ available: {originq_backend.is_available()}")
 | `dummy:local:mps-linear-N` | N 比特 MPS 模拟器（线性链） |
 | `dummy:<platform>:<backend>` | 复用真实 backend 拓扑和标定数据的本地含噪模拟 |
 
-> `dummy:<platform>:<backend>` 是规则型写法，不需要提前注册，也不会出现在 `uniqc backend list` 的列表中。运行时会解析真实 backend 的拓扑和标定数据，先 compile/transpile，再在本地执行含噪模拟。
+> `dummy:<platform>:<backend>` 是规则型写法，不需要提前注册，也不会出现在 [`uniqc backend list`](../4_cli/backend.md) 的列表中。运行时会解析真实 backend 的拓扑和标定数据，先 compile/transpile，再在本地执行含噪模拟。
 
 ### MPS 隐式参数
 
@@ -294,7 +294,7 @@ print(f"Submitted {len(task_ids)} tasks")
 (guide-submit-task-input-formats)=
 ## 多种输入格式
 
-`submit_task()` 和 `submit_batch()` 支持以下输入类型，提交时会自动检测并转换为内部 `Circuit` 对象：
+{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 和 {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>` 支持以下输入类型，提交时会自动检测并转换为内部 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 对象：
 
 - **`uniqc.Circuit`**（推荐）—— 直接传入
 - **OriginIR 字符串** —— 以 `QINIT` 开头的 OriginIR 文本
@@ -376,7 +376,7 @@ print(wait_for_result(uid)[0].counts)   # -> {'01': 1024}
 
 ### 返回值结构
 
-`wait_for_result(task_id, ...)` 返回 :class:`UnifiedResult`（dict-like，统一接口）；
+{py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>`(task_id, ...) 返回 {py:class}`UnifiedResult <uniqc.backend_adapter.task.result_types.UnifiedResult>`（dict-like，统一接口）；
 原生批量任务（`submit_batch(..., native_batch=True)`）返回 `list[UnifiedResult]`。
 
 ```python
@@ -397,7 +397,7 @@ print(f"<ZZ> = {exp_zz}")
 (guide-submit-task-polling)=
 ### 非阻塞查询
 
-所有任务提交都是异步的——`submit_task()` 立即返回 task_id，不会阻塞等待云端结果。你可以选择阻塞或非阻塞方式获取结果：
+所有任务提交都是异步的——{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 立即返回 task_id，不会阻塞等待云端结果。你可以选择阻塞或非阻塞方式获取结果：
 
 ```python
 from uniqc import submit_task, get_result, poll_result, TaskStatus
@@ -460,15 +460,15 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 - 如果你还没有完成线路验证，先回到 [本地模拟](simulation.md)
 - 如果你还不清楚线路如何构建，先阅读 [构建量子线路](circuit.md)
 - API 参考：
-  - {mod}`uniqc.backend_adapter.task_manager`
-  - {mod}`uniqc.backend_adapter.backend`
-  - {mod}`uniqc.backend_adapter.task.adapters`
-  - {mod}`uniqc.backend_adapter.task.normalizers`
+  - {py:mod}`uniqc.backend_adapter.task_manager`
+  - {py:mod}`uniqc.backend_adapter.backend`
+  - {py:mod}`uniqc.backend_adapter.task.adapters`
+  - {py:mod}`uniqc.backend_adapter.task.normalizers`
 
 (guide-submit-task-api-reference)=
 ## 完整 API 参考
 
-下面把 `submit_task` 的完整签名 / 默认参数 / 隐藏 kwargs 全部展开列出，避免你必须跳到独立 API 文档去查。`submit_batch` 接受同样的 kwargs，只是把 `circuit` 换成 `circuits: list[Circuit]`，并返回 `list[str]`。
+下面把 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 的完整签名 / 默认参数 / 隐藏 kwargs 全部展开列出，避免你必须跳到独立 API 文档去查。`submit_batch` 接受同样的 kwargs，只是把 `circuit` 换成 `circuits: list[Circuit]`，并返回 `list[str]`。
 
 ```{eval-rst}
 .. autofunction:: uniqc.backend_adapter.task_manager.submit_task
@@ -494,11 +494,11 @@ task_id = submit_task(circuit, backend='originq:WK_C180', circuit_optimize=True)
 
 | 参数 / 环境变量 | 默认值 | 作用 |
 |------|--------|------|
-| `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 `docs/source/2_advanced/compile_levels.md`。 |
+| `local_compile` (kwarg) | `1` | 本地 qiskit transpile 强度。`0` 完全关闭本地编译；`1` 在校验失败时做轻量 transpile 到 basis/拓扑；`2`/`3` 走更重的优化（更慢但更短/更高保真度的线路）。详情见 [编译强度](../2_advanced/compile_levels.md)。 |
 | `cloud_compile` (kwarg) | `1` | 转发给适配器的云端编译强度。`0` 关闭云端编译（如 OriginQ 适配器会收到 `circuit_optimize=False`），`>0` 开启；支持精细控制的适配器可直接读取 1/2/3。 |
 | `skip_validation` (kwarg) | `False` | 完全跳过离线 compatibility 检查（不推荐，会让已知会被云端拒绝的线路也走到网络层）。 |
-| `options` (kwarg) | `None` | 平台专属的强类型选项对象（`OriginQOptions` / `IBMOptions` 等）。 |
-| `metadata` (kwarg) | `None` | 写入本地 task 缓存的附加元数据；后续可通过 `query_task(...).metadata` 取回。 |
+| `options` (kwarg) | `None` | 平台专属的强类型选项对象（{py:class}`OriginQOptions <uniqc.backend_adapter.task.options.OriginQOptions>` / {py:class}`IBMOptions <uniqc.backend_adapter.task.options.IBMOptions>` 等）。 |
+| `metadata` (kwarg) | `None` | 写入本地 task 缓存的附加元数据；后续可通过 {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>`(...).metadata 取回。 |
 | `backend_name` / `chip_id` (kwarg) | — | 旧式写法，把 chip 名以独立 kwarg 形式传入。新代码直接写在 `backend='provider:chip'` 即可，旧写法会被自动归一。 |
 
 > 文档版本与代码同步保证：基本用法示例由 `uniqc/test/cloud/test_doc_basic_usage.py` 自动跑测，文档写错或代码行为漂移时 CI 会失败；如果你发现新的 doc 示例无法运行，请同步加一条对应测试。

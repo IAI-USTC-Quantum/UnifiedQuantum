@@ -1,6 +1,6 @@
 # 校准命令 (`uniqc calibrate`)
 
-`uniqc calibrate` 用于生成后续 QEM 和噪声建模需要的实验数据。校准模块只负责运行实验并写入 `~/.uniqc/calibration_cache/`；QEM 模块在读取这些数据时检查 `calibrated_at` 和 TTL。
+`uniqc calibrate` 用于生成后续 QEM 和噪声建模需要的实验数据。[校准模块](../2_advanced/calibration.md)只负责运行实验并写入 `~/.uniqc/calibration_cache/`；QEM 模块（{py:mod}`uniqc.qem`）在读取这些数据时检查 `calibrated_at` 和 TTL。
 
 ## 子命令
 
@@ -50,7 +50,7 @@ uniqc calibrate readout --backend dummy --type 1q --qubits 0 1 2
 uniqc calibrate readout --backend dummy --qubits 0 1 --output readout.json
 ```
 
-读出校准结果会保存 assignment fidelity 和 confusion matrix。后续 `uniqc.qem` 会按 `calibrated_at` 检查数据是否过期。
+读出校准结果（由 {py:class}`ReadoutCalibrator <uniqc.calibration.readout.calibrator.ReadoutCalibrator>` 生成）会保存 assignment fidelity 和 confusion matrix。后续 `uniqc.qem`（如 {py:class}`ReadoutEM <uniqc.qem.readout_em.ReadoutEM>`）会按 `calibrated_at` 检查数据是否过期。
 
 ## Pattern
 
@@ -62,4 +62,4 @@ uniqc calibrate pattern --qubits 0 1 2 3 --type auto
 uniqc calibrate pattern --type circuit --circuit circuit.ir
 ```
 
-`pattern` 主要用于并行 XEB 和芯片调度检查。输出包含 `n_rounds`、`chromatic_number` 和每轮可并行执行的 2q gate 分组。
+`pattern` 主要用于并行 XEB 和芯片调度检查。输出包含 `n_rounds`、`chromatic_number` 和每轮可并行执行的 2q gate 分组（由 {py:class}`ParallelPatternGenerator <uniqc.calibration.xeb.patterns.ParallelPatternGenerator>` 生成）。

@@ -68,8 +68,8 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 进入弃用轨道，**将在 0.2.0 移除**：
 
 - `uniqc.visualization.draw()`（旧行为：委托 pyqpanda3 的 `draw_qprog` 输出
-  字符画）→ 迁移：`uniqc.visualization.render(circuit, mode="text")` 或
-  `Circuit.draw("text")`。
+  字符画）→ 迁移：{py:func}`uniqc.visualization.render(circuit, mode="text") <uniqc.visualization.circuit_render.render>` 或
+  {py:meth}`Circuit.draw("text") <uniqc.circuit_builder.qcircuit.Circuit.draw>`。
 - `uniqc.visualization.draw_html()`（旧行为：timeline 风格静态 HTML）→
   迁移：`render(circuit, mode="html")` / `Circuit.draw("html")`。
 - `uniqc.compile.draw`（上述 `draw` 的再导出）→ 迁移：同上。
@@ -83,7 +83,7 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 - **算法构件的 in-place 旧形式** —— 下列 `*_circuit(circuit, ...)`
   就地突变写法已全部移除，统一收敛为 fragment 形式
   `*_circuit(n_qubits, ...) -> Circuit`，调用方用
-  `circuit.add_circuit(fragment)` 组合：
+  {py:meth}`circuit.add_circuit(fragment) <uniqc.circuit_builder.qcircuit.Circuit.add_circuit>` 组合：
 
   - `qft_circuit(circuit, ...)`
   - `deutsch_jozsa_circuit(circuit, oracle, ...)`
@@ -101,15 +101,15 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
   - `grover_diffusion(..., ancilla=...)` —— 该参数无效果，已删除。
 
 - **`uniqc.simulator.get_backend()`** —— 改用
-  {func}`uniqc.simulator.get_simulator` 或
-  {func}`uniqc.simulator.create_simulator`（参数相同）。顶层
+  {py:func}`get_simulator() <uniqc.simulator.get_backend.get_simulator>` 或
+  {py:func}`create_simulator() <uniqc.simulator.get_backend.create_simulator>`（参数相同）。顶层
   `uniqc.get_backend()`（云后端工厂）不受影响。
 - **`IBMAdapter`**（`uniqc.backend_adapter.task.adapters.ibm_adapter`）
-  —— 改用 `QiskitAdapter`（同样基于 `qiskit-ibm-runtime`，构造签名
+  —— 改用 {py:class}`QiskitAdapter <uniqc.backend_adapter.task.adapters.qiskit_adapter.QiskitAdapter>`（同样基于 `qiskit-ibm-runtime`，构造签名
   `proxy=` 一致）。`ibm_adapter` 模块本身保留（其中的标定数据辅助
   函数仍被 `QiskitAdapter` 使用）。
 - **平台原生 task id 查询回退**（`uniqc.backend_adapter.task_manager`）
-  —— 查询接口（`query_task` / `get_platform_task_ids` 等）不再把平台
+  —— 查询接口（{py:func}`query_task <uniqc.backend_adapter.task_manager.query_task>` / {py:func}`get_platform_task_ids <uniqc.backend_adapter.task_manager.get_platform_task_ids>` 等）不再把平台
   原生 id 经 shard 索引隐式解析到 `uqt_*` 父任务；请改用提交时返回的
   uniqc 内部 task id。显式传入 `backend=` 的 legacy 直连查询路径不受
   影响。shard 索引本身（`TaskStore.find_uniqc_id_by_platform_id`）
@@ -126,7 +126,7 @@ UnifiedQuantum 使用 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)
 引入新的 `DeprecationWarning` 时，按以下步骤操作：
 
 1. **使用集中辅助函数**：调用
-   {func}`uniqc._deprecation.warn_removed_in_0_1_0`，
+   ``uniqc._deprecation.warn_removed_in_0_1_0()``，
    不要手写 `warnings.warn(..., DeprecationWarning, ...)`。
    这样所有消息都包含字符串 `"uniqc 0.1.0"`，方便统一搜索与
    迁移工具识别。

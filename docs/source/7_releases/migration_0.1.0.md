@@ -53,7 +53,7 @@ adapter = QiskitAdapter(proxy=...)
 
 ## 平台原生 task id 查询回退 → uniqc 内部 task id
 
-查询接口（`query_task` / `get_platform_task_ids` 等）不再把平台原生
+查询接口（{py:func}`query_task <uniqc.backend_adapter.task_manager.query_task>` / {py:func}`get_platform_task_ids <uniqc.backend_adapter.task_manager.get_platform_task_ids>` 等）不再把平台原生
 task id 经 shard 索引隐式解析到 `uqt_*` 父任务。
 
 ```python
@@ -70,10 +70,10 @@ result = query_task(task_id)
 
 ## 算法构件：in-place 旧形式 → fragment + `add_circuit`
 
-以下 12 个函数不再接受 `Circuit` 作为首参做就地突变，统一收敛为
+以下 12 个函数不再接受 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 作为首参做就地突变，统一收敛为
 fragment 形式 `f(n_qubits, ...) -> Circuit`：
 
-`qft_circuit`、`deutsch_jozsa_circuit`、`dicke_state_circuit`、
+{py:func}`qft_circuit <uniqc.algorithms.core.circuits.qft.qft_circuit>`、`deutsch_jozsa_circuit`、`dicke_state_circuit`、
 `thermal_state_circuit`、`cluster_state`、`ghz_state`、`w_state`、
 `amplitude_estimation_circuit`、`grover_oracle`、`grover_diffusion`、
 `grover_operator`、`vqd_circuit`。
@@ -120,7 +120,7 @@ c.add_circuit(grover_diffusion(qubits=list(range(n))))
 - `grover_diffusion(n_qubits=None, *, qubits=None)`：`qubits=None` 时默认
   `[0, 1]`（或 `range(n_qubits)`）。
 - `vqd_circuit(n_qubits, *, ansatz_params, prev_states, ...)`：等价于
-  `vqd_ansatz` 的 fragment 包装。
+  {py:func}`vqd_ansatz <uniqc.algorithms.core.circuits.vqd.vqd_ansatz>` 的 fragment 包装。
 
 ## `grover_diffusion(..., ancilla=...)` 参数删除
 

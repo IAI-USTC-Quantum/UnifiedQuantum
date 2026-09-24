@@ -63,10 +63,10 @@ pytest uniqc/test/ -v --real-cloud-test
 
 | 模块 | 测试文件 | 测试方式 | 覆盖范围 |
 |------|----------|----------|----------|
-| **simulator** | `test_simulator.py` | 单元测试 | 噪声模拟器（`NoisySimulator`）statevector/density_matrix 后端计算正确性；含自定义错误模型测试 |
+| **simulator** | `test_simulator.py` | 单元测试 | 噪声模拟器（{py:class}`NoisySimulator <uniqc.simulator.simulator.NoisySimulator>`）statevector/density_matrix 后端计算正确性；含自定义错误模型测试 |
 | **originir** | `test_originir_parser.py`, `test_random_OriginIR.py` | 单元测试 + 随机回归 | 解析器：随机生成 OriginIR → 解析 → 重建 → 模拟结果一致性验证；密度矩阵后端与 QuTip 对比 |
 | **qasm** | `test_qasm_parser.py`, `test_random_QASM.py`, `test_random_QASM_measure.py`, `test_QASMBench.py` | 单元测试 + 随机回归 + Benchmark | QASM 解析与重建一致性；statevector/density_matrix 后端与 Qiskit 对比；shots 采样与 Qiskit 对比；QASMBench 兼容性验证 |
-| **transpiler** | `test_transpile.py` | 单元测试 | `plot_time_line` 脉冲序列可视化正确性 |
+| **transpiler** | `test_transpile.py` | 单元测试 | {py:func}`plot_time_line() <uniqc.visualization.timeline.plot_time_line>` 脉冲序列可视化正确性 |
 | **analyzer** | `test_result_adapter.py` | 单元测试 | 结果适配器工具函数基本验证 |
 | **circuit_builder** | `test_general.py` | 集成测试 | 电路构建基本功能（iswap 等特殊门操作） |
 | **demos** | `test_demos.py` | 集成测试 | 示例代码（`backend='dummy:local:simulator'` 模式）端到端运行验证 |
@@ -152,11 +152,11 @@ QASMBench 基准测试兼容性：
 
 Fake-backend 端到端测试，**无需 API key 或云访问**：
 
-- `submit_task` + `get_result` / `wait_for_result` 完整流水线
-- `poll_result` 非阻塞查询
-- `submit_batch` 批量提交与结果排序
+- {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` + {py:func}`get_result() <uniqc.backend_adapter.task_manager.get_result>` / {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` 完整流水线
+- {py:func}`poll_result() <uniqc.backend_adapter.task_manager.poll_result>` 非阻塞查询
+- {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>` 批量提交与结果排序
 - OriginIR / QASM 字符串自动检测输入
-- `Circuit.from_qasm()` / `Circuit.to_qasm()` 序列化往返
+- {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`.from_qasm() / `Circuit.to_qasm()` 序列化往返
 - 全目标门集（H, X, Y, Z, S, T, RX, RY, RZ, P, U1, U2, U3, CNOT, CZ, SWAP, CRX, CRY, CRZ, CP, CU, TOFFOLI）
 - `qiskit.QuantumCircuit` 自动转换
 
@@ -169,7 +169,7 @@ pytest uniqc/test/task_pipeline/test_fake_backend.py -v
 
 IBM 适配器本地测试，使用 qiskit fake provider（无需 IBM Quantum 凭证）：
 
-- `IBMCircuitAdapter.adapt()` 转换验证
+- {py:class}`IBMCircuitAdapter <uniqc.backend_adapter.circuit_adapter.IBMCircuitAdapter>`.adapt() 转换验证
 - 全目标门集适配
 - `qiskit_adapter._normalize_qiskit_status` 状态映射验证
 

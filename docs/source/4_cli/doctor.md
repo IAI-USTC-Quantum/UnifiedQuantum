@@ -22,20 +22,20 @@ uniqc doctor
 
 ### 3. 配置文件
 
-- 验证 `~/.uniqc/config.yaml` 存在性
-- 调用 `validate_config()` 报告所有错误/警告
+- 验证 [`~/.uniqc/config.yaml`](config.md) 存在性
+- 调用 {py:func}`validate_config() <uniqc.config.validate_config>` 报告所有错误/警告
 - 显示当前活跃 profile
 - 对每个平台展示脱敏后的 API Key（前 6 位 + `****`）
 
 ### 4. 任务数据库
 
-检查 `~/.uniqc/cache/tasks.sqlite`：
+检查 [`~/.uniqc/cache/tasks.sqlite`](task.md)：
 - 验证 `application_id` 是否为 `0x554E4943`（UNIC）
 - 报告 schema 版本和任务数量
 
 ### 5. 后端缓存
 
-检查 `~/.uniqc/backend/backends.json`：
+检查 [`~/.uniqc/backend/backends.json`](backend.md)：
 - 显示每个平台的缓存后端数量
 - 报告缓存年龄和是否过期（TTL 24 小时）
 

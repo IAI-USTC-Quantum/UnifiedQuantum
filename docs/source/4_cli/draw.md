@@ -1,7 +1,7 @@
 # 线路绘制 (`uniqc draw`)
 
 把 OriginIR / OpenQASM 2.0 电路文件渲染成字符画、矢量图、位图、quantikz 源码或
-自包含 HTML。渲染内核与 Python API `Circuit.draw()` 完全一致（见
+自包含 HTML。渲染内核与 Python API {py:meth}`Circuit.draw() <uniqc.circuit_builder.qcircuit.Circuit.draw>` 完全一致（见
 [构造电路 · 可视化](circuit-visualization)）。
 
 ## 基本用法

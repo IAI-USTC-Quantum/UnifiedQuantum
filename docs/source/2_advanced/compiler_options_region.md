@@ -2,16 +2,16 @@
 # 编译、选项与区域选择
 
 ```{important}
-本页所有 `compile()` / `compile_with_config()` / `compile_for_backend()` /
-`schedule_circuit()` / `plot_time_line_html()` 调用都**强制依赖** Qiskit。
+本页所有 {py:func}`compile() <uniqc.compile.compiler.compile>` / {py:func}`compile_with_config() <uniqc.compile.compiler.compile_with_config>` / {py:func}`compile_for_backend() <uniqc.compile.policy.compile_for_backend>` /
+{py:func}`schedule_circuit() <uniqc.visualization.timeline.schedule_circuit>` / {py:func}`plot_time_line_html() <uniqc.visualization.timeline.plot_time_line_html>` 调用都**强制依赖** Qiskit。
 任何 `level`（含 `level=0`）都会进入 Qiskit transpiler 路径，缺少 `qiskit`
-时直接抛 `CompilationFailedError`。Qiskit 现在是 `unified-quantum` 的核心依赖，
+时直接抛 {py:mod}`CompilationFailedError <uniqc.exceptions>`。Qiskit 现在是 `unified-quantum` 的核心依赖，
 随默认安装一起进来；如果 `import qiskit` 失败，说明环境损坏，请重装：
 
     pip install --upgrade unified-quantum
 
 只做线路构建、`Circuit.qasm` / `Circuit.originir` 导出、模拟器运行（含
-`Simulator` / `MPSSimulator` / `dummy:local:virtual-line-N`）这些场景**不需要**
+{py:class}`Simulator <uniqc.simulator.simulator.Simulator>` / {py:class}`MPSSimulator <uniqc.simulator.mps_simulator.MPSSimulator>` / `dummy:local:virtual-line-N`）这些场景**不需要**
 qiskit；只有进入"编译/调度/timeline"才需要。
 ```
 
@@ -41,13 +41,13 @@ qiskit；只有进入"编译/调度/timeline"才需要。
 
 ### 1.1 为什么需要 `compile()`？
 
-现有的 `transpile_originir()` / `transpile_qasm()` 返回字符串，缺少：
+现有的 {py:func}`transpile_originir() <uniqc.compile.qiskit_transpiler.transpile_originir>` / {py:func}`transpile_qasm() <uniqc.compile.qiskit_transpiler.transpile_qasm>` 返回字符串，缺少：
 
 - **芯片标定感知路由**：根据各量子比特 fidelity 选择高保真路径
 - **统一的返回类型**：可返回 `Circuit` 对象而非字符串
 - **编译元数据**：SWAP 插入数量、预估成功率
 
-`compile()` 是这三个问题的统一解决方案。
+{py:func}`compile() <uniqc.compile.compiler.compile>` 是这三个问题的统一解决方案。
 
 ### 1.2 核心签名
 
@@ -96,7 +96,7 @@ assert "OPENQASM" in qasm
 
 ### 1.5 `TranspilerConfig`：类型化配置（可选）
 
-`TranspilerConfig` 是一个 `frozen=True` 的数据类，可用于打包并复用一组编译参数（便于缓存、传参）。注意：`compile()` 当前不直接接受 `config` 参数，调用时需要把字段展开传入：
+{py:class}`TranspilerConfig <uniqc.compile.compiler.TranspilerConfig>` 是一个 `frozen=True` 的数据类，可用于打包并复用一组编译参数（便于缓存、传参）。注意：`compile()` 当前不直接接受 `config` 参数，调用时需要把字段展开传入：
 
 ```python
 from uniqc import TranspilerConfig, compile, find_backend
@@ -165,13 +165,13 @@ transpile_qasm(qasm_strs, ...)
 
 ### 2.1 为什么需要 `BackendOptions`？
 
-现有 `submit_task(circuit, "originq:WK_C180", shots=1000, measurement_amend=True)` 的问题：
+现有 {py:func}`submit_task(circuit, "originq:WK_C180", shots=1000, measurement_amend=True) <uniqc.backend_adapter.task_manager.submit_task>` 的问题：
 
 - **无 IDE 自动补全**：字符串参数无法提供类型提示
 - **无文档注解**：不知道有哪些可选参数
 - **平台间不一致**：各平台参数名不同，无法统一处理
 
-`BackendOptions` 在保留 `**kwargs` 兼容性的同时，提供了类型安全的替代接口。
+{py:class}`BackendOptions <uniqc.backend_adapter.task.options.BackendOptions>` 在保留 `**kwargs` 兼容性的同时，提供了类型安全的替代接口。
 
 ### 2.2 类层次结构
 
@@ -273,7 +273,7 @@ task_id = submit_task(circuit, "originq:WK_C180", shots=500,
 
 量子芯片上的物理量子比特具有不同的门保真度（由标定数据表征）。对于一个需要 N 个量子比特的电路，选择**哪 N 个量子比特**会直接影响执行成功率。
 
-`RegionSelector` 通过分析 `ChipCharacterization` 标定数据，自动找到：
+{py:class}`RegionSelector <uniqc.backend_adapter.region_selector.RegionSelector>` 通过分析 `ChipCharacterization` 标定数据，自动找到：
 
 - 最高保真度的线性链（1D）
 - 适合给定电路的 2D 区域
@@ -471,7 +471,7 @@ print(f"任务 ID: {task_id}")
 
 **缺少 Qiskit 依赖**
 
-调用 `compile()` 时若 Qiskit 未安装，会抛出 `CompilationFailedError`。Qiskit 是核心依赖，缺失时通常意味着安装损坏，重装即可：
+调用 {py:func}`compile() <uniqc.compile.compiler.compile>` 时若 Qiskit 未安装，会抛出 {py:mod}`CompilationFailedError <uniqc.exceptions>`。Qiskit 是核心依赖，缺失时通常意味着安装损坏，重装即可：
 
 ```
 pip install --upgrade unified-quantum
@@ -479,19 +479,19 @@ pip install --upgrade unified-quantum
 
 **绘图功能需要 matplotlib**
 
-`plot_time_line()` 需要 matplotlib。若未安装，调用时返回 `None` 而不抛异常。若需脉冲序列可视化：
+{py:func}`plot_time_line() <uniqc.visualization.timeline.plot_time_line>` 需要 matplotlib。若未安装，调用时返回 `None` 而不抛异常。若需脉冲序列可视化：
 
 ```
 pip install matplotlib
 ```
 
 :::{note}
-🔧 `schedule_circuit` 与 `plot_time_line*` 在内部**始终**调用 `compile()`（默认
+🔧 {py:func}`schedule_circuit() <uniqc.visualization.timeline.schedule_circuit>` 与 `plot_time_line*` 在内部**始终**调用 `compile()`（默认
 `compile_to_basis=True`），即便输入只使用平台原生门也不例外。因此它们**强制依赖**
 Qiskit；qiskit 现在是 `unified-quantum` 的核心依赖，缺失时请重装：
 
     pip install --upgrade unified-quantum
 
 唯一可绕过 `compile()` 的路径是：构造一份所有 entry 都已带 `start_time` 的 pulse /
-timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 `TimelineDurationError`）。
+timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 {py:mod}`TimelineDurationError <uniqc.exceptions>`）。
 :::

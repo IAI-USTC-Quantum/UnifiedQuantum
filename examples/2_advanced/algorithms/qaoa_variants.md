@@ -2,7 +2,7 @@
 
 ## Background and Theory
 
-The Quantum Approximate Optimization Algorithm (QAOA) solves combinatorial optimization problems by alternating between a **cost Hamiltonian** $H_C$ (encoding the objective) and a **mixer Hamiltonian** $H_M$ (exploring the solution space):
+The [Quantum Approximate Optimization Algorithm (QAOA)](qaoa.md) solves combinatorial optimization problems by alternating between a **cost Hamiltonian** $H_C$ (encoding the objective) and a **mixer Hamiltonian** $H_M$ (exploring the solution space):
 
 $$|\psi(\boldsymbol{\gamma}, \boldsymbol{\beta})\rangle = \prod_{l=1}^{p} e^{-i\beta_l H_M} e^{-i\gamma_l H_C} |s\rangle$$
 

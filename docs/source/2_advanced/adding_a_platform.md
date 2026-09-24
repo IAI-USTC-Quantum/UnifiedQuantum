@@ -16,7 +16,7 @@
 UnifiedQuantum **没有插件机制**：平台名硬编码在一组注册表、枚举和映射表里。
 新增一个平台意味着在核心层、配置层、外围（CLI / Gateway / 前端 / 打包 /
 测试 / 文档）各登记一遍。漏掉任何一处，平台会在某条路径上"半可见"——例如
-能提交但 `uniqc backend list` 不列出，或 `uniqc doctor` 不检查其 SDK。
+能提交但 [`uniqc backend list`](../4_cli/backend.md) 不列出，或 [`uniqc doctor`](../4_cli/doctor.md) 不检查其 SDK。
 
 下面按层给出完整 checklist。文中以 `<p>` 表示新平台的小写标识符
 （如 `tianyan`），以 `<P>` 表示类名前缀（如 `Tianyan`）。
@@ -27,7 +27,7 @@ UnifiedQuantum **没有插件机制**：平台名硬编码在一组注册表、�
 ### 1. `task/adapters/<p>_adapter.py` —— QuantumAdapter 实现
 
 新建适配器类，继承
-{mod}`uniqc.backend_adapter.task.adapters.base` 的 `QuantumAdapter`，实现：
+{mod}`uniqc.backend_adapter.task.adapters.base` 的 {py:class}`QuantumAdapter <uniqc.backend_adapter.task.adapters.base.QuantumAdapter>`，实现：
 
 | 方法 | 职责 |
 |------|------|
@@ -38,7 +38,7 @@ UnifiedQuantum **没有插件机制**：平台名硬编码在一组注册表、�
 | `query_batch(taskids)` | 批量查询，状态按 `failed` > `running` > `success` 合并 |
 | `is_available()` | SDK / 凭证层面的可用性检查 |
 | `list_backends()` | 返回平台后端原始列表（供 registry 归一化） |
-| `dry_run(originir, *, shots, **kwargs)` | 离线校验，返回 `DryRunResult` |
+| `dry_run(originir, *, shots, **kwargs)` | 离线校验，返回 {py:class}`DryRunResult <uniqc.backend_adapter.task.result_types.DryRunResult>` |
 
 ```{warning}
 `dry_run()` **必须是纯离线的**——不允许任何网络调用、不允许读取云端状态。
@@ -47,36 +47,36 @@ UnifiedQuantum **没有插件机制**：平台名硬编码在一组注册表、�
 ```
 
 平台 SDK（如 `cqlib`、`lqcloud`）一律在方法内部或 `__init__` 中通过
-`optional_deps.require()` 懒导入，禁止模块顶层 `import`，否则未装
+{py:mod}`optional_deps <uniqc.backend_adapter.task.optional_deps>`.require() 懒导入，禁止模块顶层 `import`，否则未装
 对应 extra 的用户连 `import uniqc` 都会变慢或报错。
 
 ### 2. `backend.py` —— Backend 薄壳
 
-新增 `<P>Backend(QuantumBackend)` 子类：只需设置 `platform` 类变量与
+新增 `<P>Backend` 子类（继承 {py:class}`QuantumBackend <uniqc.backend_adapter.backend.QuantumBackend>`）：只需设置 `platform` 类变量与
 `_adapter_class`，再登记进模块底部的 `BACKENDS` 注册表，使
-`get_backend("<p>")` / `get_backend("<p>:<chip>")` 可用。
+{py:func}`get_backend("<p>") <uniqc.backend_adapter.backend.get_backend>` / `get_backend("<p>:<chip>")` 可用。
 
 ### 3. `backend_info.py` —— Platform 枚举
 
-在 `Platform` 枚举中新增成员 `<P> = "<p>"`。`parse_backend_id()`、
+在 {py:class}`Platform <uniqc.backend_adapter.backend_info.Platform>` 枚举中新增成员 `<P> = "<p>"`。{py:func}`parse_backend_id() <uniqc.backend_adapter.backend_info.parse_backend_id>`、
 CLI、Gateway 全部以该枚举为准。
 
 ### 4. `circuit_adapter.py` —— CircuitAdapter
 
-新增 `<P>CircuitAdapter(CircuitAdapter[T])`，实现 `adapt(circuit)`：
-把内部 `Circuit` 转为平台提交所需类型（字符串或 SDK 线路对象）。
+新增 `<P>CircuitAdapter`（继承 {py:class}`CircuitAdapter <uniqc.backend_adapter.circuit_adapter.CircuitAdapter>`[T]），实现 `adapt(circuit)`：
+把内部 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 转为平台提交所需类型（字符串或 SDK 线路对象）。
 
 ### 5. `backend_registry.py` —— 后端归一化与适配器构造
 
 - 新增 `_normalise_<p>(raw)`：把 `list_backends()` 的原始输出归一化为
-  `BackendInfo` 列表（name / num_qubits / topology / status /
+  {py:class}`BackendInfo <uniqc.backend_adapter.backend_info.BackendInfo>` 列表（name / num_qubits / topology / status /
   is_simulator / is_hardware / extra / 标定数据字段）。
 - 把 `_normalise_<p>` 登记进 `_NORMALISERS`。
 - 在 `_build_adapter()` 中新增 `Platform.<P>` 分支（懒导入适配器）。
 
 ### 6. `task_manager.py` —— 提交路径接线
 
-- `ADAPTER_MAP["<p>"] = <P>CircuitAdapter`：让 `submit_task(backend="<p>:<chip>")`
+- `ADAPTER_MAP["<p>"] = <P>CircuitAdapter`：让 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>`（`submit_task(backend="<p>:<chip>")`）
   找到线路转换器。
 - `_PLATFORM_CHIP_KWARG["<p>"] = "<chip 参数名>"`：`backend="<p>:<chip>"`
   中的 chip 部分会以这个参数名注入到 adapter 的 `submit()` kwargs
@@ -87,7 +87,7 @@ CLI、Gateway 全部以该枚举为准。
 | 文件 | 要做的修改 |
 |------|-----------|
 | `task/options.py` | 新增 `<P>Options` dataclass 并接入 `BackendOptionsFactory` |
-| `task/normalizers.py` | 新增 `normalize_<p>()`（平台原始结果 → `UnifiedResult`），并加入 `__all__` |
+| `task/normalizers.py` | 新增 `normalize_<p>()`（平台原始结果 → {py:class}`UnifiedResult <uniqc.backend_adapter.task.result_types.UnifiedResult>`），并加入 `__all__` |
 | `task/optional_deps.py` | 新增 `check_<p>()` 与 `<P>_AVAILABLE`（基于 `_can_import()`） |
 | `task/adapters/__init__.py` | 在 `__getattr__` 中懒导出 `<P>Adapter`（不要顶层 import，避免硬依赖 SDK） |
 | `preflight.py` | `PROVIDER_INSTALL_HINTS["<p>"]` 加安装提示；凭证探测分支调用 `load_<p>_config()` |
@@ -101,10 +101,10 @@ CLI、Gateway 全部以该枚举为准。
 - `SUPPORTED_PLATFORMS`：加入 `"<p>"`。
 - `PLATFORM_REQUIRED_FIELDS`：声明必填凭证字段
   （如 tianyan 的 `["login_key"]`、logicalqubit 的 `["api_key"]`）。
-- `PLATFORM_KNOWN_FIELDS`：声明全部合法字段，用于 `validate_config()`
+- `PLATFORM_KNOWN_FIELDS`：声明全部合法字段，用于 {py:func}`validate_config() <uniqc.config.validate_config>`
   的"未知字段"告警（如 logicalqubit 还需包含可选的 `url`）。
 - `DEFAULT_CONFIG`：给 `<p>` 一节加空模板。
-- 新增 `load_<p>_config()`：缺凭证时抛出带 `uniqc config set <p>.<field>`
+- 新增 `load_<p>_config()`：缺凭证时抛出带 [`uniqc config set`](../4_cli/config.md) `<p>.<field>`
   提示的 `ImportError`。
 - `has_platform_credentials()`：若平台的凭证字段名不是 `token`
   （如 `login_key` / `api_key`），需要在这里加分支——当前实现里
@@ -130,7 +130,7 @@ CLI、Gateway 全部以该枚举为准。
 - **凭证懒加载**：adapter 构造时不读配置，首次真正需要（submit / list_backends）
   时才调用 `load_<p>_config()`。这样未配置该平台用户的其它功能不受影响。
 - **SDK 懒导入**：同上，一律经 `optional_deps.require()` / `check_<p>()`。
-  缺失时报 `MissingDependencyError`，提示语里给出
+  缺失时报 {py:mod}`MissingDependencyError <uniqc.exceptions>`，提示语里给出
   `pip install unified-quantum[<p>]`。
 - **backend 标识符**：用户侧一律 `backend="<platform>:<chip>"`；裸平台名
   在云提交路径上被拒绝并提示可用 chip 列表。chip 参数名经

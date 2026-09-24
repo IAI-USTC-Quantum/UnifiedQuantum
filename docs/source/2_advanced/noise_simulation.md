@@ -39,7 +39,7 @@ prob = sim.simulate_pmeasure(circuit.originir)
 
 ## 错误模型（Error Model）
 
-UnifiedQuantum 提供了多种预设错误模型，位于 `uniqc.simulator.error_model` 模块中。
+UnifiedQuantum 提供了多种预设错误模型，位于 {py:mod}`uniqc.simulator.error_model` 模块中。
 
 | 错误模型 | 说明 | 参数 |
 |---------|------|------|
@@ -162,7 +162,7 @@ sim = NoisySimulator(
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `backend_type` | `str` | 必须是 `'density_matrix'`，状态向量后端不支持噪声 |
-| `error_loader` | `ErrorLoader` | 错误加载器实例，如 `ErrorLoader_GenericError` |
+| `error_loader` | {py:class}`ErrorLoader <uniqc.simulator.error_model.ErrorLoader>` | 错误加载器实例，如 `ErrorLoader_GenericError` |
 | `readout_error` | `Dict[int, List[float]]` | 测量读取错误配置，键为量子比特编号 |
 
 ## 完整示例
@@ -205,7 +205,7 @@ print(prob)
 
 ## 更进一步：声明式含噪虚拟机
 
-手写 `ErrorLoader` 适合程序化构造噪声；如果只想用一份配置文件描述整台含噪机器
+手写 {py:class}`ErrorLoader <uniqc.simulator.error_model.ErrorLoader>` 适合程序化构造噪声；如果只想用一份配置文件描述整台含噪机器
 （拓扑、分层 gate error model、T1/T2 热弛豫、逐比特读出错误），可以在
 `~/.uniqc/backend/virtual/` 下写 YAML，然后以 `dummy:virtual:<name>` 作为 backend
 使用，无需手写 Python 噪声代码。详见 [自定义含噪量子虚拟机](virtual_backends.md)。

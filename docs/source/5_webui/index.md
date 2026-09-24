@@ -19,7 +19,7 @@ npm install
 npm run dev   # vite dev server，会代理到 uniqc gateway 后端
 ```
 
-后端的 ASGI app 由 ``uniqc.gateway.server.create_app()`` 构造；可以直接用 uvicorn /
+后端的 ASGI app 由 {py:func}`create_app() <uniqc.gateway.server.create_app>` 构造；可以直接用 uvicorn /
 gunicorn / 第三方 reverse-proxy 部署。
 
 ## 编程访问
@@ -32,13 +32,13 @@ gunicorn / 第三方 reverse-proxy 部署。
 | 路径 | 内容 |
 |------|------|
 | ``~/.uniqc/config.yaml`` | 平台 token、proxy、profile、gateway host/port |
-| ``~/.uniqc/cache/tasks.sqlite`` | 本地任务历史（SQLite，由 ``TaskStore`` 管理） |
+| ``~/.uniqc/cache/tasks.sqlite`` | 本地任务历史（SQLite，由 {py:class}`TaskStore <uniqc.backend_adapter.task.store.TaskStore>` 管理） |
 | ``~/.uniqc/backend/backends.json`` | 后端发现缓存 |
 | ``~/.uniqc/backend/chips/`` | chip characterization 缓存 |
 | ``~/.uniqc/backend/virtual/`` | 用户自定义含噪量子虚拟机（YAML） |
 | ``~/.uniqc/calibration_cache/`` | XEB / readout 校准结果（带 ISO-8601 时间戳） |
 | ``~/.uniqc/logs/`` | gateway / cli 运行日志（如果启用） |
 
-任务库是 ``TaskStore`` 抽象（``uniqc.backend_adapter.task.store``）的默认 SQLite 实现，
-schema 由 ``uniqc.backend_adapter.database_migration`` 管理，可以平滑升级到新版本。
-迁移在每次 ``submit_task`` / ``query_task`` 第一次调用时自动触发。
+任务库是 ``TaskStore`` 抽象（{py:mod}`uniqc.backend_adapter.task.store`）的默认 SQLite 实现，
+schema 由 {py:mod}`uniqc.backend_adapter.database_migration` 管理，可以平滑升级到新版本。
+迁移在每次 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>` 第一次调用时自动触发。

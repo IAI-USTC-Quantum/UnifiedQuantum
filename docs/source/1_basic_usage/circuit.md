@@ -4,14 +4,14 @@
 (guide-circuit-when-to-read)=
 ## 什么时候先看本页
 
-当你还没把量子线路表达出来——还不确定如何用 {class}`uniqc.circuit_builder.Circuit` 把一个量子算法或实验想法写成可执行的线路表示时，先看本页。
+当你还没把量子线路表达出来——还不确定如何用 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 把一个量子算法或实验想法写成可执行的线路表示时，先看本页。
 
 本页解决的核心问题是：**如何从空线路开始，构建一个可以交给模拟器或真机的量子程序**。
 
 (guide-circuit-problems)=
 ## 本页解决的问题
 
-- 如何创建空线路并添加量子门（{class}`uniqc.circuit_builder.Circuit`）
+- 如何创建空线路并添加量子门（{py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`）
 - 如何添加测量指令
 - 如何使用 CONTROL / DAGGER 控制结构
 - 如何将线路导出为 OriginIR 或 OpenQASM 2.0 字符串
@@ -125,7 +125,7 @@ circuit_from_originir = Circuit.from_originir(originir_str)
 
 ## 线路信息
 
-`Circuit` 的几个常用统计量都通过 **属性 (property)** 暴露 —— 直接 `circuit.depth` 取值，
+{py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 的几个常用统计量都通过 **属性 (property)** 暴露 —— 直接 `circuit.depth` 取值，
 不要写成 `circuit.depth()`（会得到 `TypeError: 'int' object is not callable`）。
 
 ```python
@@ -137,7 +137,7 @@ circuit.opcode_list  # 属性：门操作列表
 ```
 
 如果需要按门类型 / 仅计算某些子集的深度，可使用底层函数
-{func}`uniqc.compile.compute_gate_depth`，它接受一个 `Circuit` 并接受
+{py:func}`compute_gate_depth() <uniqc.compile.validation.compute_gate_depth>`，它接受一个 `Circuit` 并接受
 `virtual_z=True/False` 等开关，返回与 `Circuit.depth` 同种类的整数指标。
 
 ## 量子比特重映射
@@ -150,7 +150,7 @@ remapped = circuit.remapping({0: 3, 1: 5})
 (circuit-visualization)=
 ## 可视化
 
-``Circuit.draw()`` 是统一入口（等价于 {func}`uniqc.visualization.render`），一个方法覆盖
+{py:meth}`Circuit.draw() <uniqc.circuit_builder.qcircuit.Circuit.draw>` 是统一入口（等价于 {py:func}`render() <uniqc.visualization.circuit_render.render>`），一个方法覆盖
 七种输出形态：
 
 ```python
@@ -182,7 +182,7 @@ circuit.draw("svg",
 ```
 
 在 Jupyter 里对线路直接 ``回车`` 即出图（``_repr_svg_``），在终端 ``print(circuit)``
-即字符画。命令行对应物为 ``uniqc draw <file>``（见 [CLI · draw](../4_cli/draw.md)）。
+即字符画。命令行对应物为 [`uniqc draw`](../4_cli/draw.md)（``<file>`` 为线路文件）。
 
 > 更多细节见 [线路分析](../2_advanced/circuit_analysis.md) 与可执行示例
 > ``examples/1_basic_usage/06_circuit_drawing.py``。
@@ -190,7 +190,7 @@ circuit.draw("svg",
 (guide-circuit-unitary-matrix)=
 ## 提取酉矩阵
 
-对于不含测量门的线路，可以直接通过 `Circuit.get_matrix()`（或顶层 `uniqc.get_matrix(circuit)`）获取完整酉矩阵：
+对于不含测量门的线路，可以直接通过 {py:meth}`Circuit.get_matrix() <uniqc.circuit_builder.qcircuit.Circuit.get_matrix>`（或顶层 {py:func}`get_matrix() <uniqc.circuit_builder.matrix.get_matrix>`）获取完整酉矩阵：
 
 ```python
 import numpy as np
@@ -207,7 +207,7 @@ print(U.shape)           # (4, 4)
 约定：qubit 0 是 statevector 索引的最低位（little-endian），且 `state_out = U @ state_in`，门按 `opcode_list` 中的顺序左乘。
 
 :::{note}
-若线路中包含 `MEASURE` / `CONTROL` / `DAGGER` 等无 unitary 表示的 opcode，会抛出 `NotMatrixableError`。如果只想看演化后的态矢，推荐使用状态向量模拟器：
+若线路中包含 `MEASURE` / `CONTROL` / `DAGGER` 等无 unitary 表示的 opcode，会抛出 {py:class}`NotMatrixableError <uniqc.exceptions.NotMatrixableError>`。如果只想看演化后的态矢，推荐使用状态向量模拟器：
 
 ```python
 from uniqc.simulator import Simulator
@@ -251,14 +251,14 @@ c.x(data[1:3])         # 对 data[1], data[2] 应用 X 门
 
 ### QReg 类型
 
-- **QReg**：命名量子寄存器，支持索引和切片
-- **Qubit**：单个量子比特的命名引用
-- **QRegSlice**：寄存器切片视图，用于多量子比特操作
+- **{py:class}`QReg <uniqc.circuit_builder.qubit.QReg>`**：命名量子寄存器，支持索引和切片
+- **{py:class}`Qubit <uniqc.circuit_builder.qubit.Qubit>`**：单个量子比特的命名引用
+- **{py:class}`QRegSlice <uniqc.circuit_builder.qubit.QRegSlice>`**：寄存器切片视图，用于多量子比特操作
 
 (guide-circuit-parametric)=
 ## 参数化电路
 
-UnifiedQuantum 支持符号化参数，可以在运行时绑定具体值。这对于变分算法（如 VQE、QAOA）非常有用。
+UnifiedQuantum 支持符号化参数（{py:class}`Parameter <uniqc.circuit_builder.parameter.Parameter>`），可以在运行时绑定具体值。这对于变分算法（如 VQE、QAOA）非常有用。
 
 ### 创建参数
 
@@ -310,7 +310,7 @@ phi.bind(0.3)
 
 ### 参数数组
 
-使用 `Parameters` 创建参数数组：
+使用 {py:class}`Parameters <uniqc.circuit_builder.parameter.Parameters>` 创建参数数组：
 
 ```python
 from uniqc import Parameters
@@ -365,7 +365,7 @@ print(c.originir)
 
 #### 往返解析
 
-`Circuit.from_originir`（及别名 `from_originir_ext`）能解析回符号电路，保留参数名
+{py:meth}`Circuit.from_originir() <uniqc.circuit_builder.qcircuit.Circuit.from_originir>`（及别名 `from_originir_ext`）能解析回符号电路，保留参数名
 与数组结构，因此 `from_originir(c.originir).originir == c.originir`：
 
 ```python
@@ -376,7 +376,7 @@ assert c2.free_parameters == ["phi", "theta", "w_0", "w_1"]
 
 #### 绑定数值：assign_parameters
 
-用 `Circuit.assign_parameters`（别名 `bind_parameters`）把符号参数绑定为具体数值。
+用 {py:meth}`Circuit.assign_parameters() <uniqc.circuit_builder.qcircuit.Circuit.assign_parameters>`（别名 `bind_parameters`）把符号参数绑定为具体数值。
 默认返回一个新电路（不修改原电路），支持 **部分绑定**——未提供的参数仍保持符号：
 
 ```python
@@ -402,7 +402,7 @@ OpenQASM / 官方 OriginIR，或提交云端——这些操作会抛出明确的
 (guide-circuit-named-circuit)=
 ## Named Circuit（可复用子程序）
 
-`@circuit_def` 装饰器用于定义可复用的量子子程序，类似 QASM3 的 gate 定义。
+{py:func}`@circuit_def <uniqc.circuit_builder.named_circuit.circuit_def>` 装饰器用于定义可复用的量子子程序，类似 QASM3 的 gate 定义。
 
 ### 定义子程序
 
@@ -492,7 +492,7 @@ circuit = rot_x.build_standalone(param_values={"theta": 0.5})
 
 ### 子程序属性
 
-NamedCircuit 对象提供以下属性：
+{py:class}`NamedCircuit <uniqc.circuit_builder.named_circuit.NamedCircuit>` 对象提供以下属性：
 
 ```python
 print(bell_pair.name)           # "bell_pair"

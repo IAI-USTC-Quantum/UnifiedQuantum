@@ -116,4 +116,4 @@ MEASURE q[1], c[1]
 | 动态电路扩展（`RESET` / `QIF` / `QWHILE` / `AND`/`OR`/`XOR`/`MOV`/`NOT`） | - | Y |
 | `QRAMDECL` / QRAM 调用 | - | Y |
 
-当 OriginIR-ext 代码提交到 OriginQ 云时，扩展门会通过 `decompose_for_originir()` 自动分解为官方门，inline 语法会通过 `opcode_to_line_originir_official()` 转换为块语法。
+当 OriginIR-ext 代码提交到 OriginQ 云时，扩展门会通过 {py:func}`decompose_for_originir() <uniqc.compile.decompose.decompose_for_originir>` 自动分解为官方门，inline 语法会通过 {py:func}`opcode_to_line_originir_official() <uniqc.circuit_builder.opcode.opcode_to_line_originir_official>` 转换为块语法。

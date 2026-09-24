@@ -30,11 +30,11 @@
 | ``uniqc gateway start --host ... --port ...`` | 启动 WebUI / FastAPI 网关 | [`uniqc gateway`](gateway.md) · [WebUI](../5_webui/index.md) |
 
 帮助文本里都附带了对应文档的 URL；加 ``--ai-hints`` 选项（或环境变量 ``UNIQC_AI_HINTS=1``）
-会输出额外的 AI 工作流提示。
+会输出额外的 [AI 工作流提示](config.md)。
 
 ## Dummy backend id 命名
 
-CLI ``-p`` / ``-b`` 跟 Python API ``backend=...`` 共用同一套 id 文法（详见
+CLI ``-p`` / ``-b`` 跟 Python API {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 的 ``backend=...`` 参数共用同一套 id 文法（详见
 [进阶教程 · Dummy 系统](advanced-dummy-system)）：
 
 | id | 含义 |

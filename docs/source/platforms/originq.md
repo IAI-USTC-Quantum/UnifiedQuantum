@@ -4,8 +4,9 @@
 ## 简介
 
 OriginQ（本源量子云）提供超导量子计算机真机与多种模拟器后端。uniqc 通过
-OriginIR 与其交互——uniqc 的 `Circuit.originir` 原生输出即 OriginIR，
-因此 OriginQ 是转换损耗最低的平台。
+[OriginIR](../1_basic_usage/originir.md) 与其交互——uniqc 的
+{py:attr}`Circuit.originir <uniqc.circuit_builder.qcircuit.Circuit.originir>`
+原生输出即 OriginIR，因此 OriginQ 是转换损耗最低的平台。
 
 ## 安装
 
@@ -56,8 +57,11 @@ print(wait_for_result(task_id))
 
 ## 平台约定与限制
 
-- 输入格式：OriginIR 字符串，由 `OriginQCircuitAdapter` 自动转换。
-- 提交为**异步**：`submit()` 立即返回任务 ID，用 `wait_for_result()`
+- 输入格式：[OriginIR](../1_basic_usage/originir.md) 字符串，由
+  {py:class}`OriginQCircuitAdapter <uniqc.backend_adapter.circuit_adapter.OriginQCircuitAdapter>`
+  自动转换。
+- 提交为**异步**：`submit()` 立即返回任务 ID，用
+  {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>`
   阻塞等待结果。
 - 支持完整的 OriginIR 门集（含 `RPhi`、`UU15`、`CONTROL`/`DAGGER` 块等），
   详见 {ref}`平台约定 <platform-gate-support>`。

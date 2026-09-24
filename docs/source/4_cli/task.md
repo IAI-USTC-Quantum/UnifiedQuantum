@@ -1,6 +1,6 @@
 # 任务管理 (`uniqc task`)
 
-管理已提交的任务。
+管理已提交的任务（Python API 详见[任务管理](../1_basic_usage/task_manager.md)）。
 
 ## 列出任务
 
@@ -42,7 +42,7 @@ uniqc task show TASK_ID
 uniqc task show TASK_ID --format json
 ```
 
-> 如需等待任务完成并获取完整结果，请使用 `uniqc result TASK_ID --wait`。`task show` 显示缓存的任务信息，适合快速查看已缓存的结果。
+> 如需等待任务完成并获取完整结果，请使用 [`uniqc result TASK_ID --wait`](result.md)。`task show` 显示缓存的任务信息（{py:class}`TaskInfo <uniqc.backend_adapter.task.store.TaskInfo>`），适合快速查看已缓存的结果。
 
 ## 清理任务缓存
 

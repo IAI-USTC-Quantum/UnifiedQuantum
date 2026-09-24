@@ -4,7 +4,7 @@
 (advanced-adapter-overview)=
 ## 概述
 
-UnifiedQuantum 的云平台适配器采用 **适配器模式（Adapter Pattern）**，通过统一的 `QuantumAdapter` 基类定义接口，各平台实现具体的适配逻辑。这种设计使得用户可以在不同量子云平台之间无缝切换，而无需修改业务代码。
+UnifiedQuantum 的云平台适配器采用 **适配器模式（Adapter Pattern）**，通过统一的 {py:class}`QuantumAdapter <uniqc.backend_adapter.task.adapters.base.QuantumAdapter>` 基类定义接口，各平台实现具体的适配逻辑。这种设计使得用户可以在不同量子云平台之间无缝切换，而无需修改业务代码。
 
 ### 架构图
 
@@ -46,17 +46,17 @@ IBM 平台由 QiskitAdapter（基于 qiskit-ibm-runtime）承接；旧的 IBMAda
 (advanced-adapter-unified-io)=
 ## 统一输入与结果接口
 
-`submit_task()` 和 `submit_batch()` 接受多种输入类型（`Circuit`、OriginIR/QASM 字符串、`qiskit.QuantumCircuit`），提交前自动转换为内部 `Circuit` 对象。结果检索有两种模式：
+{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 和 {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>` 接受多种输入类型（{py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`、OriginIR/QASM 字符串、`qiskit.QuantumCircuit`），提交前自动转换为内部 `Circuit` 对象。结果检索有两种模式：
 
-- `poll_result(task_id)` — 非阻塞查询，立即返回 `TaskInfo`（含 `.status` 和 `.result`）
-- `get_result(task_id)` / `wait_for_result(task_id)` — 阻塞等待直到任务完成或超时
+- {py:func}`poll_result() <uniqc.backend_adapter.task_manager.poll_result>` — 非阻塞查询，立即返回 {py:class}`TaskInfo <uniqc.backend_adapter.task.store.TaskInfo>`（含 `.status` 和 `.result`）
+- {py:func}`get_result() <uniqc.backend_adapter.task_manager.get_result>` / {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` — 阻塞等待直到任务完成或超时
 
-所有 adapter 的 `query()` 方法返回统一的 `{"status": "success"|"failed"|"running", ...}` 格式，`task_manager` 自动映射为 `TaskStatus` 枚举。
+所有 adapter 的 `query()` 方法返回统一的 `{"status": "success"|"failed"|"running", ...}` 格式，`task_manager` 自动映射为 {py:class}`TaskStatus <uniqc.backend_adapter.task.store.TaskStatus>` 枚举。
 
 (advanced-adapter-base-class)=
 ## QuantumAdapter 基类
 
-`QuantumAdapter` 是所有适配器的抽象基类，定义了统一的接口。
+{py:class}`QuantumAdapter <uniqc.backend_adapter.task.adapters.base.QuantumAdapter>` 是所有适配器的抽象基类，定义了统一的接口。
 
 ### 接口定义
 
@@ -181,7 +181,7 @@ results = adapter.query_sync(task_id, timeout=300)
 
 用于本地模拟，无需真实云平台连接。
 
-用户侧任务提交优先使用显式 backend id：`dummy`（无约束、无噪声）、`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`（虚拟拓扑、无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。直接构造 `DummyAdapter` 主要用于底层 adapter 测试或自定义噪声模型。
+用户侧任务提交优先使用显式 backend id：`dummy`（无约束、无噪声）、`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC`（虚拟拓扑、无噪声）、`dummy:<platform>:<backend>`（真实 backend compile/transpile + 本地含噪执行）。直接构造 {py:class}`DummyAdapter <uniqc.backend_adapter.task.adapters.dummy_adapter.DummyAdapter>` 主要用于底层 adapter 测试或自定义噪声模型。
 
 ```python
 from uniqc.backend_adapter.task.adapters.dummy_adapter import DummyAdapter
@@ -225,7 +225,7 @@ bitstring，由 normalizer 改写为统一 cbit 框架。凭证字段为
 (advanced-adapter-normalization)=
 ## 结果归一化
 
-各平台适配器返回的结果格式可能不同，`normalizers` 模块提供了统一的结果转换函数。
+各平台适配器返回的结果格式可能不同，{py:mod}`normalizers <uniqc.backend_adapter.task.normalizers>` 模块提供了统一的结果转换函数。
 
 ### UnifiedResult 类
 
@@ -295,7 +295,7 @@ api_key = config['api_key']  # OriginQ 配置以 api_key 为主键
 (advanced-adapter-custom)=
 ## 实现自定义适配器
 
-要实现自定义适配器，继承 `QuantumAdapter` 并实现所有抽象方法：
+要实现自定义适配器，继承 {py:class}`QuantumAdapter <uniqc.backend_adapter.task.adapters.base.QuantumAdapter>` 并实现所有抽象方法：
 
 ```python
 from uniqc.backend_adapter.task.adapters.base import (
@@ -396,7 +396,7 @@ def query_batch(self, taskids):
 
 ### 3. 异常处理
 
-使用 `MissingDependencyError` 提供清晰的依赖缺失提示：
+使用 {py:mod}`MissingDependencyError <uniqc.exceptions>` 提供清晰的依赖缺失提示：
 
 ```python
 from uniqc.backend_adapter.task.optional_deps import MissingDependencyError, check_qiskit

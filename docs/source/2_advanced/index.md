@@ -15,7 +15,8 @@ error mitigation、MPS 模拟器、动态电路（mid-circuit measurement 与经
 walkthrough
 ```
 
-[进阶主题走读](walkthrough.md) 串联 7 个核心进阶主题（编译选项、RegionSelector、
+[进阶主题走读](walkthrough.md) 串联 7 个核心进阶主题（编译选项、
+{py:class}`RegionSelector <uniqc.backend_adapter.region_selector.RegionSelector>`、
 变分算法、Dummy 系统、Calibration、QEM、MPS），每节都来自可重跑的示例脚本。
 
 ## 编译与基础设施

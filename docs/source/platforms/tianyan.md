@@ -38,7 +38,7 @@ uniqc backend list -p tianyan
 | `tianyan_tn` | 张量网络仿真 |
 | `tianyan_tnn` | 带噪声张量网络仿真 |
 
-实际可用列表以 `uniqc backend list -p tianyan` 输出为准。机器名中的数字是
+实际可用列表以 [`uniqc backend list -p tianyan`](../4_cli/backend.md) 输出为准。机器名中的数字是
 机型名而非在线比特数（例如 `tianyan176` 当前在线 66 比特）；后端发现会尽力
 用 `download_config` 的实况数据，取不到时才回退到机型名数字。
 
@@ -65,7 +65,10 @@ print(wait_for_result(task_id))
 
 ## 平台约定与限制
 
-- 提交格式为 **QCIS**，由 `TianyanCircuitAdapter` 从内部 `Circuit` 自动转换。
+- 提交格式为 **QCIS**，由
+  {py:class}`TianyanCircuitAdapter <uniqc.backend_adapter.circuit_adapter.TianyanCircuitAdapter>`
+  从内部 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`
+  自动转换。
 - 结果按**测量比特标签序**归一为 `{bitstring: shots}` counts，并遵循
   {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`，即第一次 `measure()` 写入的比特）。

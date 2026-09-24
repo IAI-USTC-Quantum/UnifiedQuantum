@@ -12,8 +12,8 @@
 升级到 ``v0.1.1`` 时最值得先确认的是：
 
 - **你是否在用旧的绘图入口。** ``uniqc.visualization.draw()`` / ``draw_html()``
-  已弃用（``0.2.0`` 移除），改用 ``Circuit.draw(...)``、
-  ``uniqc.visualization.render(...)`` 或 ``uniqc draw`` CLI；新的 ``text``
+  已弃用（``0.2.0`` 移除），改用 {py:meth}`Circuit.draw(...) <uniqc.circuit_builder.qcircuit.Circuit.draw>`、
+  {py:func}`uniqc.visualization.render(...) <uniqc.visualization.circuit_render.render>` 或 [`uniqc draw`](../4_cli/draw.md) CLI；新的 ``text``
   模式由自研渲染器输出，不再委托 pyqpanda3（Python 3.14 可用）。
 - **其余变更对用户透明**：新渲染引擎是纯增量能力，旧 OriginIR / QASM /
   提交工作流不受影响。
@@ -108,9 +108,9 @@ Gateway 前端构建 + API 全通；Quark / TianYan / LogicalQubit 实时发现
 
 - **移除全部 `0.0.x` 弃用 API**（逐项对照见 [0.1.0 迁移指南](migration_0.1.0.md)）：
   Quafu 平台（BAQIS 芯片改用 ``quark:<chip>``）、``uniqc.simulator.get_backend()``
-  （改用 ``get_simulator()`` / ``create_simulator()``）、``IBMAdapter``
-  （改用 ``QiskitAdapter``）、平台 task-id 回退查询、12 个算法 building block
-  的 in-place 形式（改用 ``circuit.add_circuit(fragment)``）。
+  （改用 {py:func}`get_simulator() <uniqc.simulator.get_backend.get_simulator>` / {py:func}`create_simulator() <uniqc.simulator.get_backend.create_simulator>`）、``IBMAdapter``
+  （改用 {py:class}`QiskitAdapter <uniqc.backend_adapter.task.adapters.qiskit_adapter.QiskitAdapter>`）、平台 task-id 回退查询、12 个算法 building block
+  的 in-place 形式（改用 {py:meth}`circuit.add_circuit(fragment) <uniqc.circuit_builder.qcircuit.Circuit.add_circuit>`）。
 - **C++ 模拟器拆分为独立包** ``uniqc-cppsimulator>=1.0.1,<2``：主包变为纯
   Python wheel，源码构建不再需要 CMake / C++ 工具链；import 名 ``uniqc_cpp``
   不变，Python 侧用法无感。
@@ -172,7 +172,7 @@ smoke 与双仓 contract parity 变成 blocking gate。
   下用 YAML 声明比特数、耦合拓扑和分层错误模型——统一 depolarizing、按门类型 /
   按门实例覆盖、T1/T2 热弛豫（由门时长换算为振幅阻尼 + 退相位）、逐比特读出错误——
   之后任何接受 backend id 的位置都可使用（``submit_task(...,
-  backend="dummy:virtual:<name>")``、``uniqc submit``、标定工作流）。新模块
+  backend="dummy:virtual:<name>")``、[`uniqc submit`](../4_cli/submit.md)、标定工作流）。新模块
   ``uniqc.backend_adapter.virtual_machine`` 提供严格校验（未知键、概率范围、拓扑
   一致性、``T2 <= 2*T1``、读出对形状），报错信息带文件路径；新错误模型
   ``uniqc.simulator.ThermalRelaxation``；新 CLI 组 ``uniqc backend virtual

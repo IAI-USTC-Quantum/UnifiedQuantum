@@ -77,7 +77,7 @@ uniqc --help
 
 ### Q：配置文件存储在哪里？
 
-配置文件位于 `~/.uniqc/config.yaml`。可以通过 `uniqc config init` 重新初始化。
+配置文件位于 `~/.uniqc/config.yaml`。可以通过 [`uniqc config init`](config.md) 重新初始化。
 
 ### Q：如何切换不同的云平台账户？
 
@@ -97,7 +97,7 @@ uniqc config profile use account1
 
 ### Q：dummy 平台是什么？
 
-`dummy` 是一个本地模拟器后端，用于测试工作流而无需连接真实云平台。提交到 dummy 的任务会立即返回模拟结果。
+`dummy` 是一个[本地模拟器后端](../platforms/dummy.md)，用于测试工作流而无需连接真实云平台。提交到 dummy 的任务会立即返回模拟结果。
 
 ```bash
 # 无约束、无噪声
@@ -110,4 +110,4 @@ uniqc submit bell.ir --backend dummy:local:virtual-line-3 --wait
 uniqc submit bell.ir --backend dummy:originq:WK_C180 --wait
 ```
 
-`dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 `uniqc backend list` 的后端列表中。
+`dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 [`uniqc backend list`](backend.md) 的后端列表中。

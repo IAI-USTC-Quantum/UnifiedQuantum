@@ -26,7 +26,7 @@ uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000 --wait
 
 ## 验证环境
 
-安装与配置完成后，可运行 `uniqc doctor` 一键验证环境（依赖、配置、缓存、网络连通性等），
+安装与配置完成后，可运行 [`uniqc doctor`](../4_cli/doctor.md) 一键验证环境（依赖、配置、缓存、网络连通性等），
 详见 [`uniqc doctor`](../4_cli/doctor.md)。
 
 ## 下一步

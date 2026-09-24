@@ -4,7 +4,8 @@
 `dummy:<platform>:<chip>`，uniqc 还支持**完全由用户定义的含噪量子虚拟机**：在
 `~/.uniqc/backend/virtual/` 下写一个 YAML 文件，声明比特数、耦合拓扑、分层 gate error
 model、T1/T2 热弛豫和逐比特读出错误，然后以 `dummy:virtual:<name>` 作为 backend
-标识符在任意接受 backend 的地方使用（`submit_task`、`uniqc submit`、XEB / 读出标定工作流等）。
+标识符在任意接受 backend 的地方使用（{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>`、
+[`uniqc submit`](../4_cli/submit.md)、XEB / 读出标定工作流等）。
 
 ## 目录布局
 
@@ -109,7 +110,7 @@ noise:
 | `qubits` / `num_qubits` | 比特列表或比特数(二选一，必填) |
 | `topology` | 可选耦合边列表；省略表示全连接。2q `gate_instance` 的边必须在其中 |
 | `gate_times_ns` | 门时长(ns)。`default_1q` / `default_2q` 按 arity 提供默认值，门名键(如 `CZ`)覆盖特定门。配置热弛豫时必需 |
-| `noise.depolarizing` | 均匀退极化：`1q` 作用于所有 1q 门，`2q` 作用于所有 2q 门（真双比特退极化通道 `TwoQubitDepolarizing`) |
+| `noise.depolarizing` | 均匀退极化：`1q` 作用于所有 1q 门，`2q` 作用于所有 2q 门（真双比特退极化通道 {py:class}`TwoQubitDepolarizing <uniqc.simulator.error_model.TwoQubitDepolarizing>`） |
 | `noise.gate_type` | 按门类型的退极化率，与均匀噪声叠加；值可写 `{depolarizing: p}` 或简写 `p` |
 | `noise.gate_instance` | 按具体门实例的退极化率列表；CZ 比特顺序无关（自动归一化） |
 | `noise.thermal_relaxation` | 逐比特 T1/T2(μs),`default` 作用于全部比特，`qubits` 按比特覆盖 |
@@ -121,7 +122,7 @@ noise:
 ### T1/T2 热弛豫模型
 
 热弛豫按门的实际时长换算为振幅阻尼 + 退相位通道（纯 Python 实现，复用
-`AmplitudeDamping` / `PhaseFlip` opcode)。对比特 q、门时长 t（统一换算为 ns):
+{py:class}`AmplitudeDamping <uniqc.simulator.error_model.AmplitudeDamping>` / {py:class}`PhaseFlip <uniqc.simulator.error_model.PhaseFlip>` opcode)。对比特 q、门时长 t（统一换算为 ns):
 
 - 振幅阻尼：`γ = 1 - exp(-t / T1)`（仅当配置了 T1)
 - 退相位：`p_φ = 0.5 * (1 - exp(-t * (1/T2 - 1/(2*T1))))`(T1、T2 均配置时）;
@@ -142,13 +143,13 @@ noise:
 
 ## 校验与错误排查
 
-`uniqc backend virtual validate <name>` 会逐项校验：未知键、概率越界、拓扑边引用未声明
+[`uniqc backend virtual validate`](../4_cli/backend.md) `<name>` 会逐项校验：未知键、概率越界、拓扑边引用未声明
 比特、`gate_instance` 边不在拓扑中、`t2_us > 2 * t1_us`、热弛豫缺少 `gate_times_ns`、
 读出错误不是二元组等。提交任务时 preflight 也会加载配置，配置缺失或非法会在提交前
 以带文件路径的错误信息失败。
 
-`uniqc backend virtual list` 会同时列出合法与非法的配置文件（非法项标红并附原因）,
-`uniqc backend list` / WebUI 只展示合法虚拟机（非法文件以 warning 形式跳过）。
+[`uniqc backend virtual list`](../4_cli/backend.md) 会同时列出合法与非法的配置文件（非法项标红并附原因）,
+[`uniqc backend list`](../4_cli/backend.md) / WebUI 只展示合法虚拟机（非法文件以 warning 形式跳过）。
 
 ## CLI 参考
 

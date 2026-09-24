@@ -1,6 +1,6 @@
 # 云端任务提交 (`uniqc submit`)
 
-将电路提交到量子云平台。
+将电路提交到量子云平台（对应 Python API {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>`）。
 
 后端命名规则和典型示例见 [提交任务 → 后端命名规则](guide-submit-task-backend-naming)。
 
@@ -46,7 +46,7 @@ uniqc submit circuit.ir --backend dummy:local:mps-linear-32:chi=64:cutoff=1e-10
 uniqc submit circuit.ir --backend dummy:originq:WK_C180
 ```
 
-> `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend compile/transpile，再在本地 dummy 上执行含噪模拟。完整后端命名规则见 [提交任务 → 后端命名规则](guide-submit-task-backend-naming)。
+> `dummy:<platform>:<backend>` 是规则型写法，不会作为独立 backend 列表项展示；提交时会先按真实 backend {py:func}`compile() <uniqc.compile.compiler.compile>`/transpile，再在本地 [dummy](../platforms/dummy.md) 上执行含噪模拟。完整后端命名规则见 [提交任务 → 后端命名规则](guide-submit-task-backend-naming)。
 
 ## 批量提交
 
@@ -59,13 +59,13 @@ uniqc submit circuit1.ir circuit2.ir circuit3.ir --backend originq:WK_C180
 
 | 平台 | 说明 |
 |------|------|
-| `originq` | 本源量子云平台 |
-| `ibm` | IBM Quantum |
-| `dummy` | 本地模拟器（用于测试） |
+| `originq` | [本源量子云平台](../platforms/originq.md) |
+| `ibm` | [IBM Quantum](../platforms/ibm.md) |
+| `dummy` | [本地模拟器](../platforms/dummy.md)（用于测试） |
 
 ## 试运行模式 (`--dry-run`)
 
-`--dry-run` 在不发起任何网络请求的情况下验证电路兼容性。检查项包括：
+`--dry-run`（对应 Python API {py:func}`dry_run_task() <uniqc.backend_adapter.task_manager.dry_run_task>`）在不发起任何网络请求的情况下验证电路兼容性。检查项包括：
 
 - 电路格式解析（OriginIR 或 OpenQASM 2.0）
 - 目标后端的门集兼容性

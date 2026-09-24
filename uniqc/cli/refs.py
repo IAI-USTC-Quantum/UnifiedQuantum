@@ -14,63 +14,63 @@ DOCS_URL = "https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/"
 # ----------------------------------------------------------------------
 CMD_REFS: dict[str, list[tuple[str, str]]] = {
     "circuit": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-circuit"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/circuit.html"),
         ("GitHub", GITHUB_URL),
     ],
     "simulate": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-simulate"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/simulate.html"),
         ("GitHub", GITHUB_URL),
     ],
     "submit": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-submit"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/submit.html"),
         ("GitHub", GITHUB_URL),
     ],
     "result": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-result"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/result.html"),
         ("GitHub", GITHUB_URL),
     ],
     "task-list": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-task-list"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/task.html"),
         ("GitHub", GITHUB_URL),
     ],
     "task-show": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-task-show"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/task.html"),
         ("GitHub", GITHUB_URL),
     ],
     "backend-list": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-backend"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/backend.html"),
         ("GitHub", GITHUB_URL),
     ],
     "backend-show": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-backend"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/backend.html"),
         ("GitHub", GITHUB_URL),
     ],
     "config": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-config"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/config.html"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate": [
-        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/calibrate.html"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-xeb": [
-        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#xeb"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/calibrate.html#xeb"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-readout": [
-        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#readout"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/calibrate.html#readout"),
         ("GitHub", GITHUB_URL),
     ],
     "calibrate-pattern": [
-        ("CLI Docs", f"{DOCS_URL}source/4_cli/index.html#pattern"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/calibrate.html#pattern"),
         ("GitHub", GITHUB_URL),
     ],
     "doctor": [
-        ("CLI Docs", f"{DOCS_URL}source/cli/doctor.html"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/doctor.html"),
         ("GitHub", GITHUB_URL),
     ],
     "sync": [
-        ("CLI Docs", f"{DOCS_URL}cli.html#uniqc-sync"),
+        ("CLI Docs", f"{DOCS_URL}source/4_cli/sync.html"),
         ("GitHub", GITHUB_URL),
     ],
 }

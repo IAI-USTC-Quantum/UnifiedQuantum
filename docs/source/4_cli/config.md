@@ -23,7 +23,7 @@ default:
     token: xxx
 ```
 
-- **自动迁移**：当 uniqc 升级、配置 schema 发生变化时，`load_config`（CLI 与
+- **自动迁移**：当 uniqc 升级、配置 schema 发生变化时，{py:func}`load_config() <uniqc.config.load_config>`（CLI 与
   Python API 共用）会在读取时自动把旧版配置逐级迁移到当前版本，并尽可能写回
   磁盘（写入失败不影响本次读取）。你不需要手动修改配置文件。
 - **无版本号的旧文件**：在引入 schema 版本之前生成的 `config.yaml` 被视为
@@ -68,7 +68,7 @@ uniqc config list --format json
 uniqc config validate
 ```
 
-> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/config.yaml` 中的配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python API 读取。新代码优先使用顶级 `uniqc.config` 模块；旧路径 `uniqc.backend_adapter.config` 仍保留兼容。
+> **配置文件同时对 CLI 和 Python API 生效**：`~/.uniqc/config.yaml` 中的配置不仅支持 `uniqc config set` 写入的 CLI 命令，也被 Python API 读取。新代码优先使用顶级 {py:mod}`uniqc.config` 模块；旧路径 {py:mod}`uniqc.backend_adapter.config` 仍保留兼容。
 
 ## AI 工作流提示
 

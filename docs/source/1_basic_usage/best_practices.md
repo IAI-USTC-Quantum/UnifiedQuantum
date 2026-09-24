@@ -89,13 +89,13 @@ dummy backend 的编号语义固定为：
 - `dummy:local:virtual-grid-RxC`：`R*C` 比特网格拓扑，无噪声，例如 `dummy:local:virtual-grid-2x2`。
 - `dummy:<platform>:<backend>`：复用指定真实 backend 的芯片拓扑和标定数据做本地含噪仿真，例如 `dummy:originq:WK_C180`。使用前需要已有 chip characterization 缓存，或在可访问云平台时由适配器拉取。
 
-`dummy:<platform>:<backend>` 是提交规则，不是一个需要预先注册或枚举出来的 backend；它不会作为独立卡片出现在 `uniqc backend list` 或 Gateway WebUI 的 backend 列表里。提交时 UnifiedQuantum 会先按真实 backend 的拓扑和门集执行 compile/transpile，保存编译后线路，再交给本地 dummy 含噪模拟器执行。
+`dummy:<platform>:<backend>` 是提交规则，不是一个需要预先注册或枚举出来的 backend；它不会作为独立卡片出现在 [`uniqc backend list`](../4_cli/backend.md) 或 Gateway WebUI 的 backend 列表里。提交时 UnifiedQuantum 会先按真实 backend 的拓扑和门集执行 compile/transpile，保存编译后线路，再交给本地 dummy 含噪模拟器执行。
 
-真实后端的账号、网络、区域选择、任务缓存和结果归一化都属于 `uniqc.backend_adapter`。具体设备示例，例如 WK180，应放在 `examples/`，不应进入 `uniqc` 通用包。
+真实后端的账号、网络、区域选择、任务缓存和结果归一化都属于 {py:mod}`uniqc.backend_adapter`。具体设备示例，例如 WK180，应放在 `examples/`，不应进入 `uniqc` 通用包。
 
 ## 路径四：校准、QEM 与后端格式审查
 
-校准数据属于 `uniqc.calibration`，error mitigation 属于 `uniqc.qem`。当需要检查云平台返回的后端格式是否满足 UnifiedQuantum 的最小约定时，使用 registry audit：
+校准数据属于 {py:mod}`uniqc.calibration`，error mitigation 属于 {py:mod}`uniqc.qem`。当需要检查云平台返回的后端格式是否满足 UnifiedQuantum 的最小约定时，使用 registry audit：
 
 ```python
 from uniqc import audit_backends, fetch_all_backends
@@ -108,7 +108,7 @@ issues = audit_backends(backends)
 
 ## 路径五：提交前格式校验与 gate depth 估计
 
-任何会真正发请求的提交（`submit_task` / `submit_batch`）都先经过一次 **离线** 校验，避免无效线路打到云端再被拒：
+任何会真正发请求的提交（{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>`）都先经过一次 **离线** 校验，避免无效线路打到云端再被拒：
 
 ```python
 from uniqc import (
@@ -154,14 +154,14 @@ depth = compute_gate_depth(circuit)                  # 默认 virtual_z=True
 depth_no_vz = compute_gate_depth(circuit, virtual_z=False)
 ```
 
-`compute_gate_depth` 严格按物理执行 layer 计数：单/双比特门并行折叠；`Z/RZ/S/T/U1` 视为 frame change 不占深度（`virtual_z=True`）；`BARRIER` 同步不计入；`MEASURE` 不计入。详细约定见 [平台约定 §2.8](platform-gate-depth)。
+{py:func}`compute_gate_depth() <uniqc.compile.validation.compute_gate_depth>` 严格按物理执行 layer 计数：单/双比特门并行折叠；`Z/RZ/S/T/U1` 视为 frame change 不占深度（`virtual_z=True`）；`BARRIER` 同步不计入；`MEASURE` 不计入。详细约定见 [平台约定 §2.8](platform-gate-depth)。
 
 **何时绕过校验**：
 
 - 一次性绕过：`submit_task(..., skip_validation=True)`（仅在你确信前端已经做过等价校验时使用，例如自定义 transpiler 已经把电路降到 backend 原生门集，再用 `uniqc` 仅作 IR adapter）
-- 没有 backend 缓存时：`compatibility_report` 会以 warning 形式提示，并继续执行；建议先 `uniqc backend update --platform <name>` 把后端拓扑拉到本地缓存
+- 没有 backend 缓存时：`compatibility_report` 会以 warning 形式提示，并继续执行；建议先 [`uniqc backend update`](../4_cli/backend.md) `--platform <name>` 把后端拓扑拉到本地缓存
 
-**多平台编译政策**（由 `compile_for_backend` 与 `submit_task(..., auto_compile=True)` 自动处理）：
+**多平台编译政策**（由 {py:func}`compile_for_backend() <uniqc.compile.policy.compile_for_backend>` 与 `submit_task(..., auto_compile=True)` 自动处理）：
 
 | 平台 | basis gate set | 提交语言 |
 |------|----------------|----------|
@@ -177,14 +177,14 @@ report = compatibility_report(circuit, backend_info, basis_gates=("h", "cz", "rx
 
 ## 模块边界
 
-- `uniqc.circuit_builder`：线路构建。
-- `uniqc.compile`：compile/transpile、OriginIR/OpenQASM 解析与互转。
-- `uniqc.config`：项目级配置，包括 profile、云平台 token、IBM proxy、AI workflow hints 等；`uniqc.backend_adapter.config` 仅作为兼容入口保留。
-- `uniqc.simulator`：本地 C++ 模拟器，无噪声和含噪声模拟。
-- `uniqc.backend_adapter`：后端 adapter、配置、网络、区域选择、任务管理、dummy 后端。
-- `uniqc.visualization`：线路可视化、结果可视化、timeline。
-- `uniqc.utils`：期望值、结果转换等公共函数。
-- `uniqc.algorithms`：通用算法组件与工作流。
-- `uniqc.calibration`：从后端取得和保存校准数据。
-- `uniqc.qem`：从 calibration 数据构建 error mitigator。
-- `uniqc.torch_adapter`：变分量子算法与 PyTorch 的连接层。
+- {py:mod}`uniqc.circuit_builder`：线路构建。
+- {py:mod}`uniqc.compile`：compile/transpile、OriginIR/OpenQASM 解析与互转。
+- {py:mod}`uniqc.config`：项目级配置，包括 profile、云平台 token、IBM proxy、AI workflow hints 等；`uniqc.backend_adapter.config` 仅作为兼容入口保留。
+- {py:mod}`uniqc.simulator`：本地 C++ 模拟器，无噪声和含噪声模拟。
+- {py:mod}`uniqc.backend_adapter`：后端 adapter、配置、网络、区域选择、任务管理、dummy 后端。
+- {py:mod}`uniqc.visualization`：线路可视化、结果可视化、timeline。
+- {py:mod}`uniqc.utils`：期望值、结果转换等公共函数。
+- {py:mod}`uniqc.algorithms`：通用算法组件与工作流。
+- {py:mod}`uniqc.calibration`：从后端取得和保存校准数据。
+- {py:mod}`uniqc.qem`：从 calibration 数据构建 error mitigator。
+- {py:mod}`uniqc.torch_adapter`：变分量子算法与 PyTorch 的连接层。

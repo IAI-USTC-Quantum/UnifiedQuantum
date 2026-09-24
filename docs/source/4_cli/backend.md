@@ -16,7 +16,7 @@
 
 所有子命令支持 `--ai-hints` / `--ai-hint` 标志（也可通过环境变量 `UNIQC_AI_HINTS=1` 或 `uniqc config always-ai-hint on` 启用），用于显示 AI 工作流提示。`workflow` 是文档中的工作流说明页，不是 `uniqc workflow` 子命令；需要下一步建议时优先使用 AI hints。
 
-Dummy backend 的可枚举列表包含通用本地 backend、虚拟拓扑 fixture（例如 `dummy:local:virtual-line-3`、`dummy:local:virtual-grid-2x2`），以及 `~/.uniqc/backend/virtual/` 下用户定义的含噪虚拟机（显示为 `virtual:<name>`）。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
+[Dummy backend](../platforms/dummy.md) 的可枚举列表包含通用本地 backend、虚拟拓扑 fixture（例如 `dummy:local:virtual-line-3`、`dummy:local:virtual-grid-2x2`），以及 `~/.uniqc/backend/virtual/` 下用户定义的含噪虚拟机（显示为 `virtual:<name>`）。`dummy:<platform>:<backend>`（例如 `dummy:originq:WK_C180`）是提交时解析的规则型写法，用来复用真实 backend 的拓扑和标定数据；它不会作为独立 backend 出现在列表或 Gateway backend 卡片中。
 
 ## 列出后端 (`uniqc backend list`)
 
@@ -89,7 +89,7 @@ uniqc backend update --clear
 uniqc backend update -c
 ```
 
-> 默认情况下，后端列表缓存有效期为 24 小时。如平台侧更新了硬件拓扑或新增后端，需运行此命令使列表同步。
+> 默认情况下，后端列表缓存（{py:mod}`uniqc.backend_adapter.backend_cache`）有效期为 24 小时。如平台侧更新了硬件拓扑或新增后端，需运行此命令使列表同步。
 
 ## 查看后端详情 (`uniqc backend show`)
 
@@ -163,7 +163,7 @@ uniqc backend chip-display originq/WK_C180 -u
 | Gate | 门类型（如 CNOT、CZ） |
 | Fidelity | 该量子比特对的双量子比特门保真度 |
 
-> 标定数据可用于量子比特选择（RegionSelector）和噪声感知编译（`compile()`），详见[编译选项与区域选择](../2_advanced/compiler_options_region.md)。
+> 标定数据可用于量子比特选择（{py:class}`RegionSelector <uniqc.backend_adapter.region_selector.RegionSelector>`）和噪声感知编译（{py:func}`compile() <uniqc.compile.compiler.compile>`），详见[编译选项与区域选择](../2_advanced/compiler_options_region.md)。
 
 ## 自定义含噪虚拟机 (`uniqc backend virtual`)
 

@@ -9,7 +9,7 @@ mitigation、MPS 模拟器。每一节都对应一个可运行的 ``examples/2_a
 ```{include} ../_generated/examples/2_advanced/01_compile_options.md
 ```
 
-完整接口签名与 BackendOptions 系列见 [编译选项与 RegionSelector](compiler_options_region.md)
+完整接口签名与 {py:class}`BackendOptions <uniqc.backend_adapter.task.options.BackendOptions>` 系列见 [编译选项与 RegionSelector](compiler_options_region.md)
 与 [编译强度](compile_levels.md)。
 
 ## 2. RegionSelector：在芯片上挑选高保真度子区域
@@ -53,8 +53,8 @@ DummyBackend 编号规则与本地噪声模拟说明见
 ```{include} ../_generated/examples/2_advanced/05_calibration_xeb.md
 ```
 
-完整 workflow 见 ``uniqc calibrate xeb`` / ``uniqc calibrate readout`` /
-``uniqc calibrate pattern``，结果统一缓存到 ``~/.uniqc/calibration_cache/``，
+完整 workflow 见 [`uniqc calibrate xeb`](../4_cli/calibrate.md) / [`uniqc calibrate readout`](../4_cli/calibrate.md) /
+[`uniqc calibrate pattern`](../4_cli/calibrate.md)，结果统一缓存到 ``~/.uniqc/calibration_cache/``，
 带 ISO-8601 时间戳和 TTL 新鲜度检查。详见 [校准](calibration.md)。
 
 ## 6. Error mitigation：M3 + ReadoutEM
@@ -64,8 +64,8 @@ DummyBackend 编号规则与本地噪声模拟说明见
 
 QEM 模块当前覆盖：
 
-* {py:class}`uniqc.M3Mitigator` —— 多比特读取误差线性反演（M3 风格）；
-* {py:class}`uniqc.ReadoutEM` —— 自动从 calibration cache 读校准、强制 TTL 检查；
+* {py:class}`M3Mitigator <uniqc.qem.m3.M3Mitigator>` —— 多比特读取误差线性反演（M3 风格）；
+* {py:class}`ReadoutEM <uniqc.qem.readout_em.ReadoutEM>` —— 自动从 calibration cache 读校准、强制 TTL 检查；
 * {py:mod}`uniqc.qem.zne` —— 零噪声外推（实验性）。
 
 详见 [校准 · M3 / ReadoutEM](calibration.md)。

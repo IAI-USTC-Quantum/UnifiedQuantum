@@ -1,6 +1,6 @@
 # MPS 模拟器 (MPSSimulator)
 
-UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：{py:class}`uniqc.simulator.MPSSimulator`。
+UnifiedQuantum 在原有的稠密态模拟器（{py:class}`Simulator <uniqc.simulator.simulator.Simulator>` / {py:class}`NoisySimulator <uniqc.simulator.simulator.NoisySimulator>`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：{py:class}`MPSSimulator <uniqc.simulator.mps_simulator.MPSSimulator>`。
 
 它的目标场景是：
 
@@ -48,7 +48,7 @@ psi = sim.simulate_statevector(c.originir)  # ≤ 24 qubit
 probs = sim.simulate_pmeasure(c.originir)   # ≤ 24 measured qubit
 ```
 
-`MPSConfig` 字段：
+{py:class}`MPSConfig <uniqc.simulator.mps_simulator.MPSConfig>` 字段：
 
 * `chi_max: int = 64` — 键维上限。χ 越大越精确，代价 `O(χ³)`；高度纠缠的线路需要把 `chi_max` 调大，单层张量的内存大致按 `N · χ² · d²` 增长（`d=2` 为单比特维度）
 * `svd_cutoff: float = 1e-12` — 截掉小于该阈值的奇异值
@@ -56,7 +56,7 @@ probs = sim.simulate_pmeasure(c.originir)   # ≤ 24 measured qubit
 
 ## 通过 dummy 后端调用
 
-跟 `dummy:local:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 `submit_task` / `wait_for_result` 流水线：
+跟 `dummy:local:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` 流水线：
 
 ```python
 from uniqc.backend_adapter.task_manager import submit_task, wait_for_result
@@ -73,7 +73,7 @@ dummy:local:mps-linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]
 
 * `linear-N` 给出比特数与拓扑（`[[0,1],[1,2],...,[N-2,N-1]]`），dry-run 阶段会拒绝跨距 ≠ 1 的双比特门
 * `chi`、`cutoff`、`seed` 三个 kwarg 会被转发到 `MPSConfig`
-* 与 `dummy:local:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 `NoisySimulator`
+* 与 `dummy:local:virtual-line-N` 不同，MPS 后端**忽略噪声相关字段**；如果你想要噪声，请使用 `dummy:<platform>:<chip>` 或显式构造 {py:class}`NoisySimulator <uniqc.simulator.simulator.NoisySimulator>`
 
 ## OriginIR 门集
 

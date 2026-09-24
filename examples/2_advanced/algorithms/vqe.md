@@ -40,9 +40,9 @@ expectation value over $\boldsymbol{\theta}$, we approach $E_0$.
 
 | Component | Module | Role |
 |-----------|--------|------|
-| `uccsd_ansatz` | `algorithmics.ansatz` | Parameterised trial state |
-| `pauli_expectation` | `algorithmics.measurement` | Energy measurement |
-| `Simulator` | `simulator` | Statevector simulation |
+| [`uccsd_ansatz`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) | `algorithmics.ansatz` | Parameterised trial state |
+| [`pauli_expectation`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) | `algorithmics.measurement` | Energy measurement |
+| [`Simulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html) | `simulator` | Statevector simulation |
 
 ### H₂ Molecule
 
@@ -104,9 +104,9 @@ In production, use scipy's `COBYLA` or `SLSQP`.
 ## Extensions
 
 - **Larger molecules**: Extend to LiH, BeH₂, H₂O by expanding the Hamiltonian.
-- **Better ansätze**: Try Hardware-Efficient Ansatz (`hea`) for NISQ devices.
-- **Noise mitigation**: Use `classical_shadow` for efficient measurement.
-- **Shot-based simulation**: Replace statevector with `Simulator` for
+- **Better ansätze**: Try Hardware-Efficient Ansatz ([`hea`](hea_options.md)) for NISQ devices.
+- **Noise mitigation**: Use [`classical_shadow`](../measurement/shadow_tomography.py) for efficient measurement.
+- **Shot-based simulation**: Replace statevector with [`Simulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html) for
   realistic measurement statistics.
 
 ## References

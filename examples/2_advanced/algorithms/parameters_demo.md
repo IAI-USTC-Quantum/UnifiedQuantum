@@ -8,7 +8,7 @@ Traditional variational quantum algorithms use raw numpy arrays for parameters. 
 2. **Gradient bookkeeping**: Difficult to map gradients back to specific parameters
 3. **Debugging**: Hard to identify which parameter caused issues
 
-The `Parameter` and `Parameters` classes in `uniqc.circuit_builder.parameter` address these issues by providing:
+The [`Parameter`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) and [`Parameters`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) classes in `uniqc.circuit_builder.parameter` address these issues by providing:
 
 - **Named parameters**: Each parameter has a unique name (e.g., `theta_0`, `gamma_2`)
 - **Symbolic expressions**: Arithmetic operations produce sympy expressions

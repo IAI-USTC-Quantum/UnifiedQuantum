@@ -8,19 +8,19 @@
 最常用的符号都从 ``uniqc`` 顶层导出（见 ``uniqc/__init__.py`` 的 ``__all__``）；
 新增公共符号时请在 ``__init__.py`` 同步更新。
 
-* {py:class}`uniqc.Circuit`, {py:class}`uniqc.NamedCircuit`, {py:class}`uniqc.QReg`,
-  {py:class}`uniqc.Qubit`, {py:func}`uniqc.circuit_def`
-* {py:func}`uniqc.compile`, {py:func}`uniqc.compile_for_backend`,
-  {py:class}`uniqc.TranspilerConfig`
-* {py:func}`uniqc.submit_task`, {py:func}`uniqc.dry_run_task`,
-  {py:func}`uniqc.submit_batch`, {py:func}`uniqc.wait_for_result`,
-  {py:func}`uniqc.query_task`, {py:func}`uniqc.get_task`
-* {py:class}`uniqc.QuantumBackend`, {py:class}`uniqc.OriginQBackend`,
-  {py:class}`uniqc.IBMBackend`,
-  {py:class}`uniqc.QuarkBackend`, {py:class}`uniqc.DummyBackend`
-* {py:class}`uniqc.BackendInfo`, {py:class}`uniqc.QubitTopology`,
-  {py:class}`uniqc.RegionSelector`
-* {py:class}`uniqc.M3Mitigator`, {py:class}`uniqc.ReadoutEM`
+* {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`, {py:class}`NamedCircuit <uniqc.circuit_builder.named_circuit.NamedCircuit>`, {py:class}`QReg <uniqc.circuit_builder.qubit.QReg>`,
+  {py:class}`Qubit <uniqc.circuit_builder.qubit.Qubit>`, {py:func}`circuit_def() <uniqc.circuit_builder.named_circuit.circuit_def>`
+* {py:func}`compile() <uniqc.compile.compiler.compile>`, {py:func}`compile_for_backend() <uniqc.compile.policy.compile_for_backend>`,
+  {py:class}`TranspilerConfig <uniqc.compile.compiler.TranspilerConfig>`
+* {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>`, {py:func}`dry_run_task() <uniqc.backend_adapter.task_manager.dry_run_task>`,
+  {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>`, {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>`,
+  {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>`, {py:func}`get_task() <uniqc.backend_adapter.task_manager.get_task>`
+* {py:class}`QuantumBackend <uniqc.backend_adapter.backend.QuantumBackend>`, {py:class}`OriginQBackend <uniqc.backend_adapter.backend.OriginQBackend>`,
+  {py:class}`IBMBackend <uniqc.backend_adapter.backend.IBMBackend>`,
+  {py:class}`QuarkBackend <uniqc.backend_adapter.backend.QuarkBackend>`, {py:class}`DummyBackend <uniqc.backend_adapter.backend.DummyBackend>`
+* {py:class}`BackendInfo <uniqc.backend_adapter.backend_info.BackendInfo>`, {py:class}`QubitTopology <uniqc.backend_adapter.backend_info.QubitTopology>`,
+  {py:class}`RegionSelector <uniqc.backend_adapter.region_selector.RegionSelector>`
+* {py:class}`M3Mitigator <uniqc.qem.m3.M3Mitigator>`, {py:class}`ReadoutEM <uniqc.qem.readout_em.ReadoutEM>`
 * 异常都在 {py:mod}`uniqc.exceptions`
 
 ## 子模块索引

@@ -1,6 +1,6 @@
 # 编译策略：`local_compile` 与 `cloud_compile`
 
-uniqc 在 `submit_task` / `submit_batch` / `dry_run_task` 中通过两个**整数**关键字参数来描述编译流水线：
+uniqc 在 {py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>` / {py:func}`dry_run_task() <uniqc.backend_adapter.task_manager.dry_run_task>` 中通过两个**整数**关键字参数来描述编译流水线：
 
 - `local_compile: int = 1` —— 本地（qiskit）层的优化等级
 - `cloud_compile: int = 1` —— 云端编译器的请求强度
@@ -14,7 +14,7 @@ uniqc 在 `submit_task` / `submit_batch` / `dry_run_task` 中通过两个**整�
 - 提交到 OriginQ 平台只能是 OriginIR
 - 提交到 IBM / Quark 平台只能是 OpenQASM 2.0
 
-这一层规则是“硬阻塞”，发现不兼容立即抛 `UnsupportedGateError`，不会静默放行。
+这一层规则是“硬阻塞”，发现不兼容立即抛 {py:mod}`UnsupportedGateError <uniqc.exceptions>`，不会静默放行。
 
 ## `local_compile`（本地编译）
 
@@ -25,7 +25,7 @@ uniqc 在 `submit_task` / `submit_batch` / `dry_run_task` 中通过两个**整�
 | `2` | qiskit `optimization_level=2` |
 | `3` | qiskit `optimization_level=3`（重型优化，编译时间长） |
 
-底层调用 `compile_for_backend(circuit, backend, level=local_compile)`。
+底层调用 {py:func}`compile_for_backend() <uniqc.compile.policy.compile_for_backend>`（`compile_for_backend(circuit, backend, level=local_compile)`）。
 
 ## `cloud_compile`（云端编译）
 

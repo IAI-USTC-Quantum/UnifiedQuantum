@@ -53,7 +53,7 @@ uv pip install unified-quantum
 > | `[pytorch]` | ✅ 可用 | — |
 >
 > 在 Python 3.14 上安装 `[originq]` 或 `[quark]` 不会报错，但相关依赖不会被安装。
-> 尝试提交到 OriginQ 时会收到 `MissingDependencyError` 并附带安装提示。
+> 尝试提交到 OriginQ 时会收到 {py:exc}`MissingDependencyError <uniqc.exceptions.MissingDependencyError>` 并附带安装提示。
 > 芯片缓存（`dummy:originq:*`、`dummy:quark:*`）在 Python 3.14 上仍然可用——
 > 仅实时云端连接需要对应 SDK。
 >
@@ -78,7 +78,7 @@ uv run pytest uniqc/test
 
 ## 备选安装方式：通过 pip 安装
 
-> pip 不支持 `uv tool install` 的 CLI 全局安装方式（无需虚拟环境即可全局调用 `uniqc` 命令）。如无特殊需求，建议优先使用上面的 uv 安装方式。
+> pip 不支持 `uv tool install` 的 CLI 全局安装方式（无需虚拟环境即可全局调用 [`uniqc`](../4_cli/index.md) 命令）。如无特殊需求，建议优先使用上面的 uv 安装方式。
 
 ### 从 PyPI 安装
 
@@ -119,9 +119,9 @@ uniqc config set originq.token <YOUR_ORIGINQ_TOKEN>
 uniqc config validate
 ```
 
-* OriginQ 是目前推荐的入门平台：免费试用门槛低、文档完整，`uniqc backend list -p originq`
+* OriginQ 是目前推荐的入门平台：免费试用门槛低、文档完整，[`uniqc backend list -p originq`](../4_cli/backend.md)
   能看到全部芯片。
-* 其它平台同理：`uniqc config set ibm.token ...` / `uniqc config set quark.token ...`。
+* 其它平台同理：[`uniqc config set ibm.token ...`](../4_cli/config.md) / [`uniqc config set quark.token ...`](../4_cli/config.md)。
 
 配置文件结构与 profile 切换的完整说明见 [平台约定](../1_basic_usage/platform_conventions.md) 与
 [`uniqc config`](../4_cli/config.md)。

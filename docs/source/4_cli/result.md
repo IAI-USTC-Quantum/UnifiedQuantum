@@ -1,6 +1,6 @@
 # 结果查询 (`uniqc result`)
 
-查询已提交任务的结果。
+查询已提交任务的结果（对应 Python API {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>` 与 {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>`）。
 
 ## 基本用法
 

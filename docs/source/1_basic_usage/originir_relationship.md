@@ -74,7 +74,7 @@ UnifiedQuantum 支持三种量子线路描述语言，它们之间存在明确�
 - **Inline 语法**: `dagger` 后缀、`controlled_by(q[...])` 子句（替代 DAGGER/CONTROL 块）
 - **动态电路扩展**: mid-circuit 测量（`MEASURE q[i], c[j]`）、mid-circuit 复位（`RESET q[i]`）、经典比特指令（`AND`/`OR`/`XOR`/`MOV`/`NOT`）与控制流（`QIF`/`QELSE`/`ENDQIF`、`QWHILE`/`ENDQWHILE`）；仅本地模拟，详见 [动态电路](../2_advanced/dynamic_circuits.md)
 
-> 扩展门可以分解成官方 OriginIR 门，但并非所有扩展特性都能转换。**QRAM 与动态电路扩展**都没有官方 OriginIR 或 OpenQASM 2.0 等价表示；转换器遇到它们会明确抛 `CircuitTranslationError`，而不是静默丢弃。
+> 扩展门可以分解成官方 OriginIR 门，但并非所有扩展特性都能转换。**QRAM 与动态电路扩展**都没有官方 OriginIR 或 OpenQASM 2.0 等价表示；转换器遇到它们会明确抛 {py:class}`CircuitTranslationError <uniqc.exceptions.CircuitTranslationError>`，而不是静默丢弃。
 
 ## 转换路径
 
@@ -127,8 +127,8 @@ result = compile(circuit, output_format="auto")
 
 ## 何时使用哪种格式
 
-- **日常开发**: 使用 OriginIR-ext。通过 `Circuit` API 构建线路，`circuit.originir` 即为 OriginIR-ext 格式
-- **提交到 OriginQ 云**: 使用 `circuit.originir_official` 或 `compile(output_format="originir")`，扩展会自动分解
+- **日常开发**: 使用 OriginIR-ext。通过 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` API 构建线路，`circuit.originir` 即为 OriginIR-ext 格式
+- **提交到 OriginQ 云**: 使用 `circuit.originir_official` 或 {py:func}`compile() <uniqc.compile.compiler.compile>`(output_format="originir")，扩展会自动分解
 - **提交到 IBM/Quark**: 使用 QASM 格式，`compile(output_format="qasm")` 或 `circuit.qasm`
 - **本地模拟**: 接受 OriginIR-ext 格式，无需转换；QRAM 仅在支持该指令的本地 statevector / density-matrix 模拟器中执行
 

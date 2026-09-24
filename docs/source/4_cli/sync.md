@@ -1,6 +1,6 @@
 # 凭据同步 (`uniqc sync`)
 
-在多台机器之间同步 `~/.uniqc/config.yaml` 中的量子真机凭据与平台配置。`uniqc sync` 提供两套**相互独立、可各自单独使用**的后端：
+在多台机器之间同步 [`~/.uniqc/config.yaml`](config.md) 中的量子真机凭据与平台配置。`uniqc sync` 提供两套**相互独立、可各自单独使用**的后端：
 
 - **Infisical** 后端（`setup` / `status` / `push` / `pull`）：把配置扁平化为一组 `UNIQC_` 前缀的 secrets，存到 [Infisical](https://infisical.com) 密钥管理平台（通过本机 `infisical` CLI 访问）；
 - **confsync** 后端（`upload`）：把整个配置文件作为一份加密文档上传到自托管的 [confsync](https://github.com/Agony5757/confsync) 服务器（依赖可选的 `confsync-client` 包）。

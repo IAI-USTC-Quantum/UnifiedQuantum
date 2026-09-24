@@ -10,11 +10,11 @@
 
 本页按 **从简单到复杂** 的顺序组织：
 
-1. [快速优化参数化电路](#guide-pytorch-has-param)：用 `has_param` 最佳实践，几行代码
+1. [快速优化参数化电路](guide-pytorch-has-param)：用 `has_param` 最佳实践，几行代码
    完成一次可微的变分优化（推荐入门方式）。
-2. [手动定义 Parameters](#guide-pytorch-manual-params)：用符号 `Parameter`/`Parameters`
+2. [手动定义 Parameters](guide-pytorch-manual-params)：用符号 {py:class}`Parameter <uniqc.circuit_builder.parameter.Parameter>`/{py:class}`Parameters <uniqc.circuit_builder.parameter.Parameters>`
    显式管理命名参数、绑定数值，并序列化 / 往返 OriginIR-ext。
-3. [PyTorch 集成](#guide-pytorch-torch)：把量子电路嵌入 `nn.Module`、parameter-shift
+3. [PyTorch 集成](guide-pytorch-torch)：把量子电路嵌入 `nn.Module`、parameter-shift
    梯度、批量执行等进阶用法。
 
 ## 前置条件
@@ -40,7 +40,7 @@ pip install unified-quantum[pytorch]
 > **推荐方式**：无需 TorchQuantum 依赖，梯度通过纯 PyTorch 态矢量模拟自动传播。
 
 给旋转门传入 `has_param=True`，UnifiedQuantum 会自动为它创建一个可训练的
-`nn.Parameter`。配合后端无关的 `expectation()` 函数，几行代码即可完成一次变分优化：
+`nn.Parameter`。配合后端无关的 {py:func}`expectation() <uniqc.torch_adapter.expectation.expectation>` 函数，几行代码即可完成一次变分优化：
 
 ```python
 import torch
@@ -155,7 +155,7 @@ for step in range(200):
 
 当你需要 **显式命名的参数**——例如用经典优化器（`scipy.optimize`）扫描、复用同一
 模板绑定不同数值，或把参数化电路 **序列化 / 共享** 为 OriginIR-ext 文本——使用符号
-`Parameter` / `Parameters`。它们基于 sympy，与上一节的 `has_param`（自动、面向
+{py:class}`Parameter <uniqc.circuit_builder.parameter.Parameter>` / {py:class}`Parameters <uniqc.circuit_builder.parameter.Parameters>`。它们基于 sympy，与上一节的 `has_param`（自动、面向
 autograd）互补。
 
 ### 创建、运算与绑定
@@ -183,7 +183,7 @@ alphas.bind([0.1, 0.2, 0.3, 0.4])
 ### 构建电路并绑定数值
 
 把符号参数传给门即可构建 **未绑定** 的参数化电路，随后用
-`Circuit.assign_parameters`（别名 `bind_parameters`）绑定为具体数值。默认返回
+{py:meth}`Circuit.assign_parameters() <uniqc.circuit_builder.qcircuit.Circuit.assign_parameters>`（别名 `bind_parameters`）绑定为具体数值。默认返回
 新电路（不修改原电路），并支持部分绑定：
 
 ```python
@@ -260,7 +260,7 @@ model = nn.Sequential(nn.Linear(4, 4), nn.ReLU(), QuantumHead())
 
 ### QuantumLayer（旧版 / parameter-shift）
 
-> `QuantumLayer` 是较早的封装，使用 parameter-shift 规则（每个参数 2 次电路求值）。
+> {py:class}`QuantumLayer <uniqc.torch_adapter.quantum_layer.QuantumLayer>` 是较早的封装，使用 parameter-shift 规则（每个参数 2 次电路求值）。
 > 新代码建议优先使用上面的 `expectation()` 方案；此处保留用于兼容与硬件后端场景。
 
 ```python
@@ -309,7 +309,7 @@ $$\frac{\partial f(\theta)}{\partial \theta} = \frac{f(\theta + s) - f(\theta - 
 
 ### 批量执行
 
-需要并行评估多个电路时（梯度计算、超参数搜索、集成评估），使用 `batch_execute`：
+需要并行评估多个电路时（梯度计算、超参数搜索、集成评估），使用 {py:func}`batch_execute() <uniqc.torch_adapter.batch_executor.batch_execute>`：
 
 ```python
 from uniqc.torch_adapter import batch_execute, batch_execute_with_params
@@ -345,13 +345,13 @@ results = batch_execute_with_params(
 
 ## 相关 API
 
-- {mod}`uniqc.torch_adapter` — PyTorch 集成模块
-- {func}`uniqc.torch_adapter.expectation` — 后端无关的可微期望值（推荐）
-- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装（旧版，parameter-shift）
-- {func}`uniqc.torch_adapter.batch_execute` — 并行电路执行
-- {func}`uniqc.torch_adapter.batch_execute_with_params` — 参数化批量执行
-- {class}`uniqc.circuit_builder.Parameter` — 符号参数
-- {class}`uniqc.circuit_builder.Parameters` — 符号参数数组
+- {py:mod}`uniqc.torch_adapter` — PyTorch 集成模块
+- {py:func}`expectation() <uniqc.torch_adapter.expectation.expectation>` — 后端无关的可微期望值（推荐）
+- {py:class}`QuantumLayer <uniqc.torch_adapter.quantum_layer.QuantumLayer>` — 量子层封装（旧版，parameter-shift）
+- {py:func}`batch_execute() <uniqc.torch_adapter.batch_executor.batch_execute>` — 并行电路执行
+- {py:func}`batch_execute_with_params() <uniqc.torch_adapter.batch_executor.batch_execute_with_params>` — 参数化批量执行
+- {py:class}`Parameter <uniqc.circuit_builder.parameter.Parameter>` — 符号参数
+- {py:class}`Parameters <uniqc.circuit_builder.parameter.Parameters>` — 符号参数数组
 
 ## 下一步
 

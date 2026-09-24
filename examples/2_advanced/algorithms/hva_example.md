@@ -2,7 +2,7 @@
 
 ## Background and Theory
 
-The Hamiltonian Variational Ansatz (HVA) is designed for quantum simulation of systems with known Hamiltonian structure. Unlike generic ansätze (HEA), HVA respects the physical symmetries of the target system by alternating between exponentials of **commuting Hamiltonian groups**.
+The Hamiltonian Variational Ansatz (HVA) is designed for quantum simulation of systems with known Hamiltonian structure. Unlike generic ansätze ([HEA](hea_options.md)), HVA respects the physical symmetries of the target system by alternating between exponentials of **commuting Hamiltonian groups**.
 
 The HVA state is prepared as:
 

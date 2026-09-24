@@ -10,7 +10,7 @@
 (platform-input-formats)=
 ## 1. 输入格式约定
 
-各平台接受的电路格式不同，`submit_task()` 内部会根据 `backend` 参数自动选择对应的 Circuit Adapter 进行转换，但用户也可以手动调用各平台的 adapter。
+各平台接受的电路格式不同，{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` 内部会根据 `backend` 参数自动选择对应的 Circuit Adapter 进行转换，但用户也可以手动调用各平台的 adapter。
 
 | 平台 | 输入类型 | 自动转换 | 手动转换 |
 |------|----------|----------|----------|
@@ -88,7 +88,7 @@ bitstring**，normalizer 改写为统一 cbit 框架（见 2.6）。
 
 ### 2.5 统一结果格式
 
-所有平台的 `wait_for_result()` / `query_task()` 均返回统一的扁平 counts 字典：
+所有平台的 {py:func}`wait_for_result() <uniqc.backend_adapter.task_manager.wait_for_result>` / {py:func}`query_task() <uniqc.backend_adapter.task_manager.query_task>` 均返回统一的扁平 counts 字典：
 
 ```python
 from uniqc import wait_for_result
@@ -155,10 +155,10 @@ normalizer mock）上回归保护：
 (platform-precheck)=
 ## 2.7 提交前格式校验
 
-从 0.0.12 起，`submit_task()` / `submit_batch()` 在提交到任何云端之前，会执行一次 **离线校验**（`uniqc.compile.compatibility_report`）：
+从 0.0.12 起，{py:func}`submit_task() <uniqc.backend_adapter.task_manager.submit_task>` / {py:func}`submit_batch() <uniqc.backend_adapter.task_manager.submit_batch>` 在提交到任何云端之前，会执行一次 **离线校验**（{py:func}`compatibility_report() <uniqc.compile.validation.compatibility_report>`）：
 
 1. **Submit language**：根据后端确定提交语言 — `originq` → OriginIR；`ibm`、`quark` → QASM 2.0。
-2. **Basis gate set**：根据后端确定基础门集合 — `originq`、`quark` 默认按 `cz + sx + rz` 校验；`ibm` 按 `BackendInfo.extra["basis_gates"]` 校验。
+2. **Basis gate set**：根据后端确定基础门集合 — `originq`、`quark` 默认按 `cz + sx + rz` 校验；`ibm` 按 {py:class}`BackendInfo <uniqc.backend_adapter.backend_info.BackendInfo>`.extra["basis_gates"] 校验。
 3. **Topology**：双比特门必须落在 backend 拓扑的边上。`CZ`、`ISWAP`、`SWAP`、`XX`、`YY`、`ZZ`、`XY` 视为无向；`CNOT`/`CX`、`ECR` 视为有向。
 4. **Qubit count**：电路中用到的 qubit 索引必须 `< backend.num_qubits`。
 5. **Topology TTL**：后端拓扑使用 `~/.uniqc/backend/backends.json` 的缓存，TTL 24h；过期但仍可用的拓扑会以 warning 方式提示。
@@ -175,7 +175,7 @@ normalizer mock）上回归保护：
 }
 ```
 
-校验**失败**且未启用自动编译时会抛出 `UnsupportedGateError`。可以这样跳过校验或自动编译：
+校验**失败**且未启用自动编译时会抛出 {py:class}`UnsupportedGateError <uniqc.exceptions.UnsupportedGateError>`。可以这样跳过校验或自动编译：
 
 ```python
 from uniqc import submit_task, compile_for_backend, compatibility_report, is_compatible
@@ -203,7 +203,7 @@ compiled = compile_for_backend(circuit, backend_info)  # → cz/sx/rz
 (platform-gate-depth)=
 ### 2.8 Gate depth 计算约定
 
-`uniqc.compute_gate_depth(circuit, *, virtual_z=True)` 返回 **并行感知 + virtual-Z 感知** 的 depth：
+{py:func}`compute_gate_depth() <uniqc.compile.validation.compute_gate_depth>`(circuit, *, virtual_z=True) 返回 **并行感知 + virtual-Z 感知** 的 depth：
 
 * 每个 gate 占据其所有 qubit 的 *earliest free layer*；同一层中无冲突的 gate 被并行计入同一深度。**这与“gate 数”不同**——很多旧实验代码错误地把它们等同。
 * `virtual_z=True`（默认）时，`Z`、`RZ`、`S`、`T`、`U1` 视为 **frame change**，深度为 0；它们仍占据该 qubit 的 cursor 以避免与非交换的相邻门折叠。
@@ -272,22 +272,22 @@ task_id = submit_task(circuit, backend="originq:full_amplitude", shots=1000)
 result = wait_for_result(task_id)
 ```
 
-> 注意：模拟器后端在 `uniqc backend list --platform originq` 中以 `Type = sim` 标识，与 QPU 硬件后端（`Type = hw`）分开列出。模拟器后端使用 `QCloudSimulator` API 而非 QPU 的 `QCloudOptions`。
+> 注意：模拟器后端在 [`uniqc backend list`](../4_cli/backend.md) `--platform originq` 中以 `Type = sim` 标识，与 QPU 硬件后端（`Type = hw`）分开列出。模拟器后端使用 `QCloudSimulator` API 而非 QPU 的 `QCloudOptions`。
 
 ### 4.2 IBM / Qiskit
 
-`QiskitAdapter.translate_circuit()` 走 OriginIR → QASM → qiskit.QuantumCircuit 路线，借助 Qiskit 的转译器支持所有标准 OpenQASM 2.0 门。
+{py:class}`QiskitAdapter <uniqc.backend_adapter.task.adapters.qiskit_adapter.QiskitAdapter>`.translate_circuit() 走 OriginIR → QASM → qiskit.QuantumCircuit 路线，借助 Qiskit 的转译器支持所有标准 OpenQASM 2.0 门。
 
 ### 4.3 Tianyan（天衍）
 
-`TianyanCircuitAdapter` 把内部 `Circuit` 转换为 **QCIS** 格式提交。天衍平台提供
+{py:class}`TianyanCircuitAdapter <uniqc.backend_adapter.circuit_adapter.TianyanCircuitAdapter>` 把内部 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 转换为 **QCIS** 格式提交。天衍平台提供
 真机 `tianyan176` 与多种仿真机：`tianyan_sw`（全振幅）、`tianyan_sa`（单振幅）、
 `tianyan_s`（稳定子）、`tianyan_tn`（张量网络）、`tianyan_tnn`（带噪声张量网络）。
 凭证字段为 `tianyan.login_key`。详见 [天衍平台页](../platforms/tianyan.md)。
 
 ### 4.4 LogicalQubit（逻辑比特）
 
-`LogicalQubitCircuitAdapter` 把内部 `Circuit` 转换为 qiskit 风格门集提交。
+{py:class}`LogicalQubitCircuitAdapter <uniqc.backend_adapter.circuit_adapter.LogicalQubitCircuitAdapter>` 把内部 `Circuit` 转换为 qiskit 风格门集提交。
 单次提交 **shots ≤ 50000**。凭证字段为 `logicalqubit.api_key`，可选
 `logicalqubit.url`（默认 `https://cloud.logicalqubit.com`）。详见
 [逻辑比特平台页](../platforms/logicalqubit.md)。
@@ -305,7 +305,7 @@ PQPUMESH8       # 8 比特硬件
 full_amplitude  # 全振幅模拟器
 ```
 
-可用 `OriginQAdapter().list_backends()` 查询所有可用后端。
+可用 {py:class}`OriginQAdapter <uniqc.backend_adapter.task.adapters.originq_adapter.OriginQAdapter>`().list_backends() 查询所有可用后端。
 
 ### IBM
 
@@ -328,12 +328,12 @@ tianyan_tn    # 张量网络仿真
 tianyan_tnn   # 带噪声张量网络仿真
 ```
 
-使用 `uniqc backend list -p tianyan` 查询当前可用后端。
+使用 [`uniqc backend list`](../4_cli/backend.md) `-p tianyan` 查询当前可用后端。
 
 ### LogicalQubit（逻辑比特）
 
 AGate 系列超导芯片（如 30 / 100 比特规格），具体后端名使用
-`uniqc backend list -p logicalqubit` 查询。
+[`uniqc backend list`](../4_cli/backend.md) `-p logicalqubit` 查询。
 
 ---
 
@@ -410,7 +410,7 @@ task_id = submit_task(circuit, backend='dummy:local:virtual-line-3')     # 线�
 (platform-dummy-backend)=
 ## 8. DummyBackend：编号规则、虚拟拓扑与本地噪声模拟
 
-DummyBackend 是本地模拟器后端，在不需要真实量子硬件的情况下执行电路。推荐通过 backend id 使用，而不是在业务代码里手动拼装 adapter。
+{py:class}`DummyBackend <uniqc.backend_adapter.backend.DummyBackend>` 是本地模拟器后端，在不需要真实量子硬件的情况下执行电路。推荐通过 backend id 使用，而不是在业务代码里手动拼装 adapter。
 
 | backend id | 语义 |
 |------------|------|
@@ -419,7 +419,7 @@ DummyBackend 是本地模拟器后端，在不需要真实量子硬件的情况�
 | `dummy:local:virtual-grid-RxC` | `R*C` 比特网格拓扑，无噪声 |
 | `dummy:<platform>:<backend>` | 复用真实 backend 的拓扑和标定数据，先 compile/transpile，再本地含噪执行 |
 
-`dummy:<platform>:<backend>` 是规则型写法，不是需要提前注册的 backend；它不会作为独立后端出现在 `uniqc backend list` 或 Gateway WebUI 的 backend 卡片中。运行时会解析真实 backend 的 topology / chip characterization，并把编译后的线路写入 task metadata。
+`dummy:<platform>:<backend>` 是规则型写法，不是需要提前注册的 backend；它不会作为独立后端出现在 [`uniqc backend list`](../4_cli/backend.md) 或 Gateway WebUI 的 backend 卡片中。运行时会解析真实 backend 的 topology / chip characterization，并把编译后的线路写入 task metadata。
 
 ### 基本用法
 
@@ -449,7 +449,7 @@ noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 
 若某量子比特或量子比特对缺少标定数据，使用默认值（1Q 误差 0.01，2Q 误差 0.05）。
 
-直接使用 `DummyAdapter(chip_characterization=...)` 仍可作为底层测试或自定义 adapter 路径，但文档、示例和新业务代码应优先使用 `dummy:<platform>:<backend>`，这样 compile/transpile、task metadata 和 Gateway 展示都能走统一链路。
+直接使用 {py:class}`DummyAdapter <uniqc.backend_adapter.task.adapters.dummy_adapter.DummyAdapter>`(chip_characterization=...) 仍可作为底层测试或自定义 adapter 路径，但文档、示例和新业务代码应优先使用 `dummy:<platform>:<backend>`，这样 compile/transpile、task metadata 和 Gateway 展示都能走统一链路。
 
 ### `DummyOptions`（Python API）
 
@@ -490,7 +490,7 @@ uniqc submit circuit.ir --backend dummy --dry-run
 (platform-get-backend)=
 ## 9. 统一后端工厂：`get_backend()`
 
-`get_backend()` 是量子后端工厂函数（`uniqc.backend_adapter.backend`），用于获取平台后端实例。日常代码优先从 `uniqc` 直接导入。
+{py:func}`get_backend() <uniqc.backend_adapter.backend.get_backend>` 是量子后端工厂函数（{py:mod}`uniqc.backend_adapter.backend`），用于获取平台后端实例。日常代码优先从 `uniqc` 直接导入。
 
 ```python
 from uniqc import get_backend
@@ -513,7 +513,7 @@ backend = get_backend("ibm")
 
 ```
 
-`get_backend()` 返回 `QuantumBackend` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../2_advanced/compiler_options_region.md)。
+`get_backend()` 返回 {py:class}`QuantumBackend <uniqc.backend_adapter.backend.QuantumBackend>` 实例，支持 `.submit()`、`.query()` 等方法。详见 [后端管理](../2_advanced/compiler_options_region.md)。
 
 ---
 

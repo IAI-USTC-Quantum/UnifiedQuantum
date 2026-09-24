@@ -14,13 +14,13 @@
 
 **UnifiedQuantum** — A unified, non-commercial quantum computing aggregation framework.
 
-UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for quantum circuit construction, simulation, and cloud execution across multiple quantum computing platforms. It aggregates backends including OriginQ, QuarkStudio, IBM Quantum, TianYan, and LogicalQubit under one consistent API.
+UnifiedQuantum is a lightweight Python framework that provides a **unified interface** for [quantum circuit construction](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/circuit.html), [simulation](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html), and [cloud execution](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/submit_task.html) across multiple quantum computing platforms. It aggregates backends including [OriginQ](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/originq.html), [QuarkStudio](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/quark.html), [IBM Quantum](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/ibm.html), [TianYan](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/tianyan.html), and [LogicalQubit](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/logicalqubit.html) under one consistent API.
 
-Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and quantum error mitigation (QEM) toolkit**:
+Beyond circuit execution, UnifiedQuantum ships a complete **[chip calibration](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/calibration.html) and quantum error mitigation (QEM) toolkit**:
 
-- **XEB cross-entropy benchmarking**: `uniqc calibrate xeb` measures per-layer gate fidelity in 1q, 2q, and parallel-2q modes
-- **Readout calibration + M3 mitigation**: confusion matrix characterisation and linear-inversion correction
-- **Local noisy simulation**: `dummy:<platform>:<backend>` reuses real-chip topology and calibration data, compiles/transpiles first, then injects realistic hardware noise locally
+- **[XEB cross-entropy benchmarking](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/calibration.html)**: [`uniqc calibrate xeb`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/calibrate.html) measures per-layer gate fidelity in 1q, 2q, and parallel-2q modes
+- **[Readout calibration](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.qem.readout_em.html#uniqc.qem.readout_em.ReadoutEM) + [M3 mitigation](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.qem.m3.html#uniqc.qem.m3.M3Mitigator)**: confusion matrix characterisation and linear-inversion correction
+- **[Local noisy simulation](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/noise_simulation.html)**: `dummy:<platform>:<backend>` reuses real-chip topology and calibration data, compiles/transpiles first, then injects realistic hardware noise locally
 - **DSatur parallel scheduling**: automatically partitions 2q gates into minimum parallel rounds
 
 All calibration results are written to `~/.uniqc/calibration_cache/`; the QEM layer reads them back and enforces TTL freshness.
@@ -56,7 +56,7 @@ c.measure(1)
 open('circuit.ir', 'w').write(c.originir)
 ```
 
-> You can also build circuits with Qiskit, Cirq, etc. — just output OriginIR or OpenQASM 2.0 in the end.
+> You can also build circuits with Qiskit, Cirq, etc. — just output [OriginIR](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/originir.html) or [OpenQASM 2.0](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/qasm.html) in the end.
 
 ### 3. Execute via CLI
 
@@ -77,7 +77,7 @@ uniqc submit circuit.ir --backend dummy:virtual:<name> --shots 1000
 uniqc result <task_id>
 ```
 
-`dummy` is an unconstrained noiseless local simulator; `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` are noiseless local backends with virtual topology constraints; `dummy:<platform>:<backend>` compiles/transpiles against the real target backend first, then executes locally with chip-characterization-derived noise; `dummy:virtual:<name>` loads a user-defined topology and noise model from `~/.uniqc/backend/virtual/<name>.yaml`.
+[`dummy`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/dummy.html) is an unconstrained noiseless local simulator; `dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` are noiseless local backends with [virtual topology constraints](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/virtual_backends.html); `dummy:<platform>:<backend>` [compiles/transpiles](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.compile.compiler.html#uniqc.compile.compiler.compile) against the real target backend first, then executes locally with chip-characterization-derived noise; `dummy:virtual:<name>` loads a user-defined topology and noise model from `~/.uniqc/backend/virtual/<name>.yaml`.
 
 ---
 
@@ -102,14 +102,14 @@ UnifiedQuantum is a **non-commercial** open-source project built for the **AI er
 
 ## Features
 
-- **Multi-platform submission**: One `submit_task` (or `uniqc submit`) sends circuits to OriginQ, QuarkStudio, IBM Quantum, TianYan, LogicalQubit, or the local dummy simulator. Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
-- **Format conversion**: `Circuit.from_qasm()` / `Circuit.from_originir()` for import; `circuit.to_qasm()` / `circuit.to_originir()` for export.
-- **Local simulation**: Built-in OriginIR Simulator and QASM Simulator, supporting statevector / density matrix backends, plus noisy variants.
-- **Algorithm components**: Built-in HEA, UCCSD, QAOA ansatz ready for VQE / QAOA research.
-- **PyTorch integration**: `QuantumLayer`, parameter-shift gradients, and batched execution for hybrid quantum-classical models.
+- **Multi-platform submission**: One [`submit_task`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.submit_task) (or [`uniqc submit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/submit.html)) sends circuits to OriginQ, QuarkStudio, IBM Quantum, TianYan, LogicalQubit, or the local [dummy simulator](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/dummy.html). Auto-detects input format: `Circuit` object, OriginIR string, QASM string, or `qiskit.QuantumCircuit`.
+- **Format conversion**: [`Circuit.from_qasm()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.circuit_builder.qcircuit.html#uniqc.circuit_builder.qcircuit.Circuit.from_qasm) / [`Circuit.from_originir()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.circuit_builder.qcircuit.html#uniqc.circuit_builder.qcircuit.Circuit.from_originir) for import; `circuit.to_qasm()` / `circuit.to_originir()` for export.
+- **Local simulation**: Built-in OriginIR Simulator and QASM Simulator, supporting statevector / density matrix backends, plus [noisy variants](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.simulator.simulator.html#uniqc.simulator.simulator.NoisySimulator).
+- **Algorithm components**: Built-in [HEA](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.hea.html#uniqc.algorithms.core.ansatz.hea.hea), [UCCSD](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.uccsd.html#uniqc.algorithms.core.ansatz.uccsd.uccsd_ansatz), [QAOA ansatz](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.qaoa_ansatz.html#uniqc.algorithms.core.ansatz.qaoa_ansatz.qaoa_ansatz) ready for VQE / QAOA research.
+- **PyTorch integration**: [`QuantumLayer`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.torch_adapter.quantum_layer.html#uniqc.torch_adapter.quantum_layer.QuantumLayer), parameter-shift gradients, and batched execution for hybrid quantum-classical models.
 - **Interoperable**: Circuits from native API, Qiskit, Cirq, etc. — as long as they output OriginIR or OpenQASM 2.0.
-- **Async submission**: `submit_task` returns `task_id` immediately; `poll_result()` for non-blocking status check, `get_result()` or `wait_for_result()` to block until done.
-- **Easily extensible**: Gate sets, noise models, and platform adapters all follow interface contracts — a new backend is one adapter away.
+- **Async submission**: `submit_task` returns `task_id` immediately; [`poll_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.poll_result) for non-blocking status check, [`get_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.get_result) or [`wait_for_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.wait_for_result) to block until done.
+- **Easily extensible**: Gate sets, noise models, and platform adapters all follow interface contracts — a new backend is one [adapter](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/adapter_architecture.html) away.
 
 ---
 
@@ -173,10 +173,10 @@ Core dependencies (including `scipy`) are included by default.
 
 | Feature | Install command (uv) | pip fallback |
 |---------|---------------------|-------------|
-| OriginQ cloud | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| QuarkStudio / Quark cloud (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
-| TianYan cloud platform | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
-| LogicalQubit cloud platform | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
+| [OriginQ cloud](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/originq.html) | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
+| [QuarkStudio / Quark cloud](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/quark.html) (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
+| [TianYan cloud platform](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/tianyan.html) | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
+| [LogicalQubit cloud platform](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/logicalqubit.html) | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
 | Advanced simulation (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | Visualization | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch integration | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
@@ -271,7 +271,18 @@ uniqc backend update
 
 ## Documentation
 
-📖 [GitHub Pages](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/)
+📖 [Documentation site](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/) — full chapter navigation:
+
+| Chapter | Contents |
+|---------|----------|
+| [Quick Start](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/0_quickstart/index.html) | Installation and the end-to-end workflow |
+| [Basic Usage](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/index.html) | Circuit building, simulation, task submission, task management, PyTorch, OriginIR / QASM |
+| [Platforms](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/index.html) | OriginQ, Quark, IBM, TianYan, LogicalQubit, and dummy backends |
+| [Advanced Topics](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/index.html) | Adapter architecture, compile levels, calibration, noisy and MPS simulation, virtual backends |
+| [CLI Reference](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/index.html) | One page per subcommand |
+| [Web UI](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/5_webui/index.html) | Gateway and web interface |
+| [API Reference](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) | Auto-generated full API tree (with a top-level public API quick reference) |
+| [Release Notes](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/7_releases/index.html) | Version overview and deprecation policy |
 
 ### Release Notes
 
@@ -289,6 +300,8 @@ uniqc backend update
 - **Contact**: chenzhaoyun@iai.ustc.edu.cn
 
 Issues, pull requests, and emails are all welcome. Interested in quantum computing research? Come join us.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute, [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for the code of conduct, [CHANGELOG.md](CHANGELOG.md) for version history, and [LICENSE](LICENSE) for license details.
 
 ---
 

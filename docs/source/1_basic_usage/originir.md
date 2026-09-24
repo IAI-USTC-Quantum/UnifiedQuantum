@@ -14,9 +14,9 @@
 
 ## 设计立场
 
-**内部表示 vs 导出格式。** 线路在内存中以 `Circuit` 对象及其 `opcode_list: list[OpcodeType]` 存储（`uniqc.circuit_builder.opcode`）。`.originir` 与 `.qasm` 都是把 opcode 序列序列化为文本的**导出视图**，不是内部存储格式。模拟器直接消费 opcode，不经过 OriginIR 文本中转。
+**内部表示 vs 导出格式。** 线路在内存中以 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 对象及其 `opcode_list: list[OpcodeType]` 存储（{py:mod}`uniqc.circuit_builder.opcode`）。`.originir` 与 `.qasm` 都是把 opcode 序列序列化为文本的**导出视图**，不是内部存储格式。模拟器直接消费 opcode，不经过 OriginIR 文本中转。
 
-**默认本地语言。** `circuit.originir` 输出 OriginIR-ext。提交 OriginQ 云时，扩展门自动经 {func}`uniqc.compile.decompose_for_originir` 降级为官方 OriginIR；动态电路扩展和 QRAM 不能降级，会被明确拒绝而不是静默丢弃。
+**默认本地语言。** `circuit.originir` 输出 OriginIR-ext。提交 OriginQ 云时，扩展门自动经 {py:func}`decompose_for_originir() <uniqc.compile.decompose.decompose_for_originir>` 降级为官方 OriginIR；动态电路扩展和 QRAM 不能降级，会被明确拒绝而不是静默丢弃。
 
 ---
 
@@ -87,7 +87,7 @@ U3 q[0], (1.57, 0.785, 0.392)       # 三参数
 
 数值字面量支持：整数（`0`、`-1`）、浮点（`0.5`、`1.57`）、科学计数法（`1.5e-3`）。OriginIR-ext 额外允许在角度槽位写符号表达式，见 [PARAM 节](originir-ext-param)。
 
-> **矩阵约定。** 下文给出的矩阵采用与 {mod}`uniqc.circuit_builder.matrix` 一致的标准基。1 量子比特门使用基 $|0\rangle, |1\rangle$；2 量子比特门使用基 $|00\rangle, |01\rangle, |10\rangle, |11\rangle$（操作数按 `gate q[a], q[b]` 中 $a$ 为高位、$b$ 为低位的顺序展开）。所有精确实现以该模块为准。
+> **矩阵约定。** 下文给出的矩阵采用与 {py:mod}`uniqc.circuit_builder.matrix` 一致的标准基。1 量子比特门使用基 $|0\rangle, |1\rangle$；2 量子比特门使用基 $|00\rangle, |01\rangle, |10\rangle, |11\rangle$（操作数按 `gate q[a], q[b]` 中 $a$ 为高位、$b$ 为低位的顺序展开）。所有精确实现以该模块为准。
 
 ### 量子门
 
@@ -249,7 +249,7 @@ QINIT data[4], anc[2]       # 一行多寄存器；data→0-3，anc→4-5
 (originir-ext-param)=
 ### PARAM 符号参数头
 
-`PARAM` 是 OriginIR-ext 的**符号参数头**（仅本地模拟；与 Python 侧 {class}`uniqc.circuit_builder.parameter.Parameter` / `Parameters` 对应）。声明在头部，可以被后续门的角度槽位以符号表达式引用。
+`PARAM` 是 OriginIR-ext 的**符号参数头**（仅本地模拟；与 Python 侧 {py:class}`Parameter <uniqc.circuit_builder.parameter.Parameter>` / `Parameters` 对应）。声明在头部，可以被后续门的角度槽位以符号表达式引用。
 
 ```text
 PARAM <name>                 # 标量参数
@@ -276,7 +276,7 @@ RZ q[0], (2*theta + alpha_0/3)   # 算术表达式
 - 复杂角度请拆成多个具名参数
 - 标识符不与 sympy 内置符号（`I`、`E`、`pi`、`gamma` 等）冲突——解析器会把每个标识符强制为普通 `Symbol`
 
-未绑定的 `PARAM` 符号可以序列化回 OriginIR-ext 文本，但**不能**直接模拟、导出为官方 OriginIR / OpenQASM 或提交云。绑定前请先通过 {meth}`uniqc.circuit_builder.Circuit.assign_parameters` 赋具体值。
+未绑定的 `PARAM` 符号可以序列化回 OriginIR-ext 文本，但**不能**直接模拟、导出为官方 OriginIR / OpenQASM 或提交云。绑定前请先通过 {py:meth}`Circuit.assign_parameters() <uniqc.circuit_builder.qcircuit.Circuit.assign_parameters>` 赋具体值。
 
 ### 扩展门
 
@@ -312,7 +312,7 @@ RZ q[0], (2*theta + alpha_0/3)   # 算术表达式
 | 门 | 描述 | 矩阵 |
 |----|------|------|
 | `ISWAP` | i-SWAP | $\begin{pmatrix} 1&0&0&0 \\ 0&0&i&0 \\ 0&i&0&0 \\ 0&0&0&1 \end{pmatrix}$ |
-| `ECR` | 弹性 Cross-Resonance | 见 {func}`uniqc.circuit_builder.matrix._ecr` |
+| `ECR` | 弹性 Cross-Resonance | 见 ``uniqc.circuit_builder.matrix._ecr()`` |
 
 语法：`<GATE> q[<a>], q[<b>]`
 
@@ -444,7 +444,7 @@ RESET q[<i>]
 
 操作数 `A`、`B` 是 `c[k]` 或立即数 `0` / `1`；`<cond>` 是对 CREG 比特的布尔表达式（`not`/`~`、`and`/`&`、`xor`/`^`、`or`/`|`，可加括号）。
 
-**这是 OriginIR-ext 专属、仅本地模拟的特性**——不能导出为 OpenQASM 或官方 OriginIR，也不能提交云平台（相关导出/提交抛 `CircuitTranslationError`）。
+**这是 OriginIR-ext 专属、仅本地模拟的特性**——不能导出为 OpenQASM 或官方 OriginIR，也不能提交云平台（相关导出/提交抛 {py:class}`CircuitTranslationError <uniqc.exceptions.CircuitTranslationError>`）。
 
 完整语法、CREG 模型、Circuit API、运行细节（含 `QWHILE` 看门狗）见 [动态电路：mid-circuit measurement 与经典控制流](../2_advanced/dynamic_circuits.md)。
 
@@ -553,7 +553,7 @@ $$
 \end{cases}
 $$
 
-QRAM 文本的规范编码使用内联 `controlled_by`。在 Python API 中，`Circuit.control()` 上下文可以与 `qram_call(..., control_qubits=...)` 组合；序列化时两者会合并成同一个内联控制列表。所有控制量子比特仍须互不重复且不与地址/数据寄存器重叠。
+QRAM 文本的规范编码使用内联 `controlled_by`。在 Python API 中，{py:meth}`Circuit.control() <uniqc.circuit_builder.qcircuit.Circuit.control>` 上下文可以与 `qram_call(..., control_qubits=...)` 组合；序列化时两者会合并成同一个内联控制列表。所有控制量子比特仍须互不重复且不与地址/数据寄存器重叠。
 
 ```text
 QRAMDECL lookup 2,3
@@ -571,7 +571,7 @@ MEASURE q[4], c[2]
 
 #### Python API 与运行时数据
 
-`Circuit.qram_declare()` 对应 `QRAMDECL`，`Circuit.qram_call()` 对应调用语句。要执行非零查找表，先预处理线路以注册 QRAM，再通过 `sim.qram_objects` 写入数据：
+{py:meth}`Circuit.qram_declare() <uniqc.circuit_builder.qcircuit.Circuit.qram_declare>` 对应 `QRAMDECL`，{py:meth}`Circuit.qram_call() <uniqc.circuit_builder.qcircuit.Circuit.qram_call>` 对应调用语句。要执行非零查找表，先预处理线路以注册 QRAM，再通过 `sim.qram_objects` 写入数据：
 
 ```python
 from uniqc import Circuit
@@ -654,7 +654,7 @@ PauliError2Q q[0], q[1], (p1, p2, ..., p15)
 ```
 
 ```{note}
-`Kraus1Q` 在 spec 中以 `param: -1` 作为 sentinel，表示"参数是一组结构化的 2×2 复矩阵"。**它不在 line parser 的指令分派链里**，不能从 OriginIR-ext 文本解析；只能通过 {class}`uniqc.simulator.error_model.Kraus1Q` 等 `ErrorModel` API 构造，再由模拟器在执行期合并到 opcode 流。其他 7 个通道可以文本写出。
+`Kraus1Q` 在 spec 中以 `param: -1` 作为 sentinel，表示"参数是一组结构化的 2×2 复矩阵"。**它不在 line parser 的指令分派链里**，不能从 OriginIR-ext 文本解析；只能通过 {py:class}`Kraus1Q <uniqc.simulator.error_model.Kraus1Q>` 等 `ErrorModel` API 构造，再由模拟器在执行期合并到 opcode 流。其他 7 个通道可以文本写出。
 ```
 
 ---
@@ -741,7 +741,7 @@ MEASURE q[2], c[2]
 | `circuit.qasm` / QASM 编译管线 | ✓ | ✓ | ✗ | ✗ | 需先 `assign_parameters` |
 | 云平台提交 | ✓ | ✓ | ✗ | ✗ | 需先 `assign_parameters` |
 
-✓ 表示支持；✗ 表示会抛出 `CircuitTranslationError` 或编译错误。
+✓ 表示支持；✗ 表示会抛出 {py:class}`CircuitTranslationError <uniqc.exceptions.CircuitTranslationError>` 或编译错误。
 
 ---
 
@@ -751,10 +751,10 @@ MEASURE q[2], c[2]
 
 | 任务 | API |
 |------|-----|
-| 导出 OriginIR-ext 文本 | `Circuit.originir` / `Circuit.to_extended_originir()` |
-| 从文本解析 | {meth}`uniqc.circuit_builder.Circuit.from_originir` / `from_originir_ext()` |
-| 导出官方 OriginIR（已降级） | `Circuit.originir_official` / {func}`uniqc.compile.convert_originir_ext_to_originir` |
-| 导出 OpenQASM 2.0 | `Circuit.qasm` |
+| 导出 OriginIR-ext 文本 | {py:attr}`Circuit.originir <uniqc.circuit_builder.qcircuit.Circuit.originir>` / {py:meth}`Circuit.to_extended_originir() <uniqc.circuit_builder.qcircuit.Circuit.to_extended_originir>` |
+| 从文本解析 | {py:meth}`Circuit.from_originir() <uniqc.circuit_builder.qcircuit.Circuit.from_originir>` / `from_originir_ext()` |
+| 导出官方 OriginIR（已降级） | {py:attr}`Circuit.originir_official <uniqc.circuit_builder.qcircuit.Circuit.originir_official>` / {py:func}`convert_originir_ext_to_originir() <uniqc.compile.converter.convert_originir_ext_to_originir>` |
+| 导出 OpenQASM 2.0 | {py:attr}`Circuit.qasm <uniqc.circuit_builder.qcircuit.Circuit.qasm>` |
 | QRAM 运行时 API | 见上文 [QRAM 节](originir-ext-qram) |
 | 动态电路（mid-circuit 测量、QIF/QWHILE…） | 见 [动态电路](../2_advanced/dynamic_circuits.md) |
 | 用文本直接模拟 | 见 [本地模拟](simulation.md) |

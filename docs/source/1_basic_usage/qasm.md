@@ -6,7 +6,7 @@
 
 ## 本页解决的问题
 
-- 想用 `circuit.qasm` 导出 OpenQASM 2.0 格式的线路文本
+- 想用 {py:attr}`circuit.qasm <uniqc.circuit_builder.qcircuit.Circuit.qasm>` 导出 OpenQASM 2.0 格式的线路文本
 - 想将已有的 QASM 文本转换为 OriginIR 格式
 - 需要提交到 IBM 等要求 QASM 格式的平台
 - 想查阅某个门在 OriginIR 和 QASM 之间的对应关系
@@ -20,11 +20,11 @@ OpenQASM 2.0 是量子计算领域广泛使用的跨平台线路描述标准。�
 - **跨平台提交**：IBM 等平台接受 QASM 格式的线路
 - **外部互操作**：导入已有的 QASM 文件并转换为 UnifiedQuantum 可处理的格式
 
-> **注意**：UnifiedQuantum 对 OpenQASM 2.0 的支持目前**不完整**——并非所有 QASM 2.0 指令都能被解析或互转。使用前请确认你需要的门在下方的对照表中列出。详见 {mod}`uniqc.compile.qasm` 模块的 API 参考。
+> **注意**：UnifiedQuantum 对 OpenQASM 2.0 的支持目前**不完整**——并非所有 QASM 2.0 指令都能被解析或互转。使用前请确认你需要的门在下方的对照表中列出。详见 {py:mod}`uniqc.compile.qasm` 模块的 API 参考。
 
 ## 格式互转操作
 
-UnifiedQuantum 支持在 Circuit 对象、OriginIR 和 QASM 之间进行格式互转。以下是核心互转路径：
+UnifiedQuantum 支持在 {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 对象、OriginIR 和 QASM 之间进行格式互转。以下是核心互转路径：
 
 ### Circuit → QASM
 
@@ -61,7 +61,7 @@ originir_str = circuit.to_originir()
 
 ### QASM → Circuit（推荐）
 
-使用 `Circuit.from_qasm()` 类方法将 QASM 文本导入为 Circuit 对象：
+使用 {py:meth}`Circuit.from_qasm() <uniqc.circuit_builder.qcircuit.Circuit.from_qasm>` 类方法将 QASM 文本导入为 Circuit 对象：
 
 ```python
 circuit = Circuit.from_qasm(qasm_str)

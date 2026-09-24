@@ -1,14 +1,14 @@
 # Algorithm API design conventions
 
 `uniqc.algorithms` exposes its primitives as **circuit fragments** —
-self-contained `Circuit` objects you can assemble freely with
+self-contained {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` objects you can assemble freely with
 `Circuit.add_circuit()`. This page documents the four conventions used
 across the package.
 
 ## 1. Variational ansätze — `_ansatz` suffix
 
 Variational algorithms expose a parameterised **ansatz** factory that
-returns a fresh :class:`~uniqc.circuit_builder.Circuit`.
+returns a fresh {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>`.
 
 ```python
 from uniqc import hea, hva, qaoa_ansatz, uccsd_ansatz, vqd_ansatz
@@ -31,12 +31,16 @@ groups = [[("X0X1", 1.0), ("Y0Y1", 1.0)], [("Z0Z1", 0.5)]]
 c = hva(groups, p=2)
 ```
 
-Names: `hea`, `hva`, `qaoa_ansatz`, `uccsd_ansatz`, `vqd_ansatz`.
+Names: {py:func}`hea() <uniqc.algorithms.core.ansatz.hea.hea>`,
+{py:func}`hva() <uniqc.algorithms.core.ansatz.hva.hva>`,
+{py:func}`qaoa_ansatz() <uniqc.algorithms.core.ansatz.qaoa_ansatz.qaoa_ansatz>`,
+{py:func}`uccsd_ansatz() <uniqc.algorithms.core.ansatz.uccsd.uccsd_ansatz>`,
+{py:func}`vqd_ansatz() <uniqc.algorithms.core.circuits.vqd.vqd_ansatz>`.
 
 ## 2. State preparation — `_circuit` suffix
 
 State-preparation primitives take an `n_qubits: int` (or `qubits`
-list) and return a fresh `Circuit` containing only state-prep gates
+list) and return a fresh {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` containing only state-prep gates
 (no measurements):
 
 ```python
@@ -54,7 +58,7 @@ To place a fragment inside a larger circuit, use `circuit.add_circuit(fragment)`
 
 ## 3. Oracular algorithms — input a `Circuit`
 
-Algorithms that consume an oracle accept a `Circuit` as their first
+Algorithms that consume an oracle accept a {py:class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` as their first
 argument and return a fresh `Circuit`:
 
 ```python
@@ -97,8 +101,10 @@ value = PauliExpectation(c, "ZZ").execute("statevector")
 rho   = StateTomography(c, shots=8192).execute()
 ```
 
-The free-function APIs (`pauli_expectation`, `state_tomography`,
-`classical_shadow`, `basis_rotation_measurement`) remain available as
+The free-function APIs ({py:func}`pauli_expectation() <uniqc.algorithms.core.measurement.pauli_expectation.pauli_expectation>`,
+{py:func}`state_tomography() <uniqc.algorithms.core.measurement.state_tomography.state_tomography>`,
+{py:func}`classical_shadow() <uniqc.algorithms.core.measurement.classical_shadow.classical_shadow>`,
+{py:func}`basis_rotation_measurement() <uniqc.algorithms.core.measurement.basis_rotation.basis_rotation_measurement>`) remain available as
 thin convenience wrappers but new code should prefer the class form.
 
 ## 5. `_example` helpers
@@ -115,7 +121,7 @@ c = qft_example()
 ## 6. Parameter management
 
 All ansatz functions accept either `np.ndarray` (backward-compatible) or
-`Parameters` objects for symbolic parameter management.
+{py:class}`Parameters <uniqc.circuit_builder.parameter.Parameters>` objects for symbolic parameter management.
 
 ```python
 from uniqc.circuit_builder import Parameters

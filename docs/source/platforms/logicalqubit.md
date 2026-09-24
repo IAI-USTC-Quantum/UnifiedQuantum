@@ -31,7 +31,7 @@ uniqc backend list -p logicalqubit
 ```
 
 芯片为 AGate 系列（如 30 / 100 比特规格），具体后端名以
-`uniqc backend list -p logicalqubit` 输出为准。
+[`uniqc backend list -p logicalqubit`](../4_cli/backend.md) 输出为准。
 
 ## 提交任务
 
@@ -57,8 +57,10 @@ print(wait_for_result(task_id))
 ## 平台约定与限制
 
 - 单次提交 **shots ≤ 50000**，超出会被拒绝；需要更多采样请分批提交。
-- 平台原生结果为 **qiskit 风格大端 bitstring** 的 counts，normalizer 会
-  改写为 uniqc 的
+- 平台原生结果为 **qiskit 风格大端 bitstring** 的 counts，
+  {ref}`normalizer <advanced-adapter-normalization>` 会改写为 uniqc 的
   {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`）。
-- 门集为 qiskit 风格，转换由 `LogicalQubitCircuitAdapter` 自动完成。
+- 门集为 qiskit 风格，转换由
+  {py:class}`LogicalQubitCircuitAdapter <uniqc.backend_adapter.circuit_adapter.LogicalQubitCircuitAdapter>`
+  自动完成。

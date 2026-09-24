@@ -43,11 +43,13 @@ print(circuit.draw("latex"))
 ``latex``（quantikz 源码）、``html``（静态）、``interactive``（点击门看详情）。
 统一选项：``style`` / ``fold``（每行门数）/ ``orientation`` / ``qubit_order`` /
 ``theme`` / ``param_mode`` / ``show_clbits`` / ``filename``，详见
-{func}`uniqc.visualization.render`。覆盖 OriginIR-ext 全特性（含误差通道、QRAM、
+{func}`uniqc.visualization.circuit_render.render`。覆盖 OriginIR-ext 全特性（含误差通道、QRAM、
 经典控制流）。
 
-> 时序（timeline）可视化见 `uniqc.visualization.schedule_circuit` 与
-> `plot_time_line`；结果分布见 `plot_histogram` / `plot_distribution`。
+> 时序（timeline）可视化见 {py:func}`schedule_circuit() <uniqc.visualization.timeline.schedule_circuit>` 与
+> {py:func}`plot_time_line() <uniqc.visualization.timeline.plot_time_line>`；结果分布见
+> {py:func}`plot_histogram() <uniqc.visualization.result.plot_histogram>` /
+> {py:func}`plot_distribution() <uniqc.visualization.result.plot_distribution>`。
 
 ## 线路转译
 
