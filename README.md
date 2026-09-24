@@ -14,13 +14,13 @@
 
 **UnifiedQuantum** — 非商业性量子计算聚合框架。
 
-UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟和云端执行提供**统一接口**，聚合 OriginQ、QuarkStudio、IBM Quantum、天衍（tianyan）、逻辑比特（logicalqubit）等多平台后端于一套一致的 API 下。
+UnifiedQuantum 是一个轻量级 Python 框架，为[量子线路构建](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/circuit.html)、[模拟](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/simulation.html)和[云端执行](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/submit_task.html)提供**统一接口**，聚合 [OriginQ](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/originq.html)、[QuarkStudio](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/quark.html)、[IBM Quantum](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/ibm.html)、[天衍](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/tianyan.html)、[逻辑比特](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/logicalqubit.html)等多平台后端于一套一致的 API 下。
 
-除了核心的线路构建和执行能力，UnifiedQuantum 还提供完整的**本地芯片校准与量子错误缓解（QEM）工具链**：
+除了核心的线路构建和执行能力，UnifiedQuantum 还提供完整的本地芯片[校准](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/calibration.html)与量子错误缓解（QEM）工具链：
 
-- **XEB 交叉熵基准测试**：`uniqc calibrate xeb` 测量每层门保真度，支持单比特、双比特和并行 2q 模式
-- **读出误差校准 + M3 缓解**：混淆矩阵标定与线性求逆修正
-- **本地含噪模拟**：通过 `dummy:<platform>:<backend>` 复用真实芯片的拓扑和校准数据，先 compile/transpile，再在本地重现硬件噪声特性
+- **[XEB 交叉熵基准测试](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/calibration.html)**：[`uniqc calibrate xeb`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/calibrate.html) 测量每层门保真度，支持单比特、双比特和并行 2q 模式
+- **读出误差校准（[`ReadoutEM`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.qem.readout_em.html#uniqc.qem.readout_em.ReadoutEM)）+ [M3 缓解](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.qem.m3.html#uniqc.qem.m3.M3Mitigator)**：混淆矩阵标定与线性求逆修正
+- **[本地含噪模拟](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/noise_simulation.html)**：通过 `dummy:<platform>:<backend>` 复用真实芯片的拓扑和校准数据，先 compile/transpile，再在本地重现硬件噪声特性
 - **DSatur 并行调度**：自动将 2q 门分配到最小并行轮次
 
 所有校准结果写入 `~/.uniqc/calibration_cache/`，QEM 模块读取并强制 TTL 新鲜度策略。
@@ -43,6 +43,8 @@ uv pip install unified-quantum
 
 ### 2. 构建线路（支持原生 API 或任意第三方工具）
 
+使用原生 [`Circuit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.circuit_builder.qcircuit.html#uniqc.circuit_builder.qcircuit.Circuit) API：
+
 ```python
 from uniqc import Circuit
 
@@ -56,7 +58,7 @@ c.measure(1)
 open('circuit.ir', 'w').write(c.originir)
 ```
 
-> 你也可以使用 Qiskit、Cirq 等工具构建线路，只需最终输出 OriginIR 或 OpenQASM 2.0 格式。
+> 你也可以使用 Qiskit、Cirq 等工具构建线路，只需最终输出 [OriginIR](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/originir.html) 或 [OpenQASM 2.0](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/qasm.html) 格式。
 
 ### 3. CLI 统一执行
 
@@ -77,7 +79,9 @@ uniqc submit circuit.ir --backend dummy:virtual:<name> --shots 1000
 uniqc result <task_id>
 ```
 
-`dummy` 表示无约束、无噪声本地虚拟机；`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` 表示带虚拟拓扑约束的无噪声本地 backend；`dummy:<platform>:<backend>` 表示先按真实 backend compile/transpile，再用真实芯片标定数据在本地含噪执行；`dummy:virtual:<name>` 使用 `~/.uniqc/backend/virtual/<name>.yaml` 中的自定义拓扑与噪声模型。
+以上命令的完整参数见 [`uniqc simulate`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/simulate.html)、[`uniqc submit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/submit.html)、[`uniqc result`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/result.html)。
+
+[`dummy`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/dummy.html) 表示无约束、无噪声本地虚拟机；`dummy:local:virtual-line-N` / `dummy:local:virtual-grid-RxC` 表示带[虚拟拓扑约束](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/virtual_backends.html)的无噪声本地 backend；`dummy:<platform>:<backend>` 表示先按真实 backend [compile/transpile](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.compile.compiler.html#uniqc.compile.compiler.compile)，再用真实芯片标定数据在本地含噪执行；`dummy:virtual:<name>` 使用 `~/.uniqc/backend/virtual/<name>.yaml` 中的自定义拓扑与噪声模型。
 
 ---
 
@@ -102,14 +106,14 @@ UnifiedQuantum 是一个**非商业性**的开源项目，致力于打造 **AI �
 
 ## Features
 
-- **多平台提交**：一个 `submit_task`（或 `uniqc submit`）即可将同一份线路发往 OriginQ、QuarkStudio、IBM Quantum、天衍、逻辑比特，或本地 dummy 模拟器。支持自动检测输入格式：`Circuit` 对象、OriginIR 字符串、QASM 字符串、`qiskit.QuantumCircuit`。
-- **格式互转**：`Circuit.from_qasm()` / `Circuit.from_originir()` 导入，`circuit.to_qasm()` / `circuit.to_originir()` 导出。
-- **本地模拟**：自带 OriginIR Simulator、QASM Simulator，支持 statevector / density matrix 两种后端，以及带噪声的变体。
-- **算法组件**：内置 HEA、UCCSD、QAOA 等常用 ansatz，可直接用于 VQE / QAOA 研究。
-- **PyTorch 集成**：提供 `QuantumLayer`、参数偏移梯度、批处理执行，便于构建混合量子—经典模型。
+- **多平台提交**：一个 [`submit_task`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.submit_task)（或 [`uniqc submit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/submit.html)）即可将同一份线路发往 OriginQ、QuarkStudio、IBM Quantum、天衍、逻辑比特，或本地 [dummy 模拟器](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/dummy.html)。支持自动检测输入格式：`Circuit` 对象、OriginIR 字符串、QASM 字符串、`qiskit.QuantumCircuit`。
+- **格式互转**：[`Circuit.from_qasm()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.circuit_builder.qcircuit.html#uniqc.circuit_builder.qcircuit.Circuit.from_qasm) / [`Circuit.from_originir()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.circuit_builder.qcircuit.html#uniqc.circuit_builder.qcircuit.Circuit.from_originir) 导入，`circuit.to_qasm()` / `circuit.to_originir()` 导出。
+- **本地模拟**：自带 OriginIR Simulator、QASM Simulator（[`Simulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.simulator.simulator.html#uniqc.simulator.simulator.Simulator)），支持 statevector / density matrix 两种后端，以及带噪声的变体 [`NoisySimulator`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.simulator.simulator.html#uniqc.simulator.simulator.NoisySimulator)（另见 [含噪模拟](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/noise_simulation.html)与 [MPS 模拟器](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/mps_simulator.html)）。
+- **算法组件**：内置 [`hea`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.hea.html#uniqc.algorithms.core.ansatz.hea.hea)（HEA）、[`uccsd_ansatz`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.uccsd.html#uniqc.algorithms.core.ansatz.uccsd.uccsd_ansatz)（UCCSD）、[`qaoa_ansatz`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.algorithms.core.ansatz.qaoa_ansatz.html#uniqc.algorithms.core.ansatz.qaoa_ansatz.qaoa_ansatz)（QAOA）等常用 ansatz，可直接用于 VQE / QAOA 研究。
+- **PyTorch 集成**：提供 [`QuantumLayer`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.torch_adapter.quantum_layer.html#uniqc.torch_adapter.quantum_layer.QuantumLayer)、参数偏移梯度、批处理执行，便于构建混合量子—经典模型（[PyTorch 指南](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/pytorch.html)）。
 - **可互操作**：线路既可用原生 API 构建，也可来自 Qiskit、Cirq 等第三方工具，只要最终产出 OriginIR 或 OpenQASM 2.0。
-- **异步提交**：`submit_task` 立即返回 `task_id`；`poll_result()` 非阻塞查询状态，`get_result()` 或 `wait_for_result()` 阻塞等待完成。
-- **易扩展**：门集、错误模型、平台适配器都按接口组织，添加新后端只需实现一个 adapter。
+- **异步提交**：`submit_task` 立即返回 `task_id`；[`poll_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.poll_result) 非阻塞查询状态，[`get_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.get_result) 或 [`wait_for_result()`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/uniqc.backend_adapter.task_manager.html#uniqc.backend_adapter.task_manager.wait_for_result) 阻塞等待完成（[任务管理指南](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/task_manager.html)）。
+- **易扩展**：门集、错误模型、平台适配器都按接口组织，添加新后端只需实现一个 [adapter](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/adapter_architecture.html)。
 
 ---
 
@@ -186,10 +190,10 @@ pip install -e .
 
 | 功能 | 安装命令（uv） | pip 备选 |
 |------|----------------|---------|
-| OriginQ 云平台 | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
-| QuarkStudio / Quark 云平台 (Python ≥ 3.12) | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
-| 天衍云平台 | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
-| 逻辑比特云平台 | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
+| [OriginQ 云平台](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/originq.html) | `uv pip install unified-quantum[originq]` | `pip install unified-quantum[originq]` |
+| [QuarkStudio / Quark 云平台](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/quark.html)（Python ≥ 3.12） | `uv pip install unified-quantum[quark]` | `pip install unified-quantum[quark]` |
+| [天衍云平台](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/tianyan.html) | `uv pip install unified-quantum[tianyan]` | `pip install unified-quantum[tianyan]` |
+| [逻辑比特云平台](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/logicalqubit.html) | `uv pip install unified-quantum[logicalqubit]` | `pip install unified-quantum[logicalqubit]` |
 | 高级模拟 (QuTiP) | `uv pip install unified-quantum[simulation]` | `pip install unified-quantum[simulation]` |
 | 可视化 | `uv pip install unified-quantum[visualization]` | `pip install unified-quantum[visualization]` |
 | PyTorch 集成 | `uv pip install unified-quantum[pytorch]` | `pip install unified-quantum[pytorch]` |
@@ -246,6 +250,8 @@ uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
 uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10
 ```
 
+各子命令的完整参数与示例：[`simulate`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/simulate.html) · [`submit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/submit.html) · [`result`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/result.html) · [`circuit`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/circuit.html) · [`task`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/task.html) · [`doctor`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/doctor.html) · [`gateway`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/gateway.html) · [`config`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/config.html) · [`calibrate`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/calibrate.html)，另见 [CLI 总览](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/index.html)。
+
 ### 后端信息查询
 
 ```bash
@@ -264,6 +270,8 @@ uniqc backend show originq:WK_C180
 # 强制刷新后端缓存（update 始终全量拉取最新数据）
 uniqc backend update
 ```
+
+[`uniqc backend`](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/backend.html) 的完整用法见 CLI 参考对应页面。
 
 ---
 
@@ -290,7 +298,18 @@ uniqc backend update
 
 ## Documentation
 
-📖 [GitHub Pages](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/)
+📖 [文档站点](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/) — 完整章节导航：
+
+| 章节 | 内容 |
+|------|------|
+| [快速上手](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/0_quickstart/index.html) | 安装与端到端流程 |
+| [基础用法](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/1_basic_usage/index.html) | 线路构建、模拟、任务提交、任务管理、PyTorch、OriginIR / QASM |
+| [平台接入](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/platforms/index.html) | OriginQ、Quark、IBM、天衍、逻辑比特与 dummy 后端 |
+| [进阶主题](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/2_advanced/index.html) | 适配器架构、编译等级、校准、含噪与 MPS 模拟、虚拟后端 |
+| [CLI 参考](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/4_cli/index.html) | 每个子命令一页的完整参考 |
+| [Web UI](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/5_webui/index.html) | 网关与 Web 界面 |
+| [API 参考](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/6_api/index.html) | 自动生成的完整 API 树（含顶层公共 API 速查） |
+| [发布说明](https://iai-ustc-quantum.github.io/UnifiedQuantum/docs/source/7_releases/index.html) | 版本变化总览与弃用政策 |
 
 ### Release Notes
 
@@ -308,6 +327,8 @@ uniqc backend update
 - **联系我们**：chenzhaoyun@iai.ustc.edu.cn
 
 欢迎提交 Issues、Pull Request，或通过邮件联系我们。如果您对量子计算研究感兴趣，欢迎加入我们。
+
+参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，行为准则见 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)，版本历史见 [CHANGELOG.md](CHANGELOG.md)，许可证见 [LICENSE](LICENSE)。
 
 ---
 
