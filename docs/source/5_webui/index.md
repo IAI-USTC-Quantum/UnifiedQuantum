@@ -42,3 +42,11 @@ gunicorn / 第三方 reverse-proxy 部署。
 任务库是 ``TaskStore`` 抽象（``uniqc.backend_adapter.task.store``）的默认 SQLite 实现，
 schema 由 ``uniqc.backend_adapter.database_migration`` 管理，可以平滑升级到新版本。
 迁移在每次 ``submit_task`` / ``query_task`` 第一次调用时自动触发。
+
+## 相关页面
+
+- [CLI gateway 命令](../4_cli/gateway.md) —— `start` / `stop` / `status` 与配置项
+- [任务管理器](../1_basic_usage/task_manager.md) —— 任务库的上层 API
+- [自定义含噪量子虚拟机](../2_advanced/virtual_backends.md) —— `~/.uniqc/backend/virtual/` 的 YAML 格式
+- [芯片校准与 QEM](../2_advanced/calibration.md) —— `~/.uniqc/calibration_cache/` 的读写方
+- [CLI config 命令](../4_cli/config.md) —— `~/.uniqc/config.yaml` 的字段与 profile

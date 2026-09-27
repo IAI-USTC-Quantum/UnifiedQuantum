@@ -1,5 +1,7 @@
 # Algorithm API design conventions
 
+(advanced-algorithm-design)=
+
 `uniqc.algorithms` exposes its primitives as **circuit fragments** —
 self-contained `Circuit` objects you can assemble freely with
 `Circuit.add_circuit()`. This page documents the four conventions used
@@ -144,3 +146,12 @@ Benefits of `Parameters`:
 - Symbolic arithmetic via sympy expressions
 - Rebindable values for multiple optimization runs
 - See: `examples/2_advanced/algorithms/parameters_demo.py`
+
+## See also
+
+- [构建量子线路](../1_basic_usage/circuit.md) — how `Circuit` fragments are assembled; every
+  convention on this page builds on it
+- [PyTorch 集成](../1_basic_usage/pytorch.md) — training parametric ansätze with autodiff
+- [线路分析](circuit_analysis.md) — depth / gate statistics for the circuits you assemble
+- [算法实现示例](../8_algorithms_examples/index.md) — runnable, topic-organized examples
+  (variational, state preparation, measurement, …) that follow these conventions

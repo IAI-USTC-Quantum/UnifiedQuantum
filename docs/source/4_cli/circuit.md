@@ -40,3 +40,11 @@ uniqc circuit input.ir --info
 |------|------|
 | `originir` | UnifiedQuantum 原生格式 |
 | `qasm` | OpenQASM 2.0 格式 |
+
+## 相关文档
+
+- [构建量子线路](../1_basic_usage/circuit.md) —— `Circuit` 对象的构建与格式转换 API
+- [OriginIR-ext 规范](../1_basic_usage/originir.md) —— 原生格式的语法
+- [OpenQASM 2.0 支持](../1_basic_usage/qasm.md) —— QASM 门集覆盖与限制
+- [线路分析](../2_advanced/circuit_analysis.md) —— `--info` 背后的 Python API 与可视化
+- [线路绘制](draw.md) —— 把电路文件渲染成图

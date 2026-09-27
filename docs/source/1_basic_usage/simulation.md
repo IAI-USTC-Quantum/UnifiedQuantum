@@ -48,9 +48,9 @@
 
 | 本地模拟入口 | 输入形式 | 适合先看什么问题 |
 | --- | --- | --- |
-| {class}`uniqc.simulator.Simulator` | `AnyQuantumCircuit`（`Circuit` 对象、`originir` 字符串或 `qasm` 字符串） | 已经用 {class}`uniqc.circuit_builder.Circuit` 构好线路，想先快速验证概率分布、状态向量或采样结果；也适用于 OpenQASM 2.0 输入，`Simulator` 会自动检测格式 |
-| {class}`uniqc.simulator.OpcodeSimulator` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
-| {class}`uniqc.simulator.NoisySimulator` | `AnyQuantumCircuit` + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
+| {py:class}`uniqc.simulator.Simulator <uniqc.simulator.simulator.Simulator>` | `AnyQuantumCircuit`（`Circuit` 对象、`originir` 字符串或 `qasm` 字符串） | 已经用 {py:class}`uniqc.circuit_builder.Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 构好线路，想先快速验证概率分布、状态向量或采样结果；也适用于 OpenQASM 2.0 输入，`Simulator` 会自动检测格式 |
+| {py:class}`uniqc.simulator.OpcodeSimulator <uniqc.simulator.opcode_simulator.OpcodeSimulator>` | opcode 列表 | 需要更底层控制、特定后端或排查后端差异 |
+| {py:class}`uniqc.simulator.NoisySimulator <uniqc.simulator.simulator.NoisySimulator>` | `AnyQuantumCircuit` + 噪声配置 | 想在本地模拟阶段加入噪声模型并观察结果变化 |
 | `MPSSimulator`（见 [MPS 模拟器](../2_advanced/mps_simulator.md)） | `AnyQuantumCircuit` + `MPSConfig` | 比特数较多但纠缠/键维 (`χ`) 受控，`statevector` 装不下时使用 |
 | `TorchQuantumSimulator`（需要 `unified-quantum[pytorch]`） | `Circuit` / `originir` | 想把模拟接入 PyTorch 计算图、做端到端可微分实验 |
 
@@ -130,7 +130,7 @@ result = sim.simulate_shots(circuit.originir, shots=1000)
 | `density_operator` | `density_matrix`, `densitymatrix`, `densityoperator`, `density` (CLI) | 密度矩阵（支持噪声） |
 | `density_operator_qutip` | `density_matrix_qutip` | 基于 QuTiP 的密度矩阵；需要 `unified-quantum[simulation]` extra（`qutip` + `qutip-qip`） |
 
-> 别名在 {func}`uniqc.simulator.backend_alias` 中统一解析；`OpcodeSimulator`、`create_simulator` 与 CLI `uniqc simulate --backend` 接受同一组别名。
+> 别名在 {py:func}`uniqc.simulator.backend_alias <uniqc.simulator.opcode_simulator.backend_alias>` 中统一解析；`OpcodeSimulator`、`create_simulator` 与 CLI `uniqc simulate --backend` 接受同一组别名。
 
 ```python
 from uniqc.simulator import OpcodeSimulator
@@ -166,11 +166,11 @@ prob = sim.simulate_pmeasure(circuit.originir)
 | `density_matrix` | 含噪声模拟，双比特门为主 | ✅ | 较慢（内存 O(4^n)） |
 | `density_matrix_qutip` | 复杂噪声模型，高精度需求 | ✅ | 较慢，依赖 Qutip |
 
-> **CLI 与 Python API 的别名一致性**：CLI `uniqc simulate --backend density` 与 Python API 的 `density_matrix` / `density_operator` / `densitymatrix` / `density` 都是同一种密度矩阵后端的别名（在 {func}`uniqc.simulator.backend_alias` 内部归一化为 `density_operator`）。`density_operator_qutip` 与其别名 `density_matrix_qutip` 同理。
+> **CLI 与 Python API 的别名一致性**：CLI `uniqc simulate --backend density` 与 Python API 的 `density_matrix` / `density_operator` / `densitymatrix` / `density` 都是同一种密度矩阵后端的别名（在 {py:func}`uniqc.simulator.backend_alias <uniqc.simulator.opcode_simulator.backend_alias>` 内部归一化为 `density_operator`）。`density_operator_qutip` 与其别名 `density_matrix_qutip` 同理。
 
 **选择建议**：
-- 一般无噪声模拟 → {class}`uniqc.simulator.Simulator`（基于 statevector）
-- 需要噪声模拟 → {class}`uniqc.simulator.NoisySimulator`（基于 density_matrix）
+- 一般无噪声模拟 → {py:class}`uniqc.simulator.Simulator <uniqc.simulator.simulator.Simulator>`（基于 statevector）
+- 需要噪声模拟 → {py:class}`uniqc.simulator.NoisySimulator <uniqc.simulator.simulator.NoisySimulator>`（基于 density_matrix）
 - 复杂多比特噪声模型 → `density_matrix_qutip`
 
 (guide-simulation-known-limitations)=
@@ -184,9 +184,9 @@ prob = sim.simulate_pmeasure(circuit.originir)
 完整的模拟器 API 见：
 
 - {mod}`uniqc.simulator` — 模拟器模块
-- {class}`uniqc.simulator.OpcodeSimulator`
-- {class}`uniqc.simulator.Simulator`
-- {class}`uniqc.simulator.NoisySimulator`
+- {py:class}`uniqc.simulator.OpcodeSimulator <uniqc.simulator.opcode_simulator.OpcodeSimulator>`
+- {py:class}`uniqc.simulator.Simulator <uniqc.simulator.simulator.Simulator>`
+- {py:class}`uniqc.simulator.NoisySimulator <uniqc.simulator.simulator.NoisySimulator>`
 - `uniqc.simulator.mps_simulator.MPSSimulator` / `MPSConfig` — MPS 后端，详见 [MPS 模拟器](../2_advanced/mps_simulator.md)
 - `uniqc.simulator.torchquantum_simulator.TorchQuantumSimulator` — 基于 torchquantum 的可微分后端（`unified-quantum[pytorch]` 会同时安装 `torch` 与 `torchquantum-ng`）
 - `create_simulator(backend=...)` — 统一工厂入口，`backend` 支持 `'statevector' | 'density_matrix' | 'mps' | 'torchquantum'` 等

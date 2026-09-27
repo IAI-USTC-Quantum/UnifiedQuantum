@@ -5,7 +5,7 @@
 ## 构建量子线路
 
 第一个示例将让你看到如何创建量子线路并添加量子门。建议重点关注：
-- 如何使用 {class}`uniqc.circuit_builder.Circuit` 创建空线路
+- 如何使用 {py:class}`uniqc.circuit_builder.Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 创建空线路
 - 如何添加量子门（如 `h`、`cnot`）
 - 如何添加测量指令 `measure`
 
@@ -29,7 +29,7 @@ print(circuit.originir)
 ## 本地模拟
 
 接下来使用本地模拟器运行线路并观察结果。建议重点关注：
-- 如何使用 {class}`uniqc.simulator.Simulator` 创建模拟器
+- 如何使用 {py:class}`uniqc.simulator.Simulator <uniqc.simulator.simulator.Simulator>` 创建模拟器
 - 如何调用 `simulate_pmeasure` 获取测量概率分布
 - 输出结果的含义（概率分布）
 
@@ -54,4 +54,6 @@ print("测量概率分布:", prob)
 - 如果你已经完成安装、最小示例和本地验证，准备提交到云平台或真机，请阅读 [提交任务](../1_basic_usage/submit_task.md)。
 - 如果你想了解 OriginIR 格式的详细说明，请阅读 [OriginIR](../1_basic_usage/originir.md)。
 - 如果你想了解 QASM 格式与格式互转，请阅读 [QASM](../1_basic_usage/qasm.md)。
+- 如果你想要一条覆盖"构建 → 模拟 → 提交 → 配置 → 可视化"的完整主路径走读，请阅读 [主路径走读](../1_basic_usage/walkthrough.md)。
+- 如果你想查找某个类 / 方法对应的文档页，见 [主要 API 索引](../1_basic_usage/main_api.md)。
 - 如果你想从命令行直接操作，请阅读 [命令行工具](../4_cli/index.md)。

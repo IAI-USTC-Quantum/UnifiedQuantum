@@ -128,7 +128,8 @@ uniqc config validate
 
 ## C++ 模拟器（uniqc-cppsimulator）
 
-C++ 模拟器已拆分为独立仓库 [uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)，并以同名 PyPI 包发布；`pip install unified-quantum` 会自动将其作为依赖安装，import 名仍为 `uniqc_cpp`。本仓库的源码构建是纯 Python 流程，不再需要 CMake / C++ 工具链。编译相关问题（CMake、pybind11、平台 wheel 等）请参阅 uniqc-cppsimulator 仓库的 README。
+C++ 模拟器已拆分为独立仓库 [uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator)，并以同名 PyPI 包发布；`pip install unified-quantum` 会自动将其作为依赖安装，import 名仍为 `uniqc_cpp`。本仓库的源码构建是纯 Python 流程，不再需要 CMake / C++ 工具链。编译相关问题（CMake、pybind11、平台 wheel 等）、安装方式与测试运行请参阅
+[uniqc-cppsimulator 文档的安装与测试章节](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator/blob/main/docs/usage.rst)，其 C++ 内核的基准测试见[该仓库的基准测试文档](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator/blob/main/docs/benchmark.rst)。
 
 ## 可选依赖
 

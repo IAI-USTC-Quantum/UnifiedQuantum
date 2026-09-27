@@ -66,3 +66,11 @@ print(wait_for_result(task_id))
   序遵循
   {ref}`统一 endianness 约定 <platform-bit-endianness>`——
   IBM 原生 BitArray 顺序已被 normalizer 改写。
+
+## 相关页面
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` 参数全景与提交流程
+- [CLI 提交命令](../4_cli/submit.md) 与 [CLI backend 命令](../4_cli/backend.md) —— 本文命令的完整选项
+- [OpenQASM 2.0 支持](../1_basic_usage/qasm.md) —— IBM 平台接受的线路格式与门集
+- [配置管理](../4_cli/config.md) —— token 与代理配置的更多细节
+- [其它平台](index.md) —— 如需在平台间切换，先看这里的对比表

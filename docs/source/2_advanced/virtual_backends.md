@@ -1,10 +1,14 @@
 # 自定义含噪量子虚拟机 (`dummy:virtual:`)
 
+(advanced-virtual-backends)=
+
 除了内置的虚拟拓扑 fixture(`virtual-line-N` / `virtual-grid-RxC`）和复用真实芯片标定数据的
 `dummy:<platform>:<chip>`，uniqc 还支持**完全由用户定义的含噪量子虚拟机**：在
 `~/.uniqc/backend/virtual/` 下写一个 YAML 文件，声明比特数、耦合拓扑、分层 gate error
 model、T1/T2 热弛豫和逐比特读出错误，然后以 `dummy:virtual:<name>` 作为 backend
 标识符在任意接受 backend 的地方使用（`submit_task`、`uniqc submit`、XEB / 读出标定工作流等）。
+backend 标识符的整体命名规则见 [Backend 命名](guide-submit-task-backend-naming)，
+内置 fixture 与 `dummy:<platform>:<chip>` 见 [dummy 平台](platforms-dummy)。
 
 ## 目录布局
 
@@ -133,7 +137,8 @@ noise:
 
 ## 与 `dummy:<platform>:<chip>` 的噪声语义差异
 
-两条路径最终都注入到同一台密度矩阵含噪模拟器，但噪声构造不同：
+两条路径最终都注入到同一台密度矩阵含噪模拟器（噪声模拟总览见
+[噪声模拟](advanced-noise-simulation)），但噪声构造不同：
 
 - `dummy:originq:WK_C180` 从**芯片标定数据**换算：2q 门噪声按比特分解为逐比特 1q
   depolarizing 近似，读出错误取 `avg_readout_fidelity` 对称拆分，T1/T2 不参与换算。
@@ -158,3 +163,12 @@ noise:
 | `uniqc backend virtual list` | 列出全部虚拟机（名称、比特数、边数、噪声摘要、合法性） |
 | `uniqc backend virtual show <name>` | 展示解析后的配置与派生噪声参数 |
 | `uniqc backend virtual validate <name>` | 校验配置文件，退出码反映合法性 |
+
+## 相关页面
+
+- [噪声模拟](advanced-noise-simulation) —— 密度矩阵含噪模拟与噪声模型构造
+- [dummy 平台](platforms-dummy) —— 内置虚拟拓扑 fixture 与真实芯片标定复用
+- [标定与 QEM](calibration.md) —— 基于虚拟机/真实后端的 XEB 与读出标定工作流
+- [CLI backend 命令](../4_cli/backend.md) —— `uniqc backend` 子命令全集
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— 在提交流程中使用 `dummy:virtual:` 后端
+- [WebUI 概览](../5_webui/index.md) —— 在网页端浏览虚拟机与任务

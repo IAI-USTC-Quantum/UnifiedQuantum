@@ -37,3 +37,10 @@ uniqc result TASK_ID --platform originq --format json
 │ 11    │ 513   │ 51.3%   │
 └───────┴───────┴─────────┘
 ```
+
+## 相关文档
+
+- [提交任务](submit.md) —— 先提交才有任务 ID；backend 命名规则也在此页
+- [任务管理器](../1_basic_usage/task_manager.md) —— Python 侧的提交 / 轮询 / 结果管理
+- [平台约定 · 输出格式](platform-output-formats) —— counts 的 bitstring 端序与结果字段约定
+- [本地模拟](simulate.md) —— 不需要云端任务时直接在本地运行

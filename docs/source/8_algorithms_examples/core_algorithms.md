@@ -16,3 +16,9 @@
 
 ```{include} ../_generated/examples/2_advanced/circuits__vqd.md
 ```
+
+## 相关页面
+
+- [线路构件](circuit_building_blocks.md) —— Grover oracle 等 QFragments 级构件
+- [本地模拟](../1_basic_usage/simulation.md) —— 在本地后端上验证这些算法
+- [Algorithm API 设计约定](../2_advanced/algorithm_design.md) —— oracle 类算法的输入约定

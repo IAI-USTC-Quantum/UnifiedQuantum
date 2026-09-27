@@ -47,3 +47,11 @@ uniqc simulate circuit.ir --output result.json
 |------|------|
 | `statevector` | 状态向量模拟器，返回精确概率分布 |
 | `density` | 密度矩阵模拟器，支持噪声模拟 |
+
+## 相关文档
+
+- [本地模拟](../1_basic_usage/simulation.md) —— 模拟器家族总览、噪声与选型建议
+- [MPS 模拟器](../2_advanced/mps_simulator.md) —— 大比特数、线性拓扑的替代后端
+- [动态电路](../2_advanced/dynamic_circuits.md) —— `QIF` / `QWHILE` 电路的 per-shot 采样
+- [提交任务](submit.md) —— 把电路提交到云端后端
+- [结果查询](result.md) —— 查询云端任务结果

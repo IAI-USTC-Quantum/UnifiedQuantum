@@ -364,4 +364,5 @@ except MissingDependencyError as e:
 
 - 了解 [云平台适配器架构](../2_advanced/adapter_architecture.md)
 - 查看具体的 [任务提交指南](submit_task.md)
+- 命令行侧的任务管理见 [CLI task 命令](../4_cli/task.md) 与 [CLI result 命令](../4_cli/result.md)
 - 参考 API 文档：{mod}`uniqc.backend_adapter.task_manager`

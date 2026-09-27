@@ -1,5 +1,7 @@
 # 编译策略：`local_compile` 与 `cloud_compile`
 
+(advanced-compile-levels)=
+
 uniqc 在 `submit_task` / `submit_batch` / `dry_run_task` 中通过两个**整数**关键字参数来描述编译流水线：
 
 - `local_compile: int = 1` —— 本地（qiskit）层的优化等级
@@ -14,7 +16,7 @@ uniqc 在 `submit_task` / `submit_batch` / `dry_run_task` 中通过两个**整�
 - 提交到 OriginQ 平台只能是 OriginIR
 - 提交到 IBM / Quark 平台只能是 OpenQASM 2.0
 
-这一层规则是“硬阻塞”，发现不兼容立即抛 `UnsupportedGateError`，不会静默放行。
+这一层规则是“硬阻塞”，发现不兼容立即抛 `UnsupportedGateError`，不会静默放行。各平台接受的语言与门集详见[平台约定](../1_basic_usage/platform_conventions.md)（OriginIR-ext 规范见 [OriginIR](../1_basic_usage/originir.md)，OpenQASM 2.0 支持见 [QASM](../1_basic_usage/qasm.md)）。
 
 ## `local_compile`（本地编译）
 
@@ -78,3 +80,11 @@ task_id = submit_task(
 | `auto_compile=True`  | `local_compile=1` |
 | `auto_compile=False` | `local_compile=0` |
 | `skip_validation=True` | （不再需要；`local_compile=0` 时校验自动降级为 warning，硬规则仍生效） |
+
+## 相关页面
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` 全部参数与提交流程
+- [编译选项与 Region 选择器](compiler_options_region.md) —— 细粒度 `compile_options`、区域/耦合图约束
+- [云平台指南](../platforms/index.md) —— 各平台对云端编译、IR 语言的实际支持
+- [CLI 提交命令](../4_cli/submit.md) —— 命令行侧的提交流程与 `--dry-run`
+- [推荐使用路径](../1_basic_usage/best_practices.md) —— 不同场景下推荐的整体用法

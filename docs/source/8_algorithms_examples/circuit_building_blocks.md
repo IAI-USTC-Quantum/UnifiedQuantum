@@ -22,3 +22,9 @@
 
 ```{include} ../_generated/examples/2_advanced/circuits__thermal_state.md
 ```
+
+## 相关页面
+
+- [构建量子线路](../1_basic_usage/circuit.md) —— `Circuit` 与 `add_circuit()` 的组合方式
+- [Algorithm API 设计约定](../2_advanced/algorithm_design.md) —— 本页构件遵循的 `_circuit` 后缀等约定
+- [态制备](state_preparation.md) 与 [核心量子算法](core_algorithms.md) —— 常用构件的下游用法

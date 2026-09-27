@@ -118,3 +118,10 @@ uniqc sync pull     # 下载（远端优先，自动备份）
 
 详见[凭据同步 (`uniqc sync`)](sync.md)。
 
+## 相关文档
+
+- [平台概览](../platforms/index.md) —— 各平台需要哪些凭据字段
+- [CLI doctor 命令](doctor.md) —— 校验当前配置是否健康
+- [提交任务](submit.md) —— 使用配置好的凭据提交任务
+- [平台约定 · 配置](platform-configuration) —— 配置文件在平台体系中的角色
+

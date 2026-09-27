@@ -130,6 +130,8 @@ compiled = compile(
 3. 在路径上插入 SWAP 门
 4. 返回插入的 SWAP 数量和预估电路成功率
 
+标定数据本身的读取与结构见 [标定与 QEM](calibration.md)；OriginQ 平台上可用的芯片与 `get_chip_characterization` 的获取方式见 [OriginQ 平台指南](../platforms/originq.md)。
+
 ```python
 from uniqc.backend_adapter.task.adapters.originq_adapter import OriginQAdapter
 
@@ -263,7 +265,7 @@ task_id = submit_task(circuit, "originq:WK_C180", shots=500,
 )
 ```
 
-**向后兼容性保证**：当 `options=None` 且没有平台特定 kwargs 时，函数行为与之前完全相同。`options` 参数是纯增量的。
+**向后兼容性保证**：当 `options=None` 且没有平台特定 kwargs 时，函数行为与之前完全相同。`options` 参数是纯增量的。`submit_task` 的完整参数与提交流程见[提交任务到量子云平台](guide-submit-task-unified-api)；整数编译等级 `local_compile` / `cloud_compile` 的语义见[编译策略](advanced-compile-levels)。
 
 ---
 
@@ -495,3 +497,12 @@ Qiskit；qiskit 现在是 `unified-quantum` 的核心依赖，缺失时请重装
 唯一可绕过 `compile()` 的路径是：构造一份所有 entry 都已带 `start_time` 的 pulse /
 timeline 数据，并显式传 `compile_to_basis=False`（否则会抛 `TimelineDurationError`）。
 :::
+
+## 相关页面
+
+- [编译策略：`local_compile` 与 `cloud_compile`](compile_levels.md) —— 提交时两个整数编译等级的语义
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` / `options` 参数全景
+- [标定与 QEM](calibration.md) —— `ChipCharacterization` 标定数据的来源与结构
+- [云平台适配器架构](adapter_architecture.md) —— 各平台选项与适配器如何接入
+- [OriginQ 平台指南](../platforms/originq.md) —— 可用芯片与标定数据获取
+- [线路分析](circuit_analysis.md) —— 编译前后线路的深度与门统计

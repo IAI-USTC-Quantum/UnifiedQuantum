@@ -20,6 +20,13 @@
 想给 UnifiedQuantum 接入一个新云平台？见
 [添加一个新云平台](../2_advanced/adding_a_platform.md)。
 
+## 相关章节
+
+- [CLI backend 命令](../4_cli/backend.md) —— 发现、刷新与展示各平台后端
+- [CLI config 命令](../4_cli/config.md) —— 凭证字段的写入与校验
+- [任务管理器](../1_basic_usage/task_manager.md) —— 提交之后的轮询、缓存与批量管理
+- [推荐使用路径](../1_basic_usage/best_practices.md) —— 平台选择在内的整体最佳实践
+
 ## 各平台页面
 
 ```{toctree}

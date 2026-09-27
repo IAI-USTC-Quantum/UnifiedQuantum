@@ -126,3 +126,11 @@ uniqc submit circuit.ir --backend originq:WK_C180
 # JSON 输出
 uniqc submit circuit.ir --backend originq:WK_C180 --format json
 ```
+
+## 相关文档
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— Python API 侧的完整参数（含 `local_compile` / `cloud_compile`）
+- [编译策略](../2_advanced/compile_levels.md) —— 本地与云端编译等级的语义
+- [结果查询](result.md) 与 [任务管理](task.md) —— 提交后的任务生命周期
+- [平台概览](../platforms/index.md) —— 各平台的凭证与后端差异
+- [本地模拟](simulate.md) —— 不出网即可验证电路行为

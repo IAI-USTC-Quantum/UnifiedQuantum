@@ -1,6 +1,8 @@
 # MPS 模拟器 (MPSSimulator)
 
-UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：{py:class}`uniqc.simulator.MPSSimulator`。
+(advanced-mps-simulator)=
+
+UnifiedQuantum 在原有的稠密态模拟器（`Simulator` / `NoisySimulator`，由 C++ 后端驱动）之外，新增了一个**纯 Python 的矩阵乘积态 (Matrix Product State, MPS) 模拟器**：{py:class}`uniqc.simulator.MPSSimulator <uniqc.simulator.mps_simulator.MPSSimulator>`。
 
 它的目标场景是：
 
@@ -56,7 +58,7 @@ probs = sim.simulate_pmeasure(c.originir)   # ≤ 24 measured qubit
 
 ## 通过 dummy 后端调用
 
-跟 `dummy:local:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 `submit_task` / `wait_for_result` 流水线：
+跟 `dummy:local:virtual-line-N` 类似，MPS 模拟器作为一种 dummy 后端暴露给 `submit_task` / `wait_for_result` 流水线（提交流程见[提交任务到量子云平台](../1_basic_usage/submit_task.md)，backend 命名规则见 [Backend 命名](guide-submit-task-backend-naming)）：
 
 ```python
 from uniqc.backend_adapter.task_manager import submit_task, wait_for_result
@@ -98,3 +100,11 @@ OriginIR 的参数语法是 `GATE q[a],q[b],(theta)`，**不是** `GATE(theta) q
 | 跨距 > 1 的门 | 先用 SWAP 编译到最近邻，再走 MPS；或换 `Simulator` |
 
 如果电路达到了体积律纠缠（例如随机量子电路深度 ≈ N），任何 χ 都会爆，此时 MPS 不是合适的工具。
+
+## 相关页面
+
+- [本地模拟](../1_basic_usage/simulation.md) —— 全部模拟器家族的对比与选型
+- [噪声模拟](advanced-noise-simulation) —— MPS 不支持噪声；含噪场景请看这里
+- [动态电路](dynamic_circuits.md) —— MPS 同样不支持 `QIF`/`QWHILE` 经典控制流
+- [虚拟后端](virtual_backends.md) —— 与 MPS 并列的另一类本地扩展后端
+- [CLI 本地模拟](../4_cli/simulate.md) —— 命令行选择后端运行模拟

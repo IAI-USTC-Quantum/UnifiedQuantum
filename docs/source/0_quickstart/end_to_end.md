@@ -18,6 +18,9 @@ task_id = submit_task(c, backend="originq:WK_C180", shots=1000)
 print(wait_for_result(task_id))
 ```
 
+提交参数、backend 命名与平台选择的完整说明见
+[提交任务到量子云平台](../1_basic_usage/submit_task.md)。
+
 或 CLI：
 
 ```bash

@@ -63,3 +63,10 @@ uniqc calibrate pattern --type circuit --circuit circuit.ir
 ```
 
 `pattern` 主要用于并行 XEB 和芯片调度检查。输出包含 `n_rounds`、`chromatic_number` 和每轮可并行执行的 2q gate 分组。
+
+## 相关文档
+
+- [芯片校准与量子错误缓解](../2_advanced/calibration.md) —— 校准 / QEM 工作流的完整 Python API 与设计说明
+- [噪声模拟](../2_advanced/noise_simulation.md) —— 校准数据如何驱动含噪模拟
+- [CLI backend 命令](backend.md) —— `--backend` 名称的发现与查看
+- [编译选项与 Region 选择器](../2_advanced/compiler_options_region.md) —— 按标定数据挑选高保真比特区域

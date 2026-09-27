@@ -133,3 +133,10 @@ uniqc doctor
 
 ──────────────────── Done ────────────────────
 ```
+
+## 相关文档
+
+- [安装](installation.md) —— 安装方式与 extras 的对应关系
+- [配置参考](config.md) —— `~/.uniqc/config.yaml` 各字段含义
+- [CLI backend 命令](backend.md) —— 修复后端缓存问题的手动工具
+- [平台概览](../platforms/index.md) —— 各平台的凭据与 SDK 要求

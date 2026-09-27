@@ -59,3 +59,9 @@ uniqc task clear
 # 强制清理（无需确认）
 uniqc task clear --force
 ```
+
+## 相关文档
+
+- [结果查询](result.md) —— 等待任务完成并取回完整结果
+- [提交任务](submit.md) —— 创建新任务
+- [任务管理器](../1_basic_usage/task_manager.md) —— Python 侧的任务缓存、轮询与批量管理

@@ -48,3 +48,10 @@
 
 ```{include} ../_generated/examples/2_advanced/algorithms__qcnn_classifier.md
 ```
+
+## 相关页面
+
+- [PyTorch 集成](../1_basic_usage/pytorch.md) —— 本页 Torch 版示例的底层 API
+- [参数化线路](../1_basic_usage/circuit.md) —— `PARAM` 符号参数与 round-trip
+- [Algorithm API 设计约定](../2_advanced/algorithm_design.md) —— ansatz 命名与参数管理约定
+- [本地模拟](../1_basic_usage/simulation.md) —— 训练循环中的模拟器选择

@@ -1,5 +1,7 @@
 # Opcode 模拟器详解
 
+(advanced-opcode)=
+
 ## 什么时候进入本页
 
 当你需要了解底层模拟器的实现细节、支持的后端类型、量子门列表或直接操作 opcode 列表时，进入本页。
@@ -8,7 +10,7 @@
 
 > 如果你还未完成基础线路构建与本地模拟，建议先阅读 [本地模拟](../1_basic_usage/simulation.md)。
 
-OpcodeSimulator 是 UnifiedQuantum 的底层模拟器，直接操作 opcode 列表进行量子线路模拟。它通过 C++ 扩展（pybind11）实现高性能计算。
+OpcodeSimulator 是 UnifiedQuantum 的底层模拟器，直接操作 opcode 列表进行量子线路模拟。它通过 C++ 扩展（pybind11）实现高性能计算；C++ 内核本身是独立发布的 [uniqc-cppsimulator](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator) 包，其支持的量子比特规模与噪声通道见该仓库文档。
 
 ## 创建模拟器
 
@@ -134,3 +136,10 @@ for opcode in opcodes:
 ## 已知限制
 
 - **statevector 后端**：所有门均已通过测试
+
+## 相关页面
+
+- [噪声模拟](advanced-noise-simulation) —— `density_matrix` 后端上的错误模型与读出误差
+- [动态电路](dynamic_circuits.md) —— 位于 opcode 层之上的经典控制流解释器
+- [MPS 模拟器](mps_simulator.md) —— 大比特数、低纠缠场景的纯 Python 替代后端
+- [本地模拟](../1_basic_usage/simulation.md) —— 模拟器 API 的常规入口与选型建议

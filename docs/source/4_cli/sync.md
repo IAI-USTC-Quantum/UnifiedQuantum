@@ -207,3 +207,9 @@ sync 镜像的是整个平台配置段（凭据 + 平台设置）。只同步 to
 
 **`Ignored unparsable secret 'UNIQC_...'` 警告**
 项目里存在 `UNIQC_` 前缀但不符合 uniqc 布局的 secret。它会被忽略且不会被修改/删除；确认它不是本工具创建的即可。
+
+## 相关文档
+
+- [配置参考](config.md) —— 被同步的 `~/.uniqc/config.yaml` 的完整结构
+- [CLI doctor 命令](doctor.md) —— 同步后验证凭据与连通性
+- [平台概览](../platforms/index.md) —— 这些凭据对应的云平台

@@ -347,15 +347,16 @@ results = batch_execute_with_params(
 
 - {mod}`uniqc.torch_adapter` — PyTorch 集成模块
 - {func}`uniqc.torch_adapter.expectation` — 后端无关的可微期望值（推荐）
-- {class}`uniqc.torch_adapter.QuantumLayer` — 量子层封装（旧版，parameter-shift）
-- {func}`uniqc.torch_adapter.batch_execute` — 并行电路执行
-- {func}`uniqc.torch_adapter.batch_execute_with_params` — 参数化批量执行
-- {class}`uniqc.circuit_builder.Parameter` — 符号参数
-- {class}`uniqc.circuit_builder.Parameters` — 符号参数数组
+- {py:class}`uniqc.torch_adapter.QuantumLayer <uniqc.torch_adapter.quantum_layer.QuantumLayer>` — 量子层封装（旧版，parameter-shift）
+- {py:func}`uniqc.torch_adapter.batch_execute <uniqc.torch_adapter.batch_executor.batch_execute>` — 并行电路执行
+- {py:func}`uniqc.torch_adapter.batch_execute_with_params <uniqc.torch_adapter.batch_executor.batch_execute_with_params>` — 参数化批量执行
+- {py:class}`uniqc.circuit_builder.Parameter <uniqc.circuit_builder.parameter.Parameter>` — 符号参数
+- {py:class}`uniqc.circuit_builder.Parameters <uniqc.circuit_builder.parameter.Parameters>` — 符号参数数组
 
 ## 下一步
 
 - 了解 [参数化电路](guide-circuit-parametric) 与
   [OriginIR-ext 参数序列化](circuit.md)
 - 学习 [Named Circuit](guide-circuit-named-circuit) 构建复杂电路
+- 了解算法侧对参数化 ansatz 的设计约定，见 [Algorithm API 设计约定](../2_advanced/algorithm_design.md)
 - 探索 [变分与混合算法示例](../8_algorithms_examples/variational_hybrid.md)

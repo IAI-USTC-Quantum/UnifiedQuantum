@@ -4,14 +4,14 @@
 (guide-circuit-when-to-read)=
 ## 什么时候先看本页
 
-当你还没把量子线路表达出来——还不确定如何用 {class}`uniqc.circuit_builder.Circuit` 把一个量子算法或实验想法写成可执行的线路表示时，先看本页。
+当你还没把量子线路表达出来——还不确定如何用 {py:class}`uniqc.circuit_builder.Circuit <uniqc.circuit_builder.qcircuit.Circuit>` 把一个量子算法或实验想法写成可执行的线路表示时，先看本页。
 
 本页解决的核心问题是：**如何从空线路开始，构建一个可以交给模拟器或真机的量子程序**。
 
 (guide-circuit-problems)=
 ## 本页解决的问题
 
-- 如何创建空线路并添加量子门（{class}`uniqc.circuit_builder.Circuit`）
+- 如何创建空线路并添加量子门（{py:class}`uniqc.circuit_builder.Circuit <uniqc.circuit_builder.qcircuit.Circuit>`）
 - 如何添加测量指令
 - 如何使用 CONTROL / DAGGER 控制结构
 - 如何将线路导出为 OriginIR 或 OpenQASM 2.0 字符串
@@ -137,7 +137,7 @@ circuit.opcode_list  # 属性：门操作列表
 ```
 
 如果需要按门类型 / 仅计算某些子集的深度，可使用底层函数
-{func}`uniqc.compile.compute_gate_depth`，它接受一个 `Circuit` 并接受
+{py:func}`uniqc.compile.compute_gate_depth <uniqc.compile.validation.compute_gate_depth>`，它接受一个 `Circuit` 并接受
 `virtual_z=True/False` 等开关，返回与 `Circuit.depth` 同种类的整数指标。
 
 ## 量子比特重映射
@@ -150,7 +150,7 @@ remapped = circuit.remapping({0: 3, 1: 5})
 (circuit-visualization)=
 ## 可视化
 
-``Circuit.draw()`` 是统一入口（等价于 {func}`uniqc.visualization.render`），一个方法覆盖
+``Circuit.draw()`` 是统一入口（等价于 {py:func}`uniqc.visualization.render <uniqc.visualization.circuit_render.render>`），一个方法覆盖
 七种输出形态：
 
 ```python

@@ -63,3 +63,12 @@ print(wait_for_result(task_id))
   详见 {ref}`平台约定 <platform-gate-support>`。
 - 结果为扁平 `{bitstring: shots}` counts，bitstring 序遵循
   {ref}`统一 endianness 约定 <platform-bit-endianness>`。
+
+## 相关页面
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` 参数全景与提交流程
+- [CLI 提交命令](../4_cli/submit.md) 与 [CLI backend 命令](../4_cli/backend.md) —— 本文命令的完整选项
+- [安装指南](../0_quickstart/installation.md) —— extras 与 Python 版本注意事项
+- [编译策略](../2_advanced/compile_levels.md) —— `local_compile` / `cloud_compile` 对 OriginQ 提交的影响
+- [芯片校准与 QEM](../2_advanced/calibration.md) —— 基于 WK_C180 标定数据的校准 / XEB 工作流
+- [其它平台](index.md) —— 如需在平台间切换，先看这里的对比表

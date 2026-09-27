@@ -72,3 +72,5 @@ gateway:
 
 - [安装与初始化](installation.md)
 - [配置参考](config.md)
+- [WebUI 概览](../5_webui/index.md) —— 网页端能看到的页面与持久化路径
+- [任务管理器](../1_basic_usage/task_manager.md) —— Gateway 展示的任务数据来自同一套持久化层

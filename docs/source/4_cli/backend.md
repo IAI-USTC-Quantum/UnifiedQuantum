@@ -222,3 +222,11 @@ uniqc submit circuit.ir --backend originq:WK_C180 --shots 1000
 | `--clear`, `-c` | `update` | 清除缓存后强制刷新 |
 | `--format` | `show` | 输出格式：`rich`（默认）或 `json` |
 | `--update`, `-u` | `chip-display` | 强制从云端刷新标定数据 |
+
+## 相关文档
+
+- [Backend 命名规则](guide-submit-task-backend-naming) —— `provider:chip` 标识符的构造规则
+- [平台概览](../platforms/index.md) —— 各平台后端的差异与接入前提
+- [自定义含噪虚拟机](../2_advanced/virtual_backends.md) —— `backend virtual init/validate/show` 子命令详解
+- [芯片校准与 QEM](../2_advanced/calibration.md) —— `chip-display` 标定数据的下游用法
+- [提交任务](submit.md) —— 用查得的后端名提交任务

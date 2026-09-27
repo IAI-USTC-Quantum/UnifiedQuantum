@@ -1,5 +1,7 @@
 # 测试覆盖说明
 
+(advanced-testing)=
+
 本页介绍 UnifiedQuantum 的测试体系：测试框架、文件组织、各模块的测试方式与覆盖范围，以及如何运行测试和 CI 集成。
 
 ## 什么时候进入本页
@@ -186,7 +188,7 @@ pytest uniqc/test/task_pipeline/test_ibm_fake.py -v
 
 - **触发**：push/PR 到 main
 - **环境**：Ubuntu / Windows / macOS × Python 3.10–3.14
-- **内容**：纯 Python 构建安装 + `ruff check` + pytest 分组测试（C++ 内核由 `uniqc-cppsimulator` 依赖包提供，其编译与 wheel 构建在该仓库的 CI 中验证）
+- **内容**：纯 Python 构建安装 + `ruff check` + pytest 分组测试（C++ 内核由 `uniqc-cppsimulator` 依赖包提供，其编译与 wheel 构建在该仓库的 CI 中验证；C++ 侧的测试运行方式见[uniqc-cppsimulator 文档的测试章节](https://github.com/IAI-USTC-Quantum/uniqc-cppsimulator/blob/main/docs/usage.rst)）
 
 ### 2. Pytest Coverage（`pytest_coverage.yml`）
 
@@ -209,3 +211,10 @@ pytest uniqc/test/task_pipeline/test_ibm_fake.py -v
 - 增加 `circuit_builder` 的边界用例测试
 - 密度矩阵 bug 修复后取消 CI deselect
 - 引入 property-based testing（如 hypothesis）增强随机测试覆盖率
+
+## 相关页面
+
+- [进阶主题走读](walkthrough.md) —— 各主题页与对应示例脚本的导读
+- [动态电路](dynamic_circuits.md) —— CREG / 控制流扩展的模拟与限制
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— fake-backend 端到端测试覆盖的流水线
+- [示例索引](../8_algorithms_examples/index.md) —— 被 `test_demos.py` 端到端验证的示例体系

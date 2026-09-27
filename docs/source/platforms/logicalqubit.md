@@ -62,3 +62,11 @@ print(wait_for_result(task_id))
   {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`）。
 - 门集为 qiskit 风格，转换由 `LogicalQubitCircuitAdapter` 自动完成。
+
+## 相关页面
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` 参数全景与提交流程
+- [CLI 提交命令](../4_cli/submit.md) 与 [CLI backend 命令](../4_cli/backend.md) —— 本文命令的完整选项
+- [OpenQASM 2.0 支持](../1_basic_usage/qasm.md) —— qiskit 风格门集与 QASM 格式的对应关系
+- [安装指南](../0_quickstart/installation.md) —— extras 与 Python 版本注意事项
+- [其它平台](index.md) —— 如需在平台间切换，先看这里的对比表

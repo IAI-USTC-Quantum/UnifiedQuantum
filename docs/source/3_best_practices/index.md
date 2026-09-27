@@ -22,6 +22,20 @@ Torch 集成，到 calibration + QEM、XEB workflow。每一个都对应
 | 10 XEB workflow |  |  | ✓ |  | ✓ |  |  | ✓ |  |  | ✓ |
 | 11 原生 Torch 训练 |  |  | ✓ |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
 
+## 每个案例对应的概念页
+
+| 案例 | 相关主题页 |
+|---|---|
+| 00 配置与后端缓存 | [CLI config](../4_cli/config.md) · [CLI backend](../4_cli/backend.md) |
+| 01 裸线路模拟 | [构建量子线路](../1_basic_usage/circuit.md) · [本地模拟](../1_basic_usage/simulation.md) |
+| 02 Named Circuit | [Named Circuit](guide-circuit-named-circuit) |
+| 03 编译与虚拟后端 | [编译选项与 Region](../2_advanced/compiler_options_region.md) · [自定义含噪虚拟机](../2_advanced/virtual_backends.md) |
+| 04 API 提交 | [提交任务](../1_basic_usage/submit_task.md) · [任务管理器](../1_basic_usage/task_manager.md) |
+| 05 CLI 提交 | [CLI 提交](../4_cli/submit.md) · [命令行走读](../4_cli/walkthrough.md) |
+| 06 云后端模板 | [云平台指南](../platforms/index.md) · [编译策略](../2_advanced/compile_levels.md) |
+| 07 / 08 / 11 变分与 Torch | [PyTorch 集成](../1_basic_usage/pytorch.md) · [变分示例](../8_algorithms_examples/variational_hybrid.md) |
+| 09 / 10 Calibration / QEM / XEB | [芯片校准与 QEM](../2_advanced/calibration.md) |
+
 ## 案例
 
 ```{include} ../_generated/examples/3_best_practices/00_config_and_backend_cache.md

@@ -204,6 +204,42 @@ The docs build is two-step:
 `make html` runs both steps; `make html-fast` skips step 1 and trusts the
 committed `example-exec-logs/`. CI only ever runs step 2 + `scripts/check_doc_logs.py`.
 
+### Linking prose to the API reference
+
+Markdown prose uses MyST Python-domain roles so every mention of a public
+symbol can link straight to its autodoc page under `source/6_api/`:
+
+```markdown
+Build a circuit with {class}`uniqc.Circuit` …            # class
+Call {func}`uniqc.submit_task` …                          # function
+See {meth}`uniqc.Circuit.assign_parameters` …             # method
+The {mod}`uniqc.qem` module …                             # module
+```
+
+Rules for the target path — the API tree documents each symbol **only at its
+canonical defining module** (`docs/conf.py` sets `ignore-module-all`, so
+re-export paths are not registered). Sphinx resolves a role target only
+against that exact registered name:
+
+* Good: the full canonical path, e.g. `{class}`uniqc.circuit_builder.qcircuit.Circuit``.
+* Bad: re-export-only paths such as `{class}`uniqc.simulator.Simulator`` or
+  `{class}`uniqc.circuit_builder.Circuit`` — these render as plain code
+  **without any link or build warning**. Point them at
+  `uniqc.simulator.simulator.Simulator` / `uniqc.circuit_builder.qcircuit.Circuit`
+  instead.
+* To keep the visible text short while linking the canonical target, use a
+  custom title — `` {class}`Circuit <uniqc.circuit_builder.qcircuit.Circuit>` ``
+  — or a tilde — `` {class}`~uniqc.circuit_builder.qcircuit.Circuit` ``.
+
+The Sphinx build does **not** report unresolvable Python references unless it
+runs in nitpicky mode, so a broken target fails silently. When adding or
+touching role links, check them after a build with:
+
+```bash
+python scripts/check_api_role_targets.py   # exits non-zero on dead targets
+```
+
+
 ### Developer responsibilities
 
 * You must locally have the dependencies for the area of code you change.

@@ -69,3 +69,12 @@ print(wait_for_result(task_id))
   `dummy:<platform>:<chip>` 或 `dummy:virtual:<name>`。
 - 标定数据如何转换为噪声参数等细节见
   {ref}`平台约定的 DummyBackend 一节 <platform-dummy-backend>`。
+
+## 相关页面
+
+- [本地模拟](../1_basic_usage/simulation.md) —— 直接使用 Python 模拟器类（不经任务流水线）
+- [自定义含噪量子虚拟机](../2_advanced/virtual_backends.md) —— `dummy:virtual:<name>` 的 YAML 配置详解
+- [噪声模拟](../2_advanced/noise_simulation.md) —— 含噪后端的错误模型与读出误差机制
+- [MPS 模拟器](../2_advanced/mps_simulator.md) —— `dummy:local:mps-linear-N` 后端背后的引擎
+- [动态电路](../2_advanced/dynamic_circuits.md) —— `dummy:local:simulator` 支持的经典控制流
+- [CLI backend 命令](../4_cli/backend.md) —— 虚拟机的创建 / 校验 / 列举子命令

@@ -22,3 +22,10 @@ python -m uniqc.cli --help
 npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'
 npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'
 ```
+
+## 相关文档
+
+- [安装指南](../0_quickstart/installation.md) —— pip / uv 安装与 extras 选择
+- [命令行走读](walkthrough.md) —— 装好后从哪里开始
+- [环境诊断](doctor.md) —— 验证安装是否完整
+- [CLI 命令总览](index.md) —— 全部子命令分组

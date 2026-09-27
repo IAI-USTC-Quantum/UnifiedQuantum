@@ -35,3 +35,9 @@ uniqc draw bell.originir -m interactive -o bell.html
 | `--output, -o` | 输出文件 | stdout（`png` 必须给 `-o`） |
 
 `fold=auto` 时，字符画按当前终端宽度折叠换行；图形模式按 16 门/行折叠。
+
+## 相关文档
+
+- [线路分析](../2_advanced/circuit_analysis.md) —— `Circuit.draw()` Python API 与全部渲染选项
+- [构建量子线路](../1_basic_usage/circuit.md) —— 电路的构建与 OriginIR / QASM 导出
+- [电路格式转换](circuit.md) —— 渲染前转换电路文件格式

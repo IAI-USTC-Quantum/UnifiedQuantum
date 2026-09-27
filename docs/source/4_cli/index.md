@@ -49,3 +49,12 @@ backend
 calibrate
 gateway
 ```
+
+## 相关章节
+
+CLI 只是 UnifiedQuantum 的一面；每个子命令背后都有对应的 Python API 文档：
+
+- [基本用法](../1_basic_usage/index.md) —— 线路构建、模拟、提交任务的 API 全景
+- [进阶主题](../2_advanced/index.md) —— 编译、噪声、校准等 CLI 参数背后的机制
+- [云平台指南](../platforms/index.md) —— 各平台的凭证、SDK 与后端差异
+- [API 参考](../6_api/index.md) —— `uniqc` 包的完整符号索引

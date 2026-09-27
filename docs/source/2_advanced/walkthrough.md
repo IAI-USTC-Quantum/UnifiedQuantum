@@ -46,7 +46,8 @@ UnifiedQuantum 的 dummy 系统通过 backend id 文法区分三种语义：
 ```
 
 DummyBackend 编号规则与本地噪声模拟说明见
-[平台约定 · DummyBackend](platform-dummy-backend)。
+[平台约定 · DummyBackend](platform-dummy-backend)；想自己定义一台含噪虚拟机（YAML 声明
+拓扑与噪声）见 [自定义含噪量子虚拟机](virtual_backends.md)。
 
 ## 5. Calibration：1q / 2q / parallel-2q XEB + readout
 
@@ -64,8 +65,8 @@ DummyBackend 编号规则与本地噪声模拟说明见
 
 QEM 模块当前覆盖：
 
-* {py:class}`uniqc.M3Mitigator` —— 多比特读取误差线性反演（M3 风格）；
-* {py:class}`uniqc.ReadoutEM` —— 自动从 calibration cache 读校准、强制 TTL 检查；
+* {py:class}`uniqc.M3Mitigator <uniqc.qem.m3.M3Mitigator>` —— 多比特读取误差线性反演（M3 风格）；
+* {py:class}`uniqc.ReadoutEM <uniqc.qem.readout_em.ReadoutEM>` —— 自动从 calibration cache 读校准、强制 TTL 检查；
 * {py:mod}`uniqc.qem.zne` —— 零噪声外推（实验性）。
 
 详见 [校准 · M3 / ReadoutEM](calibration.md)。
@@ -78,3 +79,12 @@ QEM 模块当前覆盖：
 MPS 引擎适合**线性拓扑 + 中等纠缠**的大规模线路，可扩展到上百比特。``chi`` 决定
 最大键维（精度↑ 内存↑ 时间↑），``cutoff`` 是 SVD 截断阈值。完整文档见
 [MPS 模拟器](mps_simulator.md)。
+
+## 相关页面
+
+以上主题之外，进阶章节还包括：
+
+- [动态电路](dynamic_circuits.md) —— mid-circuit measurement 与经典控制流
+- [测试覆盖说明](testing.md) —— 各模块的测试方式与 CI 集成
+- [线路分析](circuit_analysis.md) —— 深度 / 门统计与线路可视化
+- [Opcode 模拟器](opcode.md) —— 本地模拟的底层执行细节

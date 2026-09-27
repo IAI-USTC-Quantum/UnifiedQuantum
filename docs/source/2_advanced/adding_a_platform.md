@@ -163,3 +163,11 @@ CLI、Gateway 全部以该枚举为准。
 
 用户侧用法见各平台页面：[天衍 tianyan](../platforms/tianyan.md)、
 [逻辑比特 logicalqubit](../platforms/logicalqubit.md)。
+
+## 相关页面
+
+- [云平台适配器架构](adapter_architecture.md) —— checklist 背后的运行时架构
+- [CLI config 命令](../4_cli/config.md) —— 凭证字段的配置与校验入口
+- [CLI doctor 命令](../4_cli/doctor.md) —— 新平台 SDK 探测的落点
+- [CLI backend 命令](../4_cli/backend.md) —— backend 发现 / 缓存 / 展示
+- [Gateway 与 WebUI](../5_webui/index.md) —— 外围接线中 gateway / 前端两侧的对应位置

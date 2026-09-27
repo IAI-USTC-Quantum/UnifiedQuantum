@@ -1,5 +1,7 @@
 # 线路分析
 
+(advanced-circuit-analysis)=
+
 ## 什么时候进入本页
 
 当你需要查看线路信息（深度、门统计）、绘制线路图、分析门类型与数量，或了解量子比特重映射时，进入本页。
@@ -43,7 +45,7 @@ print(circuit.draw("latex"))
 ``latex``（quantikz 源码）、``html``（静态）、``interactive``（点击门看详情）。
 统一选项：``style`` / ``fold``（每行门数）/ ``orientation`` / ``qubit_order`` /
 ``theme`` / ``param_mode`` / ``show_clbits`` / ``filename``，详见
-{func}`uniqc.visualization.render`。覆盖 OriginIR-ext 全特性（含误差通道、QRAM、
+{py:func}`uniqc.visualization.render <uniqc.visualization.circuit_render.render>`。覆盖 OriginIR-ext 全特性（含误差通道、QRAM、
 经典控制流）。
 
 > 时序（timeline）可视化见 `uniqc.visualization.schedule_circuit` 与
@@ -59,4 +61,13 @@ originir_str = circuit.originir
 qasm_str = circuit.qasm
 ```
 
-> 详细的门对照表见 [QASM 2.0 文档](../1_basic_usage/qasm.md)。
+> 详细的门对照表见 [QASM 2.0 文档](../1_basic_usage/qasm.md)；`Circuit` 侧的格式转换入口见
+> [格式转换](guide-circuit-format-conversion)。
+
+## 相关页面
+
+- [构建量子线路](../1_basic_usage/circuit.md) —— `Circuit` 构建全景（本页是其延伸）
+- [编译选项与 Region 选择器](compiler_options_region.md) —— 编译到具体芯片拓扑与基门集
+- [编译策略](advanced-compile-levels) —— 提交时的 `local_compile` / `cloud_compile` 等级
+- [算法实现示例](../8_algorithms_examples/index.md) —— 各算法线路的深度/门统计实例
+- [CLI 线路绘制](../4_cli/draw.md) —— 命令行渲染线路图

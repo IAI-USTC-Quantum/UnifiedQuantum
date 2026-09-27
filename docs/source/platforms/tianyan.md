@@ -70,3 +70,11 @@ print(wait_for_result(task_id))
   {ref}`统一 endianness 约定 <platform-bit-endianness>`
   （bitstring 最右字符对应 `c[0]`，即第一次 `measure()` 写入的比特）。
 - 真机与仿真机的可用性、排队状态以平台实时状态为准。
+
+## 相关页面
+
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— `submit_task` 参数全景与提交流程
+- [CLI 提交命令](../4_cli/submit.md) 与 [CLI backend 命令](../4_cli/backend.md) —— 本文命令的完整选项
+- [芯片校准与 QEM](../2_advanced/calibration.md) —— 天衍机器的本地含噪仿真（`dummy:tianyan:<chip>`）与标定
+- [安装指南](../0_quickstart/installation.md) —— extras 与 Python 版本注意事项
+- [其它平台](index.md) —— 如需在平台间切换，先看这里的对比表

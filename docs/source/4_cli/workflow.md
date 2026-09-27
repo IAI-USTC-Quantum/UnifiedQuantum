@@ -111,3 +111,12 @@ uniqc submit bell.ir --backend dummy:originq:WK_C180 --wait
 ```
 
 `dummy:originq:WK_C180` 这一类 chip-backed dummy 写法是提交规则，不会出现在 `uniqc backend list` 的后端列表中。
+
+## 相关文档
+
+- [命令行走读](walkthrough.md) —— 按场景组织的 CLI 快速导览
+- [提交任务](submit.md) —— `--dry-run`、backend 命名与批量提交细节
+- [任务管理](task.md) 与 [结果查询](result.md) —— 提交之后的任务生命周期
+- [配置管理](config.md) —— token、profile 与代理配置
+- [dummy 平台](../platforms/dummy.md) —— dummy 后端的完整语义（拓扑、噪声、MPS）
+- [基本用法章节](../1_basic_usage/index.md) —— 上述命令对应的 Python API

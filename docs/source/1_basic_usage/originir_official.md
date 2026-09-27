@@ -1,5 +1,7 @@
 # OriginIR 官方规范
 
+(guide-originir-official)=
+
 ## 什么是官方 OriginIR
 
 官方 OriginIR 是本源量子云服务（OriginQ）接受的量子线路描述语言。它是 [OriginIR-ext](originir.md) 的**子集**——不包含扩展门、error channels 和 inline dagger/controlled_by 语法。
@@ -117,3 +119,11 @@ MEASURE q[1], c[1]
 | `QRAMDECL` / QRAM 调用 | - | Y |
 
 当 OriginIR-ext 代码提交到 OriginQ 云时，扩展门会通过 `decompose_for_originir()` 自动分解为官方门，inline 语法会通过 `opcode_to_line_originir_official()` 转换为块语法。
+
+## 相关页面
+
+- [OriginIR-ext 规范](originir.md) —— 默认本地语言的完整规范（本页描述其官方子集）
+- [OriginIR、OriginIR-ext 与 OpenQASM 2.0 的关系](originir_relationship.md) —— 三种格式的转换矩阵与选型
+- [OpenQASM 2.0 支持](qasm.md) —— 另一种云平台接受的交换格式
+- [动态电路](../2_advanced/dynamic_circuits.md) —— 上表中 OriginIR-ext 专属的 `RESET` / `QIF` / `QWHILE` 扩展
+- [提交任务到量子云平台](submit_task.md) —— 自动分解发生在哪一步

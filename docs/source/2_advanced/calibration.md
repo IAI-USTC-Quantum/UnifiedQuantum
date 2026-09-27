@@ -1,5 +1,7 @@
 # 芯片校准与量子错误缓解
 
+(advanced-calibration)=
+
 UnifiedQuantum 提供完整的芯片校准和量子错误缓解（QEM）工作流。核心架构将**校准实验**（写入 `~/.uniqc/calibration_cache/`）与**错误缓解**（读取缓存，强制 TTL 过期策略）分离。
 
 ## 架构概述
@@ -64,6 +66,9 @@ uniqc calibrate readout --qubits 0 1 --type 1q
 # 输出到文件
 uniqc calibrate readout --qubits 0 --output /tmp/readout.json
 ```
+
+`uniqc calibrate` 全部子命令（readout / xeb / pattern）的参数细节见
+[CLI calibrate 命令](../4_cli/calibrate.md)。
 
 ### 工作原理
 
@@ -387,7 +392,7 @@ c.measure(1)
 
 ### Dummy 含噪模拟与 ChipCharacterization
 
-新代码推荐通过 `dummy:<platform>:<backend>` 从真实芯片的校准数据中注入噪声，并保留真实 backend 的 compile/transpile 链路：
+新代码推荐通过 `dummy:<platform>:<backend>` 从真实芯片的校准数据中注入噪声，并保留真实 backend 的 compile/transpile 链路（噪声注入的具体机制见[噪声模拟](advanced-noise-simulation)与[dummy 平台](platforms-dummy)）：
 
 ```python
 from uniqc import submit_task
@@ -477,3 +482,12 @@ assert circuits[0].originir == circuits2[0].originir
 ```
 
 > `seed=None`（默认）每次生成不同的随机电路。`seed=0` 产生固定序列（适用于基准测试和回归测试）。
+
+## 相关页面
+
+- [CLI calibrate 命令](../4_cli/calibrate.md) —— `uniqc calibrate` 子命令与参数速查
+- [噪声模拟](advanced-noise-simulation) —— 标定数据驱动的含噪模拟机制
+- [自定义含噪量子虚拟机](virtual_backends.md) —— XEB / 校准工作流同样适用于 `dummy:virtual:` 后端
+- [编译选项与 Region 选择器](compiler_options_region.md) —— `ChipCharacterization` 在感知路由与区域选择中的另一用途
+- [OriginQ 平台指南](../platforms/originq.md) —— WK180 等真实芯片的接入方式
+- [真实硬件上的算法](../8_algorithms_examples/real_hardware.md) —— 在真实/仿真后端上运行的算法示例

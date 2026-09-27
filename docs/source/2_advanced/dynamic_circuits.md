@@ -1,5 +1,7 @@
 # 动态电路：Mid-circuit measurement 与经典控制流
 
+(advanced-dynamic-circuits)=
+
 UnifiedQuantum 在 OriginIR-ext 之上提供了一套 **classical / control-flow 扩展**，
 用于表达 *动态电路 (dynamic circuit)*：电路中途测量、把 outcome 写进一块运行时的
 classical register (CREG)，再用经典逻辑对后续量子操作做**实时判断**（feed-forward）。
@@ -7,6 +9,8 @@ classical register (CREG)，再用经典逻辑对后续量子操作做**实时�
 computing、重复直到成功 (repeat-until-success) 等。
 
 本页说明这套扩展的**设计逻辑**、**语法**、**Circuit API** 与**可运行案例**。
+IR 语法层面的完整规范（含经典扩展）见 [OriginIR-ext 规范](originir-ext-extensions)；全局的
+结果 bitstring 端序约定见[平台约定](platform-bit-endianness)。
 
 ```{note}
 这套扩展是 **OriginIR-ext 专属**、**仅本地模拟**的特性：动态电路不能导出成 OpenQASM
@@ -199,7 +203,8 @@ one   = sim.simulate_single_shot(c)           # 单个 shot 的 CREG 整数值
 
 ### 5.2 通过统一任务接口（dummy backend）
 
-`submit_task` / `wait_for_result` 会自动识别动态电路并路由到 CREG 模拟器：
+`submit_task` / `wait_for_result` 会自动识别动态电路并路由到 CREG 模拟器（dummy 后端
+命名规则见 [Backend 命名](guide-submit-task-backend-naming)）：
 
 ```python
 from uniqc.backend_adapter.task_manager import submit_task, wait_for_result
@@ -214,7 +219,8 @@ print(wait_for_result(task, timeout=60).counts)   # {'...': n, ...}
 uniqc simulate circuit.originir --backend statevector --shots 2000
 ```
 
-含 `QIF`/`QWHILE`/经典指令的 OriginIR 会被 CLI 自动走 per-shot 采样。
+含 `QIF`/`QWHILE`/经典指令的 OriginIR 会被 CLI 自动走 per-shot 采样（命令详见
+[本地模拟 CLI](../4_cli/simulate.md)）。
 
 ## 6. `QWHILE` 看门狗
 
@@ -254,3 +260,11 @@ counts = OriginIR_ext_Simulator("statevector", seed=123).simulate_shots(c, 4000)
 * **不可导出/提交**：动态电路不能转 OpenQASM、不能转官方 OriginIR、不能提交 cloud。
 * **CREG 是 bit 级**：每个 `c[i]` 是单个 bit；经典逻辑都是 bitwise。
 * **无噪声反馈**：当前动态执行走 noiseless 路径；把 noise model 注入动态程序尚未支持。
+
+## 相关页面
+
+- [OriginIR-ext 规范](../1_basic_usage/originir.md) —— 经典控制流扩展所在的 IR 规范全文
+- [本地模拟](../1_basic_usage/simulation.md) —— 模拟器家族总览与选型
+- [Opcode 模拟器](opcode.md) —— `MEASURE` 与经典指令的执行层细节
+- [提交任务到量子云平台](../1_basic_usage/submit_task.md) —— dummy 后端路由与任务流水线
+- [CLI 本地模拟](../4_cli/simulate.md) —— 命令行运行动态电路

@@ -1,5 +1,7 @@
 # 噪声模拟
 
+(advanced-noise-simulation)=
+
 ## 什么时候进入本页
 
 当你需要了解如何在模拟中加入噪声模型、模拟真实量子硬件的行为、或配置错误加载器与读取误差时，进入本页。
@@ -209,3 +211,11 @@ print(prob)
 （拓扑、分层 gate error model、T1/T2 热弛豫、逐比特读出错误），可以在
 `~/.uniqc/backend/virtual/` 下写 YAML，然后以 `dummy:virtual:<name>` 作为 backend
 使用，无需手写 Python 噪声代码。详见 [自定义含噪量子虚拟机](virtual_backends.md)。
+
+## 相关页面
+
+- [本地模拟](../1_basic_usage/simulation.md) —— 模拟器家族总览（本页是其延伸）
+- [MPS 模拟器](mps_simulator.md) —— 大比特数、低纠缠场景的无噪声替代方案
+- [自定义含噪量子虚拟机](virtual_backends.md) —— 声明式 YAML 噪声配置
+- [dummy 平台](platforms-dummy) —— 复用真实芯片标定数据的 `dummy:<platform>:<chip>` 后端
+- [标定与 QEM](calibration.md) —— 用真实标定数据驱动噪声与误差缓解
