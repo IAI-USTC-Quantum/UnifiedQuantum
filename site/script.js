@@ -13,10 +13,11 @@
   let width, height;
   let animId;
 
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 640;
-  const PARTICLE_COUNT = isMobile ? 40 : 90;
-  const MAX_DIST = isMobile ? 100 : 140;
-  const SPEED = 0.15;
+  const PARTICLE_COUNT = isMobile ? 30 : 60;
+  const MAX_DIST = isMobile ? 100 : 130;
+  const SPEED = 0.12;
 
   function resize() {
     width = canvas.width = window.innerWidth;
@@ -36,7 +37,7 @@
       vy: (Math.random() - 0.5) * SPEED,
       r: Math.random() * 1.5 + 0.5,
       color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.5 + 0.2,
+      alpha: Math.random() * 0.3 + 0.15,
     };
   }
 
@@ -57,7 +58,7 @@
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < MAX_DIST) {
-          const opacity = (1 - dist / MAX_DIST) * 0.12;
+          const opacity = (1 - dist / MAX_DIST) * 0.07;
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
@@ -98,7 +99,12 @@
 
   resize();
   initParticles();
-  animate();
+  if (reduceMotion) {
+    // Static single frame: draw once, skip the animation loop.
+    drawParticles();
+  } else {
+    animate();
+  }
 
   let resizeTimeout;
   window.addEventListener('resize', function () {
