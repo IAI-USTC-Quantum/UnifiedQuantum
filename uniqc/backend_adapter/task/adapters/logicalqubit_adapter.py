@@ -24,6 +24,9 @@ from uniqc.backend_adapter.task.optional_deps import check_lqcloud, require
 #: Server-side shot limit advertised by the lqcloud platform.
 MAX_SHOTS = 50000
 
+#: lqcloud server-side batch limit (``lqcloud.backend.serialization.MAX_BATCH_CIRCUITS``).
+MAX_BATCH_CIRCUITS = 64
+
 
 def _resolve_backend(kwargs: dict[str, Any], default: str | None) -> str | None:
     """Resolve the target backend from submit kwargs (canonical key first)."""
@@ -48,9 +51,11 @@ class LogicalQubitAdapter(QuantumAdapter):
     """
 
     name = "logicalqubit"
-    # lqcloud batch submission returns a single aggregate Job without child
-    # ids; keep one platform job per circuit instead.
-    max_native_batch_size: int = 1
+    # lqcloud natively batches up to MAX_BATCH_CIRCUITS circuits into ONE
+    # job (backend.run(list)); the aggregate job's result exposes one child
+    # Result per circuit (BatchResult), so uniqc keeps one platform job per
+    # chunk instead of one per circuit.
+    max_native_batch_size: int = MAX_BATCH_CIRCUITS
 
     def __init__(self, backend_name: str | None = None) -> None:
         """Initialize the LogicalQubit adapter.
@@ -242,14 +247,39 @@ class LogicalQubitAdapter(QuantumAdapter):
         job = backend.run(qc, shots=int(shots))
         return str(job.job_id)
 
-    def submit_batch(self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any) -> list[str]:
-        """Submit circuits one by one (one job id per circuit).
+    def submit_batch(self, circuits: list[Any], *, shots: int = 1000, **kwargs: Any) -> str:
+        """Submit the circuits as ONE native lqcloud batch job.
 
-        lqcloud's batch API returns a single aggregate Job without child
-        ids, so uniqc slices batches into per-circuit jobs
-        (``max_native_batch_size == 1``).
+        ``backend.run(list_of_circuits)`` posts a single ``run_circuit_batch``
+        job whose result carries one child :class:`~lqcloud.job.BatchResult`
+        entry per circuit, so the whole chunk maps to one platform job id
+        (the task manager pre-slices to ``max_native_batch_size``).
+
+        Returns:
+            The aggregate lqcloud job id.
         """
-        return [self.submit(circuit, shots=shots, **kwargs) for circuit in circuits]
+        if int(shots) > MAX_SHOTS:
+            raise ValueError(f"shots ({shots}) exceeds the LogicalQubit server maximum ({MAX_SHOTS})")
+        if len(circuits) > MAX_BATCH_CIRCUITS:
+            raise ValueError(
+                f"batch of {len(circuits)} circuits exceeds the LogicalQubit "
+                f"server maximum of {MAX_BATCH_CIRCUITS} per job"
+            )
+        backend_name = _resolve_backend(kwargs, self._default_backend)
+        if not backend_name:
+            raise ValueError(
+                "LogicalQubit submit_batch() requires a backend name. "
+                "Pass backend='logicalqubit:<backend>' to submit_batch or the "
+                "backend_name kwarg; run `uniqc backend list -p logicalqubit` "
+                "to discover available backends."
+            )
+        provider = self._get_provider()
+        # verify=False avoids an extra network round-trip; the name is
+        # validated server-side at run() time.
+        backend = provider.get_backend(backend_name, verify=False)
+        qcs = [self.translate_circuit(c) if isinstance(c, str) and "QINIT" in c else c for c in circuits]
+        job = backend.run(qcs, shots=int(shots))
+        return str(job.job_id)
 
     # -------------------------------------------------------------------------
     # Task query
@@ -269,8 +299,11 @@ class LogicalQubitAdapter(QuantumAdapter):
             taskid: lqcloud job id.
 
         Returns:
-            dict with keys: taskid, status, result (counts dict when
-            status is ``'success'``, error payload when ``'failed'``).
+            dict with keys: taskid, status, result. For native batch jobs
+            (``run_circuit_batch``) ``result`` is a list with one counts
+            dict per circuit, in submission order — the same contract the
+            OriginQ adapter uses for its native batch jobs. For
+            single-circuit jobs ``result`` is a flat counts dict.
         """
         job = self._job_for(taskid)
         status = job.status()
@@ -279,8 +312,28 @@ class LogicalQubitAdapter(QuantumAdapter):
         if status_name == "COMPLETED":
             from uniqc.backend_adapter.task.normalizers import normalize_logicalqubit
 
+            result_obj = job.result()
+            if getattr(result_obj, "result_format", "") == "batch":
+                # Aggregate batch job: BatchResult.results holds one child
+                # Result per circuit. The result object is self-describing,
+                # so no submit-time batch context needs to be restored.
+                per_circuit = [
+                    dict(
+                        normalize_logicalqubit(
+                            child.get_counts(),
+                            task_id=taskid,
+                            backend_name=self._default_backend,
+                        ).counts
+                    )
+                    for child in result_obj.results
+                ]
+                return {
+                    "taskid": taskid,
+                    "status": TASK_STATUS_SUCCESS,
+                    "result": per_circuit,
+                }
             unified = normalize_logicalqubit(
-                job.result().get_counts(),
+                result_obj.get_counts(),
                 task_id=taskid,
                 backend_name=self._default_backend,
             )

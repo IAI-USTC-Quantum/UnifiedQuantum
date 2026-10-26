@@ -357,11 +357,16 @@ def normalize_logicalqubit(
 ) -> UnifiedResult:
     """Normalize an lqcloud (LogicalQubit) counts payload.
 
-    ``job.result().get_counts()`` returns qiskit-style big-endian keys
-    (``{"00": 503, ...}``) where the rightmost character is ``c[0]`` —
-    identical to the uniqc convention (platform_conventions.md §2.6), so
-    no bit reversal is applied. Hex keys (``0x...``) are converted to a
-    uniform-width binary form inferred from the largest observed outcome.
+    ``job.result().get_counts()`` returns bitstring keys where the
+    **leftmost** character is ``c[0]`` (clbit-index ascending order) — the
+    mirror image of the uniqc convention (``c[0]`` rightmost, LSB), so every
+    key is reversed here. Verified against the live service (lqcloud 0.4.2,
+    backend MQ02, 2026-10-26): preparing ``|1>`` on the qubit measured into
+    ``c[0]`` yields key ``"1000"``, and into ``c[3]`` yields ``"0001"``
+    (uniqc task ids ``uqt_0ad60a737bb3424ba7423d98d7c268f3`` /
+    ``uqt_7cec4eece1ed4c31937ba5573b7adc73``). Hex keys (``0x...``) are
+    widened to a uniform binary form inferred from the largest observed
+    outcome, then reversed the same way.
 
     Args:
         raw: Counts dict, or an object exposing ``get_counts()``.
@@ -369,7 +374,8 @@ def normalize_logicalqubit(
         backend_name: Optional backend name.
 
     Returns:
-        UnifiedResult with counts following the uniqc cbit convention.
+        UnifiedResult with counts following the uniqc cbit convention
+        (``c[0]`` rightmost).
     """
     counts: dict[Any, Any] = {}
     if isinstance(raw, dict):
@@ -393,17 +399,20 @@ def normalize_logicalqubit(
                     continue
                 except ValueError:
                     pass
-            normalized_counts[stripped] = normalized_counts.get(stripped, 0) + int(value)
+            # lqcloud places c[0] leftmost; uniqc wants it rightmost.
+            reversed_key = stripped[::-1]
+            normalized_counts[reversed_key] = normalized_counts.get(reversed_key, 0) + int(value)
         else:
             normalized_counts[str(key)] = int(value)
 
     if hex_items:
         # Bare hex keys carry no register width; pad all of them to a single
         # uniform width inferred from the largest observed outcome so keys
-        # within one counts dict stay comparable.
+        # within one counts dict stay comparable, then reverse to the uniqc
+        # bit order.
         width = max(1, max(int_val for int_val, _ in hex_items).bit_length())
         for int_val, value in hex_items:
-            bin_key = format(int_val, f"0{width}b")
+            bin_key = format(int_val, f"0{width}b")[::-1]
             normalized_counts[bin_key] = normalized_counts.get(bin_key, 0) + value
 
     return UnifiedResult.from_counts(
