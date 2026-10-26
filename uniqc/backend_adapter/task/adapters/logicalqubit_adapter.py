@@ -27,6 +27,15 @@ MAX_SHOTS = 50000
 #: lqcloud server-side batch limit (``lqcloud.backend.serialization.MAX_BATCH_CIRCUITS``).
 MAX_BATCH_CIRCUITS = 64
 
+#: Prefix of compound task ids produced by the sequential (no-batch-tier) fallback.
+SEQ_PREFIX = "lqseq:"
+
+
+def _is_batch_tier_error(exc: Exception) -> bool:
+    """True when the server rejected the *batch* call for the subscription tier."""
+    text = str(exc)
+    return "batch" in text.lower() and ("订阅" in text or "403" in text or "subscription" in text.lower())
+
 
 def _resolve_backend(kwargs: dict[str, Any], default: str | None) -> str | None:
     """Resolve the target backend from submit kwargs (canonical key first)."""
@@ -255,8 +264,17 @@ class LogicalQubitAdapter(QuantumAdapter):
         entry per circuit, so the whole chunk maps to one platform job id
         (the task manager pre-slices to ``max_native_batch_size``).
 
+        Subscription tiers without the batch feature reject the batch call
+        server-side (HTTP 403, "当前订阅档位不支持 batch 类型任务").  In that
+        case the circuits are submitted as sequential single-circuit jobs and
+        the returned task id becomes the compound form
+        ``lqseq:<id1>|<id2>|...`` — ``query`` transparently unwraps it back
+        into the same per-circuit list contract, so callers see one logical
+        batch either way.
+
         Returns:
-            The aggregate lqcloud job id.
+            The aggregate lqcloud job id (plain for native batches,
+            ``lqseq:``-prefixed for the sequential fallback).
         """
         if int(shots) > MAX_SHOTS:
             raise ValueError(f"shots ({shots}) exceeds the LogicalQubit server maximum ({MAX_SHOTS})")
@@ -278,8 +296,15 @@ class LogicalQubitAdapter(QuantumAdapter):
         # validated server-side at run() time.
         backend = provider.get_backend(backend_name, verify=False)
         qcs = [self.translate_circuit(c) if isinstance(c, str) and "QINIT" in c else c for c in circuits]
-        job = backend.run(qcs, shots=int(shots))
-        return str(job.job_id)
+        try:
+            job = backend.run(qcs, shots=int(shots))
+            return str(job.job_id)
+        except Exception as exc:  # noqa: BLE001 - decide by the server message
+            if not _is_batch_tier_error(exc):
+                raise
+        # tier without native batch support: sequential single-circuit jobs
+        job_ids = [str(backend.run(qc, shots=int(shots)).job_id) for qc in qcs]
+        return SEQ_PREFIX + "|".join(job_ids)
 
     # -------------------------------------------------------------------------
     # Task query
@@ -296,15 +321,18 @@ class LogicalQubitAdapter(QuantumAdapter):
         """Query a single task's status.
 
         Args:
-            taskid: lqcloud job id.
+            taskid: lqcloud job id, or a compound ``lqseq:<id1>|<id2>|...``
+                id from the sequential batch fallback.
 
         Returns:
             dict with keys: taskid, status, result. For native batch jobs
-            (``run_circuit_batch``) ``result`` is a list with one counts
-            dict per circuit, in submission order — the same contract the
-            OriginQ adapter uses for its native batch jobs. For
-            single-circuit jobs ``result`` is a flat counts dict.
+            (``run_circuit_batch``) and compound ``lqseq:`` ids ``result`` is
+            a list with one counts dict per circuit, in submission order —
+            the same contract the OriginQ adapter uses for its native batch
+            jobs. For single-circuit jobs ``result`` is a flat counts dict.
         """
+        if taskid.startswith(SEQ_PREFIX):
+            return self._query_sequential(taskid)
         job = self._job_for(taskid)
         status = job.status()
         status_name = (status.name if hasattr(status, "name") else str(status)).upper()
@@ -350,6 +378,39 @@ class LogicalQubitAdapter(QuantumAdapter):
             }
         # QUEUED / PENDING / RUNNING / unknown → still in flight
         return {"taskid": taskid, "status": TASK_STATUS_RUNNING}
+
+    def _query_sequential(self, taskid: str) -> dict[str, Any]:
+        """Unwrap a compound ``lqseq:<id1>|<id2>|...`` fallback task id.
+
+        Each child is a plain single-circuit job, so its ``query`` returns a
+        flat counts dict; the merged result is the per-circuit list in
+        submission order — identical to the native batch contract.  Overall
+        status is ``failed`` on any child failure, else ``running`` until
+        every child has completed.
+        """
+        child_ids = taskid[len(SEQ_PREFIX) :].split("|")
+        per_circuit: list[dict[str, Any]] = []
+        for child in child_ids:
+            info = self.query(child)
+            if info["status"] == TASK_STATUS_FAILED:
+                return {
+                    "taskid": taskid,
+                    "status": TASK_STATUS_FAILED,
+                    "result": info.get("result"),
+                }
+            if info["status"] != TASK_STATUS_SUCCESS:
+                return {"taskid": taskid, "status": TASK_STATUS_RUNNING}
+            payload = info.get("result", {})
+            if isinstance(payload, list):  # defensive: never produced today
+                per_circuit.extend(payload)
+            else:
+                per_circuit.append(payload)
+        return {
+            "taskid": taskid,
+            "status": TASK_STATUS_SUCCESS,
+            "result": per_circuit,
+            "n_circuits": len(child_ids),
+        }
 
     def query_batch(self, taskids: str | list[str]) -> dict[str, Any]:
         """Query multiple tasks and merge results.

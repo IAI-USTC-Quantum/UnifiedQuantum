@@ -269,6 +269,43 @@ class TestLogicalQubitSubmit:
         assert isinstance(circuits, list) and len(circuits) == 2
         assert circuits[0].ops[0] == ("h", 0)
 
+    def test_submit_batch_tier_fallback_to_sequential(self, adapter, fake_lqcloud):
+        """No-batch subscription tiers (HTTP 403) fall back to sequential jobs."""
+        real_get_backend = fake_lqcloud.LQCloudProvider.get_backend
+
+        class TierLimitedBackend:
+            def __init__(self, inner):
+                self._inner = inner
+
+            def run(self, qc, shots=1000):
+                if isinstance(qc, list):
+                    raise RuntimeError(
+                        "Circuit batch submission failed (HTTP 403): "
+                        "当前订阅档位不支持 batch 类型任务，请升级订阅后重试"
+                    )
+                return self._inner.run(qc, shots=shots)
+
+        def get_backend(self, name, verify=True):
+            return TierLimitedBackend(real_get_backend(self, name, verify))
+
+        fake_lqcloud.LQCloudProvider.get_backend = get_backend
+        task_id = adapter.submit_batch([ORIGINIR_BELL, ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
+        assert task_id.startswith("lqseq:")
+        assert len(task_id[len("lqseq:") :].split("|")) == 2
+        submitted = fake_lqcloud.STATE["submitted"]
+        assert len(submitted) == 2
+        assert all(not isinstance(s["circuit"], list) for s in submitted)
+        assert all(s["shots"] == 100 for s in submitted)
+
+    def test_submit_batch_reraises_non_tier_errors(self, adapter, fake_lqcloud):
+        class ExplodingBackend:
+            def run(self, qc, shots=1000):
+                raise RuntimeError("CircuitError: unsupported gate")
+
+        fake_lqcloud.LQCloudProvider.get_backend = lambda self, name, verify=True: ExplodingBackend()
+        with pytest.raises(RuntimeError, match="unsupported gate"):
+            adapter.submit_batch([ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
+
     def test_submit_batch_rejects_above_server_limit(self, adapter):
         circuits = [ORIGINIR_BELL] * 65
         with pytest.raises(ValueError, match="64"):
@@ -317,6 +354,23 @@ class TestLogicalQubitQuery:
         result = adapter.query("JOB-1")
         assert result["status"] == "success"
         assert result["result"] == [{"0001": 99, "0000": 1}, {"10": 5, "01": 6}]
+
+    def test_query_sequential_compound_id(self, adapter, fake_lqcloud):
+        """Compound ``lqseq:`` ids from the tier fallback unwrap to the batch list contract."""
+        fake_lqcloud.STATE["statuses"]["JOB-1"] = _FakeJobStatus.COMPLETED
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.RUNNING
+        assert adapter.query("lqseq:JOB-1|JOB-2")["status"] == "running"
+
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.COMPLETED
+        fake_lqcloud.STATE["counts"]["JOB-1"] = {"1000": 99, "0000": 1}
+        fake_lqcloud.STATE["counts"]["JOB-2"] = {"01": 5, "10": 6}
+        result = adapter.query("lqseq:JOB-1|JOB-2")
+        assert result["status"] == "success"
+        assert result["result"] == [{"0001": 99, "0000": 1}, {"10": 5, "01": 6}]
+        assert result["n_circuits"] == 2
+
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.FAILED
+        assert adapter.query("lqseq:JOB-1|JOB-2")["status"] == "failed"
 
     def test_query_failed_and_cancelled(self, adapter, fake_lqcloud):
         fake_lqcloud.STATE["statuses"]["JOB-1"] = _FakeJobStatus.FAILED
