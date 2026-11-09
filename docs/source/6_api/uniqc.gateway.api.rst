@@ -10,6 +10,7 @@ Submodules
    uniqc.gateway.api.archive
    uniqc.gateway.api.backends
    uniqc.gateway.api.circuits
+   uniqc.gateway.api.demo
    uniqc.gateway.api.tasks
 
 Module contents

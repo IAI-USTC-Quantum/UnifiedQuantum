@@ -129,6 +129,8 @@ uv.lock
 
 # Node / frontend
 node_modules/
+uniqc/gateway/static/
+/out/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

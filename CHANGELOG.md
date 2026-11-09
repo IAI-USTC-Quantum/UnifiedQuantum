@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-09
+
+### Added
+
+- Standalone local quantum lab in the existing Gateway: GHZ, W-state and Ramsey
+  presets,2–8qubits, native statevector probabilities, independent analytic
+  errors, executed OriginIR and JSON export. The same workflow is available as
+  `uniqc demo`; changing parameters invalidates the previous browser result.
+- Installed-product gates exercise the real wheel and the real source archive
+  outside the checkout, including native execution, CLI, API, SPA routes and
+  asset hashes on Linux and Windows.
+
+### Fixed
+
+- Ship the existing React Gateway inside the Python distribution. Changed
+  source checkouts build with the committed npm lock; source archives include
+  verified assets and build wheels without Node or npm downloads. Retain the
+  original notices of production dependencies and emitted runtime build tools.
+- Include the previously merged QuTiP two-qubit Kraus dimension fix, together
+  with existing documentation links and landing-page improvements.
+
+The engineering change preserves134 existing backend, compiler, circuit,
+algorithm, simulator, calibration and QEM source files from main a8a936d
+(CRLF-only normalization). Local validation:2528passed/222skipped;55examples
+passed/4external-condition skips; strict HTML build and real installed-product
+checks passed. Cloud execution was deliberately excluded. Of the test skips,
+218are existing cloud/credential gates;4are pre-existing unimplemented ZNE
+placeholder cases, which remain unsupported and are not used by the new demo.
+This release does not certify real-device or scientific-application performance.
+
 ## [0.1.1] - 2026-09-19
 
 The circuit-visualization release: a self-developed rendering engine replaces

@@ -318,3 +318,13 @@ uniqc backend update
 > **v0.0.15 起**：所有在 `0.0.x` 中通过 `DeprecationWarning` 标记的公共 API
 > **将在 `0.1.0` 中移除**。升级前请运行 `pytest -W error::DeprecationWarning`
 > 清理所有弃用警告。详见 [弃用政策](docs/source/7_releases/deprecation_policy.md)。
+
+## 独立本地演示
+
+安装发行包后运行 `uniqc gateway start --host 127.0.0.1 --port 8000`，打开
+`http://127.0.0.1:8000/demo`。界面随 Python 包提供；GHZ、W 态、Ramsey 干涉
+使用既有原生模拟器，支持参数选择、解析概率对照和结果导出。
+同一入口也支持 `uniqc demo --case ghz --qubits 4 --output ghz.json`。
+
+源码开发者构建修改后的前端需要 Node/npm；正式源码包携带已校验资产，
+构建 wheel 无需 Node。详见[WebUI 文档](docs/source/5_webui/index.md)。

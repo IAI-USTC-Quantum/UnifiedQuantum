@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.1.1` | `2026-09-19` | Release v0.1.1 |
 | `v0.1.0` | `2026-08-24` | Release v0.1.0 |
 | `v0.0.17.post1` | `2026-08-16` | ci: allow post-release tags in release validation |
 | `v0.0.17` | `2026-08-15` | docs: finalize the v0.0.17 changelog for release |
@@ -33,25 +34,70 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.1.0..HEAD`
-- 提交数：4
-- 变更文件数：35
+- 对比区间：`v0.1.1..HEAD`
+- 提交数：5
+- 变更文件数：65
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
-| `docs` | 2 |
-| `feat` | 2 |
+| `docs` | 1 |
+| `fix` | 1 |
+| `merge` | 1 |
+| `other` | 1 |
+| `site` | 1 |
 
 ### 变更区域
 
-- `docs`: 13 个文件
+- `docs`: 55 个文件
+- `site`: 5 个文件
+- `design`: 2 个文件
+- `CONTRIBUTING.md`: 1 个文件
+- `scripts`: 1 个文件
+- `uniqc/simulator`: 1 个文件
+
+### 提交列表
+
+- `9e6f37e` Remove unwanted commits
+- `20d507d` fix(simulator): set 2-qubit dims in QuTiP kraus2q so expand_operator accepts two targets
+- `f40aa53` Merge pull request #130 from IAI-USTC-Quantum/fix/qutip-kraus2q-dims
+- `2ff94bb` docs: cross-link narrative pages and pin role targets to canonical paths
+- `a8a936d` site: redesign landing page for readability and correct examples
+
+## v0.1.1
+
+- 发布日期：`2026-09-19`
+- 发布标题：Release v0.1.1
+- 补充说明：Release v0.1.1
+- 对比区间：`v0.1.0..v0.1.1`
+- 提交数：10
+- 变更文件数：113
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `docs` | 4 |
+| `feat` | 2 |
+| `merge` | 2 |
+| `chore` | 1 |
+| `fix` | 1 |
+
+### 变更区域
+
+- `example-exec-logs`: 51 个文件
+- `docs`: 35 个文件
 - `uniqc/visualization`: 13 个文件
 - `design`: 2 个文件
 - `uniqc/cli`: 2 个文件
 - `uniqc/test`: 2 个文件
+- `.gitignore`: 1 个文件
+- `AGENTS.md`: 1 个文件
 - `CHANGELOG.md`: 1 个文件
+- `RELEASE_EXECUTION_PLAN_0.1.0.md`: 1 个文件
+- `RELEASE_REPORT_0.1.0.md`: 1 个文件
+- `examples`: 1 个文件
 - `uniqc/_deprecation.py`: 1 个文件
 - `uniqc/circuit_builder`: 1 个文件
 
@@ -61,6 +107,12 @@
 - `5fd8951` docs(design): add circuit visualization redesign proposals
 - `dcf683c` docs(design): overhaul viz redesign mockup after review
 - `9d41fda` feat(visualization): new circuit rendering engine with 7 output modes
+- `873e3d3` docs(visualization): document the new circuit rendering engine
+- `ab3e401` Merge: circuit visualization redesign
+- `760efc0` chore(release): untrack release validation artifacts
+- `dd63190` docs(release): prepare v0.1.1 release
+- `9c59e51` fix(docs): resolve draw.md cross-reference anchor warning
+- `d933724` Merge pull request #129 from IAI-USTC-Quantum/release/0.1.1
 
 ## v0.1.0
 

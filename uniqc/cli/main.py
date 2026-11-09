@@ -79,6 +79,7 @@ from uniqc import gateway
 from . import backend, calibrate, circuit, doctor, result, simulate, submit, sync, task
 from . import config_cmd as config
 from . import draw as draw_cmd
+from .demo import demo
 
 # Register single-action entrypoints as direct commands instead of sub-groups.
 # This avoids Click/Typer group parsing quirks where options after positionals
@@ -89,6 +90,7 @@ app.command("simulate", help=simulate.HELP)(simulate.simulate)
 app.command("submit", help=submit.HELP)(submit.submit)
 app.command("result", help=result.HELP)(result.result)
 app.command("doctor", help=doctor.HELP)(doctor.run_doctor)
+app.command("demo")(demo)
 app.add_typer(config.app, name="config")
 app.add_typer(sync.app, name="sync")
 app.add_typer(task.app, name="task")

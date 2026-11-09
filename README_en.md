@@ -300,3 +300,14 @@ Issues, pull requests, and emails are all welcome. Interested in quantum computi
 > `0.0.x` releases **will be removed in `0.1.0`**. Before upgrading, run
 > `pytest -W error::DeprecationWarning` to clean up all deprecation warnings.
 > See [Deprecation Policy](docs/source/7_releases/deprecation_policy.md).
+
+## Standalone local demonstration
+
+After installing the distribution, run `uniqc gateway start --host 127.0.0.1 --port 8000`
+and open `http://127.0.0.1:8000/demo`. The Python package includes the UI.
+GHZ, W-state and Ramsey presets use the existing native simulator and display
+exact probabilities, independent analytic errors, the executed circuit and JSON export.
+Use the same workflow from the CLI: `uniqc demo --case ghz --qubits 4 --output ghz.json`.
+
+Building changed frontend sources requires Node/npm; published source archives
+carry verified assets and can build wheels without Node.

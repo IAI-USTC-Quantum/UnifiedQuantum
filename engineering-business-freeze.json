@@ -1,0 +1,543 @@
+{
+  "source_commit": "a8a936db970c93d0e568d727fdc124bf1af6f963",
+  "scope": "Existing backend, compiler, circuit, simulator, calibration, QEM and algorithm implementations remain byte-identical for this engineering change. New demonstration composition delegates these unchanged implementations.",
+  "files": [
+    {
+      "path": "uniqc/algorithms/__init__.py",
+      "sha256": "ef3cd69c3c65ca8a1e9787d858b582ecd4913f6d6b31c0024374bf8dc4231541"
+    },
+    {
+      "path": "uniqc/algorithms/core/__init__.py",
+      "sha256": "785684be6b6cfaf1c23f5ba2fdcea47214977ada6305653c00ecff1857908fdf"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/__init__.py",
+      "sha256": "05f248369c3c94679394dd76b25e29015beb1c5d4329f639f88b73e20bb2bb60"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/_hardware_aware.py",
+      "sha256": "3c00c2b59202ff661dd5e81c2af2d271f2c341c2c95ddb66f67f168e7e720fc5"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/_operator_pool.py",
+      "sha256": "b1696a3ae30b307be9e1b3fffd892623dafd0c5c18ee0294cee70850cdb9edaf"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/_pauli_unitary.py",
+      "sha256": "b59a98a58268da3ebc280ce61253078c2e10dab1fb5c5f871ddb43d3a656f15e"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/_topology.py",
+      "sha256": "b5eaa4ec4ab2d19ba053f4ea87274fc0d9398ff7611f678807dc7ea10d4270f8"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/_types.py",
+      "sha256": "b880ac630658789f5de0fcbdd69e73bf11be69c33075970ff4674db35ad275ad"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/hea.py",
+      "sha256": "2ef7859cfa3627f78d34bb139db993f48cc564f7e942d956a9f390ef236b1ea1"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/hva.py",
+      "sha256": "f9c131c4a41da3b5a7e1fb11b8c7c22644f10d022b07b481abab0eaeb7af232a"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/qaoa_ansatz.py",
+      "sha256": "a575e7f45a230e5e3651b074bc1b5235897132d6f4fb69b378345ac775a32aed"
+    },
+    {
+      "path": "uniqc/algorithms/core/ansatz/uccsd.py",
+      "sha256": "ee197f15593cac51ecc66bef6089e5ee0fd80d09577e393a70a578ff57b2e271"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/__init__.py",
+      "sha256": "d34cfc255597acb96f03a7f31ff1943775c66d450678bd696561cf97160ab59e"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/amplitude_estimation.py",
+      "sha256": "593e364efc648a29a9df6fbe2b79b2ae6de112fc25fd900030f6e56611e06175"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/deutsch_jozsa.py",
+      "sha256": "9dbf44804b104585a6b99c7edfc358fd2e3b917c225b7a7132ad8a6ebdc5c32d"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/dicke_state.py",
+      "sha256": "6d0145a2f3f37912d11e6bee5540845e810dfbb8fdb56200a7750a028045f268"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/entangled_states.py",
+      "sha256": "c631fd3a835d8ff56e17b4b660192d4025186ce087b8b6bf9d6646a589f764ba"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/grover_oracle.py",
+      "sha256": "9ddae95047418b42eb2901228af1945007a12911c9c934278551c06987e3c8ba"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/qft.py",
+      "sha256": "e3e8845d7b69d86a9cc6ef31c43405fffb7e0a36dd882fcd0b03f8152dbf2e2d"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/qpe.py",
+      "sha256": "0c6698146753e37e761bf0adab72830564a86b8826b67454659bcdd6fd368f26"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/thermal_state.py",
+      "sha256": "0a610840a7bc71613f7f69d6e486d8d26b39e0a5d20b53c8a1d24b768ea9d965"
+    },
+    {
+      "path": "uniqc/algorithms/core/circuits/vqd.py",
+      "sha256": "40bdea1ad8a77798f2e04695123f5e013746eb5ebd61b0cd4f8670009ab4d873"
+    },
+    {
+      "path": "uniqc/algorithms/core/measurement/__init__.py",
+      "sha256": "0e3ca7ddb5f956b0f92a033aa5cea580f2a89f486c0c610c4a2a05cb7259b049"
+    },
+    {
+      "path": "uniqc/algorithms/core/measurement/basis_rotation.py",
+      "sha256": "ee8e76c37846e767393a7a7009544e7c5a22eb94e1f49678b1d6dea1e366f208"
+    },
+    {
+      "path": "uniqc/algorithms/core/measurement/classical_shadow.py",
+      "sha256": "12cf62fc9e29988d2ffb5e72d72225396e17f83770da3f878d132ba3f2fb6d64"
+    },
+    {
+      "path": "uniqc/algorithms/core/measurement/pauli_expectation.py",
+      "sha256": "441896839c249ca2c3a6ed0c3760fc7321eb0318d00b9c7ad4835510d434fd65"
+    },
+    {
+      "path": "uniqc/algorithms/core/measurement/state_tomography.py",
+      "sha256": "97a5a2583d3b80c9e40264ed736d59911de29682e02d53845e164756b0526b35"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/__init__.py",
+      "sha256": "863e73068f04c9641656d63ef74342bba495e14571ef3659da27473ecafe1757"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/basis_state.py",
+      "sha256": "b35a6cb64cd28f682cb9357d77cb10d1705b9b69125202c36fa1047eddb087e7"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/dicke_state.py",
+      "sha256": "70fae942fc536a54cc3d305a8582b5f2dada1998a5f2d1f5347b87eea5f5bc98"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/hadamard_superposition.py",
+      "sha256": "b7ec51cb7a11576a2770ff5ef8d1e234c90233f8c8932faf1cb97a6c9e6f7864"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/rotation_prepare.py",
+      "sha256": "654bd63f1fc7e4e52e1039c10ff4ea7500f5e628e7a85a3f2f206b18b103379b"
+    },
+    {
+      "path": "uniqc/algorithms/core/state_preparation/thermal_state.py",
+      "sha256": "f77539eaffd4741a744a005a69aa966b6ca8eff9232c4e97b6ae04be0919b876"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/__init__.py",
+      "sha256": "d23c800257a00a5b4b2c8786a56ee0a14b8c3979f3129497ecb5744eb25e29bc"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/hybrid_model.py",
+      "sha256": "b07c5d423bc2ac268b2110e1d7bc5a817fff94d82127ffb4acac836a3ec5dc1b"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/qaoa_torch.py",
+      "sha256": "b27d85d44a6fa7aa168681eef57a673af133571aafcbc1ce2093ab7f04792bb2"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/qcnn.py",
+      "sha256": "6d83cf180c18a47de86f6f7d4a13826e8074037542f4f5446d30c6c857db7201"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/qnn.py",
+      "sha256": "1281657d286db79407be341236d640d7b30ade5a2069041313ac98782fac54d3"
+    },
+    {
+      "path": "uniqc/algorithms/core/training/vqe_torch.py",
+      "sha256": "2db8daa73afc09a5bacdb5a177f14e0c4f5f9afa7b5eb91555123b46e7c2959f"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/__init__.py",
+      "sha256": "1860d6f46e8b94f4fae6ded16b6fb8cb8c527f64e686c2b87f617550553932db"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/classical_shadow_workflow.py",
+      "sha256": "5a2004de19a5da46b0af7884d6049c6063e12c14d0f2bc36a6e21d27448ebd90"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/qaoa_workflow.py",
+      "sha256": "5586126a415631306f3d636059d0e50bf3257f2957379f7cb6e14d3c4d4abd4f"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/readout_em_workflow.py",
+      "sha256": "77d685f79a5d2e23afe3da1ca545e423bd5791d72d8ec7eb2ce2152d1d3fd2c2"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/vqe_workflow.py",
+      "sha256": "f71a9bece03a44a6aa437c8cd8791be6c080e62797bb8816e9d8a6b3394af7db"
+    },
+    {
+      "path": "uniqc/algorithms/workflows/xeb_workflow.py",
+      "sha256": "8dd089b985360b12aa1b34cdda3d01ddb1f4d17f565830ded5aad6767cdc2fd6"
+    },
+    {
+      "path": "uniqc/backend_adapter/__init__.py",
+      "sha256": "25d63545bf94d78ecc693b00c630ae0cd093dd357acfb53a263b9610fadb44b7"
+    },
+    {
+      "path": "uniqc/backend_adapter/backend.py",
+      "sha256": "705faf2bf305767493e27c8d514f48c116e77bb4384435053fc364bb440941da"
+    },
+    {
+      "path": "uniqc/backend_adapter/backend_cache.py",
+      "sha256": "150571c03230b55f549bb2957a57201f43eebabfbcb5f0772162df8be64e3369"
+    },
+    {
+      "path": "uniqc/backend_adapter/backend_info.py",
+      "sha256": "63df04ed8e7f66c52bf76ec5efb2c6555623671ce20380e18900e119ef532eff"
+    },
+    {
+      "path": "uniqc/backend_adapter/backend_registry.py",
+      "sha256": "73da95d5c8ec11a132e4eb343b9351a61324dd94e1364a7b517df3737b6b53e8"
+    },
+    {
+      "path": "uniqc/backend_adapter/circuit_adapter.py",
+      "sha256": "d9676450071b8ad4c59131a096cc9131918edb45dda4d04299ec56a637629b67"
+    },
+    {
+      "path": "uniqc/backend_adapter/config.py",
+      "sha256": "e9f5690b0a75b582d6a8d0121e178a3c9bacc5a3f1bb731fd8846925cce9e318"
+    },
+    {
+      "path": "uniqc/backend_adapter/database_migration.py",
+      "sha256": "0b8ff146eedafbf1a0327048abdeddba7121e28c768a70e55377054d423bf1be"
+    },
+    {
+      "path": "uniqc/backend_adapter/dummy_backend.py",
+      "sha256": "3b4450dfb446625ee06c212ff1cba4bfecf026ffacf921c2b7031d4b3e301645"
+    },
+    {
+      "path": "uniqc/backend_adapter/network_utils.py",
+      "sha256": "d8aec0f8bbe14bb78f5fb0d8e6470b882ada10126000373b589a4f4874a05f42"
+    },
+    {
+      "path": "uniqc/backend_adapter/preflight.py",
+      "sha256": "6f292607f74c7d176a4c1ad3ddaedfccca1271f3dacfc681af94e63d51addece"
+    },
+    {
+      "path": "uniqc/backend_adapter/region_selector.py",
+      "sha256": "467e433d5c0f4b93b51ee700af53ad5fe99e9d2a95403ce57d26868a932d3e38"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/__init__.py",
+      "sha256": "bbc3f7a6872aabedba54e3cf367031c5164dbf453eaab2660b95d9d7d0208527"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/__init__.py",
+      "sha256": "ff46868b053af16d6b36c5494ebac76406d945a789a7ec0e2eadf21c5ece7dc6"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/base.py",
+      "sha256": "76601796fa16d2637e490202806739c103ecee02615f89e5fff887b5998f7549"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/dummy_adapter.py",
+      "sha256": "8c53e9f129af826c5d7610d3f82fcab99ac1a74be3015ad7d87d68ed217d15f0"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/ibm_adapter.py",
+      "sha256": "5aa292df19574dbb5e9a6ccb108b085e9b0b293ca80264b4f9ec3cd3174a0b3b"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/logicalqubit_adapter.py",
+      "sha256": "5544ce3d71d572222cd9989fe485f5f72d9e10d8e79a43fd92fcdd15cfb2c68b"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/originq_adapter.py",
+      "sha256": "576462c8a819c6319196c242d85657857b2257fe1cfa78d0a760c02f49574fdb"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/qiskit_adapter.py",
+      "sha256": "95c2f46fbad21638ecabb95ad9a261eb1dd23fff17d68e1670d2f86c20dd1f31"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/quark_adapter.py",
+      "sha256": "b156910174802991dca2ef6a9142e166cc8ae44b9f7a1b149b8e3d365628a7b3"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/adapters/tianyan_adapter.py",
+      "sha256": "a101c31988bc590c1392d7bfa079547e03a14405d242fde01bf8a5ea12d7746d"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/normalizers.py",
+      "sha256": "65626d520cffb3dbf45dbee9c00c24d3666c7b338fcff92cbad7098d53598ade"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/optional_deps.py",
+      "sha256": "432e4fee1687f0aecfd87cc28c8b7b01412941091c63635353ad8abcef672f38"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/options.py",
+      "sha256": "061f08254cb2fce2beb52fda28726d44b0693afcafb3337e42393898a8a6b9a6"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/persistence.py",
+      "sha256": "3ccee4ab931ffc42dff16a1fb18f45ad1ac6535a0d8422e1e14a247f94abcbfc"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/result_types.py",
+      "sha256": "400a8e178e42782ae7ca96f1fb107a061cb76e0b9a10f2b1be2991fc9981ba88"
+    },
+    {
+      "path": "uniqc/backend_adapter/task/store.py",
+      "sha256": "90ec132a2ca10b3de4242a2cad0e8b8acf4a2a322e3eb057d830b61528e86da4"
+    },
+    {
+      "path": "uniqc/backend_adapter/task_manager.py",
+      "sha256": "236e44c0ff165d3f1005313d7f6d81a6bc3f2e37edaf0c6c4c7ee9446c98d813"
+    },
+    {
+      "path": "uniqc/backend_adapter/virtual_machine.py",
+      "sha256": "9b8555a23acd9988f9f201e224a7699b9c06e91ad038d1c66d0a801b87a387ab"
+    },
+    {
+      "path": "uniqc/calibration/__init__.py",
+      "sha256": "8fa54fa32edd7a7687e52a2ad61accaf92cf2ab22579c58e771a8217a367e673"
+    },
+    {
+      "path": "uniqc/calibration/readout/__init__.py",
+      "sha256": "770a37c184991b70c033c5da4a56b8ecb540bd260ea8874694e713adb86c630f"
+    },
+    {
+      "path": "uniqc/calibration/readout/calibrator.py",
+      "sha256": "054df61ea69880c6fd3da7ca1b59e48cf97554d115be2ad6e38759f15dc2d93a"
+    },
+    {
+      "path": "uniqc/calibration/results.py",
+      "sha256": "26f398b0e46d29fbac159546efade7aed2a18f9fdaffda1b3e2dde28f896c59b"
+    },
+    {
+      "path": "uniqc/calibration/xeb/__init__.py",
+      "sha256": "2cbbb22226e611677bb2924f3b99e33fe75ec5ef349736242078a14fc84b1fe8"
+    },
+    {
+      "path": "uniqc/calibration/xeb/benchmarker.py",
+      "sha256": "94b004e1bf92df4afe4b3d2cad39ba4a8b7ede2b7acfda08d315b372e13681e3"
+    },
+    {
+      "path": "uniqc/calibration/xeb/circuits.py",
+      "sha256": "700899c169a3cd453a14c45e1dcb6ec55a9008100ff6ac5579b5b69afa49cfe9"
+    },
+    {
+      "path": "uniqc/calibration/xeb/fitter.py",
+      "sha256": "66854a1d532e5e2641ac293ed38c4d913e5158cd7e3ab810f80424fcf4453b6c"
+    },
+    {
+      "path": "uniqc/calibration/xeb/parallel_cz.py",
+      "sha256": "1842aa3508f4d7461018d4cdfcc31f5a5d35555cda3139879145a92febc9a545"
+    },
+    {
+      "path": "uniqc/calibration/xeb/patterns.py",
+      "sha256": "6dd4d14da8da4cd6ebea244b26ace5b170b7049a539281139e72d5814654044f"
+    },
+    {
+      "path": "uniqc/calibration/xeb/topology.py",
+      "sha256": "20c5e3b27c51fd3a22626363706534bb9d920ba4de90a99805a43a9ae1c9f6c2"
+    },
+    {
+      "path": "uniqc/circuit_builder/__init__.py",
+      "sha256": "09781e0209798ea091569e4f536ae497d12f0b0f7e0639de0f755a49ba3c49d6"
+    },
+    {
+      "path": "uniqc/circuit_builder/classical_program.py",
+      "sha256": "7a5c3c39567592b106a38a942d5f2ac150fe8393a3c65f5085055c778512a766"
+    },
+    {
+      "path": "uniqc/circuit_builder/matrix.py",
+      "sha256": "4541c736533405f6bc04d2ae37ecef030c8f16a20ac557f591576baf696f15c4"
+    },
+    {
+      "path": "uniqc/circuit_builder/named_circuit.py",
+      "sha256": "ef2759c94483376712afea2ba9f01f3888dbc09bb774ff9b1aaa3a8929b7f8f7"
+    },
+    {
+      "path": "uniqc/circuit_builder/normalize.py",
+      "sha256": "d756f06e4ff935fc21dc90206614b30c08124f7dbf3b4c7a703e8831cb172465"
+    },
+    {
+      "path": "uniqc/circuit_builder/opcode.py",
+      "sha256": "6ec5033c000d5c0957ba69f7ba38ea40fbf4d8a8eb94cfad4c4fb746b03e60eb"
+    },
+    {
+      "path": "uniqc/circuit_builder/originir_ext_spec.py",
+      "sha256": "9d817659af80835e48b729b3cba2c34ec766a0cbced15b18a4e6ba3f281625f1"
+    },
+    {
+      "path": "uniqc/circuit_builder/originir_spec.py",
+      "sha256": "74d070f40869443114ac1b361df3b173639584492e33e7b3b131d6edbd3bcbf5"
+    },
+    {
+      "path": "uniqc/circuit_builder/parameter.py",
+      "sha256": "886562a1fcbda04444c31335bb36b084fc9fcda3af4a5f00ff341ca357092c79"
+    },
+    {
+      "path": "uniqc/circuit_builder/qasm_spec.py",
+      "sha256": "7ef0458382badebbe249f31a61a1849d555c301f688d62946adbe463e19aaed6"
+    },
+    {
+      "path": "uniqc/circuit_builder/qcircuit.py",
+      "sha256": "366dba4256325719f4849dc8ddfa0431917b3e6dd54ada55701be4fa8d880bd1"
+    },
+    {
+      "path": "uniqc/circuit_builder/qram.py",
+      "sha256": "0d1ce9ff31d957f05bd74d900b0d9eef15de890046157c10cdf6946fbefaa6f1"
+    },
+    {
+      "path": "uniqc/circuit_builder/qubit.py",
+      "sha256": "c4176b1cecdaa2d7a896a3a84645975f9cc306013f920e928ddb73233efaa1a9"
+    },
+    {
+      "path": "uniqc/circuit_builder/random_originir.py",
+      "sha256": "ac3d92e09ab6db145ecd1041629b0bcb3615d06fd7a48783f861561d3cf8981a"
+    },
+    {
+      "path": "uniqc/circuit_builder/random_qasm.py",
+      "sha256": "0efd8afbe3940d4fd0621404b4133bc27bc41c073c8eb7e92c8f3d4ee268c8d2"
+    },
+    {
+      "path": "uniqc/circuit_builder/translate_qasm2_oir.py",
+      "sha256": "17e8deaa538369eed15092d442e5d137acb14ecea1a9133d1d7c5767edf44c28"
+    },
+    {
+      "path": "uniqc/compile/__init__.py",
+      "sha256": "35aba6cd3c78c2e44be604d7634277d537d5800652b8fb251e7d0fe6bf71baef"
+    },
+    {
+      "path": "uniqc/compile/_utils.py",
+      "sha256": "db4d697f9f6890c7a859da8ac1e9013d2f34720bd5ffd3be39df86e9919f5568"
+    },
+    {
+      "path": "uniqc/compile/compiler.py",
+      "sha256": "cbe57eb076bb3a0921962c978f2f4b387b14acfe58a81d55c9f0ff59251a0168"
+    },
+    {
+      "path": "uniqc/compile/converter.py",
+      "sha256": "d2be89062d346f2467c561a10934728d4d97b92677d3baad30a993cf3d3cf890"
+    },
+    {
+      "path": "uniqc/compile/decompose.py",
+      "sha256": "68dfb76f9112b121714d510223a6e7cc88fb111594f0dc999451f533fddf1962"
+    },
+    {
+      "path": "uniqc/compile/draw.py",
+      "sha256": "5694c5b5808f9c3b8d4dcdb1403a38688cda88313dba63dde53badaabf2ce81d"
+    },
+    {
+      "path": "uniqc/compile/originir/__init__.py",
+      "sha256": "9db8d7d2e527e8900a4c9728902e9c91180e2e372c6b244b464adee04aa8bef1"
+    },
+    {
+      "path": "uniqc/compile/originir/originir_base_parser.py",
+      "sha256": "55a4f81ea483ef8e946bb421442b3e62a060aa571c158b23f49351674ab3a45a"
+    },
+    {
+      "path": "uniqc/compile/originir/originir_line_parser.py",
+      "sha256": "c7fd8caf55234f51d8a76c81472eb5ef022d7c08d444927f2f3fa73e6fe6e405"
+    },
+    {
+      "path": "uniqc/compile/policy.py",
+      "sha256": "4605f318d2c6110c98fb7eb47930109002ea5f1334e1142c8e9033510343eaa3"
+    },
+    {
+      "path": "uniqc/compile/qasm/__init__.py",
+      "sha256": "532a71fae29bab515c551af85f3847129c4aa24be61e4460e3a9cf8f2ba920d0"
+    },
+    {
+      "path": "uniqc/compile/qasm/_safe_eval.py",
+      "sha256": "4f7220076473558292f68ca0721417f62976e97bb373d661d118f5bd8ba436ed"
+    },
+    {
+      "path": "uniqc/compile/qasm/exceptions.py",
+      "sha256": "c0935bfa167be9e4b1752818a7529947a36e5f66428a1b461595fa2c06695e60"
+    },
+    {
+      "path": "uniqc/compile/qasm/qasm_base_parser.py",
+      "sha256": "c618181b4cbb5eab1f7a310886f0b7eb0af17061330aeb91bc27eed4b7e8003b"
+    },
+    {
+      "path": "uniqc/compile/qasm/qasm_line_parser.py",
+      "sha256": "c56a49a3e0185d163523bd2b38a3290190011c232fdaae65c45378f8536e9209"
+    },
+    {
+      "path": "uniqc/compile/qiskit_transpiler.py",
+      "sha256": "7401b5356b4641371876c613068f33df13794e8ee1dfcf84a95e3e12c8ad6296"
+    },
+    {
+      "path": "uniqc/compile/timeline.py",
+      "sha256": "4545914fd6ab1dbe953f20183d3d0a6c96eac2b461ba7b7b6590064f5b6b3fd7"
+    },
+    {
+      "path": "uniqc/compile/validation.py",
+      "sha256": "310ca306dc05dc9210bde9bac9c1f65e96c90a854cbba01e47dff4c98120accf"
+    },
+    {
+      "path": "uniqc/qem/__init__.py",
+      "sha256": "8902caa7d0f83bd0b80759f3de8dae28215adb93c0331ca7e8c22a834fd2176a"
+    },
+    {
+      "path": "uniqc/qem/m3.py",
+      "sha256": "91a4b3f63a271eb3e716f9f623a4f4bd3bd17fa97cad3d4f0398d23a1bf980e4"
+    },
+    {
+      "path": "uniqc/qem/readout_em.py",
+      "sha256": "eb9d9cbd3571a82364fa30b9997e30eb00d9d5daa1643a1fd6ddaa9e6611559a"
+    },
+    {
+      "path": "uniqc/qem/zne.py",
+      "sha256": "5a962e59f68bca32a0f4348f99da8cd0bbae0f0555176c8133e031a310b04d3e"
+    },
+    {
+      "path": "uniqc/simulator/__init__.py",
+      "sha256": "973d8b4f06300014d24a9d079a18a2cbb8114b2b748290f18a724e9f921f3194"
+    },
+    {
+      "path": "uniqc/simulator/base_simulator.py",
+      "sha256": "bf020b74feabe9891b195e9c6bcdf69395f740f2b0ece9c7e24f48962b4bf74d"
+    },
+    {
+      "path": "uniqc/simulator/error_model.py",
+      "sha256": "0759054499f6021c657ee3caf49bf07d12edba3c8fe8663f48a9482b521e4532"
+    },
+    {
+      "path": "uniqc/simulator/get_backend.py",
+      "sha256": "643f6e25412dcf4e51586331eb6b9fa6fe2057f997c4ec1ab4d2882950ff9c73"
+    },
+    {
+      "path": "uniqc/simulator/mps_simulator.py",
+      "sha256": "e07993a49ae434f90ec721a865bf3183014899eb96c4ce6c05fcd609096baf9d"
+    },
+    {
+      "path": "uniqc/simulator/opcode_simulator.py",
+      "sha256": "a463714b60347256a2e7cf9bf0dd47cbe330bdb5f4dde2b2a38840c26ca14261"
+    },
+    {
+      "path": "uniqc/simulator/originir_ext_simulator.py",
+      "sha256": "62c8428ed5f0aab8ac48a0543eb99968cbb0fe3e5cd598cd30ac6318c72078f2"
+    },
+    {
+      "path": "uniqc/simulator/qutip_sim_impl.py",
+      "sha256": "5000857f8609fab0714cdce267d632744337c289242c2fbd4d9c74cfd541027c"
+    },
+    {
+      "path": "uniqc/simulator/simulator.py",
+      "sha256": "abbf3be2c1ae5b7d37e99fdf1983179d222f1c0d08376ce62a2993747214a361"
+    },
+    {
+      "path": "uniqc/simulator/torchquantum_simulator.py",
+      "sha256": "1b0e528587727e59a4d0f685f9072dcab8f8fef7c3308e3db2498d36e5ec118e"
+    }
+  ],
+  "normalization": "CRLF to LF only; no other source normalization"
+}

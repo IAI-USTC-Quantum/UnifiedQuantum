@@ -6,6 +6,7 @@ import { apiGateway, type GatewayVersion } from "./hooks/useApi";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/demo", label: "Local quantum lab", icon: Cpu },
   { to: "/backends", label: "Backends", icon: Cpu },
   { to: "/tasks", label: "Tasks", icon: Layers },
   { to: "/archive", label: "Archive", icon: Archive },
