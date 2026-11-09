@@ -25,6 +25,7 @@ reported number is tied to a reproducible input set.
 from __future__ import annotations
 
 import dataclasses
+import os
 import platform
 import time
 from collections.abc import Callable
@@ -147,6 +148,17 @@ class ThroughputResult:
         }
 
 
+def _load_average_1min() -> float | None:
+    """Return the 1-minute load average, or ``None`` where the OS lacks it."""
+    getloadavg = getattr(os, "getloadavg", None)
+    if getloadavg is None:
+        return None
+    try:
+        return float(getloadavg()[0])
+    except OSError:
+        return None
+
+
 def _environment_info() -> dict[str, Any]:
     def version_of(dist: str) -> str | None:
         try:
@@ -158,8 +170,8 @@ def _environment_info() -> dict[str, Any]:
         "python": platform.python_version(),
         "machine": platform.machine(),
         "processor": platform.processor() or None,
-        "cpu_count_logical": __import__("os").cpu_count(),
-        "load_average_1min": __import__("os").getloadavg()[0],
+        "cpu_count_logical": os.cpu_count(),
+        "load_average_1min": _load_average_1min(),
         "numpy": version_of("numpy"),
         "unified-quantum": version_of("unified-quantum"),
         "uniqc-cppsimulator": version_of("uniqc-cppsimulator"),
