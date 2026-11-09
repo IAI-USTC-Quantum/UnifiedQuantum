@@ -17,6 +17,7 @@ on:
       - 'MANIFEST.in'
       - 'pyproject.toml'
       - '.github/workflows/docs.yml'
+      - '.github/workflows/pypi-publish.yml'
     tags:
       - 'v*'
   pull_request:
@@ -35,6 +36,7 @@ on:
       - 'MANIFEST.in'
       - 'pyproject.toml'
       - '.github/workflows/docs.yml'
+      - '.github/workflows/pypi-publish.yml'
   workflow_dispatch:
 
 permissions:
