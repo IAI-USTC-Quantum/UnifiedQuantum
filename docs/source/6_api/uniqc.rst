@@ -9,10 +9,13 @@ Subpackages
 
    uniqc.algorithms
    uniqc.backend_adapter
+   uniqc.benchmark
    uniqc.calibration
    uniqc.circuit_builder
    uniqc.compile
+   uniqc.experiments
    uniqc.gateway
+   uniqc.noise_bridge
    uniqc.qem
    uniqc.simulator
    uniqc.torch_adapter

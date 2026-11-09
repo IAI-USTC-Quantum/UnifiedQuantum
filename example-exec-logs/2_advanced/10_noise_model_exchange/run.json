@@ -1,0 +1,19 @@
+{
+  "example": "examples/2_advanced/10_noise_model_exchange.py",
+  "source_sha256": "456bd9c1a7c13cf87d00fb86728cc17a000bbf07d11b6dd7713b9355175be321",
+  "chapter": "2_advanced",
+  "name": "10_noise_model_exchange",
+  "title": "版本化噪声模型交换与含噪 VM 的 QRAM/QPU 寻址",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "imported nlearn.noise-model.v1 model sha256=b4f3dce4fc68...\ndata_class=synthetic  chain=[0, 1, 2, 3, 4]\n\n== 3-layer QRAM basis lookup (address=5, shots=500) ==\nexpected value      : 2 (10)\nraw accuracy        : 0.932 (top outcome 10)\nmitigated accuracy  : 0.958 (top outcome 10)\nnoisy counts        : {'00': 11, '01': 1, '10': 466, '11': 22}\nmitigated counts    : {'00': 5, '01': 0, '10': 478, '11': 16}\n\n== QPU superposition addressing (shots=500) ==\nideal distribution  : {'0': 0.25, '1': 0.25, '2': 0.25, '3': 0.25}\nraw fidelity        : 0.9993\nmitigated fidelity  : 0.9995\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.106
+}
