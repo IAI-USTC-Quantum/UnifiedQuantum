@@ -9,6 +9,11 @@ from uniqc.algorithms.core.measurement.classical_shadow import ShadowSnapshot
 from uniqc.circuit_builder import Circuit
 
 
+# Fix the existing snapshot RNG, not the production algorithm or error bounds.
+# OS-entropy basis counts can otherwise hit a strict tolerance boundary in CI.
+SHADOW_SEED = 2024
+
+
 class TestSingleQubitShadow:
     """Single-qubit classical shadow tests."""
 
@@ -16,7 +21,7 @@ class TestSingleQubitShadow:
         """⟨Z⟩ on |0⟩ via shadow should be ≈ +1 with enough snapshots."""
         c = Circuit()
         c.measure(0)
-        shadows = classical_shadow(c, shots=4096, n_shadow=100)
+        shadows = classical_shadow(c, shots=4096, n_shadow=100, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "Z")
         assert abs(est - 1.0) < 0.15
 
@@ -25,7 +30,7 @@ class TestSingleQubitShadow:
         c = Circuit()
         c.h(0)
         c.measure(0)
-        shadows = classical_shadow(c, shots=4096, n_shadow=100)
+        shadows = classical_shadow(c, shots=4096, n_shadow=100, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "X")
         assert abs(est - 1.0) < 0.15
 
@@ -34,7 +39,7 @@ class TestSingleQubitShadow:
         c = Circuit()
         c.h(0)
         c.measure(0)
-        shadows = classical_shadow(c, shots=4096, n_shadow=100)
+        shadows = classical_shadow(c, shots=4096, n_shadow=100, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "Z")
         assert abs(est) < 0.2
 
@@ -51,7 +56,7 @@ class TestYExpectationShadow:
         c.h(0)
         c.s(0)
         c.measure(0)
-        shadows = classical_shadow(c, shots=4096, n_shadow=200)
+        shadows = classical_shadow(c, shots=4096, n_shadow=200, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "Y")
         assert abs(est - 1.0) < 0.15
 
@@ -65,7 +70,7 @@ class TestHighPrecisionShadow:
         c.h(0)
         c.cx(0, 1)
         c.measure(0, 1)
-        shadows = classical_shadow(c, shots=4096, n_shadow=500)
+        shadows = classical_shadow(c, shots=4096, n_shadow=500, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "ZZ")
         assert abs(est - 1.0) < 0.1
 
@@ -79,7 +84,7 @@ class TestShadowAllIdentity:
         c.h(0)
         c.cx(0, 1)
         c.measure(0, 1)
-        shadows = classical_shadow(c, shots=512, n_shadow=16)
+        shadows = classical_shadow(c, shots=512, n_shadow=16, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "II")
         assert np.isclose(est, 1.0)
 
@@ -87,7 +92,7 @@ class TestShadowAllIdentity:
         """⟨I⟩ via shadow should be 1.0."""
         c = Circuit()
         c.measure(0)
-        shadows = classical_shadow(c, shots=512, n_shadow=16)
+        shadows = classical_shadow(c, shots=512, n_shadow=16, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "I")
         assert np.isclose(est, 1.0)
 
@@ -104,7 +109,7 @@ class TestThreeQubitShadow:
         """
         c = Circuit()
         c.measure(0, 1, 2)
-        shadows = classical_shadow(c, shots=4096, n_shadow=108)
+        shadows = classical_shadow(c, shots=4096, n_shadow=108, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "ZZZ")
         assert abs(est - 1.0) < 0.15
 
@@ -115,7 +120,7 @@ class TestThreeQubitShadow:
         c.cx(0, 1)
         c.cx(0, 2)
         c.measure(0, 1, 2)
-        shadows = classical_shadow(c, shots=512, n_shadow=32)
+        shadows = classical_shadow(c, shots=512, n_shadow=32, seed=SHADOW_SEED)
         assert len(shadows) == 32
         # Each snapshot should have 3 entries
         assert len(shadows[0].unitary_indices) == 3
@@ -130,27 +135,27 @@ class TestShadowEdgeCases:
         c = Circuit()
         c.measure(0)
         with pytest.raises(ValueError, match="positive"):
-            classical_shadow(c, shots=512, n_shadow=0)
+            classical_shadow(c, shots=512, n_shadow=0, seed=SHADOW_SEED)
 
     def test_n_shadow_negative_raises(self):
         """n_shadow=-1 should raise ValueError."""
         c = Circuit()
         c.measure(0)
         with pytest.raises(ValueError, match="positive"):
-            classical_shadow(c, shots=512, n_shadow=-1)
+            classical_shadow(c, shots=512, n_shadow=-1, seed=SHADOW_SEED)
 
     def test_shots_zero_raises(self):
         """shots=0 should raise ValueError."""
         c = Circuit()
         c.measure(0)
         with pytest.raises(ValueError, match="positive"):
-            classical_shadow(c, shots=0, n_shadow=10)
+            classical_shadow(c, shots=0, n_shadow=10, seed=SHADOW_SEED)
 
     def test_invalid_pauli_in_shadow_expectation(self):
         """Invalid Pauli character in shadow_expectation should raise."""
         c = Circuit()
         c.measure(0)
-        shadows = classical_shadow(c, shots=512, n_shadow=8)
+        shadows = classical_shadow(c, shots=512, n_shadow=8, seed=SHADOW_SEED)
         with pytest.raises(ValueError):
             shadow_expectation(shadows, "A")
 
@@ -158,7 +163,7 @@ class TestShadowEdgeCases:
         """ShadowSnapshot should have a readable repr."""
         c = Circuit()
         c.measure(0)
-        shadows = classical_shadow(c, shots=512, n_shadow=4)
+        shadows = classical_shadow(c, shots=512, n_shadow=4, seed=SHADOW_SEED)
         r = repr(shadows[0])
         assert "Shadow" in r
         assert "unitary_indices" in r
@@ -187,7 +192,7 @@ class TestShadowVectorizedLargeN:
         for i in range(6):
             c.h(i)
         c.measure(0, 1, 2, 3, 4, 5)
-        shadows = classical_shadow(c, shots=512, n_shadow=200)
+        shadows = classical_shadow(c, shots=512, n_shadow=200, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "ZIIIII")
         assert abs(est) < 0.25  # should be ≈ 0
 
@@ -198,7 +203,7 @@ class TestShadowVectorizedLargeN:
         """
         c = Circuit()
         c.measure(0, 1, 2, 3, 4, 5)
-        shadows = classical_shadow(c, shots=1024, n_shadow=324)
+        shadows = classical_shadow(c, shots=1024, n_shadow=324, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "ZIIIII")
         assert abs(est - 1.0) < 0.25
 
@@ -208,7 +213,7 @@ class TestShadowVectorizedLargeN:
         for i in range(6):
             c.h(i)
         c.measure(0, 1, 2, 3, 4, 5)
-        shadows = classical_shadow(c, shots=256, n_shadow=16)
+        shadows = classical_shadow(c, shots=256, n_shadow=16, seed=SHADOW_SEED)
         est = shadow_expectation(shadows, "IIIIII")
         assert np.isclose(est, 1.0)
 

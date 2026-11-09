@@ -4,17 +4,32 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing main-ancestor release tag to recover (never moved)'
+        required: true
+        type: string
 
 permissions:
   contents: read
 
+env:
+  TARGET_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
 jobs:
   validate_release:
     name: Validate release tag
+    if: >-
+      github.repository == 'IAI-USTC-Quantum/UnifiedQuantum' &&
+      (github.event_name == 'push' || github.ref == 'refs/heads/main')
+    outputs:
+      source_commit: ${{ steps.source.outputs.commit }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Fetch main branch
@@ -23,9 +38,34 @@ jobs:
       - name: Validate tag ancestry and changelog
         run: |
           python scripts/check_release.py \
-            --tag "${{ github.ref_name }}" \
+            --tag "$TARGET_TAG" \
             --main-ref origin/main \
             --changelog CHANGELOG.md
+
+      - name: Pin verified release source
+        id: source
+        run: |
+          python - <<'PYTHON'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          commit = subprocess.check_output(
+              ["git", "rev-parse", "--verify", "refs/tags/" + os.environ["TARGET_TAG"] + "^{commit}"],
+              text=True,
+          ).strip()
+          if not re.fullmatch(r"[0-9a-f]{40}", commit):
+              raise SystemExit("Invalid release source commit")
+          subprocess.run(
+              ["git", "merge-base", "--is-ancestor", commit, "origin/main"], check=True,
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+              output.write("commit=" + commit + "\n")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+              summary.write("Release source: `" + commit + "`\n\n")
+              summary.write("Workflow revision: `" + os.environ["GITHUB_SHA"] + "`\n")
+          PYTHON
 
   build_wheels:
     name: Build pure-Python wheel and sdist
@@ -35,6 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
         with:
+          ref: ${{ needs.validate_release.outputs.source_commit }}
           fetch-depth: 0  # Need full history for setuptools_scm version detection
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -45,18 +86,21 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Build wheel and sdist
-        run: |
-          python -m pip install build
-          python -m build
-
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+        with:
+          version: '0.12.1'
+          enable-cache: false
+
+      # The offline source-archive test must consume the build dependencies
+      # populated by this same tool. No cache restore is required for correctness.
+      - name: Build wheel and sdist
+        run: uv build
 
       - name: Test installed Gateway and Node-free source archive
         run: python scripts/check_gateway_distributions.py dist
 
       - name: Validate wheel release version
-        run: python scripts/check_release.py --tag "${{ github.ref_name }}" --wheel "dist/*.whl"
+        run: python scripts/check_release.py --tag "$TARGET_TAG" --wheel "dist/*.whl"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
@@ -65,7 +109,7 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: build_wheels
+    needs: [validate_release, build_wheels]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -73,6 +117,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+        with:
+          ref: ${{ needs.validate_release.outputs.source_commit }}
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
@@ -80,7 +126,7 @@ jobs:
           merge-multiple: true
 
       - name: Validate publish artifacts
-        run: python scripts/check_release.py --tag "${{ github.ref_name }}" --wheel "dist/*.whl"
+        run: python scripts/check_release.py --tag "$TARGET_TAG" --wheel "dist/*.whl"
 
       - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
         with:
