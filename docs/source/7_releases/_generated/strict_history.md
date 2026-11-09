@@ -7,6 +7,7 @@
 
 | 版本 | 日期 | 标题 |
 | --- | --- | --- |
+| `v0.1.2` | `2026-11-09` | UnifiedQuantum0.1.2: packaged Gateway and verified native local quantum lab |
 | `v0.1.1` | `2026-09-19` | Release v0.1.1 |
 | `v0.1.0` | `2026-08-24` | Release v0.1.0 |
 | `v0.0.17.post1` | `2026-08-16` | ci: allow post-release tags in release validation |
@@ -34,15 +35,40 @@
 ## 开发中变更
 
 - 说明：这一节展示自最新 tag 之后、当前 `HEAD` 上尚未形成新版本的变更。
-- 对比区间：`v0.1.1..HEAD`
-- 提交数：5
-- 变更文件数：65
+- 对比区间：`v0.1.2..HEAD`
+- 提交数：1
+- 变更文件数：5
+
+### 提交类型统计
+
+| 类型 | 数量 |
+| --- | ---: |
+| `ci` | 1 |
+
+### 变更区域
+
+- `.github`: 4 个文件
+- `uniqc/test`: 1 个文件
+
+### 提交列表
+
+- `d07ff47` ci: recover immutable releases with a cold-cache uv build (#133)
+
+## v0.1.2
+
+- 发布日期：`2026-11-09`
+- 发布标题：UnifiedQuantum0.1.2: packaged Gateway and verified native local quantum lab
+- 补充说明：Co-authored-by: agony <chenzhaoyun@iai.ustc.edu.cn>
+- 对比区间：`v0.1.1..v0.1.2`
+- 提交数：6
+- 变更文件数：165
 
 ### 提交类型统计
 
 | 类型 | 数量 |
 | --- | ---: |
 | `docs` | 1 |
+| `feat` | 1 |
 | `fix` | 1 |
 | `merge` | 1 |
 | `other` | 1 |
@@ -50,12 +76,27 @@
 
 ### 变更区域
 
-- `docs`: 55 个文件
+- `docs`: 69 个文件
+- `example-exec-logs`: 59 个文件
 - `site`: 5 个文件
+- `.github`: 4 个文件
+- `scripts`: 4 个文件
+- `uniqc/gateway`: 4 个文件
+- `frontend`: 3 个文件
 - `design`: 2 个文件
+- `examples`: 2 个文件
+- `uniqc/cli`: 2 个文件
+- `.gitignore`: 1 个文件
+- `CHANGELOG.md`: 1 个文件
 - `CONTRIBUTING.md`: 1 个文件
-- `scripts`: 1 个文件
+- `MANIFEST.in`: 1 个文件
+- `README.md`: 1 个文件
+- `README_en.md`: 1 个文件
+- `_build_backend.py`: 1 个文件
+- `engineering-business-freeze.json`: 1 个文件
+- `pyproject.toml`: 1 个文件
 - `uniqc/simulator`: 1 个文件
+- `uniqc/test`: 1 个文件
 
 ### 提交列表
 
@@ -64,6 +105,7 @@
 - `f40aa53` Merge pull request #130 from IAI-USTC-Quantum/fix/qutip-kraus2q-dims
 - `2ff94bb` docs: cross-link narrative pages and pin role targets to canonical paths
 - `a8a936d` site: redesign landing page for readability and correct examples
+- `8d028bf` feat(product): ship Gateway assets and native local quantum lab (#132)
 
 ## v0.1.1
 

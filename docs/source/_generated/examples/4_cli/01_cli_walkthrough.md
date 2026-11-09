@@ -50,33 +50,39 @@
 │ --help                          Show this message and exit.                  │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
-│ circuit    Circuit format conversion (OriginIR <-> QASM)                     │
-│            CLI Docs  |  GitHub                                               │
-│ draw       Draw a circuit (text/svg/png/latex/html/interactive)              │
-│ simulate   Local circuit simulation                                          │
-│            CLI Docs  |  GitHub                                               │
-│ submit     Submit circuits to quantum cloud platforms                        │
-│            CLI Docs  |  GitHub                                               │
-│ result     Query task results from quantum cloud platforms                   │
-│            CLI Docs  |  GitHub                                               │
-│ doctor     Run diagnostics to verify your uniqc installation                 │
-│            CLI Docs  |  GitHub                                               │
-│ demo       Run a standard circuit with the installed native simulator.       │
-│ config     Manage API key and configuration                                  │
-│            CLI Docs  |  GitHub                                               │
-│ sync       Sync ~/.uniqc/config.yaml with an Infisical secrets project       │
-│            ('upload' is an independent confsync-based alternative)           │
-│            CLI Docs  |  GitHub                                               │
-│ task       Manage submitted tasks                                            │
-│            CLI Docs  |  GitHub                                               │
-│ backend    List, update, and inspect quantum cloud backends                  │
-│            CLI Docs  |  GitHub                                               │
-│ calibrate  Run chip calibration experiments — XEB benchmarking               │
-│            (1q/2q/parallel), readout error calibration, and parallel         │
-│            execution pattern analysis. Results are cached to                 │
-│            ~/.uniqc/calibration_cache/ with TTL freshness enforcement.       │
-│            CLI Docs  |  GitHub                                               │
-│ gateway    Manage the uniqc gateway web UI server.                           │
+│ circuit      Circuit format conversion (OriginIR <-> QASM)                   │
+│              CLI Docs  |  GitHub                                             │
+│ draw         Draw a circuit (text/svg/png/latex/html/interactive)            │
+│ simulate     Local circuit simulation                                        │
+│              CLI Docs  |  GitHub                                             │
+│ submit       Submit circuits to quantum cloud platforms                      │
+│              CLI Docs  |  GitHub                                             │
+│ result       Query task results from quantum cloud platforms                 │
+│              CLI Docs  |  GitHub                                             │
+│ doctor       Run diagnostics to verify your uniqc installation               │
+│              CLI Docs  |  GitHub                                             │
+│ demo         Run a standard circuit with the installed native simulator.     │
+│ config       Manage API key and configuration                                │
+│              CLI Docs  |  GitHub                                             │
+│ sync         Sync ~/.uniqc/config.yaml with an Infisical secrets project     │
+│              ('upload' is an independent confsync-based alternative)         │
+│              CLI Docs  |  GitHub                                             │
+│ task         Manage submitted tasks                                          │
+│              CLI Docs  |  GitHub                                             │
+│ backend      List, update, and inspect quantum cloud backends                │
+│              CLI Docs  |  GitHub                                             │
+│ calibrate    Run chip calibration experiments — XEB benchmarking             │
+│              (1q/2q/parallel), readout error calibration, and parallel       │
+│              execution pattern analysis. Results are cached to               │
+│              ~/.uniqc/calibration_cache/ with TTL freshness enforcement.     │
+│              CLI Docs  |  GitHub                                             │
+│ benchmark    Reproducible local benchmark entries (Quantum Volume,           │
+│              compile/execute throughput).                                    │
+│ experiments  List experiment coverage: unified interfaces, local             │
+│              verification, frozen re-test commands, record sources.          │
+│ noise        Import versioned noise-model exchange files and run local       │
+│              noisy-VM cases (no cloud tasks).                                │
+│ gateway      Manage the uniqc gateway web UI server.                         │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
 
@@ -89,7 +95,16 @@
 │ dummy      │ dummy:local:virtual-line-3   │        3 │ available    │ sim    │
 │ dummy      │ dummy:local:virtual-grid-2x2 │        4 │ available    │ sim    │
 │ dummy      │ dummy:local:mps-linear-3     │        3 │ available    │ sim    │
+│ dummy      │ virtual:release-check-r2     │        4 │ available    │ sim    │
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
+
+Cache:
+    originq: 7 backends, updated 43d ago (stale)
+    quafu: 16 backends, updated 194d ago (stale)
+    ibm: 3 backends, updated 157d ago (stale)
+    quark: 5 backends, updated 51d ago (stale)
+    tianyan: 15 backends, updated 43d ago (stale)
+    logicalqubit: 5 backends, updated 43d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       

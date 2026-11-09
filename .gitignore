@@ -197,3 +197,6 @@ uniqc/_version.py
 # release's plan/report lives on disk at tag time)
 RELEASE_REPORT*.md
 RELEASE_EXECUTION_PLAN*.md
+
+# 本地并行开发交接资料
+/.agent-task/

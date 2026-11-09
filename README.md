@@ -22,6 +22,12 @@ UnifiedQuantum 是一个轻量级 Python 框架，为量子线路构建、模拟
 - **读出误差校准 + M3 缓解**：混淆矩阵标定与线性求逆修正
 - **本地含噪模拟**：通过 `dummy:<platform>:<backend>` 复用真实芯片的拓扑和校准数据，先 compile/transpile，再在本地重现硬件噪声特性
 - **DSatur 并行调度**：自动将 2q 门分配到最小并行轮次
+- **可复现基准入口**：`uniqc benchmark qv` 量子体积（Cross et al. 2019 判据）与
+  `uniqc benchmark throughput` 本地编译/执行吞吐（明确计时边界，JSON 证据报告）
+- **版本化噪声模型交换**：`uniqc noise import/qram` 离线导入 `nlearn.noise-model.v1`
+  交换文件，在含噪 VM 上运行 3 层 QRAM / QPU 寻址案例并做统一读出缓解
+- **实验覆盖清单**：`uniqc experiments` 只读审计既有层析/标定/缓解实验的统一接口、
+  本地验证命令、冻结真机复测命令与历史记录来源
 
 所有校准结果写入 `~/.uniqc/calibration_cache/`，QEM 模块读取并强制 TTL 新鲜度策略。
 
@@ -244,6 +250,17 @@ uniqc config set logicalqubit.api_key YOUR_API_KEY
 # 校准与 QEM 数据准备
 uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
 uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10
+
+# 可复现基准（本地执行，不提交云任务）
+uniqc benchmark qv --width 4 --trials 20 --shots 1000
+uniqc benchmark throughput --circuits 500 --qubits 8 --depth 6
+
+# 版本化噪声模型交换与含噪 VM QRAM 案例
+uniqc noise import model.json
+uniqc noise qram model.json --case qpu --shots 1000
+
+# 实验覆盖清单（统一接口/本地验证/冻结真机复测命令）
+uniqc experiments list
 ```
 
 ### 后端信息查询

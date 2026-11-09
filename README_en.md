@@ -22,6 +22,9 @@ Beyond circuit execution, UnifiedQuantum ships a complete **chip calibration and
 - **Readout calibration + M3 mitigation**: confusion matrix characterisation and linear-inversion correction
 - **Local noisy simulation**: `dummy:<platform>:<backend>` reuses real-chip topology and calibration data, compiles/transpiles first, then injects realistic hardware noise locally
 - **DSatur parallel scheduling**: automatically partitions 2q gates into minimum parallel rounds
+- **Reproducible benchmark entries**: `uniqc benchmark qv` (Quantum Volume, Cross et al. 2019 criterion) and `uniqc benchmark throughput` (local compile/execute throughput with an explicit timing boundary and JSON evidence reports)
+- **Versioned noise-model exchange**: `uniqc noise import/qram` loads `nlearn.noise-model.v1` exchange files offline and runs 3-layer QRAM / QPU-addressing cases on the noisy VM with unified readout mitigation
+- **Experiment coverage manifest**: `uniqc experiments` audits existing tomography/calibration/mitigation flows — unified interfaces, local verification commands, frozen real-machine re-test commands, and historical record sources
 
 All calibration results are written to `~/.uniqc/calibration_cache/`; the QEM layer reads them back and enforces TTL freshness.
 
@@ -225,6 +228,17 @@ uniqc config set logicalqubit.api_key YOUR_API_KEY
 # Calibration and QEM data preparation
 uniqc calibrate readout --backend dummy --qubits 0 1 --shots 1000
 uniqc calibrate xeb --backend dummy --type 1q --qubits 0 1 --depths 5 10
+
+# Reproducible benchmarks (local execution, no cloud tasks)
+uniqc benchmark qv --width 4 --trials 20 --shots 1000
+uniqc benchmark throughput --circuits 500 --qubits 8 --depth 6
+
+# Versioned noise-model exchange and noisy-VM QRAM cases
+uniqc noise import model.json
+uniqc noise qram model.json --case qpu --shots 1000
+
+# Experiment coverage manifest (interfaces / local verify / frozen re-test commands)
+uniqc experiments list
 ```
 
 ### Backend Information

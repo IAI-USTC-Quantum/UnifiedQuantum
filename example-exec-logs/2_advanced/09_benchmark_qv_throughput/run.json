@@ -1,0 +1,19 @@
+{
+  "example": "examples/2_advanced/09_benchmark_qv_throughput.py",
+  "source_sha256": "c6652cdfa28a5820983ed45bfa06c6f6ef21db63af8529105ed24c1b815fd243",
+  "chapter": "2_advanced",
+  "name": "09_benchmark_qv_throughput",
+  "title": "量子体积与本地编译/执行吞吐基准",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [],
+  "ignored_warning_patterns": [],
+  "stdout": "== Quantum Volume (width=4, trials=5, shots=500, seed=7) ==\nmean heavy-output probability : 0.8296 +/- 0.0075\ntrials passed                 : 5/5\ncriterion mean_h - 2*sigma > 2/3 : PASS\nQuantum Volume                : 16\n\n== Local compile/execute throughput (100 circuits x 8q depth 6, 1000 shots) ==\ncompile   : 0.323s (1,113,327 circuits/h)\nexecute   : 0.046s (7,865,866 circuits/h)\ntotal     : 0.369s -> 975,286 circuits/h\n>= 30,000 circuits/hour        : PASS\ntiming boundary               : circuits/hour >= 30000 at the configured shots-per-circuit; boundary = OriginIR parse/preprocess + statevector simulate + shot sampling\ncpu backend                   : uniqc_cpp.StatevectorSimulator (via uniqc.Simulator)\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.782
+}

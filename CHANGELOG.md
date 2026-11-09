@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Reproducible NISQ benchmark entries (`uniqc.benchmark`, CLI `uniqc benchmark`):
+  seeded Quantum Volume model circuits with the Cross et al. (2019) heavy-output
+  criterion (per-trial `h-2σ>2/3`, run `mean_h-2σ_mean>2/3`, QV=2^width on
+  success; SU(4) blocks via the exact CNOT-optimal Weyl decomposition), and a
+  local compile/execute throughput benchmark with an explicit timing boundary
+  (OriginIR parse/preprocess + statevector simulation + shot sampling; process
+  startup, task-store persistence and report I/O excluded) and JSON evidence
+  reports recording input seeds, environment, CPU backend, dependency source
+  and system load. Topology-constrained dummy backends restrict entangling
+  layers to resolved topology edges.
+- Versioned noise-model exchange consumer (`uniqc.noise_bridge`, CLI
+  `uniqc noise`): imports `nlearn.noise-model.v1` files (schema + canonical
+  SHA256 validation, `uniqc.noisy_simulator.v1` binding) into the frozen noisy
+  simulation stack without importing the private producer package — density
+  operator `NoisySimulator`, unified `DummyAdapter`, seeded shot sampling with
+  post-measurement edge flips, and a synthetic WK_C180-scale model generator
+  (`data_class: synthetic`) for local verification.
+- Noisy-VM functional cases for the 3-layer (8-entry) QRAM: basis-address
+  lookup and QPU superposition addressing built from native RPhi/CZ gates,
+  with readout mitigation through the frozen unified `ReadoutEM` interface
+  calibrated on the same noisy VM (CLI `uniqc noise qram`, gateway
+  `/api/benchmarks/noise-qram`).
+- Experiment coverage manifest (`uniqc.experiments`, CLI `uniqc experiments`):
+  read-only audit of the existing tomography/calibration/mitigation flows —
+  unified-interface entries, offline local verification commands, frozen
+  real-machine re-test commands (not executed this round), historical record
+  sources, and the separately registered ZNE unimplemented placeholders; the
+  134-file business freeze stays guarded by `scripts/check_engineering_freeze.py`.
+- Gateway "Benchmarks" page: visible inputs and real local results for QV,
+  throughput and the noisy-VM QRAM cases, each exportable as JSON; new
+  `/api/benchmarks/*` endpoints run bounded local computation and never submit
+  cloud tasks.
+
+### Changed
+
+- The engineering change adds new packages only (`uniqc.benchmark`,
+  `uniqc.noise_bridge`, `uniqc.experiments`, CLI groups, gateway route,
+  frontend page); all 134 frozen business sources remain byte-identical.
+
 ## [0.1.2] - 2026-11-09
 
 ### Added
