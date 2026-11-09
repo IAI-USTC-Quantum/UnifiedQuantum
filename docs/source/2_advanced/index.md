@@ -1,7 +1,8 @@
 # 进阶教程
 
-进阶部分覆盖编译内部机制、区域选择、变分量子算法、含噪 dummy 系统、calibration、
-error mitigation、MPS 模拟器、动态电路（mid-circuit measurement 与经典控制流）。
+进阶部分覆盖编译内部机制、区域选择、变分量子算法、含噪 dummy 系统、版本化噪声模型交换、
+calibration、error mitigation、MPS 模拟器、动态电路（mid-circuit measurement 与经典控制流）、
+以及量子体积/编译执行吞吐基准入口。
 
 算法实现示例已独立为单独章节，见 [算法实现示例](../8_algorithms_examples/index.md)。
 
@@ -38,8 +39,10 @@ circuit_analysis
 
 mps_simulator
 noise_simulation
+noise_model_exchange
 virtual_backends
 dynamic_circuits
+benchmarks
 ```
 
 ## 算法、标定与测试

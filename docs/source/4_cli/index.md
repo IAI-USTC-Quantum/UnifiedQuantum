@@ -48,6 +48,7 @@ backend
 :maxdepth: 1
 
 calibrate
+benchmark
 gateway
 ```
 

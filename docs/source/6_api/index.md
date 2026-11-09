@@ -35,6 +35,7 @@
 | 任务提交（`submit_task` 等） | [提交任务到量子云平台](../1_basic_usage/submit_task.md) · [任务管理器](../1_basic_usage/task_manager.md) |
 | 后端 / 适配器（`BackendInfo` / `RegionSelector`） | [云平台适配器架构](../2_advanced/adapter_architecture.md) · [平台约定](../1_basic_usage/platform_conventions.md) |
 | 校准 / QEM（`M3Mitigator` / `ReadoutEM`） | [芯片校准与量子错误缓解](../2_advanced/calibration.md) |
+| 基准（`uniqc.benchmark`）/ 噪声交换（`uniqc.noise_bridge`）/ 实验清单（`uniqc.experiments`） | [基准测试](../2_advanced/benchmarks.md) · [版本化噪声模型交换](../2_advanced/noise_model_exchange.md) · [CLI：benchmark/noise/experiments](../4_cli/benchmark.md) |
 | PyTorch | [PyTorch 集成](../1_basic_usage/pytorch.md) |
 | CLI | [命令行工具](../4_cli/index.md) |
 

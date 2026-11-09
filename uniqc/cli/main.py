@@ -77,8 +77,11 @@ def main(
 from uniqc import gateway
 
 from . import backend, calibrate, circuit, doctor, result, simulate, submit, sync, task
+from . import benchmark as benchmark_cmd
 from . import config_cmd as config
 from . import draw as draw_cmd
+from . import experiments as experiments_cmd
+from . import noise as noise_cmd
 from .demo import demo
 
 # Register single-action entrypoints as direct commands instead of sub-groups.
@@ -96,4 +99,7 @@ app.add_typer(sync.app, name="sync")
 app.add_typer(task.app, name="task")
 app.add_typer(backend.app, name="backend")
 app.add_typer(calibrate.app, name="calibrate")
+app.add_typer(benchmark_cmd.app, name="benchmark")
+app.add_typer(experiments_cmd.app, name="experiments")
+app.add_typer(noise_cmd.app, name="noise")
 app.add_typer(gateway.app, name="gateway")

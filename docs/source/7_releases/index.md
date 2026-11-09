@@ -4,7 +4,8 @@
 
 ## 先看什么
 
-当前候选版先看 ``v0.1.2``（随包界面与本地量子实验）；
+当前候选版先看 ``v0.1.3``（NISQ 基准入口与版本化噪声模型交换）；
+上一版 ``v0.1.2`` 提供随包界面与本地量子实验；
 已有可视化改动继续参见 ``v0.1.1``（**电路可视化引擎**：自研渲染内核
 + 7 种输出模式 + ``uniqc draw`` CLI；``visualization.draw/draw_html`` 弃用）；
 如果你是从 ``0.0.x`` 直接升级，**先看 ``v0.1.0`` 的迁移部分**——逐项迁移对照见
@@ -58,6 +59,60 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 只有所有 ``examples/<chapter>/*.py`` 都 pass（或合理地 skip）才能发布。
 
 ## 版本解读
+
+### `v0.1.3`（NISQ 基准入口与版本化噪声模型交换）
+
+本版是**纯增量功能版本**：新增可复现基准入口、版本化噪声模型交换消费端、
+含噪 VM 的 QRAM/QPU 寻址案例、实验覆盖清单，以及 Gateway 的 "Benchmarks"
+图形入口。既有平台提交、位序、实验、模拟、编译与缓解逻辑不变；134 个既有
+业务源码文件保持逐字节一致（`scripts/check_engineering_freeze.py` 校验）。
+
+本版主要变更：
+
+- **`uniqc benchmark qv|throughput`**：量子体积（Cross et al. 2019 判据：
+  单 trial `h-2σ>2/3`、整体 `mean_h-2σ_mean>2/3`、通过记 QV=2^width；
+  SU(4) 经 CNOT 最优 Weyl 分解）与本地编译/执行吞吐基准（明确计时边界：
+  OriginIR 解析/预处理 + 态矢量仿真 + shot 采样；JSON 证据报告记录输入种子、
+  环境、CPU 后端、依赖来源与测量时负载）。拓扑约束 dummy 后端自动把纠缠层
+  限制在解析拓扑边内。
+- **`uniqc noise import|qram`**：消费 `nlearn.noise-model.v1` 交换文件
+  （schema + 规范 SHA256 校验、`uniqc.noisy_simulator.v1` 绑定），以纯数据方式
+  接入冻结的含噪模拟栈（密度矩阵 `NoisySimulator`、统一 `DummyAdapter`、
+  种子化 shot 采样与测后边缘翻转）。含合成 WK_C180 量级模型生成器
+  （`data_class: synthetic`，明确非硬件数据）。
+- **含噪 VM 的 3 层 QRAM / QPU 寻址 / 缓解**：基址查找与量子叠加寻址案例，
+  读出缓解经冻结的统一 `ReadoutEM` 接口、校准跑在同一含噪 adapter 上。
+- **`uniqc experiments list|show`**：只读实验覆盖清单（统一接口、离线本地验证
+  命令、冻结真机复测命令、历史记录来源；ZNE 历史未实现占位单独登记）。
+- **Gateway "Benchmarks" 页**：QV、吞吐、含噪 QRAM 案例的可见输入与真实本地
+  结果，每个结果可导出 JSON；新 `/api/benchmarks/*` 端点只做本地计算。
+
+本版本地验证数值（2026-11-09，测量时系统负载 1 分钟均值约 128，机器与其他
+并行任务共享）：
+
+- QV width=4（20 trials × 1000 shots，seed 0）：PASS，`mean_h=0.8379±0.0026`，QV=16；
+- QV width=5（同上配置）：PASS，`mean_h=0.8488±0.0025`，QV=32；
+- 吞吐 500×(8q, depth 6) × 1000 shots：**531,587 线路/小时**（门槛 30,000 的 17.7 倍）；
+- 吞吐 300×(12q, depth 10, `virtual-line-12`) × 1000 shots：**144,976 线路/小时**；
+- 3 层 QRAM 基址查找（合成模型，500 shots，address=5）：原始准确率 0.932，
+  读出缓解后 0.958；QPU 叠加寻址保真度 0.9993 → 缓解后 0.9995。
+
+已知缺口（不阻塞发布，维护者已确认接受）：
+
+- 上述基准与 QRAM 数值均为**本地模拟**证据；真机 QV/吞吐/QRAM 证据需要另行
+  授权的云端实验，本版未提交任何云任务、未消耗 shots；
+- 真实历史噪声数据导入接口就绪并通过合成模型与 noise-learning 冒烟交换文件
+  验证，`hardware_archive` 正式交换文件待 noise-learning owner 交付
+  （请求已登记在本仓 `.agent-task/interfaces.md`，不入公开仓库）；
+- CppSimulator 无需变更（仅使用已发布 `uniqc-cppsimulator 1.0.1` API）；
+- OracQ 宽寄存器 OriginIR 导出边界已按显式拒绝语义登记，协商未启动。
+
+**发布验证结果**：默认测试套件 `pytest uniqc/test -m 'not cloud'`：2581 通过、
+200 跳过、20 项云执行用例按标记排除；ruff 全仓通过；前端
+`npm run build` 通过；两个新示例脚本实际执行通过；全量文档构建见下方
+"发布验证报告"说明。218 个跳过为既有云执行/凭据规则，4 个为既有 ZNE 未实现
+占位，与本轮新增功能无关。
+
 
 ### `v0.1.2`（随包界面与本地量子实验）
 

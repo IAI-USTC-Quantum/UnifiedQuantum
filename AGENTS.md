@@ -111,6 +111,22 @@ Core philosophy: *build a circuit any way → export OriginIR / OpenQASM 2.0 →
 - **`uniqc/torch_adapter/`** (QuantumLayer, parameter-shift gradients, batch
   execution) and **`uniqc/algorithms/`** (HEA/UCCSD/QAOA ansätze, standard
   circuits, measurement, state prep, training) sit on top of the core.
+- **`uniqc/benchmark/`** — reproducible NISQ benchmark entries: seeded Quantum
+  Volume model circuits (Cross et al. 2019 heavy-output criterion, SU(4) via
+  CNOT-optimal Weyl decomposition) and the local compile/execute throughput
+  benchmark (timing boundary: OriginIR parse/preprocess + statevector
+  simulation + shot sampling). CLI: `uniqc benchmark qv|throughput`.
+- **`uniqc/noise_bridge/`** — consumer side of the versioned noise-model
+  exchange (`nlearn.noise-model.v1`): canonical-SHA256-validated import into
+  the frozen noisy simulation stack, per-gate-instance Pauli channels,
+  readout error, post-measurement edge flips, a synthetic WK-C180-scale model
+  generator for local verification, and the 3-layer QRAM / QPU-addressing /
+  readout-EM cases. Data-only exchange — never imports the private `nlearn`
+  package. CLI: `uniqc noise import|qram`.
+- **`uniqc/experiments/`** — read-only experiment coverage manifest (unified
+  interfaces, offline local verification commands, frozen real-machine
+  re-test commands, historical record sources; ZNE placeholders registered
+  separately). CLI: `uniqc experiments list|show`.
 
 ## Conventions specific to this repo
 
