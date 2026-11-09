@@ -1,6 +1,7 @@
 [build-system]
 requires = ["setuptools", "setuptools_scm", "wheel"]
-build-backend = "setuptools.build_meta"
+build-backend = "_build_backend"
+backend-path = ["."]
 
 [project]
 name = "unified-quantum"
@@ -85,6 +86,12 @@ all = [
 
 [tool.setuptools]
 zip-safe = false
+
+[tool.setuptools.package-data]
+"uniqc.gateway" = ["static/*", "static/**/*"]
+
+[tool.setuptools.exclude-package-data]
+"uniqc" = ["test/*", "test/**/*"]
 
 [tool.setuptools.packages.find]
 where = ["."]

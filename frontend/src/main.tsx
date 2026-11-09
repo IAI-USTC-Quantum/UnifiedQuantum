@@ -7,6 +7,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { BackendsPage } from "./pages/BackendsPage";
 import { TasksPage } from "./pages/TasksPage";
 import { ArchivePage } from "./pages/ArchivePage";
+import { LocalDemo } from "./pages/LocalDemo";
 
 const router = createBrowserRouter([
   {
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Dashboard /> },
+      { path: "demo", element: <LocalDemo /> },
       { path: "backends", element: <BackendsPage /> },
       { path: "tasks", element: <TasksPage /> },
       { path: "archive", element: <ArchivePage /> },

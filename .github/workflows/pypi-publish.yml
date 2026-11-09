@@ -41,10 +41,19 @@ jobs:
         with:
           python-version: '3.12'
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '24'
+
       - name: Build wheel and sdist
         run: |
           python -m pip install build
           python -m build
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+
+      - name: Test installed Gateway and Node-free source archive
+        run: python scripts/check_gateway_distributions.py dist
 
       - name: Validate wheel release version
         run: python scripts/check_release.py --tag "${{ github.ref_name }}" --wheel "dist/*.whl"

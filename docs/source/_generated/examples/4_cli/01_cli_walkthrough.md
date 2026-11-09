@@ -61,6 +61,7 @@
 │            CLI Docs  |  GitHub                                               │
 │ doctor     Run diagnostics to verify your uniqc installation                 │
 │            CLI Docs  |  GitHub                                               │
+│ demo       Run a standard circuit with the installed native simulator.       │
 │ config     Manage API key and configuration                                  │
 │            CLI Docs  |  GitHub                                               │
 │ sync       Sync ~/.uniqc/config.yaml with an Infisical secrets project       │
@@ -88,16 +89,7 @@
 │ dummy      │ dummy:local:virtual-line-3   │        3 │ available    │ sim    │
 │ dummy      │ dummy:local:virtual-grid-2x2 │        4 │ available    │ sim    │
 │ dummy      │ dummy:local:mps-linear-3     │        3 │ available    │ sim    │
-│ dummy      │ virtual:release-check-r2     │        4 │ available    │ sim    │
 ╰────────────┴──────────────────────────────┴──────────┴──────────────┴────────╯
-
-Cache:
-    originq: 7 backends, updated 35d ago (stale)
-    quafu: 16 backends, updated 143d ago (stale)
-    ibm: 3 backends, updated 106d ago (stale)
-    quark: 5 backends, updated 27d ago (stale)
-    tianyan: 15 backends, updated 27d ago (stale)
-    logicalqubit: 5 backends, updated 27d ago (stale)
 
 == uniqc simulate bell.originir --shots 256 ==
       Simulation Results       

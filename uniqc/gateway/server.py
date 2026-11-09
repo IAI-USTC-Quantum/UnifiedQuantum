@@ -95,7 +95,10 @@ def create_app() -> FastAPI:
 
 
 def _frontend_dist_dir() -> Path:
-    """Return the built frontend distribution directory."""
+    """Prefer the verified UI shipped in the Python distribution."""
+    packaged = Path(__file__).resolve().parent / "static"
+    if (packaged / "index.html").is_file():
+        return packaged
     return Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 
@@ -122,7 +125,7 @@ def _looks_like_static_asset(path: str) -> bool:
 
 
 def _mount_frontend(app: FastAPI) -> None:
-    """Mount the built React SPA from frontend/dist/ if it exists."""
+    """Mount the packaged React SPA, retaining the source development fallback."""
     frontend_dist = _frontend_dist_dir()
 
     if not frontend_dist.exists():

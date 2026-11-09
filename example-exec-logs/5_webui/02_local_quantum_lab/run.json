@@ -1,0 +1,21 @@
+{
+  "example": "examples/5_webui/02_local_quantum_lab.py",
+  "source_sha256": "ac0724e2e357633f165148dfdea05e1fbca88cf1b89aadab68d6ba5fd262cead",
+  "chapter": "5_webui",
+  "name": "02_local_quantum_lab",
+  "title": "02 — Independent local quantum lab",
+  "verdict": "pass",
+  "skip_reason": null,
+  "require": [
+    "cpp"
+  ],
+  "ignored_warning_patterns": [],
+  "stdout": "ghz probability sum: 1.0000000000\nanalytic error < 1e-10: True\nw probability sum: 1.0000000000\nanalytic error < 1e-10: True\nramsey probability sum: 1.0000000000\nanalytic error < 1e-10: True\n",
+  "stderr": "",
+  "warnings": [],
+  "figure_files": [],
+  "offending_lines": [],
+  "ignored_lines": [],
+  "exception": null,
+  "duration_seconds": 0.242
+}

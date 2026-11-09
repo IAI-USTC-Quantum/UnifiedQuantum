@@ -24,6 +24,7 @@ workflow
 :maxdepth: 1
 
 simulate
+demo
 submit
 result
 circuit

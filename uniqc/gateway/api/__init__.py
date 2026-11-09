@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter
 
-from uniqc.gateway.api import archive, backends, circuits, tasks
+from uniqc.gateway.api import archive, backends, circuits, demo, tasks
 
 router = APIRouter()
+router.include_router(demo.router, prefix="/demo", tags=["local-demo"])
 router.include_router(backends.router, prefix="/backends", tags=["backends"])
 router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 router.include_router(archive._archive_router, tags=["archive"])

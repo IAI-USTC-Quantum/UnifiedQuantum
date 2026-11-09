@@ -1,0 +1,8 @@
+include _build_backend.py
+include engineering-business-freeze.json
+include scripts/check_installed_gateway.py scripts/check_engineering_freeze.py
+include scripts/check_gateway_distributions.py
+include frontend/package.json frontend/package-lock.json frontend/index.html
+include frontend/vite.config.ts frontend/tsconfig*.json
+recursive-include frontend/src *
+recursive-include uniqc/gateway/static *

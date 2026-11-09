@@ -8,8 +8,8 @@
 拿到 ASGI app、读出网关配置（host/port）以及触发一次任务，让后台任务库里有数据
 可看。
 
-实际开发中请用 ``uniqc gateway start --host 127.0.0.1 --port 8000`` 启动；前端在
-``frontend/`` 下，``cd frontend && npm install && npm run dev``。
+安装发行包后直接用 ``uniqc gateway start --host 127.0.0.1 --port 8000`` 启动，
+界面随包提供。前端源码开发使用 ``cd frontend && npm ci && npm run dev``。
 
 **Source code**
 
@@ -21,7 +21,7 @@
 
 ```text
 == Gateway ASGI app ==
-FastAPI with 8 routes
+FastAPI with 9 routes
 
 == Configured host/port ==
 host: 127.0.0.1
