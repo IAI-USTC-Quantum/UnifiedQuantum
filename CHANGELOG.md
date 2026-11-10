@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-10
+
+### Fixed
+
+- Remove environment-specific fixture defaults and font-discovery caches from
+  portable source distributions. External noise exchange fixtures are selected
+  explicitly with `UNIQC_NOISE_EXCHANGE_FIXTURE`.
+- Describe noise-exchange and hardware-example boundaries without local workflow
+  assumptions. Public APIs, device adapters, circuits and mitigation behavior are
+  unchanged.
+
 ## [0.1.3] - 2026-11-09
 
 ### Added
@@ -24,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Versioned noise-model exchange consumer (`uniqc.noise_bridge`, CLI
   `uniqc noise`): imports `nlearn.noise-model.v1` files (schema + canonical
   SHA256 validation, `uniqc.noisy_simulator.v1` binding) into the frozen noisy
-  simulation stack without importing the private producer package — density
+  simulation stack without requiring the producer package — density
   operator `NoisySimulator`, unified `DummyAdapter`, seeded shot sampling with
   post-measurement edge flips, and a synthetic WK_C180-scale model generator
   (`data_class: synthetic`) for local verification.

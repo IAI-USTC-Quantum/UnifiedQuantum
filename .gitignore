@@ -200,3 +200,6 @@ RELEASE_EXECUTION_PLAN*.md
 
 # 本地并行开发交接资料
 /.agent-task/
+
+# Local font-discovery cache is never a portable example asset.
+/example-exec-logs/.matplotlib/

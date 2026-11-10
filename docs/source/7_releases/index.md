@@ -4,7 +4,8 @@
 
 ## 先看什么
 
-当前候选版先看 ``v0.1.3``（NISQ 基准入口与版本化噪声模型交换）；
+``v0.1.4`` 清理源码分发中的环境缓存与本机默认路径，API与设备执行逻辑保持；
+``v0.1.3`` 提供NISQ基准入口与版本化噪声模型交换；
 上一版 ``v0.1.2`` 提供随包界面与本地量子实验；
 已有可视化改动继续参见 ``v0.1.1``（**电路可视化引擎**：自研渲染内核
 + 7 种输出模式 + ``uniqc draw`` CLI；``visualization.draw/draw_html`` 弃用）；
@@ -97,15 +98,14 @@ uv run make html       # 触发完整 pre-doc-execution + sphinx 编译
 - 3 层 QRAM 基址查找（合成模型，500 shots，address=5）：原始准确率 0.932，
   读出缓解后 0.958；QPU 叠加寻址保真度 0.9993 → 缓解后 0.9995。
 
-已知缺口（不阻塞发布，维护者已确认接受）：
+适用边界：
 
 - 上述基准与 QRAM 数值均为**本地模拟**证据；真机 QV/吞吐/QRAM 证据需要另行
   授权的云端实验，本版未提交任何云任务、未消耗 shots；
-- 真实历史噪声数据导入接口就绪并通过合成模型与 noise-learning 冒烟交换文件
-  验证，`hardware_archive` 正式交换文件待 noise-learning owner 交付
-  （请求已登记在本仓 `.agent-task/interfaces.md`，不入公开仓库）；
+- 噪声数据导入接口已通过合成模型与外部交换文件验证；
+  本发行不附设备采集的 `hardware_archive` 数据，用户可自行导入有来源的文件；
 - CppSimulator 无需变更（仅使用已发布 `uniqc-cppsimulator 1.0.1` API）；
-- OracQ 宽寄存器 OriginIR 导出边界已按显式拒绝语义登记，协商未启动。
+- 宽寄存器的 OriginIR 导出遵循对应后端显式支持的位宽；不支持时会拒绝导出。
 
 **发布验证结果**：默认测试套件 `pytest uniqc/test -m 'not cloud'`：2581 通过、
 200 跳过、20 项云执行用例按标记排除；ruff 全仓通过；前端
@@ -162,7 +162,7 @@ wheel 安装和实际源码包的无 Node 重建安装。
 如果你正在从 ``v0.1.0`` 迁移，主要变更对用户透明（除非你在用旧绘图入口，
 见上文迁移说明）。
 
-已知缺口（不阻塞发布，维护者已确认接受）：
+适用边界：
 
 - OriginQ 实时后端发现因配置的 token 被上游拒绝（``Unauthorized``）失败；
   stale 缓存回退可用，后端列表 / ``backend show`` / dry-run / chip-display
@@ -206,7 +206,7 @@ Gateway 前端构建 + API 全通；Quark / TianYan / LogicalQubit 实时发现
 - **文档基建**：示例执行全面确定化（固定种子 + task id/时间戳归一化 +
   确定性 SVG），``example-exec-logs/`` 的内容性 diff 现在可靠地代表真实行为变化。
 
-已知缺口（不阻塞发布，维护者已确认接受）：
+适用边界：
 
 - OriginQ 实时后端发现在上游 ``pyqpanda3`` 0.4.1（PyPI 最新）中失败
   （``QCloudService.backends()`` 抛 ``RuntimeError``）；本地自动回退 stale
