@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-10
+
+### Documentation
+
+- Describe the noisy QRAM examples by their reusable capabilities instead of
+  external document numbering. Numerical kernels, cloud adapters and public
+  interfaces are unchanged.
+
 ## [0.1.4] - 2026-11-10
 
 ### Fixed
