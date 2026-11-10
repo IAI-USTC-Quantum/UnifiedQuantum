@@ -1,6 +1,6 @@
 """Noisy-VM functional cases: 3-layer QRAM, QPU addressing, and mitigation.
 
-These cases exercise the paper-2.2/4.1 functional capabilities on top of an
+These cases exercise QRAM lookup, quantum addressing and mitigation using an
 imported noise-model exchange file (:mod:`uniqc.noise_bridge.exchange`) — or
 on the plain noiseless simulator as an ideal reference:
 
