@@ -6,3 +6,6 @@ include frontend/package.json frontend/package-lock.json frontend/index.html
 include frontend/vite.config.ts frontend/tsconfig*.json
 recursive-include frontend/src *
 recursive-include uniqc/gateway/static *
+
+# Exclude environment-specific font paths even after local example rendering.
+prune example-exec-logs/.matplotlib

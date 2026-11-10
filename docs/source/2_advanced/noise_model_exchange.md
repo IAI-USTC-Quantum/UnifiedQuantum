@@ -58,5 +58,5 @@ qpu = run_qpu_addressing_case(model, shots=1000, seed=0)
   WK_C180，但不是硬件测量，不得写成真机证据；
 - 真实历史噪声数据以 `hardware_archive` / `historical_replay` 交换文件交付，
   走同一导入路径，导入动作本身离线、不产生新真机运行；
-- 真机 2–3 层 QRAM 访问验证（缓解后保真度 ≥75%）属于冻结的真机业务，
-  见 `uniqc experiments show xeb` 一类的复测清单条目；本轮不提交真机。
+- 硬件 QRAM 访问实验需用户自行配置后端并运行；本页展示的离线导入与本地仿真
+  不会发起设备任务，也不作为硬件验证结果。
