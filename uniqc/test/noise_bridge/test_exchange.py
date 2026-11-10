@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -16,8 +17,8 @@ from uniqc.noise_bridge import (
     write_synthetic_model,
 )
 
-# A real producer-side smoke file, when the sibling checkout is present.
-NLEARN_SMOKE = Path("/home/agony/projects/quantum-scientific-computing-dev/noise-learning/out/model-smoke/model.json")
+# Optional externally supplied exchange record; no sibling checkout is required.
+NLEARN_SMOKE = Path(os.environ.get("UNIQC_NOISE_EXCHANGE_FIXTURE", "__external_fixture_not_configured__"))
 
 
 @pytest.fixture()
