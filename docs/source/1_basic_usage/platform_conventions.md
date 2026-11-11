@@ -83,8 +83,12 @@ normalizer 改写为统一 cbit 框架（见 2.6）。
 }
 ```
 
-扁平 `{bitstring: shots}` 字典。平台原生结果为 **qiskit 风格大端
-bitstring**，normalizer 改写为统一 cbit 框架（见 2.6）。
+扁平 `{bitstring: shots}` 字典。平台原生结果的 bitstring 为 **clbit
+索引升序（`c[0]` 在最左字符）**——与统一约定互为镜像，normalizer 逐键反
+转改写为统一 cbit 框架（见 2.6；已对 lqcloud 0.4.2 真机 MQ02 双探针验
+证：制备 `|1>` 到 `c[0]` 返回 `"1000"`、到 `c[3]` 返回 `"0001"`）。批量
+任务（`run_circuit_batch`）的 `result` 为逐电路 counts 列表，按提交顺序
+展开。
 
 ### 2.5 统一结果格式
 

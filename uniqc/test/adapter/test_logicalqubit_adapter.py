@@ -75,8 +75,13 @@ def _make_fake_lqcloud(*, explode_on_provider_init: bool = False) -> types.Modul
             return module.STATE["statuses"].get(self.job_id, _FakeJobStatus.RUNNING)
 
         def result(self):
-            counts = module.STATE["counts"].get(self.job_id, {})
-            return types.SimpleNamespace(get_counts=lambda: counts)
+            payload = module.STATE["counts"].get(self.job_id, {})
+            if isinstance(payload, list):
+                # Native batch job: BatchResult-like aggregate with one
+                # child Result per circuit.
+                children = [types.SimpleNamespace(get_counts=lambda c=cnt: c) for cnt in payload]
+                return types.SimpleNamespace(result_format="batch", results=children)
+            return types.SimpleNamespace(get_counts=lambda: payload)
 
     class FakeBackend:
         def __init__(self, name, provider):
@@ -251,12 +256,63 @@ class TestLogicalQubitSubmit:
         with pytest.raises(ValueError, match="50000"):
             adapter.submit(ORIGINIR_BELL, shots=50001, backend_name="lq-sim-1")
 
-    def test_submit_batch_one_id_per_circuit(self, adapter):
-        ids = adapter.submit_batch([ORIGINIR_BELL, ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
-        assert ids == ["JOB-1", "JOB-2"]
+    def test_submit_batch_native_single_job(self, adapter, fake_lqcloud):
+        """submit_batch maps the whole chunk to ONE lqcloud batch job."""
+        job_id = adapter.submit_batch([ORIGINIR_BELL, ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
+        assert isinstance(job_id, str)
+        assert job_id == "JOB-1"
+        submitted = fake_lqcloud.STATE["submitted"]
+        assert len(submitted) == 1
+        assert submitted[0]["shots"] == 100
+        # The job carries both circuits as one list.
+        circuits = submitted[0]["circuit"]
+        assert isinstance(circuits, list) and len(circuits) == 2
+        assert circuits[0].ops[0] == ("h", 0)
 
-    def test_max_native_batch_size_is_one(self, adapter):
-        assert adapter.max_native_batch_size == 1
+    def test_submit_batch_tier_fallback_to_sequential(self, adapter, fake_lqcloud):
+        """No-batch subscription tiers (HTTP 403) fall back to sequential jobs."""
+        real_get_backend = fake_lqcloud.LQCloudProvider.get_backend
+
+        class TierLimitedBackend:
+            def __init__(self, inner):
+                self._inner = inner
+
+            def run(self, qc, shots=1000):
+                if isinstance(qc, list):
+                    raise RuntimeError(
+                        "Circuit batch submission failed (HTTP 403): "
+                        "当前订阅档位不支持 batch 类型任务，请升级订阅后重试"
+                    )
+                return self._inner.run(qc, shots=shots)
+
+        def get_backend(self, name, verify=True):
+            return TierLimitedBackend(real_get_backend(self, name, verify))
+
+        fake_lqcloud.LQCloudProvider.get_backend = get_backend
+        task_id = adapter.submit_batch([ORIGINIR_BELL, ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
+        assert task_id.startswith("lqseq:")
+        assert len(task_id[len("lqseq:") :].split("|")) == 2
+        submitted = fake_lqcloud.STATE["submitted"]
+        assert len(submitted) == 2
+        assert all(not isinstance(s["circuit"], list) for s in submitted)
+        assert all(s["shots"] == 100 for s in submitted)
+
+    def test_submit_batch_reraises_non_tier_errors(self, adapter, fake_lqcloud):
+        class ExplodingBackend:
+            def run(self, qc, shots=1000):
+                raise RuntimeError("CircuitError: unsupported gate")
+
+        fake_lqcloud.LQCloudProvider.get_backend = lambda self, name, verify=True: ExplodingBackend()
+        with pytest.raises(RuntimeError, match="unsupported gate"):
+            adapter.submit_batch([ORIGINIR_BELL], shots=100, backend_name="lq-sim-1")
+
+    def test_submit_batch_rejects_above_server_limit(self, adapter):
+        circuits = [ORIGINIR_BELL] * 65
+        with pytest.raises(ValueError, match="64"):
+            adapter.submit_batch(circuits, shots=100, backend_name="lq-sim-1")
+
+    def test_max_native_batch_size_is_server_batch_limit(self, adapter):
+        assert adapter.max_native_batch_size == 64
 
     def test_missing_credentials_raises_import_error(self, monkeypatch, fake_lqcloud):
         from uniqc.backend_adapter.task.adapters import LogicalQubitAdapter
@@ -287,8 +343,34 @@ class TestLogicalQubitQuery:
         fake_lqcloud.STATE["counts"]["JOB-1"] = {"00": 503, "11": 497}
         result = adapter.query("JOB-1")
         assert result["status"] == "success"
-        # qiskit-style big-endian keys already match the uniqc convention.
+        # Symmetric keys are invariant under the c[0]-order reversal.
         assert result["result"] == {"00": 503, "11": 497}
+
+    def test_query_batch_job_returns_per_circuit_list(self, adapter, fake_lqcloud):
+        """Native batch jobs yield one counts dict per circuit, in order."""
+        fake_lqcloud.STATE["statuses"]["JOB-1"] = _FakeJobStatus.COMPLETED
+        # lqcloud native key order (c[0] leftmost); normalizer reverses each.
+        fake_lqcloud.STATE["counts"]["JOB-1"] = [{"1000": 99, "0000": 1}, {"01": 5, "10": 6}]
+        result = adapter.query("JOB-1")
+        assert result["status"] == "success"
+        assert result["result"] == [{"0001": 99, "0000": 1}, {"10": 5, "01": 6}]
+
+    def test_query_sequential_compound_id(self, adapter, fake_lqcloud):
+        """Compound ``lqseq:`` ids from the tier fallback unwrap to the batch list contract."""
+        fake_lqcloud.STATE["statuses"]["JOB-1"] = _FakeJobStatus.COMPLETED
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.RUNNING
+        assert adapter.query("lqseq:JOB-1|JOB-2")["status"] == "running"
+
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.COMPLETED
+        fake_lqcloud.STATE["counts"]["JOB-1"] = {"1000": 99, "0000": 1}
+        fake_lqcloud.STATE["counts"]["JOB-2"] = {"01": 5, "10": 6}
+        result = adapter.query("lqseq:JOB-1|JOB-2")
+        assert result["status"] == "success"
+        assert result["result"] == [{"0001": 99, "0000": 1}, {"10": 5, "01": 6}]
+        assert result["n_circuits"] == 2
+
+        fake_lqcloud.STATE["statuses"]["JOB-2"] = _FakeJobStatus.FAILED
+        assert adapter.query("lqseq:JOB-1|JOB-2")["status"] == "failed"
 
     def test_query_failed_and_cancelled(self, adapter, fake_lqcloud):
         fake_lqcloud.STATE["statuses"]["JOB-1"] = _FakeJobStatus.FAILED
@@ -420,26 +502,35 @@ class TestLogicalQubitDryRun:
 
 
 class TestNormalizeLogicalQubit:
-    def test_binary_keys_pass_through_unchanged(self):
+    def test_binary_keys_reversed_to_uniqc_order(self):
         from uniqc.backend_adapter.task.normalizers import normalize_logicalqubit
 
-        # qiskit-style big-endian: rightmost char is c[0] — same as uniqc.
-        unified = normalize_logicalqubit({"01": 10, "11": 6}, task_id="j1")
+        # lqcloud places c[0] LEFTMOST (verified on MQ02 hardware,
+        # 2026-10-26): a |1> on the qubit measured into c[3] comes back as
+        # "0001". The normalizer reverses keys so c[0] becomes rightmost.
+        unified = normalize_logicalqubit({"0001": 10, "1000": 6}, task_id="j1")
         assert unified.platform == "logicalqubit"
-        assert unified.counts == {"01": 10, "11": 6}
+        assert unified.counts == {"1000": 10, "0001": 6}
 
-    def test_hex_keys_widened(self):
+    def test_symmetric_keys_unchanged(self):
         from uniqc.backend_adapter.task.normalizers import normalize_logicalqubit
 
-        unified = normalize_logicalqubit({"0x0": 5, "0x3": 7}, task_id="j2")
+        unified = normalize_logicalqubit({"00": 5, "11": 7}, task_id="j1b")
         assert unified.counts == {"00": 5, "11": 7}
+
+    def test_hex_keys_widened_then_reversed(self):
+        from uniqc.backend_adapter.task.normalizers import normalize_logicalqubit
+
+        unified = normalize_logicalqubit({"0x0": 5, "0x2": 7}, task_id="j2")
+        # 0x2 -> width-2 "10" -> reversed "01" (c[0]=1 in uniqc order).
+        assert unified.counts == {"00": 5, "01": 7}
 
     def test_result_object_with_get_counts(self):
         from uniqc.backend_adapter.task.normalizers import normalize_logicalqubit
 
         fake_result = types.SimpleNamespace(get_counts=lambda: {"10": 3})
         unified = normalize_logicalqubit(fake_result, task_id="j3")
-        assert unified.counts == {"10": 3}
+        assert unified.counts == {"01": 3}
 
 
 # ---------------------------------------------------------------------------
